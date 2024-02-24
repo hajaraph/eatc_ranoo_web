@@ -8,7 +8,7 @@ def upload_to_compteur(instance, filename):
 
 
 class Compteur(models.Model):
-    num_compteur = models.CharField(max_length=20, primary_key=True, blank=False)
+    num_compteur = models.CharField(max_length=255, primary_key=True, blank=False)
     marque_compteur = models.CharField(max_length=30, blank=False)
     modele_compteur = models.CharField(max_length=30, blank=False)
     DN_compteur = models.CharField(max_length=5, blank=False)

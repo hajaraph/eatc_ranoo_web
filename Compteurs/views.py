@@ -198,23 +198,19 @@ class ReleveNew(View):
         dernier_volume = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).latest('date_releve')
 
         if dernier_volume:
-            if date_releve <= dernier_volume.date_releve:
+            if date_releve <= dernier_volume.date_releve or dernier_volume.volume > volume:
                 messages.error(request, f"Veuillez fournir une date valide pour le relevé !")
                 return redirect('releve_new', num_compteur)
             else:
-                if dernier_volume.volume > volume:
-                    messages.error(request, f"Assurez-vous de saisir les chiffres correctement et réessayez !")
-                    return redirect('releve_new', num_compteur)
-                else:
-                    conso = volume - dernier_volume.volume
-                    # Relever
-                    releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
-                    facture_creation(date_releve, num_compteur, releve)
-                    # Historique
-                    message = f"Relever et Facture d'un compteur {num_compteur}"
-                    enregistre_historique(request, message)
-                    messages.success(request, f"Relevé enregistrer avec succès !")
-                    return redirect('compteur_detail', num_compteur)
+                conso = volume - dernier_volume.volume
+                # Relever
+                releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
+                facture_creation(date_releve, num_compteur, releve)
+                # Historique
+                message = f"Relever et Facture d'un compteur {num_compteur}"
+                enregistre_historique(request, message)
+                messages.success(request, f"Relevé enregistrer avec succès !")
+                return redirect('compteur_detail', num_compteur)
         else:
             # Relever
             releve = relever(request, num_compteur, date_releve, volume, volume, image_compteur, utilisateur)

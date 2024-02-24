@@ -13,10 +13,14 @@ from Clients.models import Contrat
 
 from Compteurs.api_compteur.serializer import MissionSerializer
 from Compteurs.models import Compteur, ReleveCompteur
+from Compteurs.views import relever
+from Facturation.views import facture_creation
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
 from pandas.tseries.offsets import MonthEnd
 import pandas as pd
+
+from Parametre.views import enregistre_historique
 
 
 @api_view(['GET'])
@@ -31,10 +35,10 @@ def accueil(request):
 
     # Calcul de la fin du mois actuel en utilisant pandas
     end_of_month = (
-        pd.to_datetime('now')  
-        .to_period('M')  
-        .to_timestamp()  
-        + MonthEnd(0)
+            pd.to_datetime('now')
+            .to_period('M')
+            .to_timestamp()
+            + MonthEnd(0)
     )
 
     # Filtrer les contrats avec des relevés dans le mois actuel
@@ -61,14 +65,13 @@ def accueil(request):
     )
 
 
-@permission_classes([IsAuthenticated])
 def relever_client(request):
     compteur_id = request.GET.get('num_compteur')
-    
+
     try:
         # Récupérer le compteur correspondant à l'ID fourni
         compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
-        
+
         # Récupérer les informations sur le compteur
         compteur_info = {
             'id': compteur.num_compteur,
@@ -79,7 +82,7 @@ def relever_client(request):
 
         # Récupérer le contrat associé au compteur
         contrat = get_object_or_404(Contrat, num_compteur=compteur)
-        
+
         # Récupérer les informations sur le contrat
         contrat_info = {
             'id': contrat.num_contrat,  # Utiliser num_contrat au lieu de id_contrat
@@ -97,16 +100,18 @@ def relever_client(request):
             'id': client.id_client,
             'nom': client.nom_client,
             'prenom': client.prenom_client,
-            'adresse': client.adresse_client,            
-            'commune': client.cp_commune.commune, 
+            'adresse': client.adresse_client,
+            'commune': client.cp_commune.commune,
             'region': client.cp_commune.region.region,
             'tephone1': client.tel1_client,
             'tephone2': client.tel2_client,
+            'actif': client.compte_actif
             # Ajouter d'autres informations sur le client au besoin
         }
 
-        # Récupérer les relevés de compteurs associés au compteur
-        releves_data = ReleveCompteur.objects.filter(num_compteur=compteur)
+        # Récupérer les relevés de compteurs associés au compteur, triés par date décroissante
+        releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
+
         releves_list = []
         for releve in releves_data:
             releves_list.append({
@@ -177,7 +182,7 @@ class Missions(APIView):
     def get(self, request):
         liste_contrats_info = self.get_liste_mission(request)
         return JsonResponse({'compteurs_liste': liste_contrats_info})
-    
+
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
@@ -185,18 +190,32 @@ class Missions(APIView):
         utilisateur = request.user.id_utilisateur
 
         if serializer.is_valid():
-            serializer.save(utilisateur_id=utilisateur)
+            num_compteur = serializer.validated_data.get('num_compteur')
+            num_compteur = get_object_or_404(Compteur, pk=num_compteur)
+            date_releve = serializer.validated_data.get('date_releve')
+            volume = serializer.validated_data.get('volume')
+            image_compteur = request.FILES.get('image_compteur')
 
-            return JsonResponse(
-                {
-                    'enregistre': True,
-                },
-                status=status.HTTP_201_CREATED
-            )
+            dernier_volume = ReleveCompteur.objects.filter(num_compteur=num_compteur).latest('date_releve')
+
+            if dernier_volume:
+                if date_releve <= dernier_volume.date_releve:
+                    return JsonResponse({'erreur': "Veuillez fournir une date valide pour le relevé !"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                if dernier_volume.volume > volume:
+                    return JsonResponse({'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    conso = volume - dernier_volume.volume
+            else:
+                conso = volume
+
+            releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
+            facture_creation(date_releve, num_compteur, releve)
+            message = f"Relever et Facture d'un compteur {num_compteur}"
+            enregistre_historique(request, message)
+
+            return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
+
         else:
-            return JsonResponse(
-                {
-                    'erreur': serializer.errors
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
