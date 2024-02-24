@@ -1,0 +1,58 @@
+<div class="card-body px-4">
+    <h4 class="text-center mb-5">Modification de {{ tarif.cp_commune.cp_commune }}</h4>
+    <form action="{% url 'tarif_mod' tarif.pk %}" method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="prix_m3" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.prix_m3 }}" placeholder="">
+                    <label for="prix_m3">Prix / m&#179;</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="taxe_co" id="taxe_co" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.taxe_co }}" placeholder="">
+                    <label for="taxe_co">Taxe Communal</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="redevance_bs" id="redevance_bs" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.redevance_bs }}" placeholder="">
+                    <label for="redevance_bs">Redevance Branchement Social</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="redevance_fr" id="redevance_fr" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.redevance_fr }}" placeholder="">
+                    <label for="redevance_fr">Redevance Fond de Renouvellement</label>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input type="text" name="tva" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.tva }}" placeholder="">
+                    <label for="tva">TVA</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="nb_jour_echeance_fct" id="nb_jour_echeance_fct" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.nb_jour_echeance_fct }}" placeholder="">
+                    <label for="nb_jour_echeance_fct">Nombre Jour Echeance Facture</label>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-end mt-5">
+            <button class="btn btn-success" type="submit">
+                <i class="fas fa-save"></i>
+                Enregistrer
+            </button>
+        </div>
+    </form>
+</div>

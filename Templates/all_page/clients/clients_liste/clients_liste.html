@@ -1,0 +1,69 @@
+<div class="card-body">
+    <div class="d-flex justify-content-between mb-5">
+        <div class="mx-5 col-md">
+            <a href="{% url 'client_new' %}" class="btn btn-warning ">
+                <i class="fas fa-plus"></i>
+                Nouveau
+            </a>
+        </div>
+        <div class="mx-5">
+            <a href="{% url 'export_clients' %}" class="btn btn-secondary">
+                <i class="fas fa-file-excel"></i>
+                Export
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive mt-4 p-1">
+        <table class="table" id="myTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Tétéphone</th>
+                    <th>N° contrat</th>
+                    <th>Actif</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for clients in client %}
+                <tr>
+                    <td>
+                        <a href="{% url 'client_detail' clients.pk %}" title="Détail" class="text-decoration-none">
+                            {{ clients.pk }}
+                        </a>
+                    </td>
+                    <td>{{ clients.nom_client }}</td>
+                    <td>{{ clients.prenom_client }}</td>
+                    <td>{{ clients.tel1_client }}</td>
+                    <td>
+                        {% if clients.contrats.last %}
+                            {{ clients.contrats.last.num_contrat }}
+                        {% else %}
+                            <span class="text-secondary">Pas de contrat</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if clients.compte_actif %}
+                            <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                            <i class="fas fa-xmark-circle text-danger"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'client_detail' clients.pk %}" class="btn btn-primary btn-sm " title="Détail">
+                            <i class="fas fa-info-circle"></i>
+                        </a>
+                        {% if request.session.role_utilisateur == 'Administrateur' %}
+                        	<a href="{% url 'client_delete' clients.pk %}" class="btn btn-danger btn-sm " onclick="return confirm('Êtes-vous sûr de vouloir supprimer le Client {{ clients.nom_client }} ?');">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

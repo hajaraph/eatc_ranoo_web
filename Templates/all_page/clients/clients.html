@@ -1,0 +1,52 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'datatable/dataTables.min.css' %}">
+    <title>{{ title_liste }}{{ title_new }}{{ title_contrat }}{{ title_new_contrat }}{{ title_li_contrat }}{{ title_detail }}</title>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            {% include 'navbar/navbar.html' %}
+            <div class="col p-2">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header border-0">
+                        <div class="row">
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'client_liste' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning border-top-0 border-start-0 border-end-0 w-100 text-dark {{ active_liste }}">
+                                    Client
+                                </a>
+                            </div>
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'client_contrat' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning border-top-0 border-start-0 border-end-0 w-100 text-dark {{ active_contrat }}">
+                                    Contrat
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                         <div class="d-flex justify-content-center align-content-center p-4">
+                            {% include 'message.html' %}
+                         </div>
+                        {% block content_client %}
+
+                        {% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'client/modal.js' %}"></script>
+    <script src="{% static 'datatable/datatables.min.js' %}"></script>
+    <script src="{% static 'fontawesome/js/all.js' %}"></script>
+    <script src="{% static 'modal.js' %}"></script>
+</body>
+</html>

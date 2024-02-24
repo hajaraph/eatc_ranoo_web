@@ -1,0 +1,193 @@
+<div class="card border-0 my-4">
+    <div class="card-body px-4">
+        <form method="post">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="num_mc" id="num_mc" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ main.pk }}" placeholder="" readonly>
+                        <label for="num_mc">Numéro MC</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="row">
+                        <span>
+                            Statut :
+                        {% if statut.non_traite %}
+                            <span class="badge bg-info">Non Traité</span>
+                        {% elif statut.en_cours %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-spinner"></i>
+                                En Cours
+                            </span>
+                        {% elif statut.realise %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle"></i>
+                                Realisé
+                            </span>
+                        {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% if main.client_id %}
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="client_id" id="client_id" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ main.client.nom_client }} {{ main.client.prenom_client }}" placeholder="" readonly>
+                        <label for="client_id">Client</label>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="type_anomalie" id="type_anomalie" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ main.type_anomalie }}" placeholder="" readonly>
+                        <label for="type_anomalie">Type d'anomalie</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="date" name="date_anomalie" id="date_anomalie" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ main.date_mc|date:'Y-m-d' }}" placeholder="" readonly>
+                        <label for="date_anomalie">Date d'anomalie</label>
+                    </div>
+                </div>
+            </div>
+            {% if main.latitude_mc and main.longitude_mc %}
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="logitude_mc" id="logitude_mc" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ main.longitude_mc }}" placeholder="" readonly>
+                        <label for="logitude_mc">Longitude MC</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="latitude_mc" id="latitude_mc" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ main.latitude_mc }}" placeholder="" readonly>
+                        <label for="latitude_mc">Latitude MC</label>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% if main.cp_commune %}
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="region" id="region" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ main.cp_commune.region.region }}" readonly>
+                        <label for="region">Région</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="commune" id="commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ main.cp_commune.commune }}" readonly>
+                        <label for="commune">Commune :</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="cp_commune" id="cp_commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{  main.cp_commune_id }}" readonly>
+                        <label for="cp_commune">CP Commune :</label>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="row mt-5">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <textarea name="description" id="description" cols="30" rows="5" class="form-control shadow-none" readonly>{{ main.description_mc }}</textarea>
+                        <label for="description">Description</label>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end mt-4">
+                <a href="{% url 'supprimer_mc' statut.pk %}" class="btn btn-danger" onclick="return confirm('Etes-vous sûr de vouloir supprimer ce MC ?')">
+                    <i class="fas fa-trash-alt"></i>
+                    Supprimer
+                </a>
+                {% if not statut.en_cours and not statut.realise %}
+                    <a href="{% url 'lance_mc' statut.pk %}" class="btn btn-primary mx-4" onclick="return confirm('Vous voulez vraiment lancé ce MC ?')">
+                        <i class="fas fa-spinner"></i>
+                        Lancer MC
+                    </a>
+                {% elif not statut.realise %}
+                    <a href="{% url 'valide_mc' statut.pk %}" class="btn btn-success mx-4" onclick="return confirm('Etes-vous sûr de vouloir Validé ce MC ?')">
+                        <i class="fas fa-check-circle"></i>
+                        Valider MC
+                    </a>
+                {% endif %}
+            </div>
+            {% if photos %}
+            <div class="row">
+                <div class="border-bottom w-100">
+                    <h5>Photos</h5>
+                </div>
+            </div>
+            <div class="row">
+                {% for photo in photos %}
+                <div class="col-md-3 mt-4">
+                    <div class="container rounded p-1 shadow-sm border">
+                        <img src="{{ photo.photo_anomalie.url }}" class="img-fluid rounded" alt="">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </form>
+    {% if statut.en_cours %}
+        <form action="{% url 'suivie' statut.pk %}" method="post">
+            {% csrf_token %}
+            <div class="row mt-4">
+                <div class="border-bottom w-100">
+                    <h5>Suivie</h5>
+                </div>
+            </div>
+            <div class="row mt-4">
+                {% if suivies %}
+                <table class="table table-responsive">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Commentaire</th>
+                            <th>Utilisateur</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for suivie in suivies %}
+                        <tr>
+                            <td>{{ suivie.date_suivie|date:'d/m/Y H:m' }}</td>
+                            <td>{{ suivie.commentaire_suivie }}</td>
+                            <td>
+                                {{ suivie.utilisateur.nom_utilisateur }}
+                                <span class="badge bg-primary">{{ suivie.utilisateur.role.role }}</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'supp_suivie' suivie.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Etes-vous sûr de vouloir supprimer ce commentaire ?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-5">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-floating">
+                                <textarea name="commentaire" id="commentaire" class="form-control shadow-none border-start-0 border-top-0 border-end-0" cols="20" rows="3" placeholder=""></textarea>
+                                <label for="commentaire">Commentaire</label>
+                            </div>
+                            <div class="d-flex justify-content-end mt-3">
+                                <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> Envoyer</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+    </div>
+</div>

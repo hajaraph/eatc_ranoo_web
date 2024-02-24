@@ -1,0 +1,59 @@
+<div class="card-body">
+    <div class="d-flex justify-content-between mb-5">
+        <div class="mx-5 col-md">
+            <a href="{% url 'compteur_new' %}" class="btn btn-warning ">
+                <i class="fas fa-plus"></i>
+                Nouveau
+            </a>
+        </div>
+        <div class="mx-5">
+            <a href="{% url 'export_compteur' %}" class="btn btn-secondary">
+                <i class="fas fa-file-excel"></i>
+                Export
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive p-1">
+        <table class="table" id="myTable">
+            <thead>
+                <tr>
+                    <th>N° Compteur</th>
+                    <th>N° Contrat</th>
+                    <th>Date Dernier Relevé</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for list in compteur %}
+                <tr>
+                    <td>
+                        <a href="{% url 'compteur_detail' list.pk %}" class="text-decoration-none">{{ list.pk }}</a>
+                    </td>
+                    <td>
+                        {% if list.contrats.last %}
+                        	{{ list.contrats.last.num_contrat }}
+                        {% else %}
+                            <span class="text-secondary">Pas de contrat</span>
+                        {% endif %} 
+                    </td>
+                    <td>
+                        {% if list.dernier_releve %}
+                            {{ list.dernier_releve|date:"d/m/Y" }}
+                        {% else %}
+                            <span class="bg-warning rounded px-1">Pas de relevé</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'compteur_detail' list.pk %}" class="btn btn-primary btn-sm " title="Détail">
+                            <i class="fas fa-info-circle"></i>
+                        </a>
+                        <a href="{% url 'compteur_supp' list.pk %}" class="btn btn-danger btn-sm " title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce Compteur ?')">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

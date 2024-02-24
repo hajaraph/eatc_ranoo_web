@@ -1,0 +1,166 @@
+from datetime import timedelta
+from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q
+from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
+from django.shortcuts import render
+from django.utils import timezone
+
+from Clients.communes import Region, Commune
+from Clients.models import Contrat
+from Facturation.models import Paiement, Facture
+from Login.views import authentification_requis
+from Main_Courante.models import StatutMC
+
+
+@authentification_requis
+def tableau_bord(request, *args, **kwargs):
+    font = 'custom-font'
+    region = request.GET.get('region')
+    date_deb = request.GET.get('date_deb')
+    date_fin = request.GET.get('date_fin')
+
+    date_actuelle = timezone.now()
+    annee_actuelle = timezone.now().year
+    regions = Region.objects.all()
+
+    commune = Commune.objects.filter(contrat__num_compteur__relevecompteurs__date_releve__year=annee_actuelle)
+    factures = Facture.objects.filter(date_facture__year=annee_actuelle)
+    main_courante = StatutMC.objects.filter(date_status__year=annee_actuelle)
+
+    chiffres = Paiement.objects.all()
+
+    if region:
+        commune = Commune.objects.filter(
+            region_id=region).annotate(
+            total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
+        )
+        chiffres = Paiement.objects.filter(facture__num_contrat__cp_commune__region=region)
+
+    elif date_deb and date_fin:
+        commune = Commune.objects.filter(
+            contrat__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]
+        ).annotate(
+            total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
+        )
+        chiffres = Paiement.objects.filter(facture__relevecompteur__date_releve__range=[date_deb, date_fin])
+
+    elif region and date_deb and date_fin:
+        date_fin = date_fin + timedelta(days=1)
+        commune = Commune.objects.filter(
+            region_id=region,
+            contrat__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]).annotate(
+            total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
+        )
+        chiffres = Paiement.objects.filter(
+            facture__num_contrat__cp_commune__region_id=region,
+            facture__relevecompteur__date_releve__range=[date_deb, date_fin]
+        )
+
+    commune = commune.annotate(
+        total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0)))
+    commune = commune.exclude(total_conso=0)
+    chiffres = chiffres.aggregate(Sum('montant_payer'))['montant_payer__sum'] or 0
+    chiffres = round(chiffres, 2)
+
+    resultats = []
+
+    for communes in commune:
+        # Filtrer par département
+        evo_conso_commune = communes.contrat_set.annotate(
+            mois_releve=ExtractMonth('num_compteur__relevecompteurs__date_releve'),
+            annee_releve=ExtractYear('num_compteur__relevecompteurs__date_releve'),
+            total_conso=Coalesce(Sum('num_compteur__relevecompteurs__conso'), Value(0))
+        ).order_by('mois_releve', 'annee_releve').exclude(total_conso=0)
+
+        # Ajouter les résultats au tableau
+        resultats.append(
+            {
+                'commune': f'{communes.region.region} {communes.commune}',
+                'data': [
+                    {
+                        'mois_releve': entry.mois_releve,
+                        'annee_releve': entry.annee_releve,
+                        'total_conso': entry.total_conso
+                    }
+                    for entry in evo_conso_commune
+                ]
+            }
+        )
+    # Paiement
+    factures = factures.annotate(
+        mois=ExtractMonth('date_facture'),
+        annee=ExtractYear('date_facture'),
+        statut_facture=Case(
+            When(statut=True, then=1),
+            default=0,
+            output_field=IntegerField()
+        )
+    ).values('mois', 'annee').annotate(
+        nombre_factures_payees=Count('statut_facture', filter=Q(statut_facture=1)),
+        nombre_factures_impayees=Count('statut_facture', filter=Q(statut_facture=0))
+    ).order_by('annee', 'mois')
+
+    main_courante = main_courante.annotate(
+        mois=ExtractMonth('date_status'),
+        annee=ExtractYear('date_status'),
+        nb_non_traite=Count('pk', filter=Q(non_traite=True)),
+        nb_realise=Count('pk', filter=Q(realise=True)),
+        nb_en_cours=Count('pk', filter=Q(en_cours=True))
+    ).values('mois', 'annee', 'nb_non_traite', 'nb_realise', 'nb_en_cours').order_by('annee', 'mois')
+
+    # Filtrage de main courante non traité
+    date_precedant = date_actuelle - timedelta(days=365)
+
+    # pour recuperé les nombres de client lié à un contrat pour l'année actuelle
+    contrats_annee_actuelle = Contrat.objects.filter(
+        date_debut__year=date_actuelle.year
+    ).annotate(
+        annee_contrat_actuelle=ExtractYear('date_debut')
+    ).values('annee_contrat_actuelle').annotate(
+        nb_client_actuelle=Count('client')
+    )
+
+    # pour recuperé les nombres de client lié à un contrat pour l'année precedant
+    contrats_annee_prec = Contrat.objects.filter(
+        date_debut__year=date_precedant.year
+    ).annotate(
+        annee_contrat_prec=ExtractYear('date_debut')
+    ).values('annee_contrat_prec').annotate(
+        nb_client_prec=Count('client')
+    )
+
+    # Pour obtenir seulement l'année precedant de notre requete precedant
+    annee_contrat_prec = contrats_annee_prec[0]['annee_contrat_prec'] if contrats_annee_prec else 0
+
+    # Pour obtenir le nombre de contrat pour l'année precedant depuis notre requete precedanat
+    nb_client_prec = contrats_annee_prec[0]['nb_client_prec'] if contrats_annee_prec else 0
+
+    # Pour obtenir seulement l'année actuelle de notre requete precedant
+    annee_contrat_actuelle = contrats_annee_actuelle[0]['annee_contrat_actuelle'] if contrats_annee_actuelle else 0
+
+    # Pour obtenir le nombre de contrat pour l'année actuelle depuis notre requete precedanat
+    nb_client_actuelle = contrats_annee_actuelle[0]['nb_client_actuelle'] if contrats_annee_actuelle else 0
+
+    context = {
+        'font_tableau': font,
+        'regions': regions,
+        'communes': commune,
+        'chiffres': chiffres,
+        'annee_contrat_actuelle': annee_contrat_actuelle,
+        'nb_client_actuelle': nb_client_actuelle,
+        'annee_contrat_prec': annee_contrat_prec,
+        'nb_client_prec': nb_client_prec,
+        'evo_conso': resultats,
+        'factures': factures,
+        'main_courantes': main_courante
+    }
+
+    return render(request, 'all_page/tableau_bord.html', context)
+
+
+def export(request):
+    font = 'custom-font'
+
+    context = {
+        'font_export': font
+    }
+    return render(request, 'all_page/export.html', context)

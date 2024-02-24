@@ -1,0 +1,103 @@
+<div class="card-body">
+    <h3 class="text-center mb-5">Anomalie</h3>
+    <form method="post" id="formNew" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <select name="client_id" id="client_id" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                            <option value="" selected hidden></option>
+                            {% for clients in client %}
+                                <option value="{{ clients.pk }}">{{ clients.pk }} | {{ clients.nom_client }} {{ clients.prenom_client }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="client_id">Client</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="date" name="date_mc" id="date_mc" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                        <label for="date_mc">Date de déclaration</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="type_anomalie" id="type_anomalie" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                        <label for="type_anomalie">Type d'anomalie</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
+                            <option selected hidden>Selectionné une région</option>
+                            {% for region in regions %}
+                                <option value="{{ region.region }}">{{ region.region }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="region">Région</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                        </select>
+                        <label for="commune">Commune :</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <select name="cp_commune" id="cp_commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" readonly>
+                        </select>
+                        <label for="cp_commune">CP Commune :</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="longitude_mc" id="longitude_mc" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                        <label for="longitude_mc">Longitude MC</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" name="latitude_mc" id="latitude_mc" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                        <label for="longitude_mc">Latitude MC</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <label for="piece_client">Photo d'anomalie :</label>
+                <div class="col-md-4" id="afficher">
+                    <div class="form-floating">
+                        <input type="file" name="photo_anomalie" id="photo_anomalie" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" accept="image/jpeg, image/png, application/pdf">
+                    </div>
+                </div>
+                <div class="col-md-4" id="afficher">
+                </div>
+            </div>
+            <button class="btn btn-sm btn-success mt-4" id="photo"><i class="fas fa-plus"></i> Plus Photo</button>
+            <div class="row mt-4">
+                 <div class="col-md-4">
+                    <div class="form-floating">
+                        <textarea name="description_mc" id="description_mc" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0 h-25" placeholder="" required></textarea>
+                        <label for="description_mc">Description</label>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end mt-5">
+                <button class="btn btn-success" type="submit">
+                    <i class="fas fa-save"></i>
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

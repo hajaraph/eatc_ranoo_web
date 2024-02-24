@@ -1,0 +1,32 @@
+<div class="card-body">
+    <div class="container-fluid">
+        <div class="content">
+            <form method="post">
+                {% csrf_token %}
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <input type="password" name="ancien_motpasse" id="ancien_motpasse" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                        <label for="ancien_motpasse">Ancien mot de passe</label>
+                    </div>
+                </div>
+                <div class="col-md-4 mt-4">
+                     <div class="form-floating">
+                        <input type="password" name="nouveau_motpasse" id="nouveau_motpasse" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                        <label for="nouveau_motpasse">Nouveau mot de passe</label>
+                    </div>
+                </div>
+                <div class="col-md-4 mt-4">
+                     <div class="form-floating">
+                        <input type="password" name="confirmer_motpasse" id="confirmer_motpasse" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                        <label for="confirmer_motpasse">Confirmer nouveau mot de passe</label>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-4">
+                    <button class="btn btn-primary" type="submit">
+                        Changer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

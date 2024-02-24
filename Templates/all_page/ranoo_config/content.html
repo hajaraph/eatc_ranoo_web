@@ -1,0 +1,23 @@
+{% extends 'all_page/ranoo_config/ranoo_config.html' %}
+
+{% block content %}
+    {% if titre_ranoo_utilisateur %}
+        {% include 'all_page/ranoo_config/config_utilisateur.html' %}
+    {% elif titre_mod_utilisateur %}
+        {% include 'all_page/ranoo_config/config_utilisateur_modifier.html' %}
+    {% elif titre_creation_utilisateur %}
+        {% include 'all_page/ranoo_config/config_utilisateur_creer.html' %}
+    {% elif titre_config_facture %}
+        {% include 'all_page/ranoo_config/config_facture.html' %}
+    {% elif titre_region %}
+        {% include 'all_page/ranoo_config/config_commune.html' %}
+    {% elif titre_departement %}
+        {% include 'all_page/ranoo_config/config_commune_new.html' %}
+    {% elif titre_config_tarif %}
+        {% include 'all_page/ranoo_config/config_tarif.html' %}
+    {% elif titre_mod_tarif %}
+        {% include 'all_page/ranoo_config/config_tarif_mod.html' %}
+    {% elif titre_new_tarif %}
+        {% include 'all_page/ranoo_config/config_tarif_new.html' %}
+    {% endif %}
+{% endblock %}

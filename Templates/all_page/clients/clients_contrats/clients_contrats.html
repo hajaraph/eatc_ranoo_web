@@ -1,0 +1,37 @@
+<div class="card-body">
+    <div class="d-flex justify-content-between">
+        <div class="mx-5 col-md">
+            <a href="{% url 'client_new_contrat' %}" class="btn btn-warning ">
+                <i class="fas fa-plus"></i>
+                Nouveau
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive mt-4 p-1">
+        <table class="table" id="myTable">
+            <thead>
+                <tr>
+                    <th>N° Contrat</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>N° Compteur</th>
+                    <th>Utilisateur</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for contrats in contrat %}
+                <tr>
+                    <td>{{ contrats.num_contrat }}</td>
+                    <td>{{ contrats.client.nom_client }}</td>
+                    <td>{{ contrats.client.prenom_client }}</td>
+                    <td>{{ contrats.num_compteur_id }}</td>
+                    <td>
+                        {{ contrats.utilisateur.prenom_utilisateur }}
+                        <span class="badge bg-primary ">{{ contrats.utilisateur.role.role }}</span>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

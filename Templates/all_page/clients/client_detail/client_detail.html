@@ -1,0 +1,63 @@
+<div class="card-body px-5">
+    <h5 class="text-center">Détail client</h5>
+    <form method="post" id="formNew" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input name="type_client_id" id="type_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ detail.type_client.designation_client }}" placeholder="" readonly>
+                    <label for="type_client">Type Client</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="nom_client" id="nom_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ detail.nom_client }}" placeholder="" required>
+                    <label for="nom_client">Nom</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="prenom_client" id="prenom_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ detail.prenom_client }}" placeholder="">
+                    <label for="prenom_client">Prénom</label>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between mt-5">
+            <label for="compte_actif">
+                <input type="checkbox" name="compte_actif" id="compte_actif" value="True" class="form-check-label" {% if detail.compte_actif %} checked {% endif %}>
+                Compte actif
+            </label>
+            <button class="btn btn-success " type="submit" onclick="return confirm('Êtes-vous sûr de vouloir Sauvegarder la modification ?')">
+                <i class="fas fa-save"></i>
+                Enregistrer
+            </button>
+        </div>
+        <div class="card mt-4">
+            <div class="card-header border-0">
+                <div class="row">
+                    <div class="col-md-2">
+                        <a href="{% url 'client_detail' detail.pk %}" class="fw-bold shadow-none rounded-0 btn btn-outline-warning text-dark border-start-0 border-top-0 border-end-0 w-100 {{ active_li_liste }}">
+                            Contact
+                        </a>
+                    </div>
+                    {% if contrat %}
+                    <div class="col-md-2">
+                        <a href="{% url 'client_li_contrat' detail.pk %}" class="fw-bold shadow-none rounded-0 btn btn-outline-warning text-dark border-start-0 border-top-0 border-end-0 w-100 {{ active_li_contrat }}">
+                            Contrat
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body mx-4">
+                {% if title_li_contrat %}
+                    {% include 'all_page/clients/client_detail/client_li_contrat.html' %}
+                {% elif title_detail %}
+                    {% include 'all_page/clients/client_detail/client_li_contact.html' %}
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,65 @@
+<div class="card-body">
+    <div class="d-flex justify-content-between mb-5">
+        <div class="mx-5">
+            <a href="{% url 'nouvel_utilisateur' %}" class="btn btn-warning">
+                Créer un utilisateur
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive p-1">
+        <table class="table mt-5" id="myTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Téléphone</th>
+                    <th>Crée le</th>
+                    <th>Initial</th>
+                    <th>Fonction</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in utilisateur %}
+                <tr>
+                    <td>{{ row.utilisateur_cree.pk }}</td>
+                    <td>{{ row.utilisateur_cree.nom_utilisateur }}</td>
+                    <td>{{ row.utilisateur_cree.prenom_utilisateur }}</td>
+                    <td>{{ row.utilisateur_cree.num_utilisateur }}</td>
+                    <td>{{ row.utilisateur_cree.cree_le|date:'d/m/Y' }}</td>
+                    <td>
+                        {{ row.utilisateur_createur.prenom_utilisateur }}
+                        <span class="badge bg-primary">{{ row.utilisateur_createur.role.role }}</span>
+                    </td>
+                    <td>{{ row.utilisateur_cree.role.role }}</td>
+                    {% if row.utilisateur_cree.status %}
+                    <td><span class="badge bg-success">Active</span></td>
+                    {% else %}
+                    <td><span class="badge bg-danger">Desactive</span></td>
+                    {% endif %}
+                    <td>
+                        {% if request.session.role_utilisateur == 'Administrateur' %}
+                            {% if row.utilisateur_cree.pk != request.session.id_utilisateur %}
+                            <a href="{% url 'utilisateur_modifier' row.utilisateur_cree.pk %}" class="btn btn-warning btn-sm" title="Modification">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'sup_utilisateur' row.utilisateur_cree.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Êtes vous sûr de vouloir supprimer cette utilisateur ?')" title="Suppression">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                            {% endif %}
+                        {% else %}
+                            {% if row.utilisateur_cree.pk != request.session.id_utilisateur %}
+                            <a href="{% url 'utilisateur_modifier' row.utilisateur_cree.pk %}" class="btn btn-warning btn-sm" title="Modification">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

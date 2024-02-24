@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'datatable/datatables.min.css' %}">
+    <title>{{ title_liste }}{{ title_new }}{{ title_detail }}{{ title_releve }}{{ title_releve_new }}{{ title_releve_detail}} {{ releve.date_releve|date:'d/m/Y' }}</title>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            {% include 'navbar/navbar.html' %}
+            <div class="col p-2">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header border-0">
+                        <div class="row">
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'compteur_list' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_li_co }}{{ active_releve_new }}{{ active_releve_detail }}">
+                                    Compteur
+                                </a>
+                            </div>
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'compteur_releve' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_releve }}">
+                                    Relevé
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                         <div class="d-flex justify-content-center align-content-center p-4">
+                            {% include 'message.html' %}
+                         </div>
+                        {% if title_liste %}
+                            {% include 'all_page/compteurs/compteurs_liste.html' %}
+                        {% elif title_releve %}
+                            {% include 'all_page/compteurs/compteurs_releve.html' %}
+                        {% elif title_new %}
+                            {% include 'all_page/compteurs/compteurs_new.html' %}
+                        {% elif title_detail %}
+                            {% include 'all_page/compteurs/compteur_detail.html' %}
+                        {% elif title_releve_new %}
+                            {% include 'all_page/compteurs/releve_new.html' %}
+                        {% elif title_releve_detail %}
+                            {% include 'all_page/compteurs/releve_detail.html' %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'datatable/datatables.min.js' %}"></script>
+    <script src="{% static 'fontawesome/js/all.js' %}"></script>
+    <script src="{% static 'datenow.js' %}"></script>
+    <script src="{% static 'modal.js' %}"></script>
+    <script src="{% static 'compteur/imageshow.js' %}"></script>
+</body>
+</html>

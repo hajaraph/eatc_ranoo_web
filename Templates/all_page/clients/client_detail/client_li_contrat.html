@@ -1,0 +1,107 @@
+<input type="text" name="num_contrat" value="{{ detail_co.num_contrat }}" hidden>
+<div class="row">
+    <div class="col-md-4">
+        <div class="form-floating">
+            <input type="text" name="adresse_contrat" id="adresse_contrat" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail_co.adresse_contrat }}" placeholder="" required>
+            <label for="adresse_contrat">Adresse Contrat</label>
+        </div>
+    </div>
+</div>
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="form-floating">
+            <select name="region" id="region" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                <option value="" selected hidden>{{ detail_co.cp_commune.region.region }}</option>
+                {% for region in regions %}
+                    <option value="{{ region.region }}">{{ region.region }}</option>
+                {% endfor %}
+            </select>
+            <label for="region">Région :</label>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-floating">
+            <select name="commune" id="commune" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                <option value="{{ detail_co.cp_commune_id }}">{{ detail_co.cp_commune.commune }}</option>
+            </select>
+            <label for="commune">Commune</label>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-floating">
+            <select name="cp_commune" id="cp_commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0 rounded-0" readonly>
+                <option value="">{{ detail_co.cp_commune_id }}</option>
+            </select>
+            <label for="cp_commune">CP Commune :</label>
+        </div>
+    </div>
+</div>
+<div class="row mt-4">
+     <div class="col-md-4">
+        <div class="form-floating">
+            <input type="text" name="pays_contrat" id="pays_contrat" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="Madagascar" placeholder="" required>
+            <label for="pays_client">Pays</label>
+        </div>
+    </div>
+</div>
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="form-floating">
+            <input type="text" name="compteur_id" id="compteur_id" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail_co.num_compteur.pk }}" readonly>
+            <label for="num_compteur">Compteur Associé</label>
+        </div>
+    </div>
+</div>
+<div class="card border-0 mt-4">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>N° Contrat</th>
+                    <th>Généré</th>
+                    <th>Date début</th>
+                    <th>Fin le</th>
+                    <th>Utilisateur</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for contrat in contrats  %}
+                 <tr>
+                    <td>
+                        <a href="{% url 'client_li_contrat' contrat.pk %}" class="text-decoration-none">
+                            {{ contrat.num_contrat }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{% url 'genere_pdf_contrat' contrat.pk %}" class="btn btn-sm btn-success ">
+                            <i class="fas fa-file-alt"></i>
+                            PDF
+                        </a>
+                    </td>
+                    <td>{{ contrat.date_debut|date:'d/m/Y' }}</td>
+                    <td>
+                        {% if contrat.date_fin %}
+                            {{ contrat.date_fin }}
+                        {% else %}
+                            <span class="badge bg-success">Indeterminé</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ contrat.utilisateur.nom_utilisateur }}
+                        <span class="badge bg-primary">{{ contrat.utilisateur.role.role }}</span>
+                    </td>
+                    <td>
+                        <a href="{% url 'client_li_contrat' contrat.pk %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'supp_contrat' contrat.pk %}" class="btn btn-sm btn-danger " onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce Contrat ?')">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,64 @@
+<div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-light shadow">
+    <div class="d-flex flex-column align-items-center align-items-sm-start pt-2 min-vh-100">
+        <a href="#" class="d-flex align-items-center p-3 text-decoration-none text-dark">
+            <i class="fas fa-user-circle mx-2" style="font-size: 22px;"></i>
+            <span class="d-none d-sm-inline">{{ request.session.nom_utilisateur }} {{ request.session.prenom_utilisateur }}</span>
+        </a>
+        <ul class="nav nav-pills flex-column mb-sm-auto align-items-center align-items-sm-start" id="menu">
+            <li class="nav-item custom-nav {{ font_tableau }}" title="Tableau de bord">
+                <a href="{% url 'tableau_bord' %}" class="nav-link align-middle text-dark">
+                    <i class="fas fa-dashboard"></i>
+                    <span class="d-none d-sm-inline">Tableau de bord</span>
+                </a>
+            </li>
+            <li title="Clients" class="nav-item custom-nav {{ font_client }}">
+                <a href="{% url 'client_liste' %}" class="nav-link align-middle text-dark">
+                    <i class="fas fa-user"></i>
+                    <span class="d-none d-sm-inline">Clients</span>
+                </a>
+            </li>
+            <li title="Compteurs" class="nav-item custom-nav {{ font_compteur }}">
+                <a href="{% url 'compteur_list' %}" class="nav-link align-middle text-dark">
+                    <i class="fas fa-sort-numeric-up-alt"></i>
+                    <span class="d-none d-sm-inline">Compteurs</span>
+                </a>
+            </li>
+            <li title="Facturation" class="nav-item custom-nav {{ font_facture }}">
+                <a href="{% url 'facture' %}" class="nav-link align-middle text-dark">
+                    <i class="fas fa-file-invoice"></i>
+                    <span class="d-none d-sm-inline">Facturation</span>
+                </a>
+            </li>
+            <li title="Main Courante" class="nav-item custom-nav {{ font_main }}">
+                <a href="{% url 'main_liste_mc' %}" class="nav-link align-middle text-dark">
+                    <i class="fas fa-list-1-2"></i>
+                    <span class="d-none d-sm-inline">Main Courante</span>
+                </a>
+            </li>
+            <li title="Paramètre" class="nav-item custom-nav {{ font_parametre }}">
+                <a href="{% url 'para_utilisateur' %}" class="nav-link align-middle text-dark">
+                    <i class="fas fa-cog"></i>
+                    <span class="d-none d-sm-inline">Paramètre</span>
+                </a>
+            </li>
+            <li title="Ranoo Config" class="nav-item custom-nav {{ font_rano  }}">
+                <a href="{% url 'config_utilisateur' %}" class="nav-link align-middle text-dark">
+                    <i class="fas fa-tools"></i>
+                    <span class="d-none d-sm-inline">Ranoo Config</span>
+                </a>
+            </li>
+            <li title="Ranoo Config" class="nav-item custom-nav {{ font_export  }}">
+                <a href="{% url 'export' %}" class="nav-link align-middle text-dark">
+                    <i class="fas fa-file-excel"></i>
+                    <span class="d-none d-sm-inline">Export</span>
+                </a>
+            </li>
+            <li title="Deconnexion" class="nav-item custom-nav">
+                <a href="{% url 'deconnexion' %}" class="nav-link align-middle text-dark" onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="d-none d-sm-inline">Deconnexion</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>

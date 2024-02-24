@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'datatable/datatables.min.css' %}">
+    <title>{{ titre_ranoo_utilisateur }}{{ titre_new_tarif }}{{ titre_departement }}{{ titre_mod_tarif }}{{ titre_region }}{{ titre_mod_utilisateur }}{{ titre_creation_utilisateur }}{{ titre_config_tarif }}</title>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            {% include 'navbar/navbar.html' %}
+            <div class="col p-2">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header border-0">
+                        <div class="row">
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'config_utilisateur' %}" class="fw-bold shadow-none rounded-0 btn btn-outline-warning text-dark border-start-0 border-top-0 border-end-0 w-100 {{ active_utilisateur }}{{ active_droit }}">
+                                    Utilisateur
+                                </a>
+                            </div>
+                             <div class="col-md-2 mt-4">
+                                <a href="{% url 'region' %}" class="fw-bold shadow-none rounded-0 btn btn-outline-warning text-dark border-start-0 border-top-0 border-end-0 w-100 {{ active_region }}">
+                                    Région
+                                </a>
+                            </div>
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'config_tarif' %}" class="fw-bold shadow-none rounded-0 btn btn-outline-warning text-dark border-start-0 border-top-0 border-end-0 w-100 {{ active_config_constates }}">
+                                    Tarif
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center align-content-center p-4">
+                            {% include 'message.html' %}
+                        </div>
+                        {% block content %}
+
+                        {% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'client/modal.js' %}"></script>
+    <script src="{% static 'datatable/datatables.min.js' %}"></script>
+    <script src="{% static 'fontawesome/js/all.js' %}"></script>
+    <script src="{% static 'modal.js' %}"></script>
+</body>
+</html>

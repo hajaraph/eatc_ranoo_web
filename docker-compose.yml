@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  Clients:
+    build:
+      context: ./Clients
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    # Autres configurations pour app1
+
+  Compteurs:
+    build:
+      context: ./Compteurs
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"

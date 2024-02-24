@@ -1,0 +1,71 @@
+<div class="card-body">
+    <div class="mb-4">
+        <form>
+            <div class="row">
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <input type="date" name="datedeb" id="datedeb" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                        <label for="datedeb">Période du </label>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <input type="date" name="datefin" id="datefin" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                        <label for="datefin">au </label>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <div class="mb-2"></div>
+                    <button class="btn btn-primary h-75 w-50" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="mt-4">
+        <div class="d-flex flex-wrap justify-content-start my-5">
+            <div class="col-md-2 border border-secondary rounded-2 p-4">
+                <div class="text-center">Compteur Relevé : </div>
+                <h3 class="text-center text-secondary">0</h3>
+            </div>
+            <div class="col-md-2 border border-secondary rounded-2 p-4 mx-5">
+                <div class="text-center">Absence de Relève : </div>
+                <h3 class="text-center text-secondary">0</h3>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4">
+        <a href="" class="btn btn-secondary">
+            <i class="fas fa-file-excel"></i>
+            Export
+        </a>
+        <div class="table-responsive mt-4">
+            <table class="table" id="myTable">
+                <thead>
+                    <tr>
+                        <th>N° Compteur</th>
+                        <th>Volume</th>
+                        <th>Conso</th>
+                        <th>Relevé le</th>
+                        <th>Utilisateur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in releve %}
+                    <tr>
+                        <td>{{ row.num_compteur_id }}</td>
+                        <td>{{ row.volume }} m&#179;</td>
+                        <td>{{ row.conso }} m&#179;</td>
+                        <td>{{ row.date_releve|date:'d/m/Y' }}</td>
+                        <td>
+                            {{ row.utilisateur.nom_utilisateur }}
+                            <span class="badge bg-primary">{{ row.utilisateur.role.role }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

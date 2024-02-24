@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'datatable/datatables.min.css' %}">
+    <title>{{ titre_utilisateur }}{{ titre_profile }}{{ titre_historique }}{{ titre_motde_passe }}</title>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            {% include 'navbar/navbar.html' %}
+            <div class="col p-2">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header border-0">
+                        <div class="row">
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'para_utilisateur' %}" class="fw-bold shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_utilisateur }}">
+                                    Mon Profile
+                                </a>
+                            </div>
+                            {% if request.session.role_utilisateur == 'Administrateur' %}
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'historique' %}" class="fw-bold shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_historique }}">
+                                    Historique
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center align-content-center p-4">
+                            {% include 'message.html' %}
+                        </div>
+                        {% if titre_utilisateur %}
+                            {% include 'all_page/parametre/parametre_profile.html' %}
+                        {% elif titre_historique %}
+                            {% include 'all_page/parametre/historique.html' %}
+                        {% elif titre_profile %}
+                            {% include 'all_page/parametre/profile_modifier.html' %}
+                        {% elif titre_motde_passe %}
+                            {% include 'all_page/parametre/parametre_changer_motde_passe.html' %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'datatable/datatables.min.js' %}"></script>
+    <script src="{% static 'client/modal.js' %}"></script>
+    <script src="{% static 'fontawesome/js/all.min.js' %}"></script>
+    <script src="{% static 'compteur/imageshow.js' %}"></script>
+    <script src="{% static 'modal.js' %}"></script>
+</body>
+</html>

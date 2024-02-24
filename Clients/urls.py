@@ -1,0 +1,19 @@
+from django.urls import path
+
+from Clients.views import client_liste, client_contrat, ClientNew, ContratNew, ClientContrat, \
+    ClientDetail, supp_file_client, export_clients, delete_client, genere_pdf_contrat, supp_contrat, commune_list
+
+urlpatterns = [
+    path('liste', client_liste, name='client_liste'),
+    path('nouveau', ClientNew.as_view(), name='client_new'),
+    path('nouveau/<str:region>', commune_list, name='commune_list'),
+    path('contrat', client_contrat, name='client_contrat'),
+    path('contrat/nouveau', ContratNew.as_view(), name='client_new_contrat'),
+    path('detail/contact=?<str:pk>', ClientDetail.as_view(), name='client_detail'),
+    path('detail/contrat=?<str:pk>', ClientContrat.as_view(), name='client_li_contrat'),
+    path('supprimer/file/client=?<int:pk>', supp_file_client, name='supp_file_client'),
+    path('excel', export_clients, name='export_clients'),
+    path('supprimer/client=?<int:pk>', delete_client, name='client_delete'),
+    path('suppression/contrat=?<str:pk>', supp_contrat, name='supp_contrat'),
+    path('pdf=?<str:pk>', genere_pdf_contrat, name='genere_pdf_contrat'),
+]

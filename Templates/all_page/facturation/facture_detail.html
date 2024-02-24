@@ -1,0 +1,256 @@
+<div class="my-4">
+    <h5 class="text-center">Détail de la Facture</h5>
+    <div class="container my-4">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between">
+                <h6><strong>Facture</strong></h6>
+               <div class="row w-75">
+                   <h6 class="col">
+                       Statut :
+                       {% if facture.statut %}
+                           <span class="badge bg-success">Payé</span>
+                       {% else %}
+                           {% if facture.restant_nouvel %}
+                               <span class="badge bg-warning text-dark">Montant Restant ({{ facture.restant_nouvel }} Ar)</span>
+                           {% else %}
+                               <span class="badge bg-danger">Impayé</span>
+                           {% endif %}
+                       {% endif %}
+                   </h6>
+                   <h6 class="col">Relance : 0</h6>
+               </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between">
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6 class="text-dark">Num Facture :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.num_facture }}</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6 class="text-dark">Date Facturation :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.date_facture|date:"d/m/Y" }}</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6 class="text-dark">Date Echéance :</h6>
+                    <p class="text-center text-secondary"><strong>{{ date_echeance|date:'d/m/Y' }}</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6>Telépaiement :</h6>
+                    <p class="text-center text-secondary"><strong></strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="card-header bg-white">
+            <h6><strong>Client</strong></h6>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between">
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6 class="text-dark">ID :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.num_contrat.client.pk }}</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6 class="text-dark">Contrat :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.num_contrat.num_contrat }}</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6 class="text-dark">Nom :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.num_contrat.client.nom_client }} {{ facture.num_contrat.client.prenom_client }}</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6>Prénom :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.num_contrat.client.prenom_client }}</strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="card-header bg-white">
+            <h6><strong>Compteur</strong></h6>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between">
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6 class="text-dark">Compteur :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.relevecompteur.num_compteur.pk }}</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6 class="text-dark">Date Relevé :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.relevecompteur.date_releve|date:"d/m/Y" }}</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6 class="text-dark">Volume :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.relevecompteur.volume }} m&#179;</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6>Conso :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.relevecompteur.conso }} m&#179;</strong></p>
+                </div>
+                <div class="col-md-2 border rounded px-3 py-2">
+                    <h6>CP Commune :</h6>
+                    <p class="text-center text-secondary"><strong>{{ facture.num_contrat.cp_commune_id }}</strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="card-header bg-white">
+            <h6><strong>Montant</strong></h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-borderless border-top-0">
+                    <thead>
+                        <tr class="border-bottom">
+                            <th class="text-left">Désignation</th>
+                            <th class="text-right">PU HT</th>
+                            <th class="text-right">Total HT</th>
+                            <th class="text-right">Taux TVA</th>
+                            <th class="text-right">Prix TTC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-bottom">
+                            <td class="text-left">Consommation</td>
+                            <td class="text-right">{{ montant.montant_ht.tarif.prix_m3 }} Ar</td>
+                            <td class="text-right">{{ montant.montant_ht.total_conso_ht }} Ar</td>
+                            <td class="text-right">
+                                {% if facture.num_contrat.client.type_client.pk == 2 %}
+                                    {% if facture.relevecompteur.conso >= 10 %}
+                                        {{ montant.montant_ht.tarif.tva }} %
+                                    {% endif %} 
+                                {% endif %}
+                            </td>
+                            <td class="text-right">{{ montant.total_conso_ttc }} Ar</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <td class="text-left">Taxe Communal</td>
+                            <td class="text-right">{{ montant.montant_ht.tarif.taxe_co }} Ar</td>
+                            <td class="text-right">{{ montant.montant_ht.total_taxe_co_ht }} Ar</td>
+                            <td class="text-right"></td>
+                            <td class="text-right">{{ montant.montant_ht.total_taxe_co_ht}} Ar</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <td class="text-left">Redevance Branchement Social</td>
+                            <td class="text-right">{{ montant.montant_ht.tarif.redevance_bs }} Ar</td>
+                            <td class="text-right">{{ montant.montant_ht.total_redevance_bs_ht }} Ar</td>
+                            <td class="text-right"></td>
+                            <td class="text-right">{{ montant.montant_ht.total_redevance_bs_ht }} Ar</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <td class="text-left">Redevance Fond de Renouvellement</td>
+                            <td class="text-right">{{ montant.montant_ht.tarif.redevance_fr }} Ar</td>
+                            <td class="text-right">{{ montant.montant_ht.total_redevance_fr_ht }} Ar</td>
+                            <td class="text-right"></td>
+                            <td class="text-right">{{ montant.montant_ht.total_redevance_fr_ht }} Ar</td>
+                        </tr>
+
+                        <tr class="border-bottom">
+                            <td>Avoir</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-right">
+                                {% if facture.avoir_avant %}
+                                    {{ facture.avoir_avant }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                                Ar
+                            </td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <td>Restant de la facture Precédant</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-right">
+                                {% if facture.restant_precedant %}
+                                    {{ facture.restant_precedant }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                                Ar
+                            </td>
+                        </tr>
+                        {% if paiement.montant_payer %}
+                        <tr class="border-bottom fw-bold">
+                            <td>
+                                <span class="text-success">Montant Payé</span>
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-right text-success">{{ paiement.montant_payer }} Ar</td>
+                        </tr>
+                        {% endif %}
+                        {% if facture.restant_nouvel %}
+                        <tr class="border-bottom fw-bold">
+                            <td>
+                                <span class="text-danger">Montant Restant</span>
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-right text-danger">{{ facture.restant_nouvel }} Ar</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                <div class="d-flex justify-content-end mx-1">
+                    <div class="col-md-2 border rounded px-3 py-2">
+                        <h6 class="text-dark">Net à Payer :</h6>
+                        <p class="text-center text-secondary"><strong>{{ facture.montant_total_ttc }} Ar</strong></p>
+                    </div>
+                </div>
+                {% if not facture.statut %}
+                    {% if fact.date_facture == facture.date_facture %}
+                    <div class="d-flex justify-content-end mt-4 mx-1">
+                        <div class="mb-2">
+                            <a href="" class="btn btn-warning">
+                                <i class="fas fa-arrows-rotate"></i>
+                                Relancer
+                            </a>
+                            <a href="{% url 'facture_genere_pdf' facture.pk %}" class="btn btn-success mx-4 px-4">
+                                <i class="fas fa-file-pdf"></i>
+                                 PDF
+                            </a>
+                            <button id="{{ facture.pk }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
+                                <i class="fas fa-credit-card"></i>
+                                Paiement
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="paiement-valide" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Paiement pour la facture N° {{ facture.num_facture }}</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    {% csrf_token %}
+                    <div class="form-floating">
+                        <input type="hidden" name="id_facture" id="id_facture" value="{{ csrf_token }}">
+                        <input type="text" name="paimenent" id="paiement" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
+                        <label for="paiement">Montant(Ar) :</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <i class="fas fa-xmark-circle"></i>
+                    Annuler
+                </button>
+                <button type="button" class="btn btn-success confirmer-paiement" id="confirmer-paiement">
+                    <i class="fas fa-check-circle"></i>
+                    Confirmer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

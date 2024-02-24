@@ -1,0 +1,16 @@
+{% if messages %}
+    {% for message in messages %}
+        {% if message.tags %}
+        <div id="alert" class="position-absolute alert alert-{{ message.tags }} text-center p-1" role="alert">
+        {% endif %}
+            <strong>
+            {% if message.tags == 'success' %}
+            	<i class="fa fa-check-circle"></i>
+            {% else %}
+                <i class="fas fa-triangle-exclamation"></i>
+            {% endif %}
+                {{ message }}
+            </strong>
+        </div>
+    {% endfor %}
+{% endif %}

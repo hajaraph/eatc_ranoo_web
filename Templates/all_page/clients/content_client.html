@@ -1,0 +1,17 @@
+{% extends 'all_page/clients/clients.html' %}
+
+{% block content_client %}
+    {% if title_liste %}
+        {% include 'all_page/clients/clients_liste/clients_liste.html' %}
+    {% elif title_contrat %}
+        {% include 'all_page/clients/clients_contrats/clients_contrats.html' %}
+    {% elif title_new %}
+        {% include 'all_page/clients/clients_liste/clients_new.html' %}
+    {% elif title_new_contrat %}
+        {% include 'all_page/clients/clients_contrats/clients_new_contrats.html' %}
+    {% elif title_new %}
+        {% include 'all_page/clients/clients_contrats/clients_new_contrats.html' %}
+    {% elif title_detail or title_li_contrat %}
+        {% include 'all_page/clients/client_detail/client_detail.html' %}
+    {% endif %}
+{% endblock %}

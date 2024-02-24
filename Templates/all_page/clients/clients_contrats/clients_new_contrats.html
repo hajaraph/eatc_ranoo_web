@@ -1,0 +1,117 @@
+<div class="card-body px-4">
+    <form method="post" id="formNew" class="needs-validation">
+        {% csrf_token %}
+        <div class="card-header bg-white">
+            <h5>Souscripteur</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <select name="client_id" id="client_id" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                            <option value="" selected disabled hidden>Selectionné un client</option>
+                            {% for clients in client %}
+                                <option value="{{ clients.pk }}">{{ clients.pk }} | {{ clients.nom_client }} {{ clients.prenom_client }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="client_id">Client</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+               <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="adresse_contrat" id="adresse_contrat" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                        <label for="adresse_contrat">Adresse Contrat</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <select name="region" id="region" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                            <option value="" selected hidden>Selectionné une région</option>
+                            {% for region in regions %}
+                                <option value="{{ region.region }}">{{ region.region }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="region">Région</label>
+                    </div>
+                </div>
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <select name="commune" id="commune" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                        </select>
+                        <label for="commune">Commune</label>
+                    </div>
+                </div>
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <select name="cp_commune" id="cp_commune" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" readonly>
+                        </select>
+                        <label for="cp_commune">CP Commune</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="pays_contrat" id="pays_contrat" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" value="Madagascar" placeholder="" required>
+                        <label for="pays_client">Pays</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-header bg-white mt-4">
+            <h5>Compteur</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <select name="num_compteur" id="num_compteur" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                            <option value="" disabled selected hidden>Selectionné un compteur</option>
+                            {% for compteur in compteurs %}
+                                <option value="{{ compteur.pk }}">{{ compteur.num_compteur }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="num_compteur">Compteur Associé</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-header bg-white mt-4">
+            <h5>Contrat</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="num_contrat" id="num_contrat" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                        <label for="num_contrat">Numéro Contrat</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <input type="date" name="date_debut" id="date_debut" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                        <label for="date_debut">Date Début</label>
+                    </div>
+                </div>
+                <div class="col-md-4 mt-4">
+                    <div class="form-floating">
+                        <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                        <label for="date_fin">Date Fin</label>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end mt-5">
+                <button class="btn btn-success" type="submit">
+                    <i class="fas fa-save"></i>
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

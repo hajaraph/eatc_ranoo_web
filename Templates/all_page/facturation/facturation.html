@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'datatable/datatables.min.css' %}">
+    <title>{{ title_etat }}{{ title_facture }}{{ title_retard }}{{ title_avoir }}{{ title_detail }}{{ title_etat_detail }}{{ title_facture_paye }}{{ title_facture_impaye }}</title>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            {% include 'navbar/navbar.html' %}
+            <div class="col p-2">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header border-0">
+                        <div class="row">
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'facture' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_etat }}">
+                                    Facturation
+                                </a>
+                            </div>
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'facture_paye' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_facture_paye }}">
+                                    Payé
+                                </a>
+                            </div>
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'facture_impaye' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_facture_impaye }}">
+                                    Impayé
+                                </a>
+                            </div>
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'facture_retard' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_retard }}">
+                                    Retard
+                                </a>
+                            </div>
+                             <div class="col-md-2 mt-4">
+                                <a href="{% url 'facture_restant' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_facture }}">
+                                    Restant
+                                </a>
+                            </div>
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'facture_avoir' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_avoir }}">
+                                    Avoir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center align-content-center p-4">
+                            {% include 'message.html' %}
+                        </div>
+                        {% if title_etat %}
+                            {% include 'all_page/facturation/facture.html' %}
+                        {% elif title_facture %}
+                            {% include 'all_page/facturation/facture_restant.html' %}
+                        {% elif title_retard %}
+                            {% include 'all_page/facturation/facture_retard.html' %}
+                        {% elif title_avoir %}
+                            {% include 'all_page/facturation/facture_avoir.html' %}
+                        {% elif title_etat_detail %}
+                            {% include 'all_page/facturation/facture_detail.html' %}
+                        {% elif title_facture_paye %}
+                            {% include 'all_page/facturation/facture_paye.html' %}
+                        {% elif title_facture_impaye %}
+                            {% include 'all_page/facturation/facture_impaye.html' %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
+    <script src="{% static 'datatable/datatables.min.js' %}"></script>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'fontawesome/js/all.min.js' %}"></script>
+    <script src="{% static 'paiement.js' %}"></script>
+    <script src="{% static 'modal.js' %}"></script>
+</body>
+</html>

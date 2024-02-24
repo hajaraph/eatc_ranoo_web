@@ -1,0 +1,135 @@
+<div class="card-body">
+    <h4 class="text-center my-4">Compteur</h4>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="num_compteur" id="num_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.num_compteur }}" placeholder="" readonly>
+                    <label for="num_compteur">Numéro Compteur</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="marque_compteur" id="marque_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.marque_compteur }}" placeholder="">
+                    <label for="marque_compteur">Marque</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="modele_compteur" id="modele_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.modele_compteur }}" placeholder="">
+                    <label for="modele_compteur">Modèle</label>
+                </div>
+            </div>
+             <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="DN_compteur" id="DN_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.DN_compteur }}" placeholder="">
+                    <label for="DN_compteur">DN</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="origin_compteur" id="origin_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.origin_compteur }}" placeholder="">
+                    <label for="origin_compteur">Origine</label>
+                </div>
+            </div>
+        </div>
+        {% if contrat %}
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="client" id="client" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ client.nom_client }} {{ client.prenom_client }}" placeholder="" readonly>
+                    <label for="client">Client lié</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="type_client" id="type_client" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ client.type_client.designation_client }}" placeholder="" readonly>
+                    <label for="type_client">Type Client</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="num_contrat" id="num_contrat" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ contrat }}" placeholder="" readonly>
+                    <label for="num_contrat">N° Contrat</label>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="d-flex justify-content-end mt-5">
+            {% if contrat %}
+            <a href="{% url 'releve_new' detail.pk %}" class="btn btn-warning mx-5">
+                <i class="fas fa-plus"></i>
+                Nouveau Relevé
+            </a>
+            {% endif %}
+            <button class="btn btn-success" type="submit" onclick="return confirm('Êtes-vous sûr de vouloir sauvegarder la modification de ce Compteur ?')">
+                <i class="fas fa-save"></i>
+                Sauvegarder
+            </button>
+        </div>
+    </form>
+    {% if contrat %}
+    <div class="my-2">
+        <a href="{% url 'export_relever' detail.num_compteur %}" class="btn btn-secondary ">
+            <i class="fas fa-file-excel"></i>
+            Export
+        </a>
+    </div>
+    <div class="card p-4">
+        <div class="table-responsive p-1">
+            <table class="table" id="myTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date Relevé</th>
+                        <th>Volume</th>
+                        <th>Conso</th>
+                        <th>Relevé le</th>
+                        <th>Utilisateur</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for relever in releve %}
+                    {% if forloop.first %}
+                    <tr>
+                        <td>{{ relever.pk }}</td>
+                        <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
+                        <td>{{ relever.volume }} m&#179;</td>
+                        <td>{{ relever.conso }} m&#179;</td>
+                        <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
+                        <td>
+                            {{ relever.utilisateur.nom_utilisateur }}
+                            <label class="badge bg-primary ">{{ relever.utilisateur.role.role }}</label>
+                        </td>
+                        <td></td>
+                    {% else %}
+                        <td>{{ relever.pk }}</td>
+                        <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
+                        <td>{{ relever.volume }} m&#179;</td>
+                        <td>{{ relever.conso }} m&#179;</td>
+                        <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
+                        <td>
+                            {{ relever.utilisateur.nom_utilisateur }}
+                            <label class="badge bg-primary ">{{ relever.utilisateur.role.role }}</label>
+                        </td>
+                        <td>
+                            <a href="{% url 'releve_mod' relever.pk %}" class="btn btn-sm btn-warning" title="Détail">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'del_releve' relever.pk %}" class="btn btn-sm btn-danger" title="Suppression" onclick="return confirm('Êtes-vous sûr de vouloir supprimer le Relevé du {{ relever.date_releve|date:"d/m/Y" }} ?')">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </td>
+                    {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>

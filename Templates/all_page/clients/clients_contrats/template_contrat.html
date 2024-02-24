@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Contrat entre le client et EATC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        h1 {
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .contract-section {
+            margin-bottom: 20px;
+        }
+        .contract-section h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .contract-section p {
+            margin-bottom: 5px;
+        }
+        .contract-section ul {
+            margin-bottom: 5px;
+            padding-left: 20px;
+        }
+        .signature {
+            margin-top: 40px;
+            text-align: center;
+        }
+        .signature p {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Contrat entre le client et EATC</h1>
+
+    <div class="contract-section">
+        <h2>1. Parties au contrat</h2>
+        <p>Entre :</p>
+        <ul>
+            <li>Nom du client : {{ instance.client.nom_client }} {{ instance.client.prenom_client }}</li>
+            <li>Adresse du client : {{ instance.client.adresse_client }}</li>
+        </ul>
+        <p>Et :</p>
+        <ul>
+            <li>Nom d'EATC : </li>
+            <li>Adresse d'EATC : </li>
+        </ul>
+    </div>
+
+    <div class="contract-section">
+        <h2>2. Description des services</h2>
+        <p>Les services fournis par EATC seront les suivants :</p>
+        <ul>
+            <li>Description du service 1</li>
+            <li>Description du service 2</li>
+            <li>Description du service 3</li>
+            <!-- Ajouter plus de descriptions de services si nécessaire -->
+        </ul>
+    </div>
+
+    <div class="contract-section">
+        <h2>3. Durée du contrat</h2>
+        <p>Le contrat entre le client et EATC aura une durée de {{ instance.date_debut }}.</p>
+    </div>
+
+    <div class="contract-section">
+        <h2>4. Paiement</h2>
+        <p>Le client s'engage à effectuer les paiements selon les termes et conditions convenus.</p>
+        <p>Les détails de paiement sont les suivants :</p>
+        <ul>
+            <li>Description du paiement 1</li>
+            <li>Description du paiement 2</li>
+            <li>Description du paiement 3</li>
+        </ul>
+    </div>
+
+    <div class="contract-section">
+        <h2>5. Signature</h2>
+        <div class="signature">
+            <p>Pour le client : {{ instance.client.nom_client }} {{ instance.client.prenom_client }}</p>
+            <p>Date : </p>
+            <p>Signature : _______________________</p>
+        </div>
+        <div class="signature">
+            <p>Pour EATC :</p>
+            <p>Date : </p>
+            <p>Signature : _______________________</p>
+        </div>
+    </div>
+
+</body>
+</html>

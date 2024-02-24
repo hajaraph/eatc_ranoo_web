@@ -1,0 +1,99 @@
+<div class="card-body">
+    <h4 class="text-center">Modifier l'utilisateur {{ utilisateur.nom_utilisateur }} {{ utilisateur.prenom_utilisateur }}</h4>
+    <form action="{% url 'utilisateur_modifier' utilisateur.pk %}" method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <select name="role_id" id="role_id" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                        <option value="{{ utilisateur.role.pk }}" selected hidden>{{ utilisateur.role.role }}</option>
+                        {% for row in role %}
+                        <option value="{{ row.pk }}">{{ row.role }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="role_id">Role</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-5">
+                <input type="checkbox" name="status_utilisateur" id="status_utilisateur" class="form-check-input" {% if utilisateur.status %} checked {% endif %}>
+                <label for="status_utilisateur" class="form-check-label mx-1">Active</label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="nom_utilisateur" id="nom_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ utilisateur.nom_utilisateur }}" placeholder="" required>
+                    <label for="nom_utilisateur">Nom</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="prenom_utilisateur" id="prenom_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ utilisateur.prenom_utilisateur }}" placeholder="" required>
+                    <label for="prenom_utilisateur">Prénom</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="tel" name="num_utilisateur" id="num_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" minlength="10" maxlength="10" value="{{ utilisateur.num_utilisateur }}" placeholder="" required>
+                    <label for="num_utilisateur">Téléphone</label>
+                </div>
+            </div>
+        </div>
+        {% if utilisateur.role.role == 'Releveur' %}
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                        <option selected hidden>{{ utilisateur.cp_commune.region.region }}</option>
+                        {% for region in regions %}
+                            <option value="{{ region.region }}">{{ region.region }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="region">Région</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                        <option value="{{ utilisateur.cp_commune.pk }}">{{ utilisateur.cp_commune.commune }}</option>
+                    </select>
+                    <label for="commune">Commune :</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <select name="cp_commune" id="cp_commune" class="form-control bg-light shadow-none rounded-0 border-start-0 border-top-0 border-end-0" readonly>
+                        <option value="">{{ utilisateur.cp_commune.pk }}</option>
+                    </select>
+                    <label for="cp_commune">CP Commune :</label>
+                </div>
+            </div>
+        </div>
+        {% endif %} 
+        {% if request.session.role_utilisateur == 'Administrateur' %}
+        <div class="row">
+            <h5 class="border-bottom mt-4">Change le mot de passe</h5>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="password" name="motpasse_utilisateur" id="motpasse_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" minlength="8" maxlength="16" placeholder="">
+                    <label for="motpasse_utilisateur">Nouveau Mot de passe</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="password" name="confirm_motpasse_utilisateur" id="confirm_motpasse_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" minlength="8" maxlength="16" placeholder="">
+                    <label for="confirm_motpasse_utilisateur">Confirmer le Mot de passe</label>
+                </div>
+            </div>
+        </div>
+        {% endif %} 
+        <div class="d-flex justify-content-end mt-4">
+            <button class="btn btn-success" type="submit">
+                <i class="fas fa-save"></i>
+                Enregistrer
+            </button>
+        </div>
+    </form>
+</div>

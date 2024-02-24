@@ -1,0 +1,103 @@
+<div class="card-body px-4">
+    <h4 class="text-center">Créer un utilisateur</h4>
+    <form id="formNew" method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <select name="role_id" id="role_id" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                        <option selected hidden>Selectionné un rôle</option>
+                        {% for row in role %}
+                        <option value="{{ row.pk }}">{{ row.role }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="role_id">Rôle</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="nom_utilisateur" id="nom_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                    <label for="nom_utilisateur">Nom</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="prenom_utilisateur" id="prenom_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                    <label for="prenom_utilisateur">Prénom</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="tel" name="num_utilisateur" id="num_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" minlength="10" maxlength="10" placeholder="" required>
+                    <label for="num_utilisateur">Téléphone</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="password" name="motpasse_utilisateur" id="motpasse_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" minlength="8" maxlength="16" placeholder="" required>
+                    <label for="motpasse_utilisateur">Mot de passe</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="password" name="confirm_motpasse_utilisateur" id="confirm_motpasse_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" minlength="8" maxlength="16" placeholder="" required>
+                    <label for="confirm_motpasse_utilisateur">Confirmer le Mot de passe</label>
+                </div>
+            </div>
+        </div>
+        <div class="row invisible" id="releveur_only">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                        <option selected hidden>Selectionné une région</option>
+                        {% for region in regions %}
+                            <option value="{{ region.region }}">{{ region.region }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="region">Région</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                        <option value="" selected hidden></option>
+                    </select>
+                    <label for="commune">Commune :</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <select name="cp_commune" id="cp_commune" class="form-control bg-light shadow-none rounded-0 border-start-0 border-top-0 border-end-0" readonly>
+                    </select>
+                    <label for="cp_commune">CP Commune :</label>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-end mt-4">
+            <button class="btn btn-success" type="submit">
+                <i class="fas fa-save"></i>
+                Enregistrer
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const roleSelect = document.getElementById("role_id");
+        roleSelect.addEventListener("change", function () {
+        const releveurDiv = document.getElementById("releveur_only");
+        if (this.value === "3") {
+            releveurDiv.classList.remove("invisible");
+        }
+        else {
+            releveurDiv.classList.add("invisible")
+        }
+    });
+});
+</script>
