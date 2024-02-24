@@ -43,5 +43,3 @@ class DeclareMaincourate(APIView):
                 'main_courante_list': main_courante_list
             }
         )
-
-

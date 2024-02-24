@@ -5,9 +5,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
 
 from Compteurs.api_compteur.views import Missions
-from Login.api_auth.serializer import UtilisateurSerializer
+from Login.api_auth.serializer import UtilisateurSerializer, UtilisateurSerializerWithLastToken
 from Login.models import Utilisateur
 from Main_Courante.models import StatutMC
 
@@ -23,11 +24,14 @@ def authentification(request):
             utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
 
             if check_password(motpasse_utilisateur, utilisateur.password):
-
                 if utilisateur.role.role == "Releveur":
                     refresh_token = RefreshToken.for_user(utilisateur)
                     access_token = refresh_token.access_token
-                    # access_token = Token.objects.get_or_create(user=utilisateur)
+
+                    # Mettre à jour le dernier token dans le modèle Utilisateur
+                    utilisateur.last_token = str(access_token)
+                    utilisateur.save()
+
                     return JsonResponse(
                         {
                             'access_token': str(access_token),
@@ -39,13 +43,13 @@ def authentification(request):
                                 'role': utilisateur.role.role,
                                 'region': utilisateur.cp_commune.region.region,
                                 'commune': utilisateur.cp_commune.commune,
-                                'cp_commune': utilisateur.cp_commune_id
+                                'cp_commune': utilisateur.cp_commune_id,
+                                'last_token': utilisateur.last_token
                             }
                         }
                     )
-
                 else:
-                    raise AuthenticationFailed("Veuillez vous connecté dans l'application web !")
+                    raise AuthenticationFailed("Veuillez vous connecter dans l'application web !")
 
             else:
                 raise AuthenticationFailed('Mot de passe incorrect !')
@@ -58,9 +62,17 @@ def authentification(request):
 
 
 @api_view(['GET'])
+def get_users(request):
+    users = Utilisateur.objects.filter(role_id=3)
+    serializer = UtilisateurSerializerWithLastToken(users, many=True)
+    
+    return JsonResponse(serializer.data, safe=False)
+
+
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def donne_tout(request):
-    utilisateurs = Utilisateur.objects.all()
+    utilisateurs = Utilisateur.objects.filter(role_id=3)
     utilisateur_liste = [
         {
             'id_utilisateur': utilisateur.id_utilisateur,
@@ -91,3 +103,11 @@ def donne_tout(request):
             'mission': mission
         }
     )
+
+
+@api_view(['GET'])
+def check_server(request):
+    """
+    Vue pour vérifier la disponibilité du serveur.
+    """
+    return Response({'status': 'Server is available'}, status=status.HTTP_200_OK)

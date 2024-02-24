@@ -4,22 +4,12 @@ from pathlib import Path
 
 from django.contrib import messages
 
-# from apscheduler.schedulers.background import BackgroundScheduler
-# from django_apscheduler.jobstores import DjangoJobStore
-# from apscheduler.triggers.interval import IntervalTrigger
-# from django_apscheduler.models import DjangoJob
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-iy)pk3bxm664w4$_vxm)$0$9&!grq0h%f*8!^sshd(f53uo25b'
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -53,13 +43,14 @@ MIDDLEWARE = [
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
-
+ALLOWED_HOSTS = ['localhost','127.0.0.1','10.0.2.2', '192.168.88.177']
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    'http://127.0.0.1:8000'
+    'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
+    'http://localhost:3000', 
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -86,22 +77,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Rel_Compteur.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
         'USER': 'postgres',
-        'PASSWORD': '12121212',
+        'PASSWORD': 'postgres',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
-
-# Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -118,9 +103,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = 'fr-FR'
 
 TIME_ZONE = 'Indian/Antananarivo'
@@ -129,13 +111,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
-STATIC_URL = 'static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -151,7 +127,7 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
 
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'static/media')
 
@@ -187,26 +163,21 @@ AUTH_USER_MODEL = 'Login.Utilisateur'
 
 ADMIN_ENABLED = False
 
-# SCHEDULER_CONFIG = {
-#     'apscheduler.job_defaults.coalesce': True,
-#     'apscheduler.job_defaults.max_instances': 3,
-#     'apscheduler.timezone': 'UTC',
-# }
-#
-# # Add the following to urls.py:
-#
-# # Configure the scheduler
-#
-# scheduler = BackgroundScheduler()
-# scheduler.add_jobstore(DjangoJobStore(), 'default')
-# scheduler.start()
-#
-# # Schedule the task
-#
-# trigger = IntervalTrigger(seconds=2)
-# DjangoJob.objects.create(
-#     trigger=trigger,
-#     job_state='RUNNING',
-#     name='creer_releve_compteur_auto',
-#     job_method='chemin.vers.votre.fonction.creer_releve_compteur_auto'
-# )
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
