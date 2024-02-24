@@ -48,9 +48,64 @@
                             </div>
                         </div>
                     </form>
-                    <div class="col">
-                        <div class="d-flex flex-wrap justify-content-between py-5">
-                            <div class="col-md-6">
+                    <div class="col mt-5">
+                        <div class="d-flex flex-wrap justify-content-between mt-3">
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card bg-warning shadow-sm py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs fw-bold text-dark text-uppercase mb-1">
+                                                    Chiffres d'affaires :
+                                                </div>
+                                                <div id="chiffres">
+                                                    <div class="h5 mb-0 font-weight-bold text-dark chiffre">
+                                                        {{ chiffres }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <strong class="fa-2x text-dark">AR</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card bg-primary shadow-sm py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs fw-bold text-light text-uppercase mb-1">
+                                                    nb d'abonnées ({{ annee_contrat_prec }}) :
+                                                </div>
+                                                <div class="h5 mb-0 font-weight-bold text-light">
+                                                    {{ nb_client_prec }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card bg-primary shadow-sm py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs fw-bold text-light text-uppercase mb-1">
+                                                    nb d'abonnées ({{ annee_contrat_actuelle }}) :
+                                                </div>
+                                                <div class="h5 mb-0 font-weight-bold text-light">
+                                                    {{ nb_client_actuelle }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap justify-content-between">
+                            <div class="col-md-4 mt-5">
                                 <div class="card">
                                     <div class="card-header">
                                         <div class="text-center">
@@ -62,101 +117,38 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="card border-0 py-5">
-                                    <div class="d-flex flex-wrap justify-content-center">
-                                        <div class="col-xl-6 col-md-1">
-                                            <div class="card bg-warning shadow-sm py-2">
-                                                <div class="card-body">
-                                                    <div class="row no-gutters align-items-center">
-                                                        <div class="col mr-2">
-                                                            <div class="text-xs fw-bold text-dark text-uppercase mb-1">
-                                                                Chiffres d'affaires :
-                                                            </div>
-                                                            <div id="chiffres">
-                                                                <div class="h5 mb-0 font-weight-bold text-dark chiffre">
-                                                                    {{ chiffres }}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-auto">
-                                                            <strong class="fa-2x text-dark">AR</strong>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                            <div class="col-md-4 mt-5">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <div class="text-center">
+                                            <h5 class="text-dark">Evolution de la Consommation</h5>
                                         </div>
                                     </div>
-                                    <div class="d-flex flex-wrap justify-content-between mt-5 mx-3">
-                                        <div class="col-xl-4 col-md-1">
-                                            <div class="card bg-primary shadow-sm py-2">
-                                                <div class="card-body">
-                                                    <div class="row no-gutters align-items-center">
-                                                        <div class="col mr-2">
-                                                            <div class="text-xs fw-bold text-light text-uppercase mb-1">
-                                                                nb d'abonnées ({{ annee_contrat_prec }}) :
-                                                            </div>
-                                                            <div class="h5 mb-0 font-weight-bold text-light">
-                                                                {{ nb_client_prec }}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-xl-4 col-md-1">
-                                            <div class="card bg-primary shadow-sm py-2">
-                                                <div class="card-body">
-                                                    <div class="row no-gutters align-items-center">
-                                                        <div class="col mr-2">
-                                                            <div class="text-xs fw-bold text-light text-uppercase mb-1">
-                                                                nb d'abonnées ({{ annee_contrat_actuelle }}) :
-                                                            </div>
-                                                            <div class="h5 mb-0 font-weight-bold text-light">
-                                                                {{ nb_client_actuelle }}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class="card-body">
+                                        <canvas id="EvoConso"></canvas>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="py-5">
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="text-center">
-                                        <h5 class="text-dark">Evolution de la Consommation</h5>
+                            <div class="col-md-4 d-flex flex-column justify-content-between mt-5">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <div class="text-center">
+                                            <h5 class="text-dark">Paiement</h5>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="paiement"></canvas>
                                     </div>
                                 </div>
-                                <div class="card-body">
-                                    <canvas id="EvoConso"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="py-5">
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="text-center">
-                                        <h5 class="text-dark">Paiement</h5>
+                                <div class="card">
+                                    <div class="card-header">
+                                        <div class="text-center">
+                                            <h5 class="text-dark">Main Courante</h5>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="paiement"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="py-5">
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="text-center">
-                                        <h5 class="text-dark">Main Courante</h5>
+                                    <div class="card-body">
+                                        <canvas id="main"></canvas>
                                     </div>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="main"></canvas>
                                 </div>
                             </div>
                         </div>

@@ -34,7 +34,7 @@
                         <span class="badge bg-primary">{{ row.utilisateur_createur.role.role }}</span>
                     </td>
                     <td>{{ row.utilisateur_cree.role.role }}</td>
-                    {% if row.utilisateur_cree.status %}
+                    {% if row.utilisateur_cree.statut %}
                     <td><span class="badge bg-success">Active</span></td>
                     {% else %}
                     <td><span class="badge bg-danger">Desactive</span></td>

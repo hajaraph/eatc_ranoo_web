@@ -23,7 +23,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
     password = models.TextField(max_length=200, blank=False)
     photo_utilisateur = models.ImageField(upload_to=upload_to_utilisateur, blank=True, null=True)
     cree_le = models.DateField(db_default=Now())
-    status = models.BooleanField(db_default=True, blank=False, null=False)
+    statut = models.BooleanField(db_default=True, blank=False, null=False)
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE, blank=False, null=True)
     role = models.ForeignKey(Role, blank=False, on_delete=models.PROTECT)
     last_token = models.CharField(max_length=255, blank=True, null=True)  # Nouvelle colonne pour le dernier token
