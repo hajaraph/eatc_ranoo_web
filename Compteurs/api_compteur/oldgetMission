@@ -1,0 +1,75 @@
+# def accueil(request):
+#     cp_commune_id = request.user.cp_commune_id
+#     jour_proch_relever = Tarif.objects.get(cp_commune_id=cp_commune_id).jour_proch_relever
+#     non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
+#     realise = MainCourante.objects.filter(statuts__realise=True).count()
+#     total_anomalie = non_traite + realise
+
+#     date_limite = timezone.now() - timedelta(days=jour_proch_relever)
+#     nombre_total_comtpeur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
+#     # Calcul de la fin du mois actuel en utilisant pandas
+#     end_of_month = (
+#         pd.to_datetime('now')  # Crée un objet Timestamp pour la date et l'heure actuelles
+#         .to_period('M')  # Convertit l'objet Timestamp en un objet périodique représentant le mois actuel
+#         .to_timestamp()  # Convertit l'objet périodique en un objet Timestamp pour effectuer des opérations de calcul
+#         + MonthEnd(0)  # Ajoute la fin du mois actuel à la date et à l'heure, MonthEnd(0) signifie la fin du mois en cours
+#     )
+
+#     nombre_total_compteur_sans_releve = (
+#         Contrat.objects
+#         .filter(cp_commune_id=cp_commune_id, num_compteur__relevecompteurs__date_releve__lt=end_of_month)
+#         .distinct()
+#         .count()
+#     )
+
+#     return JsonResponse(
+#         {
+#             'totale_anomalie': total_anomalie,
+#             'realise': realise,
+#             'nombre_total_compteur': nombre_total_comtpeur,
+#             'nombre_relever_effectuer': nombre_total_compteur_sans_releve
+#         }
+#     )
+
+ 
+# permission_classes = [permissions.IsAuthenticated]
+
+    # @staticmethod
+    # def get_liste_mission(request):
+    #     cp_commune = request.user.cp_commune_id
+    #     jour_proch_relever = Tarif.objects.get(cp_commune_id=cp_commune).jour_proch_relever
+    #     date_limite = timezone.now() - timedelta(days=jour_proch_relever)
+
+    #     contrats_commune = (
+    #         Contrat.objects
+    #         .filter(cp_commune_id=cp_commune, num_compteur__relevecompteurs__date_releve__lt=date_limite)
+    #         .select_related('client', 'num_compteur')  # Permet de récupérer les informations du client et compteur
+    #         # en une seule requête
+    #         .annotate(
+    #             conso_dernier_releve=F('num_compteur__relevecompteurs__conso'),
+    #             volume_dernier_releve=F('num_compteur__relevecompteurs__volume'),
+    #         )
+    #         # Permet de récupérer les informations du compteur en une seule requête
+    #     )
+
+    #     liste_contrats_info = [
+    #         {
+    #             'nom_client': contrat.client.nom_client,
+    #             'prenom_client': contrat.client.prenom_client,
+    #             'adresse_client': contrat.client.adresse_client,
+    #             'num_compteur': contrat.num_compteur_id,
+    #             'conso_dernier_releve': contrat.conso_dernier_releve,
+    #             'volume_dernier_releve': contrat.volume_dernier_releve,
+    #         }
+    #         for contrat in contrats_commune
+    #     ]
+
+    #     return liste_contrats_info
+
+    # def get(self, request):
+    #     liste_contrats_info = self.get_liste_mission(request)
+    #     return JsonResponse(
+    #         {
+    #             'compteurs_liste': liste_contrats_info,
+    #         }
+    #     )
