@@ -7,7 +7,7 @@ from django.contrib import messages
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-iy)pk3bxm664w4$_vxm)$0$9&!grq0h%f*8!^sshd(f53uo25b'
+SECRET_KEY = '2&e6eh3@0idjnee^vf$ft(ff1vzs@uhfg)3n@zna@f#7pmz14v'
 
 DEBUG = True
 
@@ -43,7 +43,8 @@ MIDDLEWARE = [
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
-ALLOWED_HOSTS = ['localhost','127.0.0.1','10.0.2.2', '192.168.88.177']
+ALLOWED_HOSTS = []
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
@@ -181,3 +182,17 @@ LOGGING = {
         },
     },
 }
+
+# SECURE_HSTS_SECONDS = 31536000  # 1 an en secondes
+#
+# SECURE_SSL_REDIRECT = True
+#
+# SESSION_COOKIE_SECURE = True
+#
+# CSRF_COOKIE_SECURE = True
+#
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+#
+# DEBUG = True
+#
+# SECURE_HSTS_PRELOAD = True
