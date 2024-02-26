@@ -6,13 +6,12 @@ from Compteurs.views import compteur_liste, CompteurNew, CompteurDetail, compteu
 urlpatterns = [
     path('liste', compteur_liste, name='compteur_list'),
     path('nouveau/compteur', CompteurNew.as_view(), name='compteur_new'),
-    path('compteur/detail=?<str:pk>', CompteurDetail.as_view(), name='compteur_detail'),
-    path('supprimer/compteur=?<str:pk>', compteur_supp, name='compteur_supp'),
+    path('compteur/detail=<str:pk>', CompteurDetail.as_view(), name='compteur_detail'),
+    path('supprimer/num_compteur=<str:pk>', compteur_supp, name='compteur_supp'),
     path('releve', compteur_releve, name='compteur_releve'),
-    path('nouveau/releve=?<str:num_compteur>', ReleveNew.as_view(), name='releve_new'),
-    # path('client/absent=?<str:num_compteur>', client_absent, name='client_absent'),
-    path('detail/releve=?<int:pk>', ReleveMod.as_view(), name='releve_mod'),
-    path('supprimer/releve?=?<int:pk>', del_releve, name='del_releve'),
+    path('nouveau/num_compteur=<str:num_compteur>', ReleveNew.as_view(), name='releve_new'),
+    path('detail/id_releve=<int:pk>', ReleveMod.as_view(), name='releve_mod'),
+    path('supprimer/id_releve=<int:pk>', del_releve, name='del_releve'),
     path('exporte/compteur', export_compteur, name='export_compteur'),
     path('exporte/relever/num_compteur=<str:num_compteur>', export_relever, name='export_relever')
 ]

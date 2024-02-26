@@ -5,12 +5,12 @@ from Facturation.views import facture, facture_restant, facture_retard, facture_
 
 urlpatterns = [
     path('list', facture, name='facture'),
-    path('detail=?<str:num_facture>', facture_etat_detail, name='facture_etat_detail'),
+    path('detail/num_facture=<str:num_facture>', facture_etat_detail, name='facture_etat_detail'),
     path('paye', facture_paye, name='facture_paye'),
     path('impaye', facture_impaye, name='facture_impaye'),
     path('restant', facture_restant, name='facture_restant'),
     path('retard', facture_retard, name='facture_retard'),
     path('avoir', facture_avoir, name='facture_avoir'),
     path('paiement', facture_paiement, name='facture_paiement'),
-    path('genere/pdf=?<str:pk>', facture_genere_pdf, name='facture_genere_pdf')
+    path('pdf/num_facture=<str:pk>', facture_genere_pdf, name='facture_genere_pdf')
 ]
