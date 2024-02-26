@@ -3,7 +3,6 @@ from datetime import datetime
 from django.contrib import messages
 from django.db.models import OuterRef, Subquery
 from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
 from django.views import View
 
 from Compteurs.models import Compteur, ReleveCompteur
@@ -83,7 +82,7 @@ class CompteurNew(View):
             )
             # Historique
             message = f"Creation d'un compteur numéro {num_compteur}"
-            enregistre_historique(request, message)
+            enregistre_historique(request, message, request.session.get('id_utilisateur'))
 
             messages.success(request, f"Compteur enregistrer avec succès !")
             return redirect('compteur_list')
@@ -126,7 +125,7 @@ class CompteurDetail(View):
         mod_compteur.save()
         # Historique
         message = f"Modification de compteur numéro {pk}"
-        enregistre_historique(request, message)
+        enregistre_historique(request, message, request.session.get('id_utilisateur'))
 
         messages.success(request, f"Modification du Compteur numéro {mod_compteur.num_compteur} avec succès !")
         return redirect('compteur_list')
@@ -138,7 +137,7 @@ def compteur_supp(request, pk):
     compteur.delete()
     # Historique
     message = f"Suppression de compteur numéro {pk}"
-    enregistre_historique(request, message)
+    enregistre_historique(request, message, request.session.get('id_utilisateur'))
 
     messages.success(request, f'Compteur supprimé avec succès !')
     return redirect('compteur_list')
@@ -195,31 +194,28 @@ class ReleveNew(View):
         volume = int(request.POST['volume'])
         image_compteur = request.FILES.get('image_compteur')
         utilisateur = request.session.get('id_utilisateur')
+
         dernier_volume = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).latest('date_releve')
 
         if dernier_volume:
-            if date_releve <= dernier_volume.date_releve or dernier_volume.volume > volume:
-                messages.error(request, f"Veuillez fournir une date valide pour le relevé !")
+            if date_releve <= dernier_volume.date_releve:
+                messages.error(request, f"Veuillez fournir une date valide !")
+                return redirect('releve_new', num_compteur)
+            elif dernier_volume.volume > volume:
+                messages.error(request, f"Assurez-vous de saisir les chiffres correctement et réessayez !")
                 return redirect('releve_new', num_compteur)
             else:
                 conso = volume - dernier_volume.volume
-                # Relever
-                releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
-                facture_creation(date_releve, num_compteur, releve)
-                # Historique
-                message = f"Relever et Facture d'un compteur {num_compteur}"
-                enregistre_historique(request, message)
-                messages.success(request, f"Relevé enregistrer avec succès !")
-                return redirect('compteur_detail', num_compteur)
         else:
-            # Relever
-            releve = relever(request, num_compteur, date_releve, volume, volume, image_compteur, utilisateur)
-            facture_creation(date_releve, num_compteur, releve)
-            # Historique
-            message = f"Relever et Facture d'un compteur {num_compteur}"
-            enregistre_historique(request, message)
-            messages.success(request, f"Relevé enregistrer avec succès !")
-            return redirect('compteur_detail', num_compteur)
+            conso = volume
+        # Relever
+        releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
+        facture_creation(date_releve, num_compteur, releve)
+        # Historique
+        message = f"Relever et Facture d'un compteur {num_compteur}"
+        enregistre_historique(request, message, request.session.get('id_utilisateur'))
+        messages.success(request, f"Relevé enregistrer avec succès !")
+        return redirect('compteur_detail', num_compteur)
 
 
 def relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur):
@@ -340,7 +336,7 @@ def export_compteur(request):
     ]
     response = exporter_en_excel(compteurs, nom_fichier, champs, nom_colonnes)
     message = f"Export de tout les compteurs"
-    enregistre_historique(request, message)
+    enregistre_historique(request, message, request.session.get('id_utilisateur'))
     return response
 
 
@@ -362,5 +358,5 @@ def export_relever(request, num_compteur):
     ]
     response = exporter_en_excel(relevecompteur, nom_fichier, champs, nom_colonnes)
     message = f"Export de tout les compteurs"
-    enregistre_historique(request, message)
+    enregistre_historique(request, message, request.session.get('id_utilisateur'))
     return response

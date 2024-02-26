@@ -40,20 +40,23 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Nom client</th>
-                    <th>Prénom client</th>
+                    <th>N° Contrat</th>
                     <th>Edité le</th>
                     <th>Montant</th>
+                    <th>Utilisateur</th>
                 </tr>
             </thead>
             <tbody>
                {% for restant in restants %}
                 <tr>
                     <td>{{ restant.pk }}</td>
-                    <td>{{ restant.num_contrat.client.nom_client }}</td>
-                    <td>{{ restant.num_contrat.client.prenom_client }}</td>
+                    <td>{{ restant.num_contrat_id }}</td>
                     <td>{{ restant.date_restant|date:'d/m/Y' }}</td>
                     <td>{{ restant.restant }} Ar</td>
+                    <td>
+                        {{ restant.utilisateur.nom_utilisateur }}
+                        <span class="badge bg-primary ">{{ restant.utilisateur.role.role }}</span>
+                    </td>
                 </tr>
                {% endfor %}
             </tbody>

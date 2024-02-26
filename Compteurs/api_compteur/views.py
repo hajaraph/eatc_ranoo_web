@@ -191,7 +191,6 @@ class Missions(APIView):
 
         if serializer.is_valid():
             num_compteur = serializer.validated_data.get('num_compteur')
-            num_compteur = get_object_or_404(Compteur, pk=num_compteur)
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
             image_compteur = request.FILES.get('image_compteur')
@@ -200,7 +199,7 @@ class Missions(APIView):
 
             if dernier_volume:
                 if date_releve <= dernier_volume.date_releve:
-                    return JsonResponse({'erreur': "Veuillez fournir une date valide pour le relevé !"},
+                    return JsonResponse({'erreur': "Veuillez fournir une date valide"},
                                         status=status.HTTP_400_BAD_REQUEST)
                 if dernier_volume.volume > volume:
                     return JsonResponse({'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"},
@@ -210,12 +209,23 @@ class Missions(APIView):
             else:
                 conso = volume
 
-            releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
-            facture_creation(date_releve, num_compteur, releve)
-            message = f"Relever et Facture d'un compteur {num_compteur}"
-            enregistre_historique(request, message)
+            releve = relever(request, dernier_volume.num_compteur_id, date_releve,
+                             volume, conso, image_compteur, utilisateur)
+
+            facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+
+            historique = f"Relever et Facture d'un compteur {num_compteur}"
+            enregistre_historique(request, historique, utilisateur)
 
             return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
 
         else:
             return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class Facture(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     @staticmethod
+#     def get(request):
+

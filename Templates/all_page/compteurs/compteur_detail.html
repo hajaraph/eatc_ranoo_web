@@ -114,7 +114,7 @@
                         <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
                         <td>
                             {{ relever.utilisateur.nom_utilisateur }}
-                            <label class="badge bg-primary ">{{ relever.utilisateur.role.role }}</label>
+                            <span class="badge bg-primary ">{{ relever.utilisateur.role.role }}</span>
                         </td>
                         <td>
                             <a href="{% url 'releve_mod' relever.pk %}" class="btn btn-sm btn-warning" title="Détail">

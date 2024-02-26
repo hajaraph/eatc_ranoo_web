@@ -107,10 +107,10 @@ class ChangerMotdePasse(View):
             return redirect('changer_motde_passe')
 
 
-def enregistre_historique(request, contexte):
+def enregistre_historique(request, contexte, utilisateur_id):
     Historique.objects.create(
         type_historique=contexte,
-        utilisateur_id=request.session.get('id_utilisateur')
+        utilisateur_id=utilisateur_id
     )
 
 
