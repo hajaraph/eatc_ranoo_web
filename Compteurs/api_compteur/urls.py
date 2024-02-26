@@ -1,11 +1,12 @@
 from django.urls import path
 
-from Compteurs.api_compteur.views import accueil, Missions, relever_client
+from Compteurs.api_compteur.views import accueil, Missions, relever_client, FactureDetail
 from Login.api_auth.views import donne_tout
 
 urlpatterns = [
     path('donnee', donne_tout),
     path('accueil', accueil),
     path('missions', Missions.as_view()),
-    path('releverClient', relever_client)
+    path('releverClient', relever_client),
+    path('facture', FactureDetail.as_view())
 ]

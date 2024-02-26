@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from Compteurs.models import ReleveCompteur, Compteur
+from Compteurs.models import ReleveCompteur
+from Facturation.models import Facture
 
 
 class MissionSerializer(serializers.ModelSerializer):
@@ -12,5 +13,5 @@ class MissionSerializer(serializers.ModelSerializer):
 
 class FactureSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ReleveCompteur
+        model = Facture
         fields = '__all__'
