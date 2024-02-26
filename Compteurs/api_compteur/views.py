@@ -14,6 +14,7 @@ from Clients.models import Contrat
 from Compteurs.api_compteur.serializer import MissionSerializer
 from Compteurs.models import Compteur, ReleveCompteur
 from Compteurs.views import relever
+from Facturation.models import Facture, MontantHT
 from Facturation.views import facture_creation
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
@@ -115,6 +116,7 @@ def relever_client(request):
         releves_list = []
         for releve in releves_data:
             releves_list.append({
+                'id_relelve': releve.pk,
                 'date_releve': releve.date_releve,
                 'volume': releve.volume,
                 'conso': releve.conso,
@@ -188,14 +190,14 @@ class Missions(APIView):
     def post(request):
         serializer = MissionSerializer(data=request.data)
         utilisateur = request.user.id_utilisateur
+        compteur_id = request.GET.get('num_compteur')
 
         if serializer.is_valid():
-            num_compteur = serializer.validated_data.get('num_compteur')
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
             image_compteur = request.FILES.get('image_compteur')
 
-            dernier_volume = ReleveCompteur.objects.filter(num_compteur=num_compteur).latest('date_releve')
+            dernier_volume = ReleveCompteur.objects.filter(num_compteur_id=compteur_id).latest('date_releve')
 
             if dernier_volume:
                 if date_releve <= dernier_volume.date_releve:
@@ -214,7 +216,7 @@ class Missions(APIView):
 
             facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
 
-            historique = f"Relever et Facture d'un compteur {num_compteur}"
+            historique = f"Relever et Facture d'un compteur {compteur_id}"
             enregistre_historique(request, historique, utilisateur)
 
             return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
@@ -223,9 +225,34 @@ class Missions(APIView):
             return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class Facture(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#
-#     @staticmethod
-#     def get(request):
+class FactureDetail(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
+    @staticmethod
+    def get(request):
+        id_releve = request.GET.get('id_releve')
+
+        releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
+        montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
+
+        facture = {
+            'relevecompteur_id': releve.relevecompteur_id,
+            'num_facture': releve.num_facture,
+            'num_compteur': releve.num_contrat.num_compteur_id,
+            'date_facture': releve.date_facture,
+            'total_conso_ht': montant_ht.total_conso_ht,
+            'total_taxe_co_ht': montant_ht.total_taxe_co_ht,
+            'total_redevance_bs_ht': montant_ht.total_redevance_bs_ht,
+            'total_redevance_fr_ht': montant_ht.total_redevance_fr_ht,
+            'tarif_m3': montant_ht.tarif.prix_m3,
+            'avoir_avant': releve.avoir_avant,
+            'avoir_utilise': releve.avoir_utilise,
+            'restant_precedant': releve.restant_precedant,
+            'montant_total_ttc': releve.montant_total_ttc,
+            'statut': releve.statut,
+        }
+        return JsonResponse(
+            {
+                'facture': facture
+            }
+        )
