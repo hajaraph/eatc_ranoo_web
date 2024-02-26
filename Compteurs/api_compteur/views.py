@@ -249,10 +249,17 @@ class FactureDetail(APIView):
             'avoir_utilise': releve.avoir_utilise,
             'restant_precedant': releve.restant_precedant,
             'montant_total_ttc': releve.montant_total_ttc,
-            'statut': releve.statut,
+            'statut': 'Payé' if releve.statut else 'Impayé',
         }
         return JsonResponse(
             {
                 'facture': facture
             }
         )
+
+    @staticmethod
+    @parser_classes((MultiPartParser, FormParser))
+    def post(request):
+        num_facture = request.GET.get('num_facture')
+
+
