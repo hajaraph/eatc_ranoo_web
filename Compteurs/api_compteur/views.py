@@ -190,14 +190,14 @@ class Missions(APIView):
     def post(request):
         serializer = MissionSerializer(data=request.data)
         utilisateur = request.user.id_utilisateur
-        compteur_id = request.GET.get('num_compteur')
 
         if serializer.is_valid():
+            compteur_id = serializer.validated_data.get('num_compteur')
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
             image_compteur = request.FILES.get('image_compteur')
 
-            dernier_volume = ReleveCompteur.objects.filter(num_compteur_id=compteur_id).latest('date_releve')
+            dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
 
             if dernier_volume:
                 if date_releve <= dernier_volume.date_releve:

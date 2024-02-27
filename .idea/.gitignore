@@ -7,5 +7,5 @@
 /dataSources/
 /dataSources.local.xml
 
-*.log
-*Rel_Compteur/settings.py
+debug.log
+Rel_Compteur/settings.py
