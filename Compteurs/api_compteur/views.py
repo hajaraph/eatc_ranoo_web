@@ -1,7 +1,9 @@
 from django.db.models import Count
 from django.db.models import Q
 
-from django.http import JsonResponse
+from django.http import JsonResponse 
+from rest_framework.response import Response
+
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -10,8 +12,11 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 
 from Clients.models import Contrat
+from Login.models import Utilisateur
 
-from Compteurs.api_compteur.serializer import MissionSerializer
+from .serializer import MissionSerializer
+
+from Login.api_auth.serializer import UtilisateurSerializerWithLastToken,UstilisateursSynchrone
 from Compteurs.models import Compteur, ReleveCompteur
 from Compteurs.views import relever
 from Facturation.models import Facture, MontantHT
@@ -263,3 +268,46 @@ class FactureDetail(APIView):
         num_facture = request.GET.get('num_facture')
 
 
+
+
+
+
+class SynchronisationView(APIView):
+    def post(self, request, format=None):
+        # Récupérer les données JSON envoyées dans la requête
+        data = request.data
+        
+        # Assurez-vous que les données ne sont pas vides
+        if isinstance(data, list):
+            utilisateurs_data = data
+            for utilisateur_data in utilisateurs_data:
+                # Votre logique de synchronisation ici
+                dataUser = {
+                    'nom_utilisateur': utilisateur_data.get('nom_utilisateur', ''),
+                    'prenom_utilisateur': utilisateur_data.get('prenom_utilisateur', ''),
+                    'num_utilisateur': utilisateur_data.get('num_utilisateur', ''),
+                    'password': utilisateur_data.get('password', ''),
+                    'cp_commune': utilisateur_data.get('cp_commune', ''),
+                    'role_id': utilisateur_data.get('role_id', ''),
+                    'last_token': utilisateur_data.get('last_token', '')
+                }
+                # Vérifier si l'utilisateur existe déjà dans la base de données
+                if Utilisateur.objects.filter(num_utilisateur=dataUser['num_utilisateur']).exists():
+                    # L'utilisateur existe déjà, récupérer l'utilisateur existant
+                    utilisateur = Utilisateur.objects.get(num_utilisateur=dataUser['num_utilisateur'])
+                    # Mettre à jour les données de l'utilisateur avec les nouvelles données
+                    for key, value in dataUser.items():
+                        setattr(utilisateur, key, value)
+                    # Enregistrer les modifications dans la base de données
+                    utilisateur.save()
+                else:
+                    # Créer un nouvel utilisateur et l'enregistrer dans la base de données
+                    utilisateur_serializer = UstilisateursSynchrone(data=dataUser)  # Correction ici
+                    if utilisateur_serializer.is_valid():
+                        utilisateur_serializer.save()
+                    else:
+                        return Response(utilisateur_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response("Synchronisation réussie", status=status.HTTP_201_CREATED)
+        else:
+            return Response("Les données de synchronisation sont manquantes ou incorrectes.", status=status.HTTP_400_BAD_REQUEST)

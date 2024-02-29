@@ -3,6 +3,10 @@ from rest_framework import serializers
 from Compteurs.models import ReleveCompteur
 from Facturation.models import Facture, Paiement
 
+class ReleveCompteurSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReleveCompteur
+        fields = ['id_releve', 'date_releve', 'volume', 'conso', 'image_compteur', 'utilisateur', 'num_compteur']
 
 class MissionSerializer(serializers.ModelSerializer):
 

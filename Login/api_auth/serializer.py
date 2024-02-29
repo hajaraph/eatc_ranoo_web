@@ -28,3 +28,17 @@ class UtilisateurSerializerWithLastToken(serializers.ModelSerializer):
             'role_id',
             'last_token'
         ]
+
+class UstilisateursSynchrone(serializers.ModelSerializer):
+
+    class Meta:
+        model = Utilisateur
+        fields = [
+            'nom_utilisateur',
+            'prenom_utilisateur',
+            'num_utilisateur',
+            'password',
+            'cp_commune',
+            'role_id',
+            'last_token'
+        ]
