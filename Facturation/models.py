@@ -9,13 +9,17 @@ import Login.models
 class Tarif(models.Model):
     id_tarif = models.BigAutoField(primary_key=True)
     prix_m3 = models.FloatField(blank=False)
-    taxe_co = models.FloatField(blank=False)
-    redevance_bs = models.FloatField(blank=False)
-    redevance_fr = models.FloatField(blank=False)
     tva = models.FloatField(blank=False)
     nb_jour_echeance_fct = models.IntegerField(blank=False)
     cp_commune = models.ForeignKey(Clients.models.Commune, on_delete=models.CASCADE,
                                    blank=False, related_name='communes')
+
+
+class Taxe(models.Model):
+    id_taxe = models.BigAutoField(primary_key=True)
+    nom_taxe = models.CharField(max_length=100, default='Taxe', null=False, blank=False)
+    taux_taxe = models.FloatField(max_length=100, null=False, blank=False)
+    tarif = models.ForeignKey(Tarif, on_delete=models.CASCADE, blank=False)
 
 
 class Facture(models.Model):

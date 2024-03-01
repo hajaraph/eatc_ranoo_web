@@ -300,9 +300,7 @@ def facture_genere_pdf(request, pk):
     dernier_releve = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).last()
 
     # Recupère le 2ème dernier date de relevé
-    releve_avant = ReleveCompteur.objects.filter(
-        num_compteur_id=num_compteur
-    ).order_by('-date_releve')
+    releve_avant = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).order_by('-date_releve')
 
     nb_jour_echeance_fct = montant.tarif.nb_jour_echeance_fct
     date_paiment = dernier_releve.date_releve + timedelta(days=nb_jour_echeance_fct)

@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404
 
 from Clients.models import Contrat
 
-from Compteurs.api_compteur.serializer import MissionSerializer
+from Compteurs.api_compteur.serializer import MissionSerializer, PaiementSerializer
 from Compteurs.models import Compteur, ReleveCompteur
 from Compteurs.views import relever
 from Facturation.models import Facture, MontantHT
@@ -36,10 +36,10 @@ def accueil(request):
 
     # Calcul de la fin du mois actuel en utilisant pandas
     end_of_month = (
-            pd.to_datetime('now')
-            .to_period('M')
-            .to_timestamp()
-            + MonthEnd(0)
+        pd.to_datetime('now')
+        .to_period('M')
+        .to_timestamp()
+        + MonthEnd(0)
     )
 
     # Filtrer les contrats avec des relevés dans le mois actuel
@@ -190,14 +190,14 @@ class Missions(APIView):
     def post(request):
         serializer = MissionSerializer(data=request.data)
         utilisateur = request.user.id_utilisateur
-        compteur_id = request.GET.get('num_compteur')
 
         if serializer.is_valid():
+            compteur_id = serializer.validated_data.get('num_compteur')
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
             image_compteur = request.FILES.get('image_compteur')
 
-            dernier_volume = ReleveCompteur.objects.filter(num_compteur_id=compteur_id).latest('date_releve')
+            dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
 
             if dernier_volume:
                 if date_releve <= dernier_volume.date_releve:
@@ -260,6 +260,8 @@ class FactureDetail(APIView):
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
-        num_facture = request.GET.get('num_facture')
+        serializer = PaiementSerializer(data=request.data)
 
+        if serializer.is_valid():
+            num_facture = serializer.validated_data.get('num_facture')
 
