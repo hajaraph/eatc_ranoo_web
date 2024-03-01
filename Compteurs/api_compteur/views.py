@@ -71,7 +71,6 @@ def accueil(request):
         }
     )
 
-
 def relever_client(request):
     compteur_id = request.GET.get('num_compteur')
 
@@ -135,11 +134,12 @@ def relever_client(request):
             'client': client_info,
             'releves': releves_list
         })
+    
+
     except Compteur.DoesNotExist:
         return JsonResponse({'error': 'Compteur non trouvé'}, status=404)
     except Contrat.DoesNotExist:
         return JsonResponse({'error': 'Contrat non trouvé'}, status=404)
-
 
 class Missions(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -268,185 +268,148 @@ class FactureDetail(APIView):
         num_facture = request.GET.get('num_facture')
 
 class SynchronisationView(APIView):
-
     permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request, format=None):
         # Récupérer les données JSON envoyées dans la requête
         data = request.data
+        communeUsrs = request.user.cp_commune_id
+        
         utilisateurs_data = data.get('utilisateurs', [])
         missions_data = data.get('missions', [])  
 
         utilisateurs_synchronises = []
-        missions_synchronisees = [] 
+        missions_synchronisees = []
 
         # Synchronisation des utilisateurs
         for utilisateur_data in utilisateurs_data:
-            # Logique de synchronisation pour chaque utilisateur
-            utilisateur_id = utilisateur_data.get('id_utilisateurs')
-            nom_utilisateur = utilisateur_data.get('nom_utilisateur')
-            prenom_utilisateur = utilisateur_data.get('prenom_utilisateur')
-            num_utilisateur = utilisateur_data.get('num_utilisateur')
-            password = utilisateur_data.get('password')
-            cp_commune = utilisateur_data.get('cp_commune')
-            role_id = utilisateur_data.get('role_id')
-            last_token = utilisateur_data.get('last_token')
-
-            # Récupérer l'instance de la commune à partir du nom de la commune
-            try:
-                cp_commune_instance = Commune.objects.get(commune=cp_commune)
-            except Commune.DoesNotExist:
-                # Gérer le cas où la commune n'existe pas
-                cp_commune_instance = None
-
-            if cp_commune_instance:
-                # Vérifier si l'utilisateur existe déjà dans la base de données
-                try:
-                    utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
-                    # L'utilisateur existe déjà, mettre à jour ses données
-                    utilisateur.nom_utilisateur = nom_utilisateur
-                    utilisateur.prenom_utilisateur = prenom_utilisateur
-                    utilisateur.password = password
-                    utilisateur.cp_commune = cp_commune_instance
-                    utilisateur.role_id = role_id
-                    utilisateur.last_token = last_token
-                    utilisateur.save()
-                except Utilisateur.DoesNotExist:
-                    # L'utilisateur n'existe pas, créer un nouvel utilisateur
-                    utilisateur = Utilisateur(
-                        id_utilisateurs=utilisateur_id,
-                        nom_utilisateur=nom_utilisateur,
-                        prenom_utilisateur=prenom_utilisateur,
-                        num_utilisateur=num_utilisateur,
-                        password=password,
-                        cp_commune=cp_commune_instance,
-                        role_id=role_id,
-                        last_token=last_token
-                    )
-                    utilisateur.save()
-                
-                # Ajouter l'utilisateur synchronisé à la liste des utilisateurs synchronisés
-                utilisateur_dict = {
-                    'id_utilisateurs': utilisateur_id,
-                    'nom_utilisateur': nom_utilisateur,
-                    'prenom_utilisateur': prenom_utilisateur,
-                    'num_utilisateur': num_utilisateur,
-                    'cp_commune': cp_commune,
-                    'role_id': role_id,
-                    'last_token': last_token
-                }
-                utilisateurs_synchronises.append(utilisateur_dict)
+            utilisateur_sync = self.sync_utilisateur(utilisateur_data)
+            utilisateurs_synchronises.append(utilisateur_sync)
 
         # Synchronisation des missions
         for mission_data in missions_data:
-            # Logique de synchronisation pour chaque mission
-            date_releve = mission_data.get('date_releve')
-            volume = mission_data.get('volume')
-            num_compteur = mission_data.get('num_compteur')
-            utilisateur_id = mission_data.get('utilisateur_id')
+            mission_sync = self.sync_mission(mission_data, communeUsrs)
+            missions_synchronisees.append(mission_sync)
 
-            # Récupérer l'utilisateur associé à la mission
-            try:
-                utilisateur = Utilisateur.objects.get(id_utilisateur=utilisateur_id)
-            except Utilisateur.DoesNotExist:
-                utilisateur = None
-
-            if utilisateur:
-                # Vérifier si la mission existe déjà dans la base de données
-                mission_exists = ReleveCompteur.objects.filter(date_releve=date_releve, num_compteur=num_compteur).exists()
-                
-                # Récupérer ou créer le compteur
-                try:
-                    compteur = Compteur.objects.get(num_compteur=num_compteur)
-                except Compteur.DoesNotExist:
-                    compteur = Compteur.objects.create(num_compteur=num_compteur)
-
-                # Calculer la consommation
-                dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur).latest('date_releve').volume if ReleveCompteur.objects.filter(num_compteur=compteur).exists() else 0
-                conso = volume - dernier_volume if dernier_volume else volume
-
-                if not mission_exists:
-                    # Créer une nouvelle mission
-                    mission = ReleveCompteur(
-                        date_releve=date_releve,
-                        volume=volume,
-                        conso=conso,
-                        num_compteur=compteur,
-                        utilisateur=utilisateur
-                    )
-                    mission.save()
-
-                    # Ajouter la mission synchronisée à la liste des missions synchronisées
-                    mission_dict = {
-                        'date_releve': date_releve,
-                        'volume': volume,
-                        'conso': conso,
-                        'num_compteur': num_compteur,
-                        'utilisateur_id': utilisateur_id
-                    }
-                    missions_synchronisees.append(mission_dict)
-
-          # Après la synchronisation des missions, exécuter la fonction get_liste_mission
-        liste_contrats_info = self.get_liste_contrats(request)
-
-        # Retourner les utilisateurs, les missions synchronisées et la liste des contrats
-        return JsonResponse(
-            {
-                'utilisateurs': utilisateurs_synchronises,
-                'missions': missions_synchronisees,
-                'liste_contrats_info': liste_contrats_info
-            }
+        # Récupérer toutes les missions dans la base de données associées à l'utilisateur actuel
+        toutes_missions = ReleveCompteur.objects.filter(utilisateur=request.user).values(
+            'date_releve', 'volume', 'conso', 'num_compteur__num_compteur', 'utilisateur_id'
         )
 
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_liste_contrats(self, request):
-        # Récupérer l'identifiant de la commune à partir de l'utilisateur actuel
-        cp_commune_id = request.user.cp_commune_id
-        print(cp_commune_id)
+        # Récupérer les détails des missions
+        missions_details = self.get_missions_details(toutes_missions)
+
+        # Récupérer les données d'accueil
+        accueil_data = self.get_accueil_data(request)
+
+        # Retourner les utilisateurs, les missions synchronisées, les détails des missions et les données d'accueil
+        return JsonResponse({
+            'utilisateurs': utilisateurs_synchronises,
+            'missions': missions_synchronisees,
+            'missions_details': missions_details,
+            'acceuil': accueil_data,
+        })
+
+    def sync_utilisateur(self, utilisateur_data):
+        utilisateur_id = utilisateur_data.get('id_utilisateurs')
+        nom_utilisateur = utilisateur_data.get('nom_utilisateur')
+        prenom_utilisateur = utilisateur_data.get('prenom_utilisateur')
+        num_utilisateur = utilisateur_data.get('num_utilisateur')
+        password = utilisateur_data.get('password')
+        cp_commune = utilisateur_data.get('cp_commune')
+        role_id = utilisateur_data.get('role_id')
+        last_token = utilisateur_data.get('last_token')
+
+        try:
+            cp_commune_instance = Commune.objects.get(cp_commune=cp_commune) 
+        except Commune.DoesNotExist:
+            cp_commune_instance = None
+
+        if cp_commune_instance:
+            try:
+                utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
+                utilisateur.nom_utilisateur = nom_utilisateur
+                utilisateur.prenom_utilisateur = prenom_utilisateur
+                utilisateur.password = password
+                utilisateur.cp_commune = cp_commune_instance
+                utilisateur.role_id = role_id
+                utilisateur.last_token = last_token
+                utilisateur.save()
+            except Utilisateur.DoesNotExist:
+                utilisateur = Utilisateur(
+                    id_utilisateurs=utilisateur_id,
+                    nom_utilisateur=nom_utilisateur,
+                    prenom_utilisateur=prenom_utilisateur,
+                    num_utilisateur=num_utilisateur,
+                    password=password,
+                    cp_commune=cp_commune_instance,
+                    role_id=role_id,
+                    last_token=last_token
+                )
+                utilisateur.save()
+            
+            utilisateur_dict = {
+                'id_utilisateurs': utilisateur_id,
+                'nom_utilisateur': nom_utilisateur,
+                'prenom_utilisateur': prenom_utilisateur,
+                'num_utilisateur': num_utilisateur,
+                'cp_commune': cp_commune,
+                'role_id': role_id,
+                'last_token': last_token
+            }
+            return utilisateur_dict
+
+    def sync_mission(self, mission_data, communeUsrs):
         
-        # Récupérer la fin du mois actuel
-        end_of_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)      
-        print(end_of_month)
+        date_releve = mission_data.get('date_releve')
+        volume = mission_data.get('volume')
+        num_compteur = mission_data.get('num_compteur')
+        utilisateur_id = mission_data.get('utilisateur_id')
 
-        # Récupérer les contrats de la commune avec les statistiques de relevés
-        contrats_commune = self.get_contrats_commune(cp_commune_id)       
-        print(contrats_commune)
-        # Mettre à jour le statut des contrats en fonction de la date du dernier relevé
-        for contrat in contrats_commune:
-            contrat.date_releve, contrat.statut = self.get_date_releve_et_statut(contrat, end_of_month)
+        end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
 
-        # Générer la liste d'informations sur les contrats
-        liste_contrats_info = self.generate_contrats_info(contrats_commune)
+        try:
+            utilisateur = Utilisateur.objects.get(id_utilisateur=utilisateur_id)
+        except Utilisateur.DoesNotExist:
+            utilisateur = None
 
-        return liste_contrats_info
+        if utilisateur:
+            compteur, created = Compteur.objects.get_or_create(num_compteur=num_compteur)
 
-    def get_contrats_commune(self, cp_commune_id):
-        # Récupérer les contrats de la commune avec les statistiques de relevés
-        contrats_commune = Contrat.objects.filter(cp_commune_id=cp_commune_id)\
-            .select_related('client', 'num_compteur')\
-            .annotate(
-                conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
-                volume_dernier_releve=Sum('num_compteur__relevecompteurs__volume')
+            dernier_releve = ReleveCompteur.objects.filter(num_compteur=compteur).latest('date_releve')
+            dernier_volume = dernier_releve.volume if dernier_releve else 0
+            conso = volume - dernier_volume if dernier_volume else volume
+
+            mission, created = ReleveCompteur.objects.update_or_create(
+                date_releve=date_releve,
+                num_compteur=compteur,
+                defaults={
+                    'volume': volume,
+                    'conso': conso,
+                    'utilisateur': utilisateur
+                }
             )
+            contrats_commune =  (Contrat.objects
+                        .filter(cp_commune_id=communeUsrs)
+                        .select_related('client', 'num_compteur')
+                        .annotate(
+                            conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
+                            volume_dernier_releve=Sum('num_compteur__relevecompteurs__volume')
+                        ))
+            
+            for contrat in contrats_commune:
+                dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
+                    max_date=Max('date_releve'))
+                contrat.date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else None
 
-        return contrats_commune
-
-    def get_date_releve_et_statut(self, contrat, end_of_month):
-        # Récupérer la date du dernier relevé pour le contrat
-        dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur)\
-            .aggregate(max_date=Max('date_releve'))
-        date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else None
-
-        # Comparer les mois pour définir le statut du contrat
-        statut = 1 if date_releve and date_releve.month == end_of_month.month else 0
-
-        return date_releve, statut
-
-    def generate_contrats_info(self, contrats_commune):
-        # Générer la liste d'informations sur les contrats
-        liste_contrats_info = []
-        for contrat in contrats_commune:
-            contrat_info = {
+                # Comparaison des mois pour définir le statut
+                if contrat.date_releve != None:
+                    contrat.statut = 1
+                else:
+                    contrat.statut = 0
+            print(contrat)
+            mission_dict = {
+                'utilisateur_id': utilisateur_id,
                 'nom_client': contrat.client.nom_client,
                 'prenom_client': contrat.client.prenom_client,
                 'adresse_client': contrat.client.adresse_client,
@@ -456,6 +419,83 @@ class SynchronisationView(APIView):
                 'date_releve': contrat.date_releve,
                 'statut': contrat.statut
             }
-            liste_contrats_info.append(contrat_info)
+            return mission_dict
 
-        return liste_contrats_info
+
+    def get_missions_details(self, toutes_missions):
+        missions_details = []
+        for mission in toutes_missions:
+            compteur_id = mission['num_compteur__num_compteur']
+            compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
+            contrat = get_object_or_404(Contrat, num_compteur=compteur)
+            client = contrat.client
+            releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
+            releves_list = []
+            for releve in releves_data:
+                releves_list.append({
+                    'id_relelve': releve.pk,
+                    'date_releve': releve.date_releve,
+                    'volume': releve.volume,
+                    'conso': releve.conso,
+                })
+            missions_details.append({
+                'compteur': {
+                    'id': compteur.num_compteur,
+                    'marque': compteur.marque_compteur,
+                    'modele': compteur.modele_compteur,
+                },
+                'contrat': {
+                    'id': contrat.num_contrat,
+                    'numero_contrat': contrat.num_contrat,
+                    'date_debut': contrat.date_debut,
+                    'date_fin': contrat.date_fin,
+                    'adresse_contrat': contrat.adresse_contrat,
+                    'pays_contrat': contrat.pays_contrat,
+                },
+                'client': {
+                    'id': client.id_client,
+                    'nom': client.nom_client,
+                    'prenom': client.prenom_client,
+                    'adresse': client.adresse_client,
+                    'commune': client.cp_commune.commune,
+                    'region': client.cp_commune.region.region,
+                    'tephone1': client.tel1_client,
+                    'tephone2': client.tel2_client,
+                    'actif': client.compte_actif
+                },
+                'releves': releves_list
+            })
+        return missions_details
+
+    def get_accueil_data(self, request):
+        cp_commune_id = request.user.cp_commune_id
+        non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
+        realise = MainCourante.objects.filter(statuts__realise=True).count()
+        total_anomalie = non_traite + realise
+        nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
+
+        end_of_month = (
+                pd.to_datetime('now')
+                .to_period('M')
+                .to_timestamp()
+                + MonthEnd(0)
+        )
+
+        contrat_data = (
+            Contrat.objects
+            .filter(cp_commune_id=cp_commune_id)
+            .annotate(releve_count=Count('num_compteur__relevecompteurs',
+                                        filter=Q(num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
+            .distinct()
+        )
+
+        contrat_list = list(contrat_data)
+        nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
+        
+        accueil = {
+                'totale_anomalie': total_anomalie,
+                'realise': realise,
+                'nombre_total_compteur': nombre_total_compteur,
+                'nombre_relever_effectuer': nombre_relever_effectuer,
+            }
+        return accueil
