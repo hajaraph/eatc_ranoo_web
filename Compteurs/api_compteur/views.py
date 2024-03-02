@@ -281,10 +281,8 @@ class SynchronisationView(APIView):
         utilisateurs_synchronises = []
         missions_synchronisees = []
 
-        # Synchronisation des utilisateurs
-        for utilisateur_data in utilisateurs_data:
-            utilisateur_sync = self.sync_utilisateur(utilisateur_data)
-            utilisateurs_synchronises.append(utilisateur_sync)
+        utilisateurs_sync = self.sync_utilisateur()
+        utilisateurs_synchronises.extend(utilisateurs_sync)
 
         # Synchronisation des missions
         for mission_data in missions_data:
@@ -310,55 +308,14 @@ class SynchronisationView(APIView):
             'acceuil': accueil_data,
         })
 
-    def sync_utilisateur(self, utilisateur_data):
-        utilisateur_id = utilisateur_data.get('id_utilisateurs')
-        nom_utilisateur = utilisateur_data.get('nom_utilisateur')
-        prenom_utilisateur = utilisateur_data.get('prenom_utilisateur')
-        num_utilisateur = utilisateur_data.get('num_utilisateur')
-        password = utilisateur_data.get('password')
-        cp_commune = utilisateur_data.get('cp_commune')
-        role_id = utilisateur_data.get('role_id')
-        last_token = utilisateur_data.get('last_token')
-
-        try:
-            cp_commune_instance = Commune.objects.get(cp_commune=cp_commune) 
-        except Commune.DoesNotExist:
-            cp_commune_instance = None
-
-        if cp_commune_instance:
-            try:
-                utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
-                utilisateur.nom_utilisateur = nom_utilisateur
-                utilisateur.prenom_utilisateur = prenom_utilisateur
-                utilisateur.password = password
-                utilisateur.cp_commune = cp_commune_instance
-                utilisateur.role_id = role_id
-                utilisateur.last_token = last_token
-                utilisateur.save()
-            except Utilisateur.DoesNotExist:
-                utilisateur = Utilisateur(
-                    id_utilisateurs=utilisateur_id,
-                    nom_utilisateur=nom_utilisateur,
-                    prenom_utilisateur=prenom_utilisateur,
-                    num_utilisateur=num_utilisateur,
-                    password=password,
-                    cp_commune=cp_commune_instance,
-                    role_id=role_id,
-                    last_token=last_token
-                )
-                utilisateur.save()
-            
-            utilisateur_dict = {
-                'id_utilisateurs': utilisateur_id,
-                'nom_utilisateur': nom_utilisateur,
-                'prenom_utilisateur': prenom_utilisateur,
-                'num_utilisateur': num_utilisateur,
-                'cp_commune': cp_commune,
-                'role_id': role_id,
-                'last_token': last_token
-            }
-            return utilisateur_dict
-
+    def sync_utilisateur(self):
+            users = Utilisateur.objects.filter(role_id=3)
+            serializer = UtilisateurSerializerWithLastToken(users, many=True)
+            return serializer.data
+    
+    
+    
+    
     def sync_mission(self, mission_data, communeUsrs):
         
         date_releve = mission_data.get('date_releve')
