@@ -7,9 +7,11 @@ from django.contrib import messages
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = '2&e6eh3@0idjnee^vf$ft(ff1vzs@uhfg)3n@zna@f#7pmz14v'
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
-DEBUG = True
+DEBUG = os.environ.get("DEBUG")
+
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS").split(",")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -43,7 +45,6 @@ MIDDLEWARE = [
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
-ALLOWED_HOSTS = []
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -163,6 +164,8 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = 'Login.Utilisateur'
 
 ADMIN_ENABLED = False
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
 
 # LOGGING = {
 #     'version': 1,
