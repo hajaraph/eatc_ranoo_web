@@ -15,7 +15,7 @@ from Compteurs.api_compteur.serializer import MissionSerializer, PaiementSeriali
 from Compteurs.models import Compteur, ReleveCompteur
 from Compteurs.views import relever
 from Facturation.models import Facture, MontantHT
-from Facturation.views import facture_creation
+from Facturation.views import facture_creation, calcule_montant_taxe
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
 from pandas.tseries.offsets import MonthEnd
@@ -234,6 +234,16 @@ class FactureDetail(APIView):
 
         releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
         montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
+        taxes = montant_ht.tarif.taxes.all()
+        taxe_montant = calcule_montant_taxe(montant_ht.tarif, releve.relevecompteur.conso)
+
+        taxes = [
+            {
+                'nom_taxe': taxe.nom_taxe,
+                'montant_taxe': montant_taxe
+            }
+            for taxe, montant_taxe in zip(taxes, taxe_montant)
+        ]
 
         facture = {
             'relevecompteur_id': releve.relevecompteur_id,
@@ -241,21 +251,15 @@ class FactureDetail(APIView):
             'num_compteur': releve.num_contrat.num_compteur_id,
             'date_facture': releve.date_facture,
             'total_conso_ht': montant_ht.total_conso_ht,
-            'total_taxe_co_ht': montant_ht.total_taxe_co_ht,
-            'total_redevance_bs_ht': montant_ht.total_redevance_bs_ht,
-            'total_redevance_fr_ht': montant_ht.total_redevance_fr_ht,
             'tarif_m3': montant_ht.tarif.prix_m3,
+            'taxes': taxes,
             'avoir_avant': releve.avoir_avant,
             'avoir_utilise': releve.avoir_utilise,
             'restant_precedant': releve.restant_precedant,
             'montant_total_ttc': releve.montant_total_ttc,
             'statut': 'Payé' if releve.statut else 'Impayé',
         }
-        return JsonResponse(
-            {
-                'facture': facture
-            }
-        )
+        return JsonResponse({'facture': facture})
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
