@@ -7,11 +7,11 @@ from django.contrib import messages
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = '2&e6eh3@0idjnee^vf$ft(ff1vzs@uhfg)3n@zna@f#7pmz14v'  # os.environ.get("SECRET_KEY")
 
-DEBUG = os.environ.get("DEBUG")
+DEBUG = True  # os.environ.get("DEBUG")
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS").split(",")
+ALLOWED_HOSTS = []  # os.environ.get("ALLOWED_HOSTS").split(",")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -52,7 +52,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
-    'http://localhost:3000', 
+    'http://localhost:3000',
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [

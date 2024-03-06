@@ -60,6 +60,7 @@ class Authentification(View):
                         return redirect('authentification')
                     else:
                         initial = Initial.objects.get(utilisateur_cree=utilisateur.pk)
+
                         request.session['id_utilisateur'] = utilisateur.id_utilisateur
                         request.session['nom_utilisateur'] = utilisateur.nom_utilisateur
                         request.session['prenom_utilisateur'] = utilisateur.prenom_utilisateur
