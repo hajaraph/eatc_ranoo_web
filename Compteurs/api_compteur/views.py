@@ -15,12 +15,11 @@ from Compteurs.api_compteur.serializer import MissionSerializer, PaiementSeriali
 from Compteurs.models import Compteur, ReleveCompteur
 from Compteurs.views import relever
 from Facturation.models import Facture, MontantHT
-from Facturation.views import facture_creation, calcule_montant_taxe
+from Facturation.views import facture_creation, calcule_montant_taxe, paiement
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
 from pandas.tseries.offsets import MonthEnd
 import pandas as pd
-
 from Parametre.views import enregistre_historique
 
 
@@ -267,5 +266,9 @@ class FactureDetail(APIView):
         serializer = PaiementSerializer(data=request.data)
 
         if serializer.is_valid():
-            num_facture = serializer.validated_data.get('num_facture')
-
+            id_releve = serializer.validated_data.get('relevecompteur_id')
+            montant_payer = float(serializer.validated_data.get('paiement'))
+            paiement(request, id_releve, montant_payer)
+            return JsonResponse({'message': 'Paiement effectué avec succès'})
+        else:
+            return JsonResponse({'message': serializer.errors})

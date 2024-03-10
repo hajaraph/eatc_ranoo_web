@@ -342,11 +342,8 @@ def facture_genere_pdf(request, pk):
     return generate_pdf(request, context, template_path, filename_prefix)
 
 
-@authentification_requis
-def facture_paiement(request, *args, **kwargs):
-    id_facture = request.POST['id_facture']
-    montant_payer = float(request.POST['paiement'])
-    fact_paiement = Facture.objects.get(pk=id_facture)
+def paiement(request, relevecompteur_id, montant_payer):
+    fact_paiement = Facture.objects.get(relevecompteur_id=relevecompteur_id)
     net_paye = fact_paiement.montant_total_ttc - montant_payer
     num_contrat = fact_paiement.num_contrat
 
@@ -427,6 +424,13 @@ def facture_paiement(request, *args, **kwargs):
                 facture_id=fact_paiement.pk
             )
     fact_paiement.save()
+
+
+@authentification_requis
+def facture_paiement(request, *args, **kwargs):
+    id_releve = request.POST['id_releve']
+    montant_payer = float(request.POST['paiement'])
+    paiement(request, id_releve, montant_payer)
     messages.success(request, 'Facture payé avec succès !')
     return JsonResponse({'message': 'Paiement effectué avec succès'})
 
