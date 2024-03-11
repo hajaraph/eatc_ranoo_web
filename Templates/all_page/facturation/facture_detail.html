@@ -212,7 +212,7 @@
                                 <i class="fas fa-file-pdf"></i>
                                  PDF
                             </a>
-                            <button id="{{ facture.pk }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
+                            <button id="{{ facture.relevecompteur_id }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
                                 <i class="fas fa-credit-card"></i>
                                 Paiement
                             </button>
@@ -236,7 +236,7 @@
                     {% csrf_token %}
                     <div class="form-floating">
                         <input type="hidden" name="id_facture" id="id_facture" value="{{ csrf_token }}">
-                        <input type="text" name="paimenent" id="paiement" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
+                        <input type="text" name="paiment" id="paiement" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
                         <label for="paiement">Montant(Ar) :</label>
                     </div>
                 </form>
