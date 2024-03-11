@@ -16,13 +16,13 @@ from Clients.models import Contrat
 from Login.models import Utilisateur
 from Clients.communes import Commune
 
-from .serializer import MissionSerializer
+from .serializer import MissionSerializer,PaiementSerializer
 
 from Login.api_auth.serializer import UtilisateurSerializerWithLastToken,UstilisateursSynchrone
 from Compteurs.models import Compteur, ReleveCompteur
 from Compteurs.views import relever
 from Facturation.models import Facture, MontantHT
-from Facturation.views import facture_creation
+from Facturation.views import facture_creation,paiement
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
 from pandas.tseries.offsets import MonthEnd
@@ -270,8 +270,16 @@ class FactureDetail(APIView):
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
-        num_facture = request.GET.get('num_facture')
+        serializer = PaiementSerializer(data=request.data)
 
+        if serializer.is_valid():
+            id_releve = serializer.validated_data.get('relevecompteur_id')
+            montant_payer = float(serializer.validated_data.get('paiement'))
+            paiement(request, id_releve, montant_payer)
+            return JsonResponse({'message': 'Paiement effectué avec succès'})
+        else:
+            return JsonResponse({'message': serializer.errors})
+            
 class SynchronisationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
