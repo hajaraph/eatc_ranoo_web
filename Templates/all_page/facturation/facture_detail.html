@@ -120,28 +120,15 @@
                             </td>
                             <td class="text-right">{{ montant.total_conso_ttc }} Ar</td>
                         </tr>
+                        {% for taxe, montant_taxe in taxes_montants %}
                         <tr class="border-bottom">
-                            <td class="text-left">Taxe Communal</td>
-                            <td class="text-right">{{ montant.montant_ht.tarif.taxe_co }} Ar</td>
-                            <td class="text-right">{{ montant.montant_ht.total_taxe_co_ht }} Ar</td>
+                            <td class="text-left">{{ taxe.nom_taxe }}</td>
+                            <td class="text-right">{{ montant_taxe }} Ar</td>
+                            <td class="text-right">{{ montant_taxe }} Ar</td>
                             <td class="text-right"></td>
-                            <td class="text-right">{{ montant.montant_ht.total_taxe_co_ht}} Ar</td>
-                        </tr>
-                        <tr class="border-bottom">
-                            <td class="text-left">Redevance Branchement Social</td>
-                            <td class="text-right">{{ montant.montant_ht.tarif.redevance_bs }} Ar</td>
-                            <td class="text-right">{{ montant.montant_ht.total_redevance_bs_ht }} Ar</td>
                             <td class="text-right"></td>
-                            <td class="text-right">{{ montant.montant_ht.total_redevance_bs_ht }} Ar</td>
                         </tr>
-                        <tr class="border-bottom">
-                            <td class="text-left">Redevance Fond de Renouvellement</td>
-                            <td class="text-right">{{ montant.montant_ht.tarif.redevance_fr }} Ar</td>
-                            <td class="text-right">{{ montant.montant_ht.total_redevance_fr_ht }} Ar</td>
-                            <td class="text-right"></td>
-                            <td class="text-right">{{ montant.montant_ht.total_redevance_fr_ht }} Ar</td>
-                        </tr>
-
+                        {% endfor %}
                         <tr class="border-bottom">
                             <td>Avoir</td>
                             <td></td>
