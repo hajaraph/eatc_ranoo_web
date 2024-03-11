@@ -346,7 +346,7 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
     utilisateur_web = request.session.get('id_utilisateur')
     fact_paiement = Facture.objects.get(relevecompteur_id=id_releve)
     net_paye = fact_paiement.montant_total_ttc - montant_payer
-    num_contrat = fact_paiement.num_contrat
+    num_contrat = fact_paiement.num_contrat_id
 
     if net_paye == 0:
         fact_paiement.statut = True
@@ -354,7 +354,8 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
             montant_payer=montant_payer,
             facture_id=fact_paiement.pk
         )
-    elif fact_paiement.montant_total_ttc < montant_payer:
+
+    elif net_paye < 0:
         net_paye = montant_payer - fact_paiement.montant_total_ttc
         fact_paiement.statut = True
         Paiement.objects.create(
@@ -374,6 +375,7 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
                 utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob,
                 num_contrat=num_contrat
             )
+
     else:
         restant = Restant.objects.filter(num_contrat=num_contrat)
         paiements = Paiement.objects.filter(facture_id=fact_paiement.pk)
@@ -411,14 +413,14 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
                 Avoir.objects.create(
                     montant_avoir=round(avoir, 2),
                     utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob,
-                    num_contrat=num_contrat
+                    num_contrat_id=num_contrat
                 )
                 restant_exist.delete()
             paiement_restant.save()
         else:
             Restant.objects.create(
                 restant=round(net_paye, 2),
-                num_contrat=num_contrat
+                num_contrat_id=num_contrat
             )
             Paiement.objects.create(
                 montant_payer=round(montant_payer, 2),
