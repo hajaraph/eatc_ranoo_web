@@ -14,7 +14,7 @@ from django.shortcuts import render
 from Clients.models import Contrat
 from Clients.views import generate_pdf
 from Compteurs.models import ReleveCompteur
-from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC
+from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
 from Login.views import authentification_requis
 
 
@@ -73,9 +73,12 @@ def facture_etat_detail(request, num_facture):
         num_contrat__num_compteur_id=factures.num_contrat.num_compteur_id).latest('date_facture')
     paiement = Paiement.objects.filter(facture__num_facture=num_facture)
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
-    nb_jour_echeance_fct = Tarif.objects.get(cp_commune_id=factures.num_contrat.cp_commune_id).nb_jour_echeance_fct
+    tarif = Tarif.objects.get(cp_commune_id=factures.num_contrat.cp_commune_id)
+    taxes = tarif.taxes.all()
+    montant_taxes = calcule_montant_taxe(tarif, factures.relevecompteur.conso)
+    taxes_montants = list(zip(taxes, montant_taxes))
 
-    date_echeance = factures.relevecompteur.date_releve + timedelta(days=nb_jour_echeance_fct)
+    date_echeance = factures.relevecompteur.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
     if paiement.exists():
         paiement = Paiement.objects.get(facture__num_facture=num_facture)
 
@@ -87,6 +90,7 @@ def facture_etat_detail(request, num_facture):
         'paiement': paiement,
         'montant': montant,
         'fact': fact_dernier,
+        'taxes_montants': taxes_montants,
         'date_echeance': date_echeance
     }
     return render(request, 'all_page/facturation/facturation.html', context)
@@ -172,12 +176,9 @@ def facture_avoir(request):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
-def montantht(total_conso_ht, total_taxe_co_ht, total_redevance_bs_ht, total_redevance_fr_ht, tarif, factures):
+def montantht(total_conso_ht, tarif, factures):
     return MontantHT.objects.create(
         total_conso_ht=round(total_conso_ht, 2),
-        total_taxe_co_ht=round(total_taxe_co_ht, 2),
-        total_redevance_bs_ht=round(total_redevance_bs_ht, 2),
-        total_redevance_fr_ht=round(total_redevance_fr_ht, 2),
         tarif_id=tarif,
         facture=factures,
     )
@@ -192,12 +193,16 @@ def montantttc(total_conso_ttc, montant_ht):
 
 def cree_montant_objet(tarif, consommation, factures):
     total_conso_ht = tarif.prix_m3 * consommation
-    total_taxe_co_ht = tarif.taxe_co * consommation
-    total_redevance_bs_ht = tarif.redevance_bs * consommation
-    total_redevance_fr_ht = tarif.redevance_fr * consommation
-    montant_ht = montantht(total_conso_ht, total_taxe_co_ht, total_redevance_bs_ht,
-                           total_redevance_fr_ht, tarif.pk, factures)
-    montantttc(total_conso_ht, montant_ht)
+    montant_taxe = sum(calcule_montant_taxe(tarif, consommation))
+    montant_ht = montantht(total_conso_ht, tarif.pk, factures)
+    montantttc(total_conso_ht + montant_taxe, montant_ht)
+
+
+def calcule_montant_taxe(tarif, consommation):
+    montant_ht = tarif.prix_m3 * consommation
+    taxes = Taxe.objects.filter(tarif=tarif)
+    montants_taxes = [montant_ht * (taxe.taux_taxe / 100) for taxe in taxes]
+    return montants_taxes
 
 
 def facture_creation(date_facture, num_compteur, releve):
@@ -225,12 +230,9 @@ def facture_creation(date_facture, num_compteur, releve):
             total_conso_ht = tarif.prix_m3 * consommation
             total_conso_ttc = (total_conso_ht * tarif.tva) / 100
             total_conso_ttc += total_conso_ht
-            total_taxe_co_ht = tarif.taxe_co * consommation
-            total_redevance_bs_ht = tarif.redevance_bs * consommation
-            total_redevance_fr_ht = tarif.redevance_fr * consommation
-            montant_ht = montantht(total_conso_ht, total_taxe_co_ht, total_redevance_bs_ht,
-                                   total_redevance_fr_ht, tarif.pk, factures)
-            montantttc(total_conso_ttc, montant_ht)
+            montant_ht = montantht(total_conso_ht, tarif.pk, factures)
+            taxe = sum(calcule_montant_taxe(tarif, consommation))
+            montantttc(total_conso_ttc + taxe, montant_ht)
 
         else:
             cree_montant_objet(tarif, consommation, factures)
@@ -240,12 +242,7 @@ def facture_creation(date_facture, num_compteur, releve):
     restant = Restant.objects.filter(num_contrat=num_contrat)
     montant = MontantTTC.objects.get(montant_ht__facture_id=factures.pk)
 
-    montant_total_ttc = (
-        montant.montant_ht.total_taxe_co_ht +
-        montant.total_conso_ttc +
-        montant.montant_ht.total_redevance_bs_ht +
-        montant.montant_ht.total_redevance_fr_ht
-    )
+    montant_total_ttc = montant.total_conso_ttc
     # Pour verifie si le contrat a un avoir
     if avoir.exists():
         avoir = Avoir.objects.get(num_contrat=num_contrat)
@@ -275,20 +272,16 @@ def facture_creation(date_facture, num_compteur, releve):
     factures.save()
 
 
-def calculer_montants(tarif, consommation, factures, tva=False):
-    total_conso_ht = tarif.prix_m3 * consommation
-    total_taxe_co_ht = tarif.taxe_co * consommation
-    total_redevance_bs_ht = tarif.redevance_bs * consommation
-    total_redevance_fr_ht = tarif.redevance_fr * consommation
-
-    if tva:
-        total_conso_ht = (total_conso_ht * tarif.tva) / 100 + total_conso_ht
-
-    montant_ht = montantht(total_conso_ht, total_taxe_co_ht, total_redevance_bs_ht,
-                           total_redevance_fr_ht, tarif.pk, factures)
-    montantttc(total_conso_ht, montant_ht)
-
-    return montant_ht
+# def calculer_montants(tarif, consommation, factures, tva=False):
+#     total_conso_ht = tarif.prix_m3 * consommation
+#
+#     if tva:
+#         total_conso_ht = (total_conso_ht * tarif.tva) / 100 + total_conso_ht
+#
+#     montant_ht = montantht(total_conso_ht, tarif.pk, factures)
+#     montantttc(total_conso_ht, montant_ht)
+#
+#     return montant_ht
 
 
 @authentification_requis
@@ -300,12 +293,13 @@ def facture_genere_pdf(request, pk):
     dernier_releve = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).last()
 
     # Recupère le 2ème dernier date de relevé
-    releve_avant = ReleveCompteur.objects.filter(
-        num_compteur_id=num_compteur
-    ).order_by('-date_releve')
+    releve_avant = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).order_by('-date_releve')
 
-    nb_jour_echeance_fct = montant.tarif.nb_jour_echeance_fct
-    date_paiment = dernier_releve.date_releve + timedelta(days=nb_jour_echeance_fct)
+    tarif = montant.tarif
+    taxes = tarif.taxes.all()
+    montant_taxes = calcule_montant_taxe(tarif, factures.relevecompteur.conso)
+    taxes_montants = list(zip(taxes, montant_taxes))
+    date_paiment = dernier_releve.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
 
     if len(releve_avant) >= 2:
         releve_avant = releve_avant[1]
@@ -313,12 +307,7 @@ def facture_genere_pdf(request, pk):
         releve_avant = ReleveCompteur.objects.first()
 
     typeclient = factures.num_contrat.client.type_client.pk
-    montant_ht_total = (
-        montant.total_conso_ht +
-        montant.total_taxe_co_ht +
-        montant.total_redevance_fr_ht +
-        montant.total_redevance_bs_ht
-    )
+
     if typeclient == 2:
         if dernier_releve.conso >= 10:
             tva_montant = (montant.total_conso_ht * montant.tarif.tva) / 100
@@ -344,19 +333,17 @@ def facture_genere_pdf(request, pk):
         'lettre': lettre,
         'dernier_releve': dernier_releve,
         'releve_avant': releve_avant,
-        'montant_ht_total': round(montant_ht_total, 2),
+        'montant_ht_total': round(montant.total_conso_ht, 2),
         'montant_tva': round(tva_montant, 2),
+        'taxes_montants': taxes_montants,
         'date_paiment': date_paiment,
         'qr_code': qr_code
     }
     return generate_pdf(request, context, template_path, filename_prefix)
 
 
-@authentification_requis
-def facture_paiement(request, *args, **kwargs):
-    id_facture = request.POST['id_facture']
-    montant_payer = float(request.POST['paiement'])
-    fact_paiement = Facture.objects.get(pk=id_facture)
+def paiement(request, relevecompteur_id, montant_payer):
+    fact_paiement = Facture.objects.get(relevecompteur_id=relevecompteur_id)
     net_paye = fact_paiement.montant_total_ttc - montant_payer
     num_contrat = fact_paiement.num_contrat
 
@@ -437,6 +424,13 @@ def facture_paiement(request, *args, **kwargs):
                 facture_id=fact_paiement.pk
             )
     fact_paiement.save()
+
+
+@authentification_requis
+def facture_paiement(request, *args, **kwargs):
+    id_releve = request.POST['id_releve']
+    montant_payer = float(request.POST['paiement'])
+    paiement(request, id_releve, montant_payer)
     messages.success(request, 'Facture payé avec succès !')
     return JsonResponse({'message': 'Paiement effectué avec succès'})
 
