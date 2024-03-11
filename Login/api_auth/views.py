@@ -40,6 +40,7 @@ def authentification(request):
                                 'nom_utilisateur': utilisateur.nom_utilisateur,
                                 'prenom_utilisateur': utilisateur.prenom_utilisateur,
                                 'num_utilisateur': utilisateur.num_utilisateur,
+                                'password': utilisateur.password,
                                 'role': utilisateur.role.role,
                                 'region': utilisateur.cp_commune.region.region,
                                 'commune': utilisateur.cp_commune.commune,

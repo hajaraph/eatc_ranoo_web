@@ -1,5 +1,6 @@
 from django.db.models import Count
 from django.db.models import Q
+import re
 
 from django.http import JsonResponse 
 from rest_framework.response import Response
@@ -70,7 +71,6 @@ def accueil(request):
             'nombre_relever_effectuer': nombre_relever_effectuer,
         }
     )
-
 def relever_client(request):
     compteur_id = request.GET.get('num_compteur')
 
@@ -80,7 +80,7 @@ def relever_client(request):
 
         # Récupérer les informations sur le compteur
         compteur_info = {
-            'id': compteur.num_compteur,
+            'id': int(compteur.num_compteur),
             'marque': compteur.marque_compteur,
             'modele': compteur.modele_compteur,
             # Ajouter d'autres informations sur le compteur au besoin
@@ -89,9 +89,13 @@ def relever_client(request):
         # Récupérer le contrat associé au compteur
         contrat = get_object_or_404(Contrat, num_compteur=compteur)
 
+        # Extraire le numéro du contrat
+        contrat_nums = contrat.num_contrat
+        num_contrat = re.search(r'\d+', contrat_nums).group()
+
         # Récupérer les informations sur le contrat
         contrat_info = {
-            'id': contrat.num_contrat,  # Utiliser num_contrat au lieu de id_contrat
+            'id': int(num_contrat),  # Utiliser l'ID en tant qu'entier
             'numero_contrat': contrat.num_contrat,
             'date_debut': contrat.date_debut,
             'date_fin': contrat.date_fin,
@@ -121,7 +125,10 @@ def relever_client(request):
         releves_list = []
         for releve in releves_data:
             releves_list.append({
-                'id_relelve': releve.pk,
+                'id_releve': releve.pk,
+                'compteur_id': int(compteur.num_compteur),
+                'contrat_id': int(num_contrat),
+                'client_id': int(client.id_client),
                 'date_releve': releve.date_releve,
                 'volume': releve.volume,
                 'conso': releve.conso,
@@ -135,12 +142,10 @@ def relever_client(request):
             'releves': releves_list
         })
     
-
     except Compteur.DoesNotExist:
         return JsonResponse({'error': 'Compteur non trouvé'}, status=404)
     except Contrat.DoesNotExist:
         return JsonResponse({'error': 'Contrat non trouvé'}, status=404)
-
 class Missions(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
