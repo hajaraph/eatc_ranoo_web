@@ -183,19 +183,19 @@ class Missions(APIView):
         liste_contrats_info = []
 
         for contrat in contrats_commune:
-            for releve in contrat.num_compteur.relevecompteurs.all():
-                contrat_info = {
-                    'id': releve.pk,
-                    'nom_client': contrat.client.nom_client,
-                    'prenom_client': contrat.client.prenom_client,
-                    'adresse_client': contrat.client.adresse_client,
-                    'num_compteur': contrat.num_compteur_id,
-                    'conso_dernier_releve': contrat.conso_dernier_releve,
-                    'volume_dernier_releve': contrat.dernier_volume,
-                    'date_releve': releve.date_releve,
-                    'statut': contrat.statut
-                }
-                liste_contrats_info.append(contrat_info)
+            dernier_releve = contrat.num_compteur.relevecompteurs.last()
+            contrat_info = {
+                'id': dernier_releve.pk,  # Utilisez l'ID du dernier relevé de compteur
+                'nom_client': contrat.client.nom_client,
+                'prenom_client': contrat.client.prenom_client,
+                'adresse_client': contrat.client.adresse_client,
+                'num_compteur': contrat.num_compteur_id,
+                'conso_dernier_releve': contrat.conso_dernier_releve,
+                'volume_dernier_releve': dernier_releve.volume,
+                'date_releve': dernier_releve.date_releve,
+                'statut': contrat.statut
+            }
+            liste_contrats_info.append(contrat_info)
 
         return liste_contrats_info
 
