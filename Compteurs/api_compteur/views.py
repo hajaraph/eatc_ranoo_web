@@ -178,6 +178,7 @@ class Missions(APIView):
 
         liste_contrats_info = [
             {
+                'id': int(contrat.num_compteur_id),
                 'nom_client': contrat.client.nom_client,
                 'prenom_client': contrat.client.prenom_client,
                 'adresse_client': contrat.client.adresse_client,
