@@ -155,17 +155,12 @@ class Missions(APIView):
         # Calcul de la fin du mois actuel en utilisant pandas
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
 
-        derniers_volumes = ReleveCompteur.objects.filter(
-            num_compteur=OuterRef('num_compteur')
-        ).order_by('-date_releve').values('volume')[:1]
-
         contrats_commune = (
             Contrat.objects
             .filter(cp_commune_id=cp_commune)
             .select_related('client', 'num_compteur')
             .annotate(
                 conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
-                dernier_volume=Subquery(derniers_volumes)
             )
         )
 
@@ -183,7 +178,7 @@ class Missions(APIView):
         liste_contrats_info = []
 
         for contrat in contrats_commune:
-            dernier_releve = contrat.num_compteur.relevecompteurs.last()
+            dernier_releve = contrat.num_compteur.relevecompteurs.order_by('date_releve').last()
             contrat_info = {
                 'id': dernier_releve.pk,  # Utilisez l'ID du dernier relevé de compteur
                 'nom_client': contrat.client.nom_client,
