@@ -18,7 +18,7 @@ class Tarif(models.Model):
 class Taxe(models.Model):
     id_taxe = models.BigAutoField(primary_key=True)
     nom_taxe = models.CharField(max_length=100, default='Taxe', null=False, blank=False)
-    taux_taxe = models.FloatField(max_length=100, null=False, blank=False)
+    taux_taxe = models.FloatField(null=False, blank=False)
     tarif = models.ForeignKey(Tarif, on_delete=models.CASCADE, related_name='taxes', blank=False)
 
 

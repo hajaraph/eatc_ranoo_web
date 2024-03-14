@@ -82,11 +82,18 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
         'USER': 'postgres',
-        'PASSWORD': 'postgres',
+        'PASSWORD': '12121212',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {

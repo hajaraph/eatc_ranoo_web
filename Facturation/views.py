@@ -71,7 +71,7 @@ def facture_etat_detail(request, num_facture):
     factures = Facture.objects.get(num_facture=num_facture)
     fact_dernier = Facture.objects.filter(
         num_contrat__num_compteur_id=factures.num_contrat.num_compteur_id).latest('date_facture')
-    paiement = Paiement.objects.filter(facture__num_facture=num_facture)
+    paiements = Paiement.objects.filter(facture__num_facture=num_facture)
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
     tarif = Tarif.objects.get(cp_commune_id=factures.num_contrat.cp_commune_id)
     taxes = tarif.taxes.all()
@@ -79,15 +79,15 @@ def facture_etat_detail(request, num_facture):
     taxes_montants = list(zip(taxes, montant_taxes))
 
     date_echeance = factures.relevecompteur.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
-    if paiement.exists():
-        paiement = Paiement.objects.get(facture__num_facture=num_facture)
+    if paiements.exists():
+        paiements = Paiement.objects.get(facture__num_facture=num_facture)
 
     context = {
         'title_etat_detail': title,
         'active_etat': active,
         'font_facture': font,
         'facture': factures,
-        'paiement': paiement,
+        'paiement': paiements,
         'montant': montant,
         'fact': fact_dernier,
         'taxes_montants': taxes_montants,
@@ -211,7 +211,7 @@ def facture_creation(date_facture, num_compteur, releve):
     consommation = releve.conso
 
     date_facture1 = date_facture.strftime("%Y%m%d")
-    num_facture = f"FACT{date_facture1}{contrat.client.pk}"
+    num_facture = f"FACT{date_facture1}{num_compteur}"
     factures = Facture.objects.create(
         num_facture=num_facture,
         date_facture=date_facture,
@@ -342,10 +342,11 @@ def facture_genere_pdf(request, pk):
     return generate_pdf(request, context, template_path, filename_prefix)
 
 
-def paiement(request, relevecompteur_id, montant_payer):
-    fact_paiement = Facture.objects.get(relevecompteur_id=relevecompteur_id)
+def paiement(request, id_releve, montant_payer, utilisateur_mob):
+    utilisateur_web = request.session.get('id_utilisateur')
+    fact_paiement = Facture.objects.get(relevecompteur_id=id_releve)
     net_paye = fact_paiement.montant_total_ttc - montant_payer
-    num_contrat = fact_paiement.num_contrat
+    num_contrat = fact_paiement.num_contrat_id
 
     if net_paye == 0:
         fact_paiement.statut = True
@@ -353,7 +354,8 @@ def paiement(request, relevecompteur_id, montant_payer):
             montant_payer=montant_payer,
             facture_id=fact_paiement.pk
         )
-    elif fact_paiement.montant_total_ttc < montant_payer:
+
+    elif net_paye < 0:
         net_paye = montant_payer - fact_paiement.montant_total_ttc
         fact_paiement.statut = True
         Paiement.objects.create(
@@ -365,14 +367,15 @@ def paiement(request, relevecompteur_id, montant_payer):
         if avoir.exists():
             avoir = Avoir.objects.get(num_contrat=num_contrat)
             avoir.montant_avoir += round(net_paye, 2)
-            avoir.utilisateur_id = request.session.get('id_utilisateur'),
+            avoir.utilisateur_id = utilisateur_web if utilisateur_web else utilisateur_mob,
             avoir.save()
         else:
             Avoir.objects.create(
                 montant_avoir=round(net_paye, 2),
-                utilisateur_id=request.session.get('id_utilisateur'),
+                utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob,
                 num_contrat=num_contrat
             )
+
     else:
         restant = Restant.objects.filter(num_contrat=num_contrat)
         paiements = Paiement.objects.filter(facture_id=fact_paiement.pk)
@@ -409,15 +412,15 @@ def paiement(request, relevecompteur_id, montant_payer):
                 avoir = montant_payer - restant_exist.restant
                 Avoir.objects.create(
                     montant_avoir=round(avoir, 2),
-                    utilisateur_id=request.session.get('id_utilisateur'),
-                    num_contrat=num_contrat
+                    utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob,
+                    num_contrat_id=num_contrat
                 )
                 restant_exist.delete()
             paiement_restant.save()
         else:
             Restant.objects.create(
                 restant=round(net_paye, 2),
-                num_contrat=num_contrat
+                num_contrat_id=num_contrat
             )
             Paiement.objects.create(
                 montant_payer=round(montant_payer, 2),
@@ -430,7 +433,7 @@ def paiement(request, relevecompteur_id, montant_payer):
 def facture_paiement(request, *args, **kwargs):
     id_releve = request.POST['id_releve']
     montant_payer = float(request.POST['paiement'])
-    paiement(request, id_releve, montant_payer)
+    paiement(request, id_releve, montant_payer, None)
     messages.success(request, 'Facture payé avec succès !')
     return JsonResponse({'message': 'Paiement effectué avec succès'})
 
