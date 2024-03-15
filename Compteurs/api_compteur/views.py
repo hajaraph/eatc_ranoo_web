@@ -1,8 +1,14 @@
+import re
+import pdb
+import logging
+import json
+import pandas as pd
 from django.db.models import Count
 from django.db.models import Q
-import re
+from django.core.exceptions import ObjectDoesNotExist
 
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -13,7 +19,7 @@ from django.shortcuts import get_object_or_404
 from Clients.models import Contrat
 from Login.models import Utilisateur
 
-from .serializer import MissionSerializer, PaiementSerializer
+from .serializer import MissionSerializer, MissionReceivePost,PaiementSerializer
 
 from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
@@ -23,8 +29,6 @@ from Facturation.views import facture_creation, paiement, calcule_montant_taxe
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
 from pandas.tseries.offsets import MonthEnd
-import pandas as pd
-
 from Parametre.views import enregistre_historique
 
 
@@ -209,6 +213,11 @@ class Missions(APIView):
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
             image_compteur = request.FILES.get('image_compteur')
+
+            
+            if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
+                        return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
+                                            status=status.HTTP_400_BAD_REQUEST)
 
             dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
 
