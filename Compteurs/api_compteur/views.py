@@ -213,7 +213,6 @@ class Missions(APIView):
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
             image_compteur = request.FILES.get('image_compteur')
-
             
             if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
                         return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
