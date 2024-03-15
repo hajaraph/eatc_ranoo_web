@@ -1,14 +1,9 @@
 import re
-import pdb
-import logging
-import json
 import pandas as pd
 from django.db.models import Count, OuterRef, Subquery
 from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist
 
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -19,7 +14,7 @@ from django.shortcuts import get_object_or_404
 from Clients.models import Contrat
 from Login.models import Utilisateur
 
-from .serializer import MissionSerializer, MissionReceivePost, PaiementSerializer
+from .serializer import MissionSerializer, PaiementSerializer, FactureSerializer
 
 from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
@@ -185,20 +180,22 @@ class Missions(APIView):
             else:
                 contrat.statut = 1
 
-        liste_contrats_info = [
-            {
-                'id': int(contrat.num_compteur_id),
-                'nom_client': contrat.client.nom_client,
-                'prenom_client': contrat.client.prenom_client,
-                'adresse_client': contrat.client.adresse_client,
-                'num_compteur': int(contrat.num_compteur_id),
-                'conso_dernier_releve': contrat.conso_dernier_releve,
-                'volume_dernier_releve': contrat.dernier_volume,
-                'date_releve': contrat.date_releve,
-                'statut': contrat.statut
-            }
-            for contrat in contrats_commune
-        ]
+        liste_contrats_info = []
+
+        for contrat in contrats_commune:
+            for releve in contrat.num_compteur.relevecompteurs.all():
+                contrat_info = {
+                    'id': releve.pk,
+                    'nom_client': contrat.client.nom_client,
+                    'prenom_client': contrat.client.prenom_client,
+                    'adresse_client': contrat.client.adresse_client,
+                    'num_compteur': int(contrat.num_compteur_id),
+                    'conso_dernier_releve': contrat.conso_dernier_releve,
+                    'volume_dernier_releve': contrat.dernier_volume,
+                    'date_releve': releve.date_releve,
+                    'statut': contrat.statut
+                }
+                liste_contrats_info.append(contrat_info)
 
         return liste_contrats_info
 
@@ -290,15 +287,17 @@ class FactureDetail(APIView):
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
         utilisateur_id = request.user.id_utilisateur
-        serializer = PaiementSerializer(data=request.data)
+        serializerpaiement = PaiementSerializer(data=request.data)
+        serializerfacture = FactureSerializer(data=request.data)
 
-        if serializer.is_valid():
-            id_releve = serializer.validated_data.get('relevecompteur_id')
-            montant_payer = float(serializer.validated_data.get('paiement'))
+        if serializerpaiement.is_valid():
+            id_releve = serializerpaiement.validated_data.get('relevecompteur_id')
+            montant_payer = float(serializerpaiement.validated_data.get('paiement'))
             paiement(request, id_releve, montant_payer, utilisateur_id)
-            return JsonResponse({'message': 'Paiement effectué avec succès'})
+
+            return JsonResponse({'message': 'Paiement effectué avec succès !'})
         else:
-            return JsonResponse({'message': serializer.errors})
+            return JsonResponse({'message': serializerpaiement.errors})
 
 
 def get_missions_details(toutes_missions):
