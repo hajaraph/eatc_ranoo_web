@@ -3,7 +3,7 @@ import pdb
 import logging
 import json
 import pandas as pd
-from django.db.models import Count
+from django.db.models import Count, OuterRef, Subquery
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -19,7 +19,7 @@ from django.shortcuts import get_object_or_404
 from Clients.models import Contrat
 from Login.models import Utilisateur
 
-from .serializer import MissionSerializer, MissionReceivePost,PaiementSerializer
+from .serializer import MissionSerializer, MissionReceivePost, PaiementSerializer
 
 from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
@@ -160,13 +160,17 @@ class Missions(APIView):
         # Calcul de la fin du mois actuel en utilisant pandas
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
 
+        derniers_volumes = ReleveCompteur.objects.filter(
+            num_compteur=OuterRef('num_compteur')
+        ).order_by('-date_releve').values('volume')[:1]
+
         contrats_commune = (
             Contrat.objects
             .filter(cp_commune_id=cp_commune)
             .select_related('client', 'num_compteur')
             .annotate(
                 conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
-                volume_dernier_releve=Sum('num_compteur__relevecompteurs__volume')
+                dernier_volume=Subquery(derniers_volumes)
             )
         )
 
@@ -187,9 +191,9 @@ class Missions(APIView):
                 'nom_client': contrat.client.nom_client,
                 'prenom_client': contrat.client.prenom_client,
                 'adresse_client': contrat.client.adresse_client,
-                'num_compteur': contrat.num_compteur_id,
+                'num_compteur': int(contrat.num_compteur_id),
                 'conso_dernier_releve': contrat.conso_dernier_releve,
-                'volume_dernier_releve': contrat.volume_dernier_releve,
+                'volume_dernier_releve': contrat.dernier_volume,
                 'date_releve': contrat.date_releve,
                 'statut': contrat.statut
             }
@@ -213,10 +217,10 @@ class Missions(APIView):
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
             image_compteur = request.FILES.get('image_compteur')
-            
+
             if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
-                        return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
-                                            status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
             dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
 
