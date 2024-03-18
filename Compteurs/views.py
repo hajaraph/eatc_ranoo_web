@@ -20,12 +20,22 @@ def compteur_liste(request):
     header = 'Liste Compteurs'
     font = 'custom-font'
     # Pour recuperer tout les compteur et affciher leur dernier relever
-    derniers_releves = ReleveCompteur.objects.filter(
-        num_compteur_id=OuterRef('pk')
-    ).order_by('-date_releve')
-    compteurs = Compteur.objects.annotate(
-        dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
-    ).order_by('pk')
+    if request.session.get('role_utilisateur') != 'Releveur':
+        derniers_releves = ReleveCompteur.objects.filter(
+            num_compteur_id=OuterRef('pk')
+        ).order_by('-date_releve')
+        compteurs = Compteur.objects.annotate(
+            dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
+        ).order_by('pk')
+
+    else:
+        derniers_releves = ReleveCompteur.objects.filter(
+            num_compteur_id=OuterRef('pk')
+        ).order_by('-date_releve')
+
+        compteurs = Compteur.objects.annotate(
+            dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
+        ).order_by('pk')
 
     context = {
         'title_liste': title,
