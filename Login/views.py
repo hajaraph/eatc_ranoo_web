@@ -38,10 +38,14 @@ def role_requis(*role):
 
 
 class Authentification(View):
+
     @staticmethod
     def get(request):
         if request.session.get('num_utilisateur'):
-            return redirect('tableau_bord')
+            if request.session.get('role_utilisateur') == 'Releveur':
+                return redirect('compteur_list')
+            else:
+                return redirect('tableau_bord')
         else:
             return render(request, 'login/login_page.html')
 
@@ -55,29 +59,30 @@ class Authentification(View):
             utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
             if check_password(motpasse_utilisateur, utilisateur.password):
                 if utilisateur.statut:
-                    if utilisateur.role.role == 'Releveur':
-                        messages.error(request, f"Vous n'avez pas l'autorisation de vous connecté ici !")
-                        return redirect('authentification')
+                    initial = Initial.objects.get(utilisateur_cree=utilisateur.pk)
+                    request.session['id_utilisateur'] = utilisateur.id_utilisateur
+                    request.session['nom_utilisateur'] = utilisateur.nom_utilisateur
+                    request.session['prenom_utilisateur'] = utilisateur.prenom_utilisateur
+                    request.session['num_utilisateur'] = utilisateur.num_utilisateur
+                    request.session['role_utilisateur'] = utilisateur.role.role
+                    request.session['photo_utilisateur'] = utilisateur.photo_utilisateur.url \
+                        if utilisateur.photo_utilisateur else None
+                    request.session['initial_utilisateur'] = (initial.utilisateur_createur.nom_utilisateur +
+                                                              ' ' +
+                                                              initial.utilisateur_createur.prenom_utilisateur)
+                    if sauvegarder:
+                        # La session expirera lorsque l'utilisateur fermera son navigateur
+                        request.session.set_expiry(None)
                     else:
-                        initial = Initial.objects.get(utilisateur_cree=utilisateur.pk)
-                        request.session['id_utilisateur'] = utilisateur.id_utilisateur
-                        request.session['nom_utilisateur'] = utilisateur.nom_utilisateur
-                        request.session['prenom_utilisateur'] = utilisateur.prenom_utilisateur
-                        request.session['num_utilisateur'] = utilisateur.num_utilisateur
-                        request.session['role_utilisateur'] = utilisateur.role.role
-                        request.session['photo_utilisateur'] = utilisateur.photo_utilisateur.url \
-                            if utilisateur.photo_utilisateur else None
-                        request.session['initial_utilisateur'] = (initial.utilisateur_createur.nom_utilisateur +
-                                                                  ' ' +
-                                                                  initial.utilisateur_createur.prenom_utilisateur)
-                        if sauvegarder:
-                            # La session expirera lorsque l'utilisateur fermera son navigateur
-                            request.session.set_expiry(None)
-                        else:
-                            # La session expirera immédiatement
-                            request.session.set_expiry(0)
+                        # La session expirera immédiatement
+                        request.session.set_expiry(0)
 
-                    return redirect('tableau_bord')
+                    if utilisateur.role.role == 'Releveur':
+                        request.session['cp_commune'] = utilisateur.cp_commune_id
+                        return redirect('compteur_list')
+                    else:
+                        return redirect('tableau_bord')
+
                 else:
                     messages.warning(request, f"Votre compte a été desactivé,"
                                               f" Veuillez contacter l'Administrateur !")
