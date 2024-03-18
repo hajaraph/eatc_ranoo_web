@@ -20,7 +20,7 @@ def compteur_liste(request):
     header = 'Liste Compteurs'
     font = 'custom-font'
     # Pour recuperer tout les compteur et affciher leur dernier relever
-    if request.session.get('role_utilisateur') is not 'Releveur':
+    if request.session.get('role_utilisateur') != 'Releveur':
         derniers_releves = ReleveCompteur.objects.filter(
             num_compteur_id=OuterRef('pk')
         ).order_by('-date_releve')

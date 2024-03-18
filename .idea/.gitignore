@@ -13,9 +13,12 @@ __pycache__
 Clients/__pycache__
 Rel_Compteur/__pycache__
 Compteurs/__pycache__
+Compteurs/api_compteur/__pycache__
 Facturation/__pycache__
 Login/__pycache__
+Login/api_auth/__pycache__
 Main_Courante/__pycache__
+Main_Courante/api_anomalie/__pycache__
 Parametre/__pycache__
 Ranoo_config/__pycache__
 Tableau_Bord/__pycache__
