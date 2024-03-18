@@ -75,7 +75,7 @@ def facture_etat_detail(request, num_facture):
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
     tarif = Tarif.objects.get(cp_commune_id=factures.num_contrat.cp_commune_id)
     taxes = tarif.taxes.all()
-    montant_taxes = calcule_montant_taxe(tarif, factures.relevecompteur.conso)
+    montant_taxes = Calcule.montant_taxe(tarif, factures.relevecompteur.conso)
     taxes_montants = list(zip(taxes, montant_taxes))
 
     date_echeance = factures.relevecompteur.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
@@ -176,33 +176,36 @@ def facture_avoir(request):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
-def montantht(total_conso_ht, tarif, factures):
-    return MontantHT.objects.create(
-        total_conso_ht=round(total_conso_ht, 2),
-        tarif_id=tarif,
-        facture=factures,
-    )
+class Calcule:
 
+    @staticmethod
+    def montantht(total_conso_ht, tarif, factures):
+        return MontantHT.objects.create(
+            total_conso_ht=round(total_conso_ht, 2),
+            tarif_id=tarif,
+            facture=factures,
+        )
 
-def montantttc(total_conso_ttc, montant_ht):
-    return MontantTTC.objects.create(
-        total_conso_ttc=total_conso_ttc,
-        montant_ht=montant_ht
-    )
+    @staticmethod
+    def montantttc(total_conso_ttc, montant_ht):
+        return MontantTTC.objects.create(
+            total_conso_ttc=total_conso_ttc,
+            montant_ht=montant_ht
+        )
 
+    @staticmethod
+    def cree_montant(tarif, consommation, factures):
+        total_conso_ht = tarif.prix_m3 * consommation
+        montant_taxe = sum(Calcule.montant_taxe(tarif, consommation))
+        montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
+        Calcule.montantttc(total_conso_ht + montant_taxe, montant_ht)
 
-def cree_montant_objet(tarif, consommation, factures):
-    total_conso_ht = tarif.prix_m3 * consommation
-    montant_taxe = sum(calcule_montant_taxe(tarif, consommation))
-    montant_ht = montantht(total_conso_ht, tarif.pk, factures)
-    montantttc(total_conso_ht + montant_taxe, montant_ht)
-
-
-def calcule_montant_taxe(tarif, consommation):
-    montant_ht = tarif.prix_m3 * consommation
-    taxes = Taxe.objects.filter(tarif=tarif)
-    montants_taxes = [montant_ht * (taxe.taux_taxe / 100) for taxe in taxes]
-    return montants_taxes
+    @staticmethod
+    def montant_taxe(tarif, consommation):
+        montant_ht = tarif.prix_m3 * consommation
+        taxes = Taxe.objects.filter(tarif=tarif)
+        montants_taxes = [montant_ht * (taxe.taux_taxe / 100) for taxe in taxes]
+        return montants_taxes
 
 
 def facture_creation(date_facture, num_compteur, releve):
@@ -223,19 +226,19 @@ def facture_creation(date_facture, num_compteur, releve):
     tarif = Tarif.objects.get(cp_commune_id=cp_commune)
 
     if typeclient == 1:
-        cree_montant_objet(tarif, consommation, factures)
+        Calcule.cree_montant(tarif, consommation, factures)
 
     elif typeclient == 2:
         if consommation >= 10:
             total_conso_ht = tarif.prix_m3 * consommation
             total_conso_ttc = (total_conso_ht * tarif.tva) / 100
             total_conso_ttc += total_conso_ht
-            montant_ht = montantht(total_conso_ht, tarif.pk, factures)
-            taxe = sum(calcule_montant_taxe(tarif, consommation))
-            montantttc(total_conso_ttc + taxe, montant_ht)
+            montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
+            taxe = sum(Calcule.montant_taxe(tarif, consommation))
+            Calcule.montantttc(total_conso_ttc + taxe, montant_ht)
 
         else:
-            cree_montant_objet(tarif, consommation, factures)
+            Calcule.cree_montant(tarif, consommation, factures)
 
     num_contrat = contrat.num_contrat
     avoir = Avoir.objects.filter(num_contrat=num_contrat)
@@ -297,7 +300,7 @@ def facture_genere_pdf(request, pk):
 
     tarif = montant.tarif
     taxes = tarif.taxes.all()
-    montant_taxes = calcule_montant_taxe(tarif, factures.relevecompteur.conso)
+    montant_taxes = Calcule.montant_taxe(tarif, factures.relevecompteur.conso)
     taxes_montants = list(zip(taxes, montant_taxes))
     date_paiment = dernier_releve.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
 

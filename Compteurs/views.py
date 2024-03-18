@@ -13,6 +13,7 @@ from Parametre.views import enregistre_historique, exporter_en_excel
 
 
 @authentification_requis
+@role_requis('Administrateur', 'Gestionnaire', 'Releveur', 'Autre')
 def compteur_liste(request):
     title = 'Compteurs | Liste'
     active = 'active'
