@@ -18,7 +18,7 @@ from Parametre.views import enregistre_historique, exporter_en_excel
 
 
 @authentification_requis
-@role_requis('Administrateur', 'Gestionnaire')
+@role_requis('Administrateur', 'Gestionnaire', 'Autre')
 def client_liste(request):
     title = 'Clients | Liste'
     active = 'active'

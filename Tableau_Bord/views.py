@@ -7,11 +7,12 @@ from django.utils import timezone
 from Clients.communes import Region, Commune
 from Clients.models import Contrat
 from Facturation.models import Paiement, Facture
-from Login.views import authentification_requis
+from Login.views import authentification_requis, role_requis
 from Main_Courante.models import StatutMC
 
 
 @authentification_requis
+@role_requis('Administratuer', 'Gestionnaire', 'Autre')
 def tableau_bord(request, *args, **kwargs):
     font = 'custom-font'
     region = request.GET.get('region')
@@ -19,7 +20,7 @@ def tableau_bord(request, *args, **kwargs):
     date_fin = request.GET.get('date_fin')
 
     date_actuelle = timezone.now()
-    annee_actuelle = timezone.now().year
+    annee_actuelle = date_actuelle.year
     regions = Region.objects.all()
 
     commune = Commune.objects.filter(contrat__num_compteur__relevecompteurs__date_releve__year=annee_actuelle)
