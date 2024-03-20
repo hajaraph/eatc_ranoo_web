@@ -123,7 +123,7 @@ def relever_client(request):
         releves_list = []
         for releve in releves_data:
             releves_list.append({
-                'id_releve': releve.pk,
+                'id_releve': releve.id_releve,
                 'compteur_id': int(compteur.num_compteur),
                 'contrat_id': int(num_contrat),
                 'client_id': int(client.id_client),
@@ -261,24 +261,29 @@ class FactureDetail(APIView):
             }
             for taxe, montant_taxe in zip(taxes, taxe_montant)
         ]
+        avoir_avant = releve.avoir_avant if releve.avoir_avant is not None else 0.0
+        avoir_utilise = releve.avoir_utilise if releve.avoir_utilise is not None else 0.0
+        restant_precedant = releve.restant_precedant if releve.restant_precedant is not None else 0.0
+        montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc is not None else 0.0
 
         facture = {
-            'relevecompteur_id': releve.relevecompteur_id,
+            'id': int(releve.id_facture),
+            'relevecompteur_id': int(releve.relevecompteur_id),
             'num_facture': releve.num_facture,
-            'num_compteur': releve.num_contrat.num_compteur_id,
+            'num_compteur': int(releve.num_contrat.num_compteur_id),
             'date_facture': releve.date_facture,
-            'total_conso_ht': montant_ht.total_conso_ht,
-            'tarif_m3': montant_ht.tarif.prix_m3,
-            'taxes': taxes,
-            'avoir_avant': releve.avoir_avant,
-            'avoir_utilise': releve.avoir_utilise,
-            'restant_precedant': releve.restant_precedant,
-            'montant_total_ttc': releve.montant_total_ttc,
+            'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
+            'tarif_m3': montant_ht.tarif.prix_m3 if montant_ht.tarif is not None and montant_ht.tarif.prix_m3 is not None else 0.0,
+
+            # 'taxes': taxes,  # Cette ligne est décommentée
+            'avoir_avant': avoir_avant,
+            'avoir_utilise': avoir_utilise,
+            'restant_precedant': restant_precedant,
+            'montant_total_ttc': montant_total_ttc,
             'statut': 'Payé' if releve.statut else 'Impayé',
         }
         return JsonResponse({'facture': facture})
 
-    @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
         utilisateur_id = request.user.id_utilisateur
