@@ -34,9 +34,13 @@ def accueil(request):
     non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
     realise = MainCourante.objects.filter(statuts__realise=True).count()
     en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
-    total_anomalie = non_traite + realise + en_cours
+    total_anomalie = non_traite + en_cours
 
-    nombre_total_facture = Facture.objects.filter(
+    nombre_total_facture_impayer = Facture.objects.filter(
+        relevecompteur__utilisateur__contrats__cp_commune_id=cp_commune_id,
+        statut=False
+    ).count()
+    nombre_total_facture_payer = Facture.objects.filter(
         relevecompteur__utilisateur__contrats__cp_commune_id=cp_commune_id,
         statut=True
     ).count()
@@ -73,7 +77,8 @@ def accueil(request):
             'totale_anomalie': total_anomalie,
             'nombre_total_compteur': nombre_total_compteur,
             'nombre_relever_effectuer': nombre_relever_effectuer,
-            'nombre_facture': nombre_total_facture
+            'nombre_total_facture_impayer': nombre_total_facture_impayer,
+            'nombre_total_facture_payer': nombre_total_facture_payer
         }
     )
 
