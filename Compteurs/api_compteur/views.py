@@ -419,13 +419,13 @@ class SynchronisationView(APIView):
                     'utilisateur': utilisateur
                 }
             )
-            contrats_commune = (Contrat.objects
-            .filter(cp_commune_id=commune_usrs)
-            .select_related('client', 'num_compteur')
-            .annotate(
+
+            contrats_commune = Contrat.objects.filter(cp_commune_id=commune_usrs).select_related(
+                'client', 'num_compteur'
+            ).annotate(
                 conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
                 volume_dernier_releve=Sum('num_compteur__relevecompteurs__volume')
-            ))
+            )
 
             for contrat in contrats_commune:
                 dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
@@ -437,7 +437,6 @@ class SynchronisationView(APIView):
                     contrat.statut = 1
                 else:
                     contrat.statut = 0
-            print(contrat)
             mission_dict = {
                 'utilisateur_id': utilisateur_id,
                 'nom_client': contrat.client.nom_client,
