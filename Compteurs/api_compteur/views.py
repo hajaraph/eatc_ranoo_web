@@ -293,11 +293,11 @@ class FactureDetail(APIView):
         }
         return JsonResponse({'facture': facture})
 
+    @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
         utilisateur_id = request.user.id_utilisateur
         serializerpaiement = PaiementSerializer(data=request.data)
-        serializerfacture = FactureSerializer(data=request.data)
 
         if serializerpaiement.is_valid():
             id_releve = serializerpaiement.validated_data.get('relevecompteur_id')
