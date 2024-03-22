@@ -1,6 +1,6 @@
 import re
 import pandas as pd
-from django.db.models import Count, OuterRef, Subquery
+from django.db.models import Count
 from django.db.models import Q
 
 from django.http import JsonResponse
@@ -33,16 +33,22 @@ def accueil(request):
     cp_commune_id = request.user.cp_commune_id
     non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
     realise = MainCourante.objects.filter(statuts__realise=True).count()
-    total_anomalie = non_traite + realise
+    en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
+    total_anomalie = non_traite + realise + en_cours
+
+    nombre_total_facture = Facture.objects.filter(
+        relevecompteur__utilisateur__contrats__cp_commune_id=cp_commune_id,
+        statut=True
+    ).count()
 
     nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
 
     # Calcul de la fin du mois actuel en utilisant pandas
     end_of_month = (
-            pd.to_datetime('now')
-            .to_period('M')
-            .to_timestamp()
-            + MonthEnd(0)
+        pd.to_datetime('now')
+        .to_period('M')
+        .to_timestamp()
+        + MonthEnd(0)
     )
 
     # Filtrer les contrats avec des relevés dans le mois actuel
@@ -61,10 +67,13 @@ def accueil(request):
 
     return JsonResponse(
         {
-            'totale_anomalie': total_anomalie,
+            'non_traite': non_traite,
             'realise': realise,
+            'en_cours': en_cours,
+            'totale_anomalie': total_anomalie,
             'nombre_total_compteur': nombre_total_compteur,
             'nombre_relever_effectuer': nombre_relever_effectuer,
+            'nombre_facture': nombre_total_facture
         }
     )
 
