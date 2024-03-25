@@ -13,7 +13,6 @@ from Parametre.views import enregistre_historique, exporter_en_excel
 
 
 @authentification_requis
-@role_requis('Administrateur', 'Gestionnaire', 'Releveur', 'Autre')
 def compteur_liste(request):
     title = 'Compteurs | Liste'
     active = 'active'
@@ -29,13 +28,15 @@ def compteur_liste(request):
         ).order_by('pk')
 
     else:
+        cp_commune = request.session.get('cp_commune')
+
         derniers_releves = ReleveCompteur.objects.filter(
             num_compteur_id=OuterRef('pk')
         ).order_by('-date_releve')
 
         compteurs = Compteur.objects.annotate(
             dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
-        ).order_by('pk')
+        ).filter(contrats__cp_commune_id=cp_commune).order_by('pk')
 
     context = {
         'title_liste': title,
@@ -50,6 +51,7 @@ def compteur_liste(request):
 class CompteurNew(View):
     @staticmethod
     @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire')
     def get(request):
         title = 'Compteurs | Nouveau'
         active = 'active'
@@ -63,6 +65,7 @@ class CompteurNew(View):
 
     @staticmethod
     @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire')
     def post(request):
         num_compteur = request.POST['num_compteur']
         marque_compteur = request.POST['marque_compteur']
@@ -102,6 +105,7 @@ class CompteurNew(View):
 class CompteurDetail(View):
     @staticmethod
     @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def get(request, pk):
         active = 'active'
         font = 'custom-font'
@@ -123,12 +127,14 @@ class CompteurDetail(View):
 
     @staticmethod
     @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def post(request, pk):
         mod_compteur = Compteur.objects.get(pk=pk)
         marque_compteur = request.POST['marque_compteur']
         modele_compteur = request.POST['modele_compteur']
         dn_compteur = request.POST['DN_compteur']
         origin_compteur = request.POST['origin_compteur']
+
         mod_compteur.marque_compteur = marque_compteur
         mod_compteur.modele_compteur = modele_compteur
         mod_compteur.DN_compteur = dn_compteur
@@ -143,6 +149,7 @@ class CompteurDetail(View):
 
 
 @authentification_requis
+@role_requis('Administrateur', 'Gestionnaire')
 def compteur_supp(request, pk):
     compteur = Compteur.objects.get(pk=pk)
     compteur.delete()
@@ -155,6 +162,7 @@ def compteur_supp(request, pk):
 
 
 @authentification_requis
+@role_requis('Administrateur', 'Gestionnaire', 'Releveur')
 def compteur_releve(request):
     title = 'Compteurs | Relevé'
     active = 'active'
@@ -184,6 +192,7 @@ def compteur_releve(request):
 class ReleveNew(View):
     @staticmethod
     @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def get(request, num_compteur):
         compteur = Compteur.objects.get(pk=num_compteur)
         title = f'Compteur Numéro : {compteur.num_compteur} | Relevé | Nouveau'
@@ -199,6 +208,7 @@ class ReleveNew(View):
 
     @staticmethod
     @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def post(request, num_compteur):
         date_releve = request.POST.get('date_releve')
         date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
@@ -243,7 +253,7 @@ def relever(request, num_compteur, date_releve, volume, conso, image_compteur, u
 class ReleveMod(View):
     @staticmethod
     @authentification_requis
-    @role_requis('Administrateur')
+    @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def get(request, pk):
         releve = ReleveCompteur.objects.get(pk=pk)
         title = f"Relevé | Détail | "
@@ -260,7 +270,7 @@ class ReleveMod(View):
 
     @staticmethod
     @authentification_requis
-    @role_requis('Administrateur')
+    @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def post(request, pk):
         date_releve = request.POST['date_releve']
         date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
@@ -273,9 +283,6 @@ class ReleveMod(View):
             messages.error(request, f"Veuillez fournir une date valide pour le relevé !")
             return redirect('releve_mod', pk)
         else:
-            #     if volume == 0:
-            #         messages.warning(request, f"Assurez-vous de saisir les chiffres correctement et réessayez !")
-            #         return redirect('releve_mod', pk)
             if volume < dernier_releve.volume:
                 messages.warning(request, f"Vous ne pouvez pas enregistrer un relevé inferieure à la dernière !")
                 return redirect('releve_mod', pk)
@@ -294,6 +301,7 @@ class ReleveMod(View):
 
 
 @authentification_requis
+@role_requis('Administrateur', 'Gestionnaire', 'Releveur')
 def del_releve(request, pk):
     releve = get_object_or_404(ReleveCompteur, pk=pk)
     releve.image_compteur.delete()
