@@ -27,5 +27,8 @@ class DeclareMaincourate(APIView):
                 'status': 0 if main_courante.non_traite else ( 1 if main_courante.en_cours else 2 if main_courante.realise else '')
             }
             main_courante_list.append(main_courante_info)
-        print(main_courante_info)
+            print(main_courante_info)
+
+        # Déplacer l'impression de main_courante_info à l'intérieur de la boucle for
+
         return JsonResponse({'main_courante_list': main_courante_list})
