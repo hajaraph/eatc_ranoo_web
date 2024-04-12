@@ -31,10 +31,10 @@ class MissionReceivePost (serializers.Serializer):
 class FactureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Facture
-        fields = '__all__'
+        fields = ['relevecompteur']
 
 
 class PaiementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Paiement
-        fields = '__all__'
+        fields = ['montant_payer']
