@@ -37,11 +37,11 @@ def accueil(request):
     total_anomalie = non_traite + en_cours
 
     nombre_total_facture_impayer = Facture.objects.filter(
-        relevecompteur__utilisateur__contrats__cp_commune_id=cp_commune_id,
+        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
         statut=False
     ).count()
     nombre_total_facture_payer = Facture.objects.filter(
-        relevecompteur__utilisateur__contrats__cp_commune_id=cp_commune_id,
+        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
         statut=True
     ).count()
 
@@ -68,6 +68,9 @@ def accueil(request):
 
     # Calculer le nombre_relever_effectuer
     nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
+
+    # print(nombre_total_facture_impayer);
+    # print(nombre_total_facture_payer);
 
     return JsonResponse(
         {
@@ -137,7 +140,8 @@ def relever_client(request):
         releves_list = []
         for releve in releves_data:
             releves_list.append({
-                'id_releve': releve.id_releve,
+                'id': int(releve.id_releve),
+                'id_releve': int(releve.id_releve),
                 'compteur_id': int(compteur.num_compteur),
                 'contrat_id': int(num_contrat),
                 'client_id': int(client.id_client),
