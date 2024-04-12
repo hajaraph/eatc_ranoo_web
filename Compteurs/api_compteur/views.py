@@ -305,17 +305,24 @@ class FactureDetail(APIView):
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
-        utilisateur_id = request.user.id_utilisateur
         serializerpaiement = PaiementSerializer(data=request.data)
+        serializerrelever = FactureSerializer(data=request.data)
 
-        if serializerpaiement.is_valid():
-            id_releve = serializerpaiement.validated_data.get('relevecompteur_id')
-            montant_payer = float(serializerpaiement.validated_data.get('paiement'))
+        if serializerpaiement.is_valid() and serializerrelever.is_valid():
+            id_releve = serializerrelever.validated_data.get('relevecompteur')
+            montant_payer = float(serializerpaiement.validated_data.get('montant_payer'))
+            utilisateur_id = request.user.id_utilisateur
+
             paiement(request, id_releve, montant_payer, utilisateur_id)
 
             return JsonResponse({'message': 'Paiement effectué avec succès !'})
         else:
-            return JsonResponse({'message': serializerpaiement.errors})
+            return JsonResponse(
+                {
+                    'message_paiement': serializerpaiement.errors,
+                    'message_releve': serializerrelever.errors
+                }
+            )
 
 
 def get_missions_details(toutes_missions):
