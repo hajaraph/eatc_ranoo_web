@@ -31,7 +31,7 @@ class MissionReceivePost (serializers.Serializer):
 class FactureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Facture
-        fields = ['relevecompteur']
+        fields = ['relevecompteur_id']
 
 
 class PaiementSerializer(serializers.ModelSerializer):

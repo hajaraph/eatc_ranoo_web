@@ -305,25 +305,36 @@ class FactureDetail(APIView):
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
+        # Imprimer les données reçues dans la requête
+        print("Données reçues dans la requête :", request.data)
+        
         serializerpaiement = PaiementSerializer(data=request.data)
         serializerrelever = FactureSerializer(data=request.data)
 
         if serializerpaiement.is_valid() and serializerrelever.is_valid():
-            id_releve = serializerrelever.validated_data.get('relevecompteur')
-            montant_payer = float(serializerpaiement.validated_data.get('montant_payer'))
+            id_releve = request.data.get('relevecompteur_id')
+            montant_payer = float(request.data.get('paiement'))
             utilisateur_id = request.user.id_utilisateur
-
-            paiement(request, id_releve, montant_payer, utilisateur_id)
-
-            return JsonResponse({'message': 'Paiement effectué avec succès !'})
+            
+            # Vérifier si le paiement est supérieur ou égal à 0.1
+            if montant_payer >= 0.1:
+                # Imprimer les données extraites et validées
+                print("ID Relevé :", id_releve)
+                print("Montant à payer :", montant_payer)
+                print("ID Utilisateur :", utilisateur_id)
+                
+                # Appeler la fonction paiement et imprimer le résultat
+                resultat_paiement = paiement(request, id_releve, montant_payer, utilisateur_id)
+                print("Résultat du paiement :", resultat_paiement)
+                
+                return JsonResponse({'message': 'Paiement effectué avec succès !'})
+            else:
+                return JsonResponse({'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'}, status=400)
         else:
-            return JsonResponse(
-                {
-                    'message_paiement': serializerpaiement.errors,
-                    'message_releve': serializerrelever.errors
-                }
-            )
-
+            return JsonResponse({
+                'message_paiement': serializerpaiement.errors,
+                'message_releve': serializerrelever.errors
+            })
 
 def get_missions_details(toutes_missions):
     missions_details = []
