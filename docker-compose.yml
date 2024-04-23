@@ -1,17 +1,17 @@
-version: '3'
+version: '4.28'
 
 services:
-  Clients:
+  django:
+    container_name: rel_compteur
     build:
-      context: ./Clients
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    # Autres configurations pour app1
-
-  Compteurs:
-    build:
-      context: ./Compteurs
-      dockerfile: Dockerfile
+      context: ./
+    command:
+      - py manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./Rel_Compteur:/usr/src/app
     ports:
       - "8001:8000"
+    environment:
+      - DEBUG:1
+      - SECRET_KEY=2&e6eh3@0idjnee^vf$ft(ff1vzs@uhfg)3n@zna@f#7pmz14v
+      - ALLOWED_HOSTS=localhost,127.0.0.1
