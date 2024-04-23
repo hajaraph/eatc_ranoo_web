@@ -12,7 +12,7 @@ from Main_Courante.models import StatutMC
 
 
 @authentification_requis
-@role_requis('Administratuer', 'Gestionnaire', 'Autre')
+@role_requis('Administrateur', 'Gestionnaire', 'Autre')
 def tableau_bord(request, *args, **kwargs):
     font = 'custom-font'
     region = request.GET.get('region')
