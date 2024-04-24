@@ -1,5 +1,5 @@
-import os
 from datetime import datetime
+import os
 from django.contrib import messages
 from django.db.models import OuterRef, Subquery
 from django.shortcuts import render, redirect, get_object_or_404
@@ -207,7 +207,7 @@ class ReleveNew(View):
         return render(request, 'all_page/compteurs/compteurs.html', context)
 
     
-# Filename  
+# Filename 
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def post(request, num_compteur):
@@ -234,7 +234,7 @@ class ReleveNew(View):
         # Stocker l'image dans un répertoire spécifique et ajuster le chemin avant de sauvegarder l'image
         if image_compteur:
             # Chemin du répertoire où vous souhaitez stocker l'image
-            path = "/chemin/vers/votre/repertoire/specifique/"
+            path = "/data/user/0/com.example.application_rano/app_flutter/assets/images/"
             
             # Concaténer le nom du fichier avec le chemin du répertoire
             filename = os.path.join(path, image_compteur.name)
