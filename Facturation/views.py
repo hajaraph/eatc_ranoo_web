@@ -248,7 +248,9 @@ def facture_creation(date_facture, num_compteur, releve):
     montant_total_ttc = montant.total_conso_ttc
     # Pour verifie si le contrat a un avoir
     if avoir.exists():
-        avoir = Avoir.objects.get(num_contrat=num_contrat)
+        # avoir = Avoir.objects.get(num_contrat=num_contrat)
+        avoir = Avoir.objects.filter(num_contrat=num_contrat)
+
         factures.avoir_avant = avoir.montant_avoir
 
         if montant_total_ttc >= avoir.montant_avoir:
@@ -368,7 +370,7 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
 
         avoir = Avoir.objects.filter(num_contrat=num_contrat)
         if avoir.exists():
-            avoir = Avoir.objects.get(num_contrat=num_contrat)
+            avoir = Avoir.objects.filter(num_contrat=num_contrat)
             avoir.montant_avoir += round(net_paye, 2)
             avoir.utilisateur_id = utilisateur_web if utilisateur_web else utilisateur_mob,
             avoir.save()
@@ -380,6 +382,7 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
             )
 
     else:
+        fact_paiement.statut = True
         restant = Restant.objects.filter(num_contrat=num_contrat)
         paiements = Paiement.objects.filter(facture_id=fact_paiement.pk)
         restant_value = round(net_paye, 2)

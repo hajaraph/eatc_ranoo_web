@@ -1,8 +1,11 @@
 import re
+import os
+import calendar
 import pandas as pd
 from django.db.models import Count
 from django.db.models import Q
-
+from datetime import datetime, time
+from django.utils.timezone import make_aware
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -139,7 +142,7 @@ def relever_client(request):
 
         releves_list = []
         for releve in releves_data:
-            releves_list.append({
+            releve_dict = {
                 'id': int(releve.id_releve),
                 'id_releve': int(releve.id_releve),
                 'compteur_id': int(compteur.num_compteur),
@@ -147,9 +150,21 @@ def relever_client(request):
                 'client_id': int(client.id_client),
                 'date_releve': releve.date_releve,
                 'volume': releve.volume,
-                'conso': releve.conso,
+                'conso': releve.conso, 
+                'image_compteur':  releve.image_compteur.url if releve.image_compteur else 'null',
                 # Ajouter d'autres informations sur le relevé au besoin
-            })
+            }
+
+            # Récupérer la facture associée au relevé
+            facture = Facture.objects.filter(relevecompteur=releve).first()
+            if facture:
+                # Si une facture est associée, enregistrer le statut de la facture dans le dictionnaire
+                releve_dict['etatFacture'] = 'Payé' if facture.statut else 'Impayé' 
+            else:
+                # Si aucune facture n'est associée, enregistrer "Pas de facture"
+                releve_dict['etatFacture'] = 'Pas de facture'
+
+            releves_list.append(releve_dict)
 
         return JsonResponse({
             'compteur': compteur_info,
@@ -217,7 +232,7 @@ class Missions(APIView):
         return JsonResponse({'compteurs_liste': liste_contrats_info})
 
     @staticmethod
-    @parser_classes((MultiPartParser, FormParser))
+    @parser_classes((MultiPartParser, FormParser))    
     def post(request):
         serializer = MissionSerializer(data=request.data)
         utilisateur = request.user.id_utilisateur
@@ -260,14 +275,22 @@ class Missions(APIView):
             return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# Details Facture #
+
+
 class FactureDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @staticmethod
+
     def get(request):
         id_releve = request.GET.get('id_releve')
 
         releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
+
+        if not releve:
+            return JsonResponse({'error': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}, status=404)
+
         montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
         taxes = montant_ht.tarif.taxes.all()
         taxe_montant = Calcule.montant_taxe(montant_ht.tarif, releve.relevecompteur.conso)
@@ -282,31 +305,38 @@ class FactureDetail(APIView):
         avoir_avant = releve.avoir_avant if releve.avoir_avant is not None else 0.0
         avoir_utilise = releve.avoir_utilise if releve.avoir_utilise is not None else 0.0
         restant_precedant = releve.restant_precedant if releve.restant_precedant is not None else 0.0
+        restant_nouvel = releve.restant_nouvel if releve.restant_nouvel is not None else 0.0
         montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc is not None else 0.0
 
+        if montant_total_ttc == 0.0 or restant_nouvel == 0.0 or restant_nouvel == 0.0:
+            montant_payer = 0.0
+        else:
+            montant_payer = montant_total_ttc - restant_nouvel
+
         facture = {
-            'id': int(releve.id_facture),
+            'id': int(releve.id_facture), 
             'relevecompteur_id': int(releve.relevecompteur_id),
             'num_facture': releve.num_facture,
             'num_compteur': int(releve.num_contrat.num_compteur_id),
             'date_facture': releve.date_facture,
             'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
             'tarif_m3': montant_ht.tarif.prix_m3 if montant_ht.tarif is not None and montant_ht.tarif.prix_m3 is not None else 0.0,
-
-            # 'taxes': taxes,  # Cette ligne est décommentée
             'avoir_avant': avoir_avant,
             'avoir_utilise': avoir_utilise,
             'restant_precedant': restant_precedant,
+            'montant_payer': montant_payer,
             'montant_total_ttc': montant_total_ttc,
             'statut': 'Payé' if releve.statut else 'Impayé',
         }
+
         return JsonResponse({'facture': facture})
+
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
         # Imprimer les données reçues dans la requête
-        print("Données reçues dans la requête :", request.data)
+        
         
         serializerpaiement = PaiementSerializer(data=request.data)
         serializerrelever = FactureSerializer(data=request.data)

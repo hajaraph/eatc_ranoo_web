@@ -11,12 +11,12 @@ class ReleveCompteurSerializer(serializers.ModelSerializer):
 
 
 class MissionSerializer(serializers.ModelSerializer):
+    image_compteur = serializers.ImageField(required=False)  # Champ pour le fichier image_compteur
 
     class Meta:
         model = ReleveCompteur
-        fields = ['date_releve', 'volume', 'num_compteur', 'utilisateur']
-
-
+        fields = ['date_releve', 'volume', 'num_compteur', 'utilisateur', 'image_compteur']
+        
 class MissionReceivePost (serializers.Serializer):
     class Meta:
         model = ReleveCompteur

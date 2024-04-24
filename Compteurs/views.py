@@ -1,5 +1,5 @@
 from datetime import datetime
-
+import os
 from django.contrib import messages
 from django.db.models import OuterRef, Subquery
 from django.shortcuts import render, redirect, get_object_or_404
@@ -206,7 +206,8 @@ class ReleveNew(View):
         }
         return render(request, 'all_page/compteurs/compteurs.html', context)
 
-    @staticmethod
+    
+
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def post(request, num_compteur):
@@ -229,12 +230,31 @@ class ReleveNew(View):
                 conso = volume - dernier_volume.volume
         else:
             conso = volume
-        # Relever
+
+        # Stocker l'image dans un répertoire spécifique et ajuster le chemin avant de sauvegarder l'image
+        if image_compteur:
+            # Chemin du répertoire où vous souhaitez stocker l'image
+            path = "data/user/0/com.example.application_rano/app_flutter/assets/images/"
+            
+            # Concaténer le nom du fichier avec le chemin du répertoire
+            filename = os.path.join(path, image_compteur.name)
+            
+            # Enregistrer l'image dans le chemin spécifié
+            with open(filename, 'wb+') as destination:
+                for chunk in image_compteur.chunks():
+                    destination.write(chunk)
+
+            # Utiliser le chemin complet comme chemin de l'image
+            image_compteur = filename
+
+        # Créer un nouvel objet ReleveCompteur avec l'image mise à jour
         releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
         facture_creation(date_releve, num_compteur, releve)
+        
         # Historique
         message = f"Relever et Facture d'un compteur {num_compteur}"
         enregistre_historique(request, message, request.session.get('id_utilisateur'))
+        
         messages.success(request, f"Relevé enregistrer avec succès !")
         return redirect('compteur_detail', num_compteur)
 
