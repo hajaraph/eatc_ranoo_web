@@ -211,7 +211,7 @@ class Calcule:
 def facture_creation(date_facture, num_compteur, releve):
     contrat = Contrat.objects.filter(num_compteur=num_compteur).first()
     typeclient = contrat.client.type_client.pk
-    consommation = releve.conso
+    consommation = releve.conso 
 
     date_facture1 = date_facture.strftime("%Y%m%d")
     num_facture = f"FACT{date_facture1}{num_compteur}"
@@ -241,16 +241,13 @@ def facture_creation(date_facture, num_compteur, releve):
             Calcule.cree_montant(tarif, consommation, factures)
 
     num_contrat = contrat.num_contrat
-    avoir = Avoir.objects.filter(num_contrat=num_contrat)
-    restant = Restant.objects.filter(num_contrat=num_contrat)
+    avoir = Avoir.objects.filter(num_contrat=num_contrat).first()
+    restant = Restant.objects.filter(num_contrat=num_contrat).first()
     montant = MontantTTC.objects.get(montant_ht__facture_id=factures.pk)
 
     montant_total_ttc = montant.total_conso_ttc
     # Pour verifie si le contrat a un avoir
-    if avoir.exists():
-        # avoir = Avoir.objects.get(num_contrat=num_contrat)
-        avoir = Avoir.objects.filter(num_contrat=num_contrat)
-
+    if avoir:
         factures.avoir_avant = avoir.montant_avoir
 
         if montant_total_ttc >= avoir.montant_avoir:
@@ -266,8 +263,7 @@ def facture_creation(date_facture, num_compteur, releve):
             avoir.save()
 
     # Pour verifié si le client a un restant d'une facture avant
-    elif restant.exists():
-        restant = Restant.objects.get(num_contrat=num_contrat)
+    elif restant:
         montant_total_ttc += restant.restant
         factures.restant_precedant = round(restant.restant, 2)
         factures.montant_total_ttc = round(montant_total_ttc, 2)
