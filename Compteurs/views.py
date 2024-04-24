@@ -231,22 +231,6 @@ class ReleveNew(View):
         else:
             conso = volume
 
-        # Stocker l'image dans un répertoire spécifique et ajuster le chemin avant de sauvegarder l'image
-        if image_compteur:
-            # Chemin du répertoire où vous souhaitez stocker l'image
-            path = "/data/user/0/com.example.application_rano/app_flutter/assets/images/"
-            
-            # Concaténer le nom du fichier avec le chemin du répertoire
-            filename = os.path.join(path, image_compteur.name)
-            
-            # Enregistrer l'image dans le chemin spécifié
-            with open(filename, 'wb+') as destination:
-                for chunk in image_compteur.chunks():
-                    destination.write(chunk)
-
-            # Utiliser le chemin complet comme chemin de l'image
-            image_compteur = filename
-
         # Créer un nouvel objet ReleveCompteur avec l'image mise à jour
         releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
         facture_creation(date_releve, num_compteur, releve)
