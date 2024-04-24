@@ -9,7 +9,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-iy)pk3bxm664w4$_vxm)$0$9&!grq0h%f*8!^sshd(f53uo25b'
 
-DEBUG = True
+# SECRET_KEY = '2&e6eh3@0idjnee^vf$ft(ff1vzs@uhfg)3n@zna@f#7pmz14v'  # os.environ.get("SECRET_KEY")
+
+DEBUG = True  # os.environ.get("DEBUG")
+
+ALLOWED_HOSTS = []  # os.environ.get("ALLOWED_HOSTS").split(",")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -43,14 +47,21 @@ MIDDLEWARE = [
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
-ALLOWED_HOSTS = ['localhost','127.0.0.1','10.0.2.2', '192.168.88.177']
+
+# ALLOWED_HOSTS = [
+#     'localhost',
+#     '127.0.0.1',
+#     '10.0.2.2',
+#     '192.168.88.177'
+# ]
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
-    'http://localhost:3000', 
+    'http://localhost:3000',
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -81,8 +92,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
-        'USER': 'eatcdb',
-        'PASSWORD': 'eatcDB',
+        'USER': 'postgres',
+        'PASSWORD': '12121212',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -119,6 +130,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -169,6 +182,8 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = 'Login.Utilisateur'
 
 ADMIN_ENABLED = False
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
 
 # LOGGING = {
 #     'version': 1,

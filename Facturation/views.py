@@ -233,6 +233,7 @@ def facture_creation(date_facture, num_compteur, releve):
             total_conso_ht = tarif.prix_m3 * consommation
             total_conso_ttc = (total_conso_ht * tarif.tva) / 100
             total_conso_ttc += total_conso_ht
+
             montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
             taxe = sum(Calcule.montant_taxe(tarif, consommation))
             Calcule.montantttc(total_conso_ttc + taxe, montant_ht)

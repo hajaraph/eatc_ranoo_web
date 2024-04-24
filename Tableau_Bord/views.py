@@ -12,7 +12,7 @@ from Main_Courante.models import StatutMC
 
 
 @authentification_requis
-@role_requis('Administratuer', 'Gestionnaire', 'Autre')
+@role_requis('Administrateur', 'Gestionnaire', 'Autre')
 def tableau_bord(request, *args, **kwargs):
     font = 'custom-font'
     region = request.GET.get('region')
@@ -34,6 +34,8 @@ def tableau_bord(request, *args, **kwargs):
             region_id=region).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
+
+        factures = Facture.objects.filter(num_contrat__cp_commune__region=region)
         chiffres = Paiement.objects.filter(facture__num_contrat__cp_commune__region=region)
 
     elif date_deb and date_fin:
@@ -42,6 +44,9 @@ def tableau_bord(request, *args, **kwargs):
         ).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
+
+        factures = Facture.objects.filter(date_facture__range=[date_deb, date_fin])
+        main_courante = StatutMC.objects.filter(date_status__range=[date_deb, date_fin])
         chiffres = Paiement.objects.filter(facture__relevecompteur__date_releve__range=[date_deb, date_fin])
 
     elif region and date_deb and date_fin:
@@ -51,8 +56,14 @@ def tableau_bord(request, *args, **kwargs):
             contrat__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
+
+        factures = Facture.objects.filter(
+            num_contrat__cp_commune__region=region,
+            date_facture__range=[date_deb, date_fin]
+        )
+
         chiffres = Paiement.objects.filter(
-            facture__num_contrat__cp_commune__region_id=region,
+            facture__num_contrat__cp_commune__region=region,
             facture__relevecompteur__date_releve__range=[date_deb, date_fin]
         )
 

@@ -326,6 +326,13 @@ class FactureDetail(APIView):
             'restant_precedant': restant_precedant,
             'montant_payer': montant_payer,
             'montant_total_ttc': montant_total_ttc,
+            'total_conso_ht': montant_ht.total_conso_ht,
+            'tarif_m3': montant_ht.tarif.prix_m3,
+            'taxes': taxes,
+            'avoir_avant': releve.avoir_avant,
+            'avoir_utilise': releve.avoir_utilise,
+            'restant_precedant': releve.restant_precedant,
+            'montant_total_ttc': releve.montant_total_ttc,
             'statut': 'Payé' if releve.statut else 'Impayé',
         }
 
