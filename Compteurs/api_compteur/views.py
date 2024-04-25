@@ -1,11 +1,7 @@
 import re
-import os
-import calendar
 import pandas as pd
 from django.db.models import Count
 from django.db.models import Q
-from datetime import datetime, time
-from django.utils.timezone import make_aware
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -52,10 +48,10 @@ def accueil(request):
 
     # Calcul de la fin du mois actuel en utilisant pandas
     end_of_month = (
-        pd.to_datetime('now')
-        .to_period('M')
-        .to_timestamp()
-        + MonthEnd(0)
+            pd.to_datetime('now')
+            .to_period('M')
+            .to_timestamp()
+            + MonthEnd(0)
     )
 
     # Filtrer les contrats avec des relevés dans le mois actuel
@@ -150,8 +146,8 @@ def relever_client(request):
                 'client_id': int(client.id_client),
                 'date_releve': releve.date_releve,
                 'volume': releve.volume,
-                'conso': releve.conso, 
-                'image_compteur':  releve.image_compteur.url if releve.image_compteur else 'null',
+                'conso': releve.conso,
+                'image_compteur': releve.image_compteur.url if releve.image_compteur else 'null',
                 # Ajouter d'autres informations sur le relevé au besoin
             }
 
@@ -159,7 +155,7 @@ def relever_client(request):
             facture = Facture.objects.filter(relevecompteur=releve).first()
             if facture:
                 # Si une facture est associée, enregistrer le statut de la facture dans le dictionnaire
-                releve_dict['etatFacture'] = 'Payé' if facture.statut else 'Impayé' 
+                releve_dict['etatFacture'] = 'Payé' if facture.statut else 'Impayé'
             else:
                 # Si aucune facture n'est associée, enregistrer "Pas de facture"
                 releve_dict['etatFacture'] = 'Pas de facture'
@@ -232,7 +228,7 @@ class Missions(APIView):
         return JsonResponse({'compteurs_liste': liste_contrats_info})
 
     @staticmethod
-    @parser_classes((MultiPartParser, FormParser))    
+    @parser_classes((MultiPartParser, FormParser))
     def post(request):
         serializer = MissionSerializer(data=request.data)
         utilisateur = request.user.id_utilisateur
@@ -282,7 +278,6 @@ class FactureDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @staticmethod
-
     def get(request):
         id_releve = request.GET.get('id_releve')
 
@@ -314,7 +309,7 @@ class FactureDetail(APIView):
             montant_payer = montant_total_ttc - restant_nouvel
 
         facture = {
-            'id': int(releve.id_facture), 
+            'id': int(releve.id_facture),
             'relevecompteur_id': int(releve.relevecompteur_id),
             'num_facture': releve.num_facture,
             'num_compteur': int(releve.num_contrat.num_compteur_id),
@@ -326,25 +321,22 @@ class FactureDetail(APIView):
             'restant_precedant': restant_precedant,
             'montant_payer': montant_payer,
             'montant_total_ttc': montant_total_ttc,
-            'total_conso_ht': montant_ht.total_conso_ht,
-            'tarif_m3': montant_ht.tarif.prix_m3,
+            # 'total_conso_ht': montant_ht.total_conso_ht,
+            # 'tarif_m3': montant_ht.tarif.prix_m3,
             'taxes': taxes,
-            'avoir_avant': releve.avoir_avant,
-            'avoir_utilise': releve.avoir_utilise,
-            'restant_precedant': releve.restant_precedant,
-            'montant_total_ttc': releve.montant_total_ttc,
+            # 'avoir_avant': releve.avoir_avant,
+            # 'avoir_utilise': releve.avoir_utilise,
+            # 'restant_precedant': releve.restant_precedant,
+            # 'montant_total_ttc': releve.montant_total_ttc,
             'statut': 'Payé' if releve.statut else 'Impayé',
         }
 
         return JsonResponse({'facture': facture})
 
-
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
         # Imprimer les données reçues dans la requête
-        
-        
         serializerpaiement = PaiementSerializer(data=request.data)
         serializerrelever = FactureSerializer(data=request.data)
 
@@ -352,26 +344,28 @@ class FactureDetail(APIView):
             id_releve = request.data.get('relevecompteur_id')
             montant_payer = float(request.data.get('paiement'))
             utilisateur_id = request.user.id_utilisateur
-            
+
             # Vérifier si le paiement est supérieur ou égal à 0.1
             if montant_payer >= 0.1:
                 # Imprimer les données extraites et validées
                 print("ID Relevé :", id_releve)
                 print("Montant à payer :", montant_payer)
                 print("ID Utilisateur :", utilisateur_id)
-                
+
                 # Appeler la fonction paiement et imprimer le résultat
                 resultat_paiement = paiement(request, id_releve, montant_payer, utilisateur_id)
                 print("Résultat du paiement :", resultat_paiement)
-                
+
                 return JsonResponse({'message': 'Paiement effectué avec succès !'})
             else:
-                return JsonResponse({'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'}, status=400)
+                return JsonResponse({'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'},
+                                    status=400)
         else:
             return JsonResponse({
                 'message_paiement': serializerpaiement.errors,
                 'message_releve': serializerrelever.errors
             })
+
 
 def get_missions_details(toutes_missions):
     missions_details = []
@@ -504,29 +498,30 @@ class SynchronisationView(APIView):
                 conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
                 volume_dernier_releve=Sum('num_compteur__relevecompteurs__volume')
             )
-
+            mission_dicts = []
             for contrat in contrats_commune:
                 dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
                     max_date=Max('date_releve'))
                 contrat.date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else None
-
                 # Comparaison des mois pour définir le statut
                 if contrat.date_releve is not None:
                     contrat.statut = 1
                 else:
                     contrat.statut = 0
-            mission_dict = {
-                'utilisateur_id': utilisateur_id,
-                'nom_client': contrat.client.nom_client,
-                'prenom_client': contrat.client.prenom_client,
-                'adresse_client': contrat.client.adresse_client,
-                'num_compteur': contrat.num_compteur_id,
-                'conso_dernier_releve': contrat.conso_dernier_releve,
-                'volume_dernier_releve': contrat.volume_dernier_releve,
-                'date_releve': contrat.date_releve,
-                'statut': contrat.statut
-            }
-            return mission_dict
+                mission_dict = {
+                    'utilisateur_id': utilisateur_id,
+                    'nom_client': contrat.client.nom_client,
+                    'prenom_client': contrat.client.prenom_client,
+                    'adresse_client': contrat.client.adresse_client,
+                    'num_compteur': contrat.num_compteur_id,
+                    'conso_dernier_releve': contrat.conso_dernier_releve,
+                    'volume_dernier_releve': contrat.volume_dernier_releve,
+                    'date_releve': contrat.date_releve,
+                    'statut': contrat.statut
+                }
+                mission_dicts.append(mission_dict)
+
+            return mission_dicts
 
     @staticmethod
     def get_accueil_data(request):

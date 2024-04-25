@@ -1,14 +1,18 @@
 from django.http import JsonResponse
-from rest_framework import permissions
+from rest_framework import permissions, status
+from rest_framework.decorators import parser_classes
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.views import APIView
 
+from Main_Courante.api_anomalie.serializer import MainCouranteSerializer, PhotosSerializer
 from Main_Courante.models import StatutMC
 
 
 class DeclareMaincourate(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    @staticmethod
+    def get(request):
         main_courantes = StatutMC.objects.all()
 
         main_courante_list = []
@@ -32,3 +36,32 @@ class DeclareMaincourate(APIView):
         # Déplacer l'impression de main_courante_info à l'intérieur de la boucle for
 
         return JsonResponse({'main_courante_list': main_courante_list})
+
+    @staticmethod
+    @parser_classes((MultiPartParser, FormParser))
+    def post(request):
+        maincourante_serializer = MainCouranteSerializer(data=request.data)
+
+        if maincourante_serializer.is_valid():
+            main_courante = maincourante_serializer.save()
+            main_courante_id = main_courante.pk
+
+            photomc = request.data.get('photomc', [])
+            for photo in photomc:
+                photo['main_courante'] = main_courante_id
+                photo_serializer = PhotosSerializer(data=photo)
+
+                if photo_serializer.is_valid():
+                    photo.save()
+                else:
+                    return JsonResponse({'message': photo_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+            StatutMC.objects.create(
+                main_courante_id=main_courante_id,
+                nom_client=True,
+                en_cours=False,
+                realise=False
+            )
+
+        else:
+            return JsonResponse({'message': maincourante_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
