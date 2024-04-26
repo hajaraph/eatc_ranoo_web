@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from Main_Courante.api_anomalie.serializer import MainCouranteSerializer, PhotosSerializer
 from Main_Courante.models import StatutMC, PhotoMC
-
+ 
 
 class DeclareMaincourate(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -18,6 +18,15 @@ class DeclareMaincourate(APIView):
         main_courante_list = []
         for main_courante in main_courantes:
             photomc = PhotoMC.objects.filter(main_courante_id=main_courante.main_courante_id)
+
+            # Initialiser les attributs photo_anomalie_1 à photo_anomalie_5 à None
+            photo_attributes = {f'photo_anomalie_{i+1}': "null" for i in range(5)}
+
+            # Remplir les attributs avec les URLs des photos disponibles
+            for i, photo in enumerate(photomc[:5]):
+                if photo.photo_anomalie.url:
+                    photo_attributes[f'photo_anomalie_{i+1}'] = photo.photo_anomalie.url
+
             main_courante_info = {
                 'id': int(main_courante.main_courante_id),
                 'id_mc': int(main_courante.main_courante_id),
@@ -30,18 +39,12 @@ class DeclareMaincourate(APIView):
                 'cp_commune': str(main_courante.main_courante.cp_commune_id) if main_courante.main_courante.cp_commune_id else '',
                 'commune': str(main_courante.main_courante.cp_commune.commune) if main_courante.main_courante.cp_commune_id else '',
                 'status': 0 if main_courante.non_traite else (1 if main_courante.en_cours else 2 if main_courante.realise else ''),
-                'photomc': [
-                    {
-                        'photo': photo.photo_anomalie.url if photo.photo_anomalie.url else '',
-                    }
-                    for photo in photomc
-                ]
+                **photo_attributes,
             }
             main_courante_list.append(main_courante_info)
-            # print(main_courante_info)
 
-        # Déplacer l'impression de main_courante_info à l'intérieur de la boucle for
         return JsonResponse({'main_courante_list': main_courante_list})
+
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
