@@ -43,7 +43,7 @@ MIDDLEWARE = [
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
-ALLOWED_HOSTS = ['localhost','127.0.0.1','10.0.2.2', '192.168.88.177']
+ALLOWED_HOSTS = ['localhost','127.0.0.1','10.0.2.2','192.168.0.102'] 
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
@@ -51,10 +51,12 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
     'http://localhost:3000', 
+    
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     'http://127.0.0.1:8000',
+    
 ]
 
 ROOT_URLCONF = 'Rel_Compteur.urls'
