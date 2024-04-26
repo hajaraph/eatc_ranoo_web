@@ -1,15 +1,11 @@
 from rest_framework import serializers
 
-
-class AnomalieSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = 'Main_Courante'
-        fields = '__all__'
+from Main_Courante.models import MainCourante, PhotoMC
 
 
 class MainCouranteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = 'Main_Courante'
+        model = MainCourante
         fields = [
             'date_mc',
             'type_anomalie',
@@ -24,5 +20,5 @@ class MainCouranteSerializer(serializers.ModelSerializer):
 
 class PhotosSerializer(serializers.ModelSerializer):
     class Meta:
-        model = 'PhotoMC'
+        model = PhotoMC
         fields = '__all__'

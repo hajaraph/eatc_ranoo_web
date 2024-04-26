@@ -16,16 +16,17 @@ class MissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReleveCompteur
         fields = ['date_releve', 'volume', 'num_compteur', 'utilisateur', 'image_compteur']
-        
-class MissionReceivePost (serializers.Serializer):
+
+
+class MissionReceivePost(serializers.Serializer):
     class Meta:
         model = ReleveCompteur
-        fields =  [ 
-                'num_compteur',
-                'volume_dernier_releve',
-                'date_releve',
-                'utilisateur'
-            ]
+        fields = [
+            'num_compteur',
+            'volume_dernier_releve',
+            'date_releve',
+            'utilisateur'
+        ]
 
 
 class FactureSerializer(serializers.ModelSerializer):
