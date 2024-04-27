@@ -53,7 +53,7 @@ def detail_mc(request, pk):
     title = 'Main Courante| Détail'
     active = 'active'
     font = 'custom-font'
-    main_courante = MainCourante.objects.get(statuts__id_statut=pk)
+    main_courante = MainCourante.objects.get(pk=pk)
     photos = main_courante.photomcs.all()
     suivies = main_courante.suiviemcs.all()
     statut = main_courante.statuts.get()

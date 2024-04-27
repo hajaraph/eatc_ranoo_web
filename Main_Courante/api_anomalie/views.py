@@ -61,9 +61,6 @@ class DeclareMaincourate(APIView):
 
             StatutMC.objects.create(
                 main_courante_id=main_courante_id,
-                non_traite=True,
-                en_cours=False,
-                realise=False,
                 date_status=datemc
             )
             return JsonResponse({'message': 'Données enregistrées avec succès'}, status=200)
