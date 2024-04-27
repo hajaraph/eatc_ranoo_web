@@ -5,7 +5,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.views import APIView
 
 from Main_Courante.api_anomalie.serializer import MainCouranteSerializer, PhotosSerializer
-from Main_Courante.models import StatutMC
+from Main_Courante.models import StatutMC, PhotoMC
 
 
 class DeclareMaincourate(APIView):
@@ -17,6 +17,7 @@ class DeclareMaincourate(APIView):
 
         main_courante_list = []
         for main_courante in main_courantes:
+            photomc = PhotoMC.objects.filter(main_courante_id=main_courante.main_courante_id)
             main_courante_info = {
                 'id': int(main_courante.main_courante_id),
                 'id_mc': int(main_courante.main_courante_id),
@@ -28,7 +29,13 @@ class DeclareMaincourate(APIView):
                 'client_declare': str(main_courante.main_courante.client.nom_client) if main_courante.main_courante.client_id else '',
                 'cp_commune': str(main_courante.main_courante.cp_commune_id) if main_courante.main_courante.cp_commune_id else '',
                 'commune': str(main_courante.main_courante.cp_commune.commune) if main_courante.main_courante.cp_commune_id else '',
-                'status': 0 if main_courante.non_traite else ( 1 if main_courante.en_cours else 2 if main_courante.realise else '')
+                'status': 0 if main_courante.non_traite else (1 if main_courante.en_cours else 2 if main_courante.realise else ''),
+                'photomc': [
+                    {
+                        'photo': photo.photo_anomalie.url if photo.photo_anomalie.url else '',
+                    }
+                    for photo in photomc
+                ]
             }
             main_courante_list.append(main_courante_info)
             # print(main_courante_info)
