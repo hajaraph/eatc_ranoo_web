@@ -41,7 +41,6 @@ class DeclareMaincourate(APIView):
             # print(main_courante_info)
 
         # Déplacer l'impression de main_courante_info à l'intérieur de la boucle for
-
         return JsonResponse({'main_courante_list': main_courante_list})
 
     @staticmethod
