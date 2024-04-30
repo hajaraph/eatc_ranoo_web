@@ -222,19 +222,30 @@ class ClientContrat(View):
     def get(request, pk, *args, **kwargs):
         active = 'active'
         font = 'custom-font'
-        if pk.isdigit():
-            client = Client.objects.get(pk=pk)
-            contrats = client.contrats.all()
-            contrat = client.contrats.latest('date_debut')
-        else:
-            client = Client.objects.get(contrats__num_contrat=pk)
-            contrats = client.contrats.all()
-            contrat = client.contrats.get(num_contrat=pk)
+
+        title = ''
+        client = ''
+        contrats = ''
+        contrat = ''
+
+        try:
+            if Client.objects.filter(pk=pk).exists():
+                client = Client.objects.get(pk=pk)
+                contrats = client.contrats.all()
+                contrat = client.contrats.latest('date_debut')
+            else:
+                client = Client.objects.get(contrats__num_contrat=pk)
+                contrats = client.contrats.all()
+                contrat = client.contrats.get(num_contrat=pk)
+
+            title = f'Clients | Detail | Contrats | {client.nom_client} {client.prenom_client}'
+
+        except Client.DoesNotExist:
+            messages.warning(request, "Ce contrat n'exist pas")
 
         region = Region.objects.order_by('region').all()
         type_client = TypeClient.objects.all()
 
-        title = f'Clients | Detail | Contrats | {client.nom_client} {client.prenom_client}'
         context = {
             'title_li_contrat': title,
             'active_li_contrat': active,
