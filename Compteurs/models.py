@@ -1,5 +1,6 @@
 from django.db import models
 
+from django.db.models.functions import Now
 from Login.models import Utilisateur
 
 
@@ -24,15 +25,9 @@ class ReleveCompteur(models.Model):
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT, blank=True, null=True)
     num_compteur = models.ForeignKey(Compteur, blank=False, related_name='relevecompteurs', on_delete=models.CASCADE)
 
-    # def save(self, *args, **kwargs):
-    #     # Calcul de la consommation avant d'enregistrer
-    #     releve_precedent = ReleveCompteur.objects.filter(
-    #         num_compteur=self.num_compteur).latest('date_releve')
-    #
-    #     if releve_precedent:
-    #         self.conso = self.volume - releve_precedent.volume
-    #     else:
-    #         # Si c'est le premier relevé, la consommation est égale au volume actuel
-    #         self.conso = self.volume
-    #
-    #     super().save(*args, **kwargs)
+
+class Syncronisation(models.Model):
+    id_syncro = models.BigAutoField(primary_key=True)
+    date_syncro = models.DateField(db_default=Now(), blank=True, null=True)
+    relevercompteur = models.ForeignKey(ReleveCompteur, on_delete=models.CASCADE, blank=True, null=True)
+
