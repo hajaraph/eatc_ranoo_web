@@ -19,7 +19,7 @@
             </div>
             <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <input type="text" name="prenom_client" id="prenom_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ detail.prenom_client }}" placeholder="">
+                    <input type="text" name="prenom_client" id="prenom_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{% if detail.prenom_client %}{{ detail.prenom_client }}{% endif %}" placeholder="">
                     <label for="prenom_client">Prénom</label>
                 </div>
             </div>

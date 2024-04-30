@@ -35,13 +35,25 @@
                         </a>
                     </td>
                     <td>{{ clients.nom_client }}</td>
-                    <td>{{ clients.prenom_client }}</td>
-                    <td>{{ clients.tel1_client }}</td>
+                    <td>
+                        {% if clients.prenom_client %}
+                            {{ clients.prenom_client }}
+                        {% else %}
+                            <span class="bg-secondary-subtle rounded px-1 small">aucun prénom</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if clients.tel1_client %}
+                        	{{ clients.tel1_client }}
+                        {% else %}
+                            <span class="bg-secondary-subtle rounded px-1 small">aucun contact</span>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if clients.contrats.last %}
                             {{ clients.contrats.last.num_contrat }}
                         {% else %}
-                            <span class="text-secondary">Pas de contrat</span>
+                            <span class="bg-secondary-subtle rounded px-1 small">Pas de contrat</span>
                         {% endif %}
                     </td>
                     <td>

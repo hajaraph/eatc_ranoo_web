@@ -33,14 +33,14 @@
                         {% if list.contrats.last %}
                         	{{ list.contrats.last.num_contrat }}
                         {% else %}
-                            <span class="text-secondary">Pas de contrat</span>
+                            <span class="bg-secondary-subtle rounded px-1 small">Pas de contrat</span>
                         {% endif %} 
                     </td>
                     <td>
                         {% if list.dernier_releve %}
                             {{ list.dernier_releve|date:"d/m/Y" }}
                         {% else %}
-                            <span class="bg-warning rounded px-1">Pas de relevé</span>
+                            <span class="bg-secondary-subtle rounded px-1 small">Pas de relevé</span>
                         {% endif %}
                     </td>
                     <td>
