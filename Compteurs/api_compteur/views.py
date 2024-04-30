@@ -463,12 +463,12 @@ class SynchronisationView(APIView):
     @staticmethod
     def sync_mission(mission_data, commune_usrs):
 
-        date_releve = mission_data.get('date_releve')
+        # date_releve = mission_data.get('date_releve')
         volume = mission_data.get('volume')
         num_compteur = mission_data.get('num_compteur')
         utilisateur_id = mission_data.get('utilisateur_id')
 
-        end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
+        # end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
 
         try:
             utilisateur = Utilisateur.objects.get(id_utilisateur=utilisateur_id)
@@ -482,15 +482,15 @@ class SynchronisationView(APIView):
             dernier_volume = dernier_releve.volume if dernier_releve else 0
             conso = volume - dernier_volume if dernier_volume else volume
 
-            mission, created = ReleveCompteur.objects.update_or_create(
-                date_releve=date_releve,
-                num_compteur=compteur,
-                defaults={
-                    'volume': volume,
-                    'conso': conso,
-                    'utilisateur': utilisateur
-                }
-            )
+            # mission, created = ReleveCompteur.objects.update_or_create(
+            #     date_releve=date_releve,
+            #     num_compteur=compteur,
+            #     defaults={
+            #         'volume': volume,
+            #         'conso': conso,
+            #         'utilisateur': utilisateur
+            #     }
+            # )
 
             contrats_commune = Contrat.objects.filter(cp_commune_id=commune_usrs).select_related(
                 'client', 'num_compteur'
@@ -550,10 +550,10 @@ class SynchronisationView(APIView):
         contrat_list = list(contrat_data)
         nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
 
-        accueil = {
+        accueils = {
             'totale_anomalie': total_anomalie,
             'realise': realise,
             'nombre_total_compteur': nombre_total_compteur,
             'nombre_relever_effectuer': nombre_relever_effectuer,
         }
-        return accueil
+        return accueils
