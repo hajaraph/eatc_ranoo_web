@@ -18,7 +18,7 @@ class Client(models.Model):
     id_client = models.BigAutoField(primary_key=True)
     nom_client = models.CharField(max_length=50, blank=False)
     prenom_client = models.CharField(max_length=30, blank=True, null=True)
-    tel1_client = models.CharField(max_length=10, blank=False)
+    tel1_client = models.CharField(max_length=10, blank=False, null=True)
     tel2_client = models.CharField(max_length=10, blank=False, null=True)
     email_client = models.TextField(max_length=60, blank=False, null=True)
     adresse_client = models.TextField(max_length=100, blank=False)
