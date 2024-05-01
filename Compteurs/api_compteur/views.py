@@ -48,10 +48,10 @@ def accueil(request):
 
     # Calcul de la fin du mois actuel en utilisant pandas
     end_of_month = (
-            pd.to_datetime('now')
-            .to_period('M')
-            .to_timestamp()
-            + MonthEnd(0)
+        pd.to_datetime('now')
+        .to_period('M')
+        .to_timestamp()
+        + MonthEnd(0)
     )
 
     # Filtrer les contrats avec des relevés dans le mois actuel
@@ -287,21 +287,21 @@ class FactureDetail(APIView):
             return JsonResponse({'error': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}, status=404)
 
         montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
-        taxes = montant_ht.tarif.taxes.all()
-        taxe_montant = Calcule.montant_taxe(montant_ht.tarif, releve.relevecompteur.conso)
+        # taxes = montant_ht.tarif.taxes.all()
+        # taxe_montant = Calcule.montant_taxe(montant_ht.tarif, releve.relevecompteur.conso)
 
-        taxes = [
-            {
-                'nom_taxe': taxe.nom_taxe,
-                'montant_taxe': montant_taxe
-            }
-            for taxe, montant_taxe in zip(taxes, taxe_montant)
-        ]
-        avoir_avant = releve.avoir_avant if releve.avoir_avant is not None else 0.0
-        avoir_utilise = releve.avoir_utilise if releve.avoir_utilise is not None else 0.0
-        restant_precedant = releve.restant_precedant if releve.restant_precedant is not None else 0.0
-        restant_nouvel = releve.restant_nouvel if releve.restant_nouvel is not None else 0.0
-        montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc is not None else 0.0
+        # taxes = [
+        #     {
+        #         'nom_taxe': taxe.nom_taxe,
+        #         'montant_taxe': montant_taxe
+        #     }
+        #     for taxe, montant_taxe in zip(taxes, taxe_montant)
+        # ]
+        avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
+        avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
+        restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
+        restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
+        montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
 
         if montant_total_ttc == 0.0 or restant_nouvel == 0.0 or restant_nouvel == 0.0:
             montant_payer = 0.0
@@ -316,14 +316,14 @@ class FactureDetail(APIView):
             'date_facture': releve.date_facture,
             'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
             'tarif_m3': montant_ht.tarif.prix_m3 if montant_ht.tarif is not None and montant_ht.tarif.prix_m3 is not None else 0.0,
-            'avoir_avant': avoir_avant,
-            'avoir_utilise': avoir_utilise,
-            'restant_precedant': restant_precedant,
+            'avoir_avant': avoir_avant if avoir_avant else 0,
+            'avoir_utilise': avoir_utilise if avoir_utilise else 0,
+            'restant_precedant': restant_precedant if restant_precedant else 0,
             'montant_payer': montant_payer,
             'montant_total_ttc': montant_total_ttc,
             # 'total_conso_ht': montant_ht.total_conso_ht,
             # 'tarif_m3': montant_ht.tarif.prix_m3,
-            'taxes': taxes,
+            # 'taxes': taxes,
             # 'avoir_avant': releve.avoir_avant,
             # 'avoir_utilise': releve.avoir_utilise,
             # 'restant_precedant': releve.restant_precedant,

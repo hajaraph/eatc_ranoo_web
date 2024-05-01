@@ -55,7 +55,7 @@
     <table>
         <tr>
             <th style="text-align: left">
-                <img style="width: 115px; height: 115px;" src="Login/static/logo/img.png" alt="">
+                <img style="width: 115px; height: 115px;" src="static/logo/img.png" alt="">
             </th>
             <th style="text-align: right">
                 <img style="width: 115px; height: 115px;" src="data:image/png;base64,{{ qr_code }}" alt="">
@@ -67,7 +67,13 @@
         <tr>
             <td style="padding-top: 5px">
                 <div class="reference"><strong>Référence client : </strong>{{ instance.num_contrat.client.id_client }}</div>
-                <div class="nom"><strong>Nom du client : </strong>{{ instance.num_contrat.client.nom_client }} {{ instance.num_contrat.client.prenom_client }}</div>
+                <div class="nom">
+                    <strong>Nom du client : </strong>
+                    {{ instance.num_contrat.client.nom_client }}
+                    {% if instance.num_contrat.client.prenom_client %}
+                        {{ instance.num_contrat.client.prenom_client }}
+                    {% endif %}
+                </div>
                 <div class="adresse"><strong>Adresse de consommation : </strong>{{ instance.num_contrat.client.adresse_client }}</div>
                 <div>
                     {{ instance.num_contrat.client.cp_commune.region.region }}
@@ -81,7 +87,9 @@
                 <div>
                     <strong>
                         {{ instance.num_contrat.client.nom_client }}
-                        {{ instance.num_contrat.client.prenom_client }}
+                         {% if instance.num_contrat.client.prenom_client %}
+                            {{ instance.num_contrat.client.prenom_client }}
+                        {% endif %}
                     </strong>
                 </div>
                 <div>
@@ -270,7 +278,9 @@
                 <td>
                     <div>
                         {{ instance.num_contrat.client.nom_client }}
-                        {{ instance.num_contrat.client.prenom_client }}
+                         {% if instance.num_contrat.client.prenom_client %}
+                            {{ instance.num_contrat.client.prenom_client }}
+                        {% endif %}
                     </div>
                     <div>{{ instance.num_contrat.client.adresse_client }}</div>
                     <div>

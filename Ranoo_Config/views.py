@@ -72,7 +72,6 @@ class NouvelUtilisateur(View):
                         nom_utilisateur=nom_utilisateur,
                         prenom_utilisateur=prenom_utilisateur,
                         num_utilisateur=num_utilisateur,
-                        initial=request.session.get('prenom_utilisateur'),
                         password=make_password(motpasse_utilisateur),
                         role_id=role_id
                     )
@@ -83,14 +82,13 @@ class NouvelUtilisateur(View):
                         nom_utilisateur=nom_utilisateur,
                         prenom_utilisateur=prenom_utilisateur,
                         num_utilisateur=num_utilisateur,
-                        initial=request.session.get('prenom_utilisateur'),
                         password=make_password(motpasse_utilisateur),
                         cp_commune_id=cp_commune,
                         role_id=role_id
                     )
                 Initial.objects.create(
                     utilisateur_createur_id=request.session.get('id_utilisateur'),
-                    utilisateur_cree=utilisateur_cree
+                    utilisateur_cree_id=utilisateur_cree.pk
                 )
 
                 messages.success(request, f"Utilisateur crée avec succès !")
@@ -139,7 +137,7 @@ class UtilisateurMod(View):
         num_utilisateur = request.POST['num_utilisateur']
         motpasse_utilisateur = request.POST['motpasse_utilisateur']
         confirm_motpasse_utilisateur = request.POST['confirm_motpasse_utilisateur']
-        status = True if request.POST.getlist('status_utilisateur') else False
+        statut = True if request.POST.getlist('status_utilisateur') else False
         role_id = request.POST['role_id']
         utilisateur = get_object_or_404(Utilisateur, pk=pk)
 
@@ -154,7 +152,7 @@ class UtilisateurMod(View):
         utilisateur.nom_utilisateur = nom_utilisateur
         utilisateur.prenom_utilisateur = prenom_utilisateur
         utilisateur.num_utilisateur = num_utilisateur
-        utilisateur.status = status
+        utilisateur.statut = statut
         utilisateur.role_id = role_id
         utilisateur.save()
         messages.success(request, f"L'utilisateur {nom_utilisateur} {prenom_utilisateur} a été modifier avec succès !")
@@ -172,19 +170,6 @@ def sup_utilisateur(request, pk):
     except ProtectedError:
         messages.warning(request, f"Vous ne pouvez pas supprimer cette utilisateur car il a déjà fais des tâche !")
     return redirect('config_utilisateur')
-
-
-@authentification_requis
-def config_facture(request):
-    titre = 'Ranoo Config | Facture'
-    active = 'active'
-    font = 'custom-font'
-    contexte = {
-        'titre_config_facture': titre,
-        'active_config_facture': active,
-        'font_rano': font
-    }
-    return render(request, 'all_page/ranoo_config/content.html', contexte)
 
 
 @authentification_requis
