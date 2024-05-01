@@ -269,7 +269,7 @@ class ClientContrat(View):
         num_contrat = request.POST['num_contrat'] if 'num_contrat' in request.POST else None
         contrat_data = extract_contrat_data(request)
 
-        if pk.isdigit():
+        if Client.objects.filter(pk=pk).exist():
             client = Client.objects.get(pk=pk)
             contrat = client.contrats.get(num_contrat=num_contrat)
         else:
