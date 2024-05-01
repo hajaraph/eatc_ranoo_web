@@ -45,7 +45,6 @@ class DeclareMaincourate(APIView):
 
         return JsonResponse({'main_courante_list': main_courante_list})
 
-
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
