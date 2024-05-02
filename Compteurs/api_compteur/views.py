@@ -26,24 +26,8 @@ from pandas.tseries.offsets import MonthEnd
 from Parametre.views import enregistre_historique
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def accueil(request):
-    cp_commune_id = request.user.cp_commune_id
-    non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
-    realise = MainCourante.objects.filter(statuts__realise=True).count()
-    en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
-    total_anomalie = non_traite + en_cours
-
-    nombre_total_facture_impayer = Facture.objects.filter(
-        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
-        statut=False
-    ).count()
-    nombre_total_facture_payer = Facture.objects.filter(
-        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
-        statut=True
-    ).count()
-
+def calculer_nombre_relever_effectuer(cp_commune_id):
+    # Calcul du nombre total de compteurs
     nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
 
     # Calcul de la fin du mois actuel en utilisant pandas
@@ -67,6 +51,29 @@ def accueil(request):
 
     # Calculer le nombre_relever_effectuer
     nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
+
+    return nombre_total_compteur, nombre_relever_effectuer
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def accueil(request):
+    cp_commune_id = request.user.cp_commune_id
+    non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
+    realise = MainCourante.objects.filter(statuts__realise=True).count()
+    en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
+    total_anomalie = non_traite + en_cours
+
+    nombre_total_facture_impayer = Facture.objects.filter(
+        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
+        statut=False
+    ).count()
+    nombre_total_facture_payer = Facture.objects.filter(
+        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
+        statut=True
+    ).count()
+
+    nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
 
     # print(nombre_total_facture_impayer);
     # print(nombre_total_facture_payer);
@@ -529,26 +536,8 @@ class SynchronisationView(APIView):
         non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
         realise = MainCourante.objects.filter(statuts__realise=True).count()
         total_anomalie = non_traite + realise
-        nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
 
-        end_of_month = (
-                pd.to_datetime('now')
-                .to_period('M')
-                .to_timestamp()
-                + MonthEnd(0)
-        )
-
-        contrat_data = (
-            Contrat.objects
-            .filter(cp_commune_id=cp_commune_id)
-            .annotate(releve_count=Count('num_compteur__relevecompteurs',
-                                         filter=Q(
-                                             num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
-            .distinct()
-        )
-
-        contrat_list = list(contrat_data)
-        nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
+        nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
 
         accueils = {
             'totale_anomalie': total_anomalie,
