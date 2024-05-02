@@ -14,10 +14,10 @@ def upload_to_mc(instance, filename):
 class MainCourante(models.Model):
     id_mc = models.BigAutoField(primary_key=True)
     date_mc = models.DateField(default=timezone.now, blank=False)
-    type_anomalie = models.CharField(max_length=30, blank=False)
+    type_anomalie = models.CharField(max_length=50, blank=False)
     longitude_mc = models.CharField(max_length=50, blank=True, null=True)
     latitude_mc = models.CharField(max_length=50, blank=True, null=True)
-    description_mc = models.CharField(max_length=50, blank=False)
+    description_mc = models.CharField(max_length=255, blank=False)
     client = models.ForeignKey(Client, on_delete=models.CASCADE, null=True)
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE, null=True, blank=True)
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT, blank=False)
