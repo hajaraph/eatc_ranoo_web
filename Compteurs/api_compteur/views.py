@@ -19,7 +19,7 @@ from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
 from Compteurs.views import relever
 from Facturation.models import Facture, MontantHT
-from Facturation.views import facture_creation, paiement, Calcule
+from Facturation.views import facture_creation, paiement
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
 from pandas.tseries.offsets import MonthEnd
