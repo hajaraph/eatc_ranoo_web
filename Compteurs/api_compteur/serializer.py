@@ -6,10 +6,11 @@ from Facturation.models import Facture, Paiement
 
 class MissionSerializer(serializers.ModelSerializer):
     image_compteur = serializers.ImageField(required=False)  # Champ pour le fichier image_compteur
+    releve_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = ReleveCompteur
-        fields = ['id_releve', 'date_releve', 'volume', 'num_compteur', 'image_compteur']
+        fields = ['releve_id', 'date_releve', 'volume', 'num_compteur', 'image_compteur']
 
 
 class FactureSerializer(serializers.ModelSerializer):

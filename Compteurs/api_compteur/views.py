@@ -17,7 +17,7 @@ from .serializer import MissionSerializer, PaiementSerializer, FactureSerializer
 
 from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
-from Compteurs.views import relever
+from Compteurs.views import relever, ReleveMod
 from Facturation.models import Facture, MontantHT
 from Facturation.views import facture_creation, paiement
 from Main_Courante.models import MainCourante
@@ -241,9 +241,8 @@ class Missions(APIView):
         utilisateur = request.user.id_utilisateur
 
         if serializer.is_valid():
-            id_releve = serializer.validated_data.get('id_releve')
+            id_releve = serializer.validated_data.get('releve_id')
             compteur_id = serializer.validated_data.get('num_compteur')
-            print(id_releve)
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
             image_compteur = request.FILES.get('image_compteur')
@@ -253,25 +252,22 @@ class Missions(APIView):
                 dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
 
                 if dernier_releve.volume >= volume:
-                    return JsonResponse({'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"},
-                                        status=status.HTTP_400_BAD_REQUEST)
+                    return JsonResponse({
+                            'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
                 else:
-                    mis_releve = compteur.relevecompteurs.get(pk=id_releve)
-                    conso = volume - dernier_releve.volume
-                    mis_releve.date_releve = date_releve
-                    mis_releve.volume = volume
-                    mis_releve.conso = conso
-                    mis_releve.image_compteur = image_compteur
-                    Facture.objects.get(relevecompteur_id=id_releve).delete()
+                    if date_releve <= dernier_releve.date_releve:
+                        return JsonResponse({'erreur': "Veuillez fournir une date valide"},
+                                            status=status.HTTP_400_BAD_REQUEST)
 
-                    facture_creation(date_releve, compteur.num_compteur, id_releve)
+                    mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur, dernier_releve)
+                    facture_creation(date_releve, compteur.num_compteur, mod_releve)
 
-                    return JsonResponse(
-                        {
+                    return JsonResponse({
                             'enregistre': 'Mise à jour effectuer avec succès !'
-                        },
-                        status=status.HTTP_201_CREATED
-                    )
+                        }, status=status.HTTP_201_CREATED)
+
             else:
                 if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
                     return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
@@ -283,13 +279,12 @@ class Missions(APIView):
                     if date_releve <= dernier_volume.date_releve:
                         return JsonResponse({'erreur': "Veuillez fournir une date valide"},
                                             status=status.HTTP_400_BAD_REQUEST)
+
                     if dernier_volume.volume > volume:
-                        return JsonResponse(
-                            {
+                        return JsonResponse({
                                 'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
-                            },
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
                     else:
                         conso = volume - dernier_volume.volume
                 else:
@@ -352,8 +347,8 @@ class FactureDetail(APIView):
             'num_facture': releve.num_facture,
             'num_compteur': int(releve.num_contrat.num_compteur_id),
             'date_facture': releve.date_facture,
-            'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
-            'tarif_m3': montant_ht.tarif.prix_m3 if montant_ht.tarif is not None and montant_ht.tarif.prix_m3 is not None else 0.0,
+            'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht else 0.0,
+            'tarif_m3': montant_ht.tarif.prix_m3 if montant_ht.tarif and montant_ht.tarif.prix_m3 else 0.0,
             'avoir_avant': avoir_avant if avoir_avant else 0,
             'avoir_utilise': avoir_utilise if avoir_utilise else 0,
             'restant_precedant': restant_precedant if restant_precedant else 0,
