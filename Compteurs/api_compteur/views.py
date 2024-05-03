@@ -32,10 +32,10 @@ def calculer_nombre_relever_effectuer(cp_commune_id):
 
     # Calcul de la fin du mois actuel en utilisant pandas
     end_of_month = (
-        pd.to_datetime('now')
-        .to_period('M')
-        .to_timestamp()
-        + MonthEnd(0)
+            pd.to_datetime('now')
+            .to_period('M')
+            .to_timestamp()
+            + MonthEnd(0)
     )
 
     # Filtrer les contrats avec des relevés dans le mois actuel
@@ -241,33 +241,64 @@ class Missions(APIView):
         utilisateur = request.user.id_utilisateur
 
         if serializer.is_valid():
+            id_releve = serializer.validated_data.get('id_releve')
             compteur_id = serializer.validated_data.get('num_compteur')
+            print(id_releve)
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
             image_compteur = request.FILES.get('image_compteur')
 
-            if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
-                return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
-                                    status=status.HTTP_400_BAD_REQUEST)
+            if id_releve is not None:
+                compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
+                dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
 
-            dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
-
-            if dernier_volume:
-                if date_releve <= dernier_volume.date_releve:
-                    return JsonResponse({'erreur': "Veuillez fournir une date valide"},
-                                        status=status.HTTP_400_BAD_REQUEST)
-                if dernier_volume.volume > volume:
+                if dernier_releve.volume >= volume:
                     return JsonResponse({'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"},
                                         status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    conso = volume - dernier_volume.volume
+                    mis_releve = compteur.relevecompteurs.get(pk=id_releve)
+                    conso = volume - dernier_releve.volume
+                    mis_releve.date_releve = date_releve
+                    mis_releve.volume = volume
+                    mis_releve.conso = conso
+                    mis_releve.image_compteur = image_compteur
+                    Facture.objects.get(relevecompteur_id=id_releve).delete()
+
+                    facture_creation(date_releve, compteur.num_compteur, id_releve)
+
+                    return JsonResponse(
+                        {
+                            'enregistre': 'Mise à jour effectuer avec succès !'
+                        },
+                        status=status.HTTP_201_CREATED
+                    )
             else:
-                conso = volume
+                if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
+                    return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
+                                        status=status.HTTP_400_BAD_REQUEST)
 
-            releve = relever(request, dernier_volume.num_compteur_id, date_releve,
-                             volume, conso, image_compteur, utilisateur)
+                dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
 
-            facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+                if dernier_volume:
+                    if date_releve <= dernier_volume.date_releve:
+                        return JsonResponse({'erreur': "Veuillez fournir une date valide"},
+                                            status=status.HTTP_400_BAD_REQUEST)
+                    if dernier_volume.volume > volume:
+                        return JsonResponse(
+                            {
+                                'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
+                            },
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    else:
+                        conso = volume - dernier_volume.volume
+                else:
+                    conso = volume
+
+                releve = relever(request, dernier_volume.num_compteur_id, date_releve,
+                                 volume, conso, image_compteur, utilisateur)
+
+                facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
 
             historique = f"Relever et Facture d'un compteur {compteur_id}"
             enregistre_historique(request, historique, utilisateur)
