@@ -131,12 +131,14 @@ PASSWORD_HASHERS = [
 MESSAGE_TAGS = {
     messages.DEBUG: 'danger',
     messages.INFO: 'info',
-    messages.SUCCESS: 'success',
+    messages.SUCCESS: 'success', 
     messages.WARNING: 'warning',
     messages.ERROR: 'danger',
 }
 
-STATIC_ROOT = 'static/files/'
+STATIC_URL = '/static/' 
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 MEDIA_URL = '/media/'
 
