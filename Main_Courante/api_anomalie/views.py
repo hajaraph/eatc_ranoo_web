@@ -1,12 +1,14 @@
+from django.db import transaction
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
 from rest_framework.decorators import parser_classes
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.views import APIView
 
 from Main_Courante.api_anomalie.serializer import MainCouranteSerializer, PhotosSerializer
-from Main_Courante.models import StatutMC, PhotoMC
- 
+from Main_Courante.models import StatutMC, PhotoMC, MainCourante
+
 
 class DeclareMaincourate(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -52,25 +54,47 @@ class DeclareMaincourate(APIView):
         maincourante_data['utilisateur'] = request.user.id_utilisateur
         maincourante_serializer = MainCouranteSerializer(data=maincourante_data)
 
-        if maincourante_serializer.is_valid():
-            datemc = maincourante_serializer.validated_data['date_mc']
-            main_courant = maincourante_serializer.save()
-            main_courante_id = main_courant.pk
-
-            photomc = request.data.get('photomc', [])
-            for photo in photomc:
-                photo['main_courante'] = main_courante_id
-                photo_serializer = PhotosSerializer(data=photo)
-
-                if photo_serializer.is_valid():
-                    photo_serializer.save()
-                else:
-                    return JsonResponse({'message': photo_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-            StatutMC.objects.create(
-                main_courante_id=main_courante_id,
-                date_status=datemc
-            )
-            return JsonResponse({'message': 'Données enregistrées avec succès'}, status=status.HTTP_200_OK)
-        else:
+        if not maincourante_serializer.is_valid():
             return JsonResponse({'message': maincourante_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        anomalie_id = maincourante_serializer.validated_data['anomalie_id']
+        datemc = maincourante_serializer.validated_data['date_mc']
+        photomc = request.data.get('photo_mc', [])
+
+        if anomalie_id is not None:
+
+            if MainCourante.objects.filter(pk=anomalie_id).exists():
+                maincourante = get_object_or_404(MainCourante, pk=anomalie_id)
+                maincourante_serializer.update(maincourante, maincourante_serializer.validated_data)
+
+                photos_to_update = PhotoMC.objects.filter(main_courante=maincourante)
+
+                for photo_data, photo_instance in zip(photomc, photos_to_update):
+                    photo_data['main_courante'] = maincourante
+                    photo_serializer = PhotosSerializer(photo_instance, data=photo_data)
+
+                    if not photo_serializer.is_valid():
+                        return JsonResponse({'message': photo_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+                    photo_serializer.save()
+
+                return JsonResponse({'message': 'Mise à jour effectuer avec succès'}, status=status.HTTP_200_OK)
+        else:
+            with transaction.atomic():
+                main_courant = maincourante_serializer.save()
+                main_courante_id = main_courant.pk
+
+                for photo in photomc:
+                    photo['main_courante'] = main_courante_id
+                    photo_serializer = PhotosSerializer(data=photo)
+
+                    if not photo_serializer.is_valid():
+                        return JsonResponse({'message': photo_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+                    photo_serializer.save()
+
+                StatutMC.objects.create(
+                    main_courante_id=main_courante_id,
+                    date_status=datemc
+                )
+            return JsonResponse({'message': 'Données enregistrées avec succès'}, status=status.HTTP_200_OK)

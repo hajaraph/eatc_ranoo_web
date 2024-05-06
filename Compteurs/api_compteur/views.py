@@ -240,68 +240,66 @@ class Missions(APIView):
         serializer = MissionSerializer(data=request.data)
         utilisateur = request.user.id_utilisateur
 
-        if serializer.is_valid():
-            id_releve = serializer.validated_data.get('releve_id')
-            compteur_id = serializer.validated_data.get('num_compteur')
-            date_releve = serializer.validated_data.get('date_releve')
-            volume = serializer.validated_data.get('volume')
-            image_compteur = request.FILES.get('image_compteur')
+        if not serializer.is_valid():
+            return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-            if id_releve is not None:
-                compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
-                dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
+        id_releve = serializer.validated_data.get('releve_id')
+        compteur_id = serializer.validated_data.get('num_compteur')
+        date_releve = serializer.validated_data.get('date_releve')
+        volume = serializer.validated_data.get('volume')
+        image_compteur = request.FILES.get('image_compteur')
 
-                if dernier_releve.volume >= volume:
+        if id_releve is not None:
+            compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
+            dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
+
+            if dernier_releve.volume >= volume:
+                return JsonResponse({
+                        'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            if date_releve <= dernier_releve.date_releve:
+                return JsonResponse({'erreur': "Veuillez fournir une date valide"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+
+            mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur, dernier_releve)
+            facture_creation(date_releve, compteur.num_compteur, mod_releve)
+
+            return JsonResponse({
+                        'enregistre': 'Mise à jour effectuer avec succès !'
+                    }, status=status.HTTP_201_CREATED)
+
+        else:
+            if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
+                return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+            dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
+
+            if dernier_volume:
+                if date_releve <= dernier_volume.date_releve:
+                    return JsonResponse({'erreur': "Veuillez fournir une date valide"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+
+                if dernier_volume.volume > volume:
                     return JsonResponse({
-                            'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
+                            'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
                         }, status=status.HTTP_400_BAD_REQUEST)
 
                 else:
-                    if date_releve <= dernier_releve.date_releve:
-                        return JsonResponse({'erreur': "Veuillez fournir une date valide"},
-                                            status=status.HTTP_400_BAD_REQUEST)
-
-                    mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur, dernier_releve)
-                    facture_creation(date_releve, compteur.num_compteur, mod_releve)
-
-                    return JsonResponse({
-                            'enregistre': 'Mise à jour effectuer avec succès !'
-                        }, status=status.HTTP_201_CREATED)
-
+                    conso = volume - dernier_volume.volume
             else:
-                if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
-                    return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
-                                        status=status.HTTP_400_BAD_REQUEST)
+                conso = volume
 
-                dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
+            releve = relever(request, dernier_volume.num_compteur_id, date_releve,
+                             volume, conso, image_compteur, utilisateur)
 
-                if dernier_volume:
-                    if date_releve <= dernier_volume.date_releve:
-                        return JsonResponse({'erreur': "Veuillez fournir une date valide"},
-                                            status=status.HTTP_400_BAD_REQUEST)
+            facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
 
-                    if dernier_volume.volume > volume:
-                        return JsonResponse({
-                                'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
-                            }, status=status.HTTP_400_BAD_REQUEST)
+        historique = f"Relever et Facture d'un compteur {compteur_id}"
+        enregistre_historique(request, historique, utilisateur)
 
-                    else:
-                        conso = volume - dernier_volume.volume
-                else:
-                    conso = volume
-
-                releve = relever(request, dernier_volume.num_compteur_id, date_releve,
-                                 volume, conso, image_compteur, utilisateur)
-
-                facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
-
-            historique = f"Relever et Facture d'un compteur {compteur_id}"
-            enregistre_historique(request, historique, utilisateur)
-
-            return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
-
-        else:
-            return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
 
 
 # Details Facture #
