@@ -8,8 +8,7 @@ git pull origin main
 echo "New changes copied to server !"
 
 # Activate Virtual Env
-cd ../
-source myenv/bin/activate 
+source /home/myenv/bin/activate 
 echo "Virtual env 'myenv' Activated !"
 
 echo "Installing Dependencies..."
@@ -24,7 +23,7 @@ python manage.py migrate
  
 # Deactivate Virtual Env
 deactivate
-echo "Virtual env 'mb' Deactivated !"
+echo "Virtual env 'myenv' Deactivated !"
 
 # Reloading Application So New Changes could reflect on website
 pushd miniblog
