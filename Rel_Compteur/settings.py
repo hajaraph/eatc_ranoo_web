@@ -93,8 +93,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
-        'USER': 'eatc',
-        'PASSWORD': 'svreatc',
+        'USER': 'postgres',
+        'PASSWORD': '12121212',
         'HOST': 'localhost',
         'PORT': '5432',
     }
