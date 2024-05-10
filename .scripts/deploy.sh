@@ -8,7 +8,7 @@ git pull origin main
 echo "New changes copied to server !"
 
 # Activate Virtual Env
-source /home/myenv/bin/activate 
+source /home/eatc/myenv/bin/activate 
 echo "Virtual env 'myenv' Activated !"
 
 echo "Installing Dependencies..."
