@@ -12,6 +12,7 @@ source /home/myenv/bin/activate
 echo "Virtual env 'myenv' Activated !"
 
 echo "Installing Dependencies..."
+cd /home/eatc/eatc_ranoo/
 pip install -r requirements.txt --no-input
 
 echo "Serving Static Files..."
