@@ -19,10 +19,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_extensions', 
     'Tableau_Bord',
     'Clients',
-    'Compteurs', 
+    'Compteurs',
     'Login',
     'Facturation',
     'Main_Courante',
@@ -45,9 +44,7 @@ MIDDLEWARE = [
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware', 
 ]
-
-
-ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149','10.0.2.2']
+ALLOWED_HOSTS = ['domainname.test', 'www.domainname.test', '192.168.88.177','10.0.2.2']
  
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -84,19 +81,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Rel_Compteur.wsgi.application'
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
-        'USER': 'eatcrano',
-        'PASSWORD': 'eatc301',
+        'USER': 'eatcdb',
+        'PASSWORD': 'eatcDB',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
-
-
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
