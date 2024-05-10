@@ -15,6 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Display SSH Connection Details
+        run: |
+          echo "Host: ${{ secrets.HOST }}"
+          echo "Username: ${{ secrets.USERNAME }}"
+          echo "Port: ${{ secrets.PORT }}"
+          echo "Key: ${{ secrets.SSHKEY }}"
+          
       - name: Deploy to Server
         uses: appleboy/ssh-action@master
         with:
