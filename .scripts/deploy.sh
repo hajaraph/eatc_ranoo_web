@@ -26,9 +26,10 @@ python manage.py migrate
 deactivate
 echo "Virtual env 'myenv' Deactivated !"
 
-# Reloading Application So New Changes could reflect on website
-pushd miniblog
+echo "Reloading Application So New Changes could reflect on website"
+pushd ~/eatc_ranoo/Rel_Compteur
 touch wsgi.py
 popd
 
 echo "Deployment Finished!"
+
