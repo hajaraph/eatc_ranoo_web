@@ -8,6 +8,7 @@ git pull origin main
 echo "New changes copied to server !"
 
 # Activate Virtual Env
+cd ../
 source myenv/bin/activate 
 echo "Virtual env 'myenv' Activated !"
 
