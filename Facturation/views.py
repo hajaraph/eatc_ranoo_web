@@ -69,8 +69,6 @@ def facture_etat_detail(request, num_facture):
 
     # Requete pour chaque detail
     factures = Facture.objects.get(num_facture=num_facture)
-    fact_dernier = Facture.objects.filter(
-        num_contrat__num_compteur_id=factures.num_contrat.num_compteur_id).latest('date_facture')
     paiements = Paiement.objects.filter(facture__num_facture=num_facture)
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
     tarif = Tarif.objects.get(cp_commune_id=factures.num_contrat.cp_commune_id)
@@ -89,7 +87,6 @@ def facture_etat_detail(request, num_facture):
         'facture': factures,
         'paiement': paiements,
         'montant': montant,
-        'fact': fact_dernier,
         'taxes_montants': taxes_montants,
         'date_echeance': date_echeance
     }
