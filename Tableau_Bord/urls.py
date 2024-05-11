@@ -1,8 +1,8 @@
 from django.urls import path
 
-from Tableau_Bord.views import tableau_bord, export
+from Tableau_Bord.views import tableau_bord, importe
 
 urlpatterns = [
     path('', tableau_bord, name='tableau_bord'),
-    path('export', export, name='export')
+    path('import', importe, name='import')
 ]

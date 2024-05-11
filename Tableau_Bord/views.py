@@ -1,6 +1,9 @@
 from datetime import timedelta
+
+from django.db import connection
 from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q
 from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
+from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -169,10 +172,16 @@ def tableau_bord(request, *args, **kwargs):
     return render(request, 'all_page/tableau_bord.html', context)
 
 
-def export(request):
-    font = 'custom-font'
+def importe(request):
+    if request.method == "POST":
+        try:
+            sql_file = request.FILES.get("sql_file")
+            sql_content = sql_file.read().decode("utf-8")
+            with connection.cursor() as cursor:
+                cursor.execute(sql_content)
+            return HttpResponse("Importation réussie.")
+        except Exception as e:
+            error_message = f"Erreur lors de l'importation du fichier SQL : {str(e)}"
+            return HttpResponse(error_message, status=500)
 
-    context = {
-        'font_export': font
-    }
-    return render(request, 'all_page/export.html', context)
+    return render(request, 'bdd_upload.html')

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload</title>
+</head>
+<body>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label for="">Fichier SQL</label>
+    <input type="file" name="sql_file">
+    <button type="submit">Upload</button>
+</form>
+</body>
+</html>
