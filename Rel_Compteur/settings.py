@@ -9,11 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-iy)pk3bxm664w4$_vxm)$0$9&!grq0h%f*8!^sshd(f53uo25b'
 
-# SECRET_KEY = '2&e6eh3@0idjnee^vf$ft(ff1vzs@uhfg)3n@zna@f#7pmz14v'  # os.environ.get("SECRET_KEY")
-
-DEBUG = True  # os.environ.get("DEBUG")
-
-ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149', '10.0.2.2', 'localhost']  # os.environ.get("ALLOWED_HOSTS").split(",")
+DEBUG = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,9 +18,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions', 
     'Tableau_Bord',
     'Clients',
-    'Compteurs',
+    'Compteurs', 
     'Login',
     'Facturation',
     'Main_Courante',
@@ -34,7 +31,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'django_db_logger'
 ]
 
 MIDDLEWARE = [
@@ -46,27 +42,25 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_browser_reload.middleware.BrowserReloadMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware', 
 ]
 
-# ALLOWED_HOSTS = [
-#     'localhost',
-#     '127.0.0.1',
-#     '10.0.2.2',
-#     '192.168.88.177'
-# ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+ALLOWED_HOSTS = ['domainname.test','www.domainname.test','10.0.2.2','192.168.0.102']
+ 
+CORS_ALLOW_ALL_ORIGINS = True 
 
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = True 
 
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
-    'http://localhost:3000',
+    'http://localhost:3000', 
+    
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     'http://127.0.0.1:8000',
+
 ]
 
 ROOT_URLCONF = 'Rel_Compteur.urls'
@@ -89,22 +83,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Rel_Compteur.wsgi.application'
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
-        'USER': 'postgres',
-        'PASSWORD': '12121212',
+        'USER': 'eatcdb',
+        'PASSWORD': 'eactDB',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
+
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'unique-snowflake',
     }
 }
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -131,8 +129,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 PASSWORD_HASHERS = [
@@ -142,10 +138,14 @@ PASSWORD_HASHERS = [
 MESSAGE_TAGS = {
     messages.DEBUG: 'danger',
     messages.INFO: 'info',
-    messages.SUCCESS: 'success',
+    messages.SUCCESS: 'success', 
     messages.WARNING: 'warning',
     messages.ERROR: 'danger',
 }
+
+STATIC_URL = '/static/' 
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 MEDIA_URL = '/media/'
 
@@ -183,34 +183,21 @@ AUTH_USER_MODEL = 'Login.Utilisateur'
 
 ADMIN_ENABLED = False
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
-        },
-        'simple': {
-            'format': '%(levelname)s %(asctime)s %(message)s'
-        },
-    },
-    'handlers': {
-        'db_log': {
-            'level': 'DEBUG',
-            'class': 'django_db_logger.db_log_handler.DatabaseLogHandler'
-        },
-    },
-    'loggers': {
-        'db': {
-            'handlers': ['db_log'],
-            'level': 'DEBUG'
-        },
-        'django.request': {  # logging 500 errors to database
-            'handlers': ['db_log'],
-            'level': 'ERROR',
-            'propagate': False,
-        }
-    }
-}
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': 'debug.log',
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['file'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#     },
+# }
