@@ -44,7 +44,7 @@ MIDDLEWARE = [
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware', 
 ]
-ALLOWED_HOSTS = ['domainname.test', 'www.domainname.test', '192.168.88.177','192.168.0.102','10.0.2.2']
+ALLOWED_HOSTS = ['domainname.test', 'www.domainname.test', '192.168.88.177','10.0.2.2']
  
 CORS_ALLOW_ALL_ORIGINS = True
 

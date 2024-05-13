@@ -2,6 +2,7 @@ import re
 import pandas as pd
 from django.db.models import Count
 from django.db.models import Q
+from datetime import datetime, time 
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -188,7 +189,6 @@ class Missions(APIView):
     @staticmethod
     def get_liste_mission(request):
         cp_commune = request.user.cp_commune_id
-        # Calcul de la fin du mois actuel en utilisant pandas
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
 
         contrats_commune = (
@@ -200,30 +200,32 @@ class Missions(APIView):
             )
         )
 
-        for contrat in contrats_commune:
-            dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
-                max_date=Max('date_releve'))
-            contrat.date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else None
-
-            # Comparaison des mois pour définir le statut
-            if contrat.date_releve and contrat.date_releve.month != end_of_month.month:
+        for contrat in contrats_commune: 
+            dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).order_by('date_releve').last()
+            if dernier_releve:
+                contrat.date_releve = dernier_releve.date_releve
+                if dernier_releve.date_releve.month == datetime.now().month and dernier_releve.date_releve.year == datetime.now().year:
+                    contrat.statut = 2
+                else:
+                    contrat.statut = 0
+            elif contrat.date_releve and contrat.date_releve.month != end_of_month.month:
                 contrat.statut = 0
-            else:
-                contrat.statut = 1
+            else: 
+                contrat.statut = 0
 
         liste_contrats_info = []
 
         for contrat in contrats_commune:
             dernier_releve = contrat.num_compteur.relevecompteurs.order_by('date_releve').last()
             contrat_info = {
-                'id': dernier_releve.pk,  # Utilisez l'ID du dernier relevé de compteur
+                'id': dernier_releve.pk if dernier_releve else None,
                 'nom_client': contrat.client.nom_client,
                 'prenom_client': contrat.client.prenom_client,
                 'adresse_client': contrat.client.adresse_client,
                 'num_compteur': contrat.num_compteur_id,
                 'conso_dernier_releve': contrat.conso_dernier_releve,
-                'volume_dernier_releve': dernier_releve.volume,
-                'date_releve': dernier_releve.date_releve,
+                'volume_dernier_releve': dernier_releve.volume if dernier_releve else None,
+                'date_releve': dernier_releve.date_releve if dernier_releve else None,
                 'statut': contrat.statut
             }
             liste_contrats_info.append(contrat_info)
@@ -340,26 +342,19 @@ class FactureDetail(APIView):
             montant_payer = montant_total_ttc - restant_nouvel
 
         facture = {
-            'id': int(releve.id_facture),
+            'id': int(releve.id_facture), 
             'relevecompteur_id': int(releve.relevecompteur_id),
             'num_facture': releve.num_facture,
             'num_compteur': int(releve.num_contrat.num_compteur_id),
             'date_facture': releve.date_facture,
-            'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht else 0.0,
-            'tarif_m3': montant_ht.tarif.prix_m3 if montant_ht.tarif and montant_ht.tarif.prix_m3 else 0.0,
-            'avoir_avant': avoir_avant if avoir_avant else 0,
-            'avoir_utilise': avoir_utilise if avoir_utilise else 0,
-            'restant_precedant': restant_precedant if restant_precedant else 0,
+            'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
+            'tarif_m3': montant_ht.tarif.prix_m3 if montant_ht.tarif is not None and montant_ht.tarif.prix_m3 is not None else 0.0,
+            'avoir_avant': avoir_avant,
+            'avoir_utilise': avoir_utilise,
+            'restant_precedant': restant_precedant,
             'montant_payer': montant_payer,
             'montant_total_ttc': montant_total_ttc,
-            # 'total_conso_ht': montant_ht.total_conso_ht,
-            # 'tarif_m3': montant_ht.tarif.prix_m3,
-            # 'taxes': taxes,
-            # 'avoir_avant': releve.avoir_avant,
-            # 'avoir_utilise': releve.avoir_utilise,
-            # 'restant_precedant': releve.restant_precedant,
-            # 'montant_total_ttc': releve.montant_total_ttc,
-            'statut': 'Payé' if releve.statut else 'Impayé',
+            'statut': 'Payé' if releve.statut else 'Impayé', 
         }
 
         return JsonResponse({'facture': facture})
