@@ -3,3 +3,6 @@ debug.log
 __pycache__/
 
 Rel_Compteur/settings.py
+
+
+static/media/
