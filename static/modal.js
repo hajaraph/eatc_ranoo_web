@@ -23,7 +23,11 @@ $(document).ready(function(){
         }
         champ.val(numericValue);
     }
+<<<<<<< HEAD
     let champ = $('#paiement, #prix_m3, #tva, #taxe_co, #redevance_bs, #redevance_fr')
+=======
+    let champ = $('#paiement, #prix_m3, #tva, #taux_taxe')
+>>>>>>> feature/test
     champ.on('input',function() {
         traiterChamp($(this));
     });

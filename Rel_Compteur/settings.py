@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django_extensions',
+    'django_extensions',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -43,21 +44,25 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware', 
+    'corsheaders.middleware.CorsMiddleware', 
 ]
 ALLOWED_HOSTS = ['domainname.test', 'www.domainname.test', '192.168.88.177','10.0.2.2']
  
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True 
+CORS_ALLOW_CREDENTIALS = True 
 
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
     'http://localhost:3000', 
     
+    
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     'http://127.0.0.1:8000',
+
 
 ]
 
@@ -134,9 +139,14 @@ MESSAGE_TAGS = {
     messages.DEBUG: 'danger',
     messages.INFO: 'info',
     messages.SUCCESS: 'success', 
+    messages.SUCCESS: 'success', 
     messages.WARNING: 'warning',
     messages.ERROR: 'danger',
 }
+
+STATIC_URL = '/static/' 
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 STATIC_URL = '/static/' 
 
@@ -196,3 +206,4 @@ ADMIN_ENABLED = False
 #         },
 #     },
 # }
+

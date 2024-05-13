@@ -5,7 +5,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('', include('Login.urls')),
-    path('tableau_Bord/', include('Tableau_Bord.urls')),
+    path('tableau_bord/', include('Tableau_Bord.urls')),
     path('clients/', include('Clients.urls')),
     path('compteurs/', include('Compteurs.urls')),
     path('facture/', include('Facturation.urls')),
@@ -18,3 +18,4 @@ urlpatterns = [
     path('__reload__', include('django_browser_reload.urls'))
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

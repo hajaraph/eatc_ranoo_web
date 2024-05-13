@@ -13,13 +13,8 @@
                 <tr>
                     <th>Région</th>
                     <th>Commune</th>
-                    <th>CP Commune</th>
                     <th>Prix / m&#179;</th>
-                    <th>TC</th>
-                    <th>RBS</th>
-                    <th>RFR</th>
                     <th>TVA</th>
-                    <th>Jour Echeance</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -28,13 +23,8 @@
                 <tr>
                     <td>{{ row.cp_commune.region.region }}</td>
                     <td>{{ row.cp_commune.commune }}</td>
-                    <td>{{ row.cp_commune_id }}</td>
                     <td>{{ row.prix_m3 }} Ar</td>
-                    <td>{{ row.taxe_co }} Ar</td>
-                    <td>{{ row.redevance_bs }} Ar</td>
-                    <td>{{ row.redevance_fr }} Ar</td>
                     <td>{{ row.tva }} %</td>
-                    <td>{{ row.nb_jour_echeance_fct }} Jours</td>
                     <td>
                         <a href="{% url 'tarif_mod' row.pk %}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i>

@@ -94,7 +94,7 @@
                         <span class="badge bg-primary">{{ row.main_courante.utilisateur.role.role }}</span>
                     </td>
                     <td>
-                        <a href="{% url 'detail_mc' row.pk %}" class="btn btn-primary btn-sm">
+                        <a href="{% url 'detail_mc' row.main_courante.pk %}" class="btn btn-primary btn-sm">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         {% if row.realise %}

@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
 from Clients.communes import Commune, Region
-from Facturation.models import Tarif
+from Facturation.models import Tarif, Taxe
 from Login.models import Utilisateur, Role, Initial
 from Login.views import authentification_requis, role_requis
 
@@ -72,7 +72,6 @@ class NouvelUtilisateur(View):
                         nom_utilisateur=nom_utilisateur,
                         prenom_utilisateur=prenom_utilisateur,
                         num_utilisateur=num_utilisateur,
-                        initial=request.session.get('prenom_utilisateur'),
                         password=make_password(motpasse_utilisateur),
                         role_id=role_id
                     )
@@ -83,14 +82,13 @@ class NouvelUtilisateur(View):
                         nom_utilisateur=nom_utilisateur,
                         prenom_utilisateur=prenom_utilisateur,
                         num_utilisateur=num_utilisateur,
-                        initial=request.session.get('prenom_utilisateur'),
                         password=make_password(motpasse_utilisateur),
                         cp_commune_id=cp_commune,
                         role_id=role_id
                     )
                 Initial.objects.create(
                     utilisateur_createur_id=request.session.get('id_utilisateur'),
-                    utilisateur_cree=utilisateur_cree
+                    utilisateur_cree_id=utilisateur_cree.pk
                 )
 
                 messages.success(request, f"Utilisateur crée avec succès !")
@@ -139,7 +137,7 @@ class UtilisateurMod(View):
         num_utilisateur = request.POST['num_utilisateur']
         motpasse_utilisateur = request.POST['motpasse_utilisateur']
         confirm_motpasse_utilisateur = request.POST['confirm_motpasse_utilisateur']
-        status = True if request.POST.getlist('status_utilisateur') else False
+        statut = True if request.POST.getlist('status_utilisateur') else False
         role_id = request.POST['role_id']
         utilisateur = get_object_or_404(Utilisateur, pk=pk)
 
@@ -154,7 +152,7 @@ class UtilisateurMod(View):
         utilisateur.nom_utilisateur = nom_utilisateur
         utilisateur.prenom_utilisateur = prenom_utilisateur
         utilisateur.num_utilisateur = num_utilisateur
-        utilisateur.status = status
+        utilisateur.statut = statut
         utilisateur.role_id = role_id
         utilisateur.save()
         messages.success(request, f"L'utilisateur {nom_utilisateur} {prenom_utilisateur} a été modifier avec succès !")
@@ -172,19 +170,6 @@ def sup_utilisateur(request, pk):
     except ProtectedError:
         messages.warning(request, f"Vous ne pouvez pas supprimer cette utilisateur car il a déjà fais des tâche !")
     return redirect('config_utilisateur')
-
-
-@authentification_requis
-def config_facture(request):
-    titre = 'Ranoo Config | Facture'
-    active = 'active'
-    font = 'custom-font'
-    contexte = {
-        'titre_config_facture': titre,
-        'active_config_facture': active,
-        'font_rano': font
-    }
-    return render(request, 'all_page/ranoo_config/content.html', contexte)
 
 
 @authentification_requis
@@ -226,20 +211,22 @@ class TarifNew(View):
     def post(request):
         cp_commune = request.POST['cp_commune']
         prix_m3 = float(request.POST['prix_m3'])
-        taxe_co = float(request.POST['taxe_co'])
-        redevance_bs = float(request.POST['redevance_bs'])
-        redevance_fr = float(request.POST['redevance_fr'])
+        nom_taxes = request.POST.getlist('nom_taxe')
+        taux_taxes = [float(taux) for taux in request.POST.getlist('taux_taxe')]
         tva = float(request.POST['tva'])
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
-        Tarif.objects.create(
+        tarif = Tarif.objects.create(
             cp_commune_id=cp_commune,
             prix_m3=round(prix_m3, 2),
-            taxe_co=round(taxe_co, 2),
-            redevance_bs=round(redevance_bs, 2),
-            redevance_fr=round(redevance_fr, 2),
             tva=round(tva, 2),
             nb_jour_echeance_fct=nb_jour_echeance_fct,
         )
+        for nom_taxe, taux_taxe in zip(nom_taxes, taux_taxes):
+            Taxe.objects.create(
+                nom_taxe=nom_taxe,
+                taux_taxe=round(float(taux_taxe), 2),
+                tarif_id=tarif.pk
+            )
         messages.success(request, f'Enregistré avec succès !')
         return redirect('config_tarif')
 
@@ -253,11 +240,13 @@ class TarifMod(View):
         active = 'active'
         font = 'custom-font'
         tarif = Tarif.objects.get(pk=pk)
+        taxes = tarif.taxes.all()
         context = {
             'titre_mod_tarif': titre,
             'active_config_constates': active,
             'font_rano': font,
             'tarif': tarif,
+            'taxes': taxes
         }
         return render(request, 'all_page/ranoo_config/content.html', context)
 
@@ -266,17 +255,14 @@ class TarifMod(View):
     @role_requis('Administrateur', 'Gestionnaire')
     def post(request, pk):
         prix_m3 = float(request.POST['prix_m3'])
-        taxe_co = float(request.POST['taxe_co'])
-        redevance_bs = float(request.POST['redevance_bs'])
-        redevance_fr = float(request.POST['redevance_fr'])
+        nom_taxes = request.POST.getlist('nom_taxe')
+        taux_taxes = [float(taux) for taux in request.POST.getlist('taux_taxe')]
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
         tva = float(request.POST['tva'])
 
         tarif = Tarif.objects.get(pk=pk)
+        taxes = tarif.taxes.all()
         tarif.prix_m3 = round(prix_m3, 2)
-        tarif.taxe_co = round(taxe_co, 2)
-        tarif.redevance_bs = round(redevance_bs, 2)
-        tarif.redevance_fr = round(redevance_fr, 2)
         tarif.tva = round(tva, 2)
         tarif.nb_jour_echeance_fct = nb_jour_echeance_fct
         tarif.save()

@@ -82,7 +82,6 @@ class Authentification(View):
                         return redirect('compteur_list')
                     else:
                         return redirect('tableau_bord')
-
                 else:
                     messages.warning(request, f"Votre compte a été desactivé,"
                                               f" Veuillez contacter l'Administrateur !")

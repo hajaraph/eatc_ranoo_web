@@ -206,8 +206,12 @@ class ReleveNew(View):
         }
         return render(request, 'all_page/compteurs/compteurs.html', context)
 
+<<<<<<< HEAD
     
 # Filename 
+=======
+    @staticmethod
+>>>>>>> feature/test
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def post(request, num_compteur):
@@ -273,6 +277,19 @@ class ReleveMod(View):
         return render(request, 'all_page/compteurs/compteurs.html', context)
 
     @staticmethod
+    def mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur, dernier_releve):
+        mod_releve = compteur.relevecompteurs.get(pk=id_releve)
+        conso = volume - dernier_releve.volume
+        mod_releve.date_releve = date_releve
+        mod_releve.volume = volume
+        mod_releve.conso = conso
+        mod_releve.image_compteur = image_compteur
+        mod_releve.save()
+        Facture.objects.get(relevecompteur_id=id_releve).delete()
+
+        return mod_releve
+
+    @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def post(request, pk):
@@ -291,17 +308,11 @@ class ReleveMod(View):
                 messages.warning(request, f"Vous ne pouvez pas enregistrer un relevé inferieure à la dernière !")
                 return redirect('releve_mod', pk)
             else:
-                mod_releve = compteur.relevecompteurs.get(pk=pk)
-                conso = volume - dernier_releve.volume
-                mod_releve.date_releve = date_releve
-                mod_releve.volume = volume
-                mod_releve.conso = conso
-                mod_releve.image_compteur = image_compteur
-                Facture.objects.get(relevecompteur_id=pk).delete()
-                mod_releve.save()
-                facture_creation(date_releve, mod_releve.num_compteur.pk, pk)
+                mod_releve = request.mod_relever_facture(pk, compteur, date_releve,
+                                                         volume, image_compteur, dernier_releve)
+                facture_creation(date_releve, compteur.pk, mod_releve)
                 messages.success(request, f"Relevé enregistré avec succès !")
-                return redirect('compteur_detail', mod_releve.num_compteur.pk)
+                return redirect('compteur_detail', compteur.pk)
 
 
 @authentification_requis

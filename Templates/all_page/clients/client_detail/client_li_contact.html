@@ -46,13 +46,13 @@
 <div class="row mt-4">
     <div class="col-md-4">
         <div class="form-floating">
-            <input type="text" name="tel1_client" id="tel1_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ detail.tel1_client }}" placeholder="">
+            <input type="text" name="tel1_client" id="tel1_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{% if detail.tel1_client %}{{ detail.tel1_client }}{% endif %}" placeholder="">
             <label for="tel1_client">Téléphone 1</label>
         </div>
     </div>
     <div class="col-md-4">
         <div class="form-floating">
-            <input type="text" name="tel2_client" id="tel2_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ detail.tel2_client }}" placeholder="">
+            <input type="text" name="tel2_client" id="tel2_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{% if detail.tel2_client %}{{ detail.tel2_client }}{% endif %}" placeholder="">
             <label for="tel2_client">Téléphone 2</label>
         </div>
     </div>
@@ -60,7 +60,7 @@
 <div class="row mt-4">
    <div class="col-md-4">
         <div class="form-floating">
-            <input type="email" name="email_client" id="email_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ detail.email_client }}" placeholder="">
+            <input type="email" name="email_client" id="email_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{% if detail.email_client %}{{ detail.email_client }}{% endif %}" placeholder="">
             <label for="email_client">Email</label>
         </div>
     </div>
@@ -91,18 +91,24 @@
         </thead>
         <tbody>
             {% for pieces in piece_client %}
-            <tr>
-                <td>
-                    <i class="fas fa-file"></i>
-                    <a href="{{ pieces.pieces_client.url }}" class="text-decoration-none">{{ pieces.pieces_client }}</a>
-                </td>
-                <td>{{ pieces.designation }}</td>
-                <td>
-                    <a href="{% url 'supp_file_client' pieces.id_piece %}" class="btn btn-danger btn-sm " onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce Pièce ?')">
-                        <i class="fas fa-trash-alt"></i>
-                    </a>
-                </td>
-            </tr>
+                {% if pieces %}
+                    <tr>
+                        <td>
+                            <i class="fas fa-file"></i>
+                            <a href="{{ pieces.pieces_client.url }}" class="text-decoration-none">{{ pieces.pieces_client }}</a>
+                        </td>
+                        <td>{{ pieces.designation }}</td>
+                        <td>
+                            <a href="{% url 'supp_file_client' pieces.id_piece %}" class="btn btn-danger btn-sm " onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce Pièce ?')">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="3">Aucune pièce n'a été trouvée.</td>
+                    </tr>
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
