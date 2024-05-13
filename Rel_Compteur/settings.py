@@ -16,7 +16,6 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django_extensions',
-    'django_extensions',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -46,7 +45,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', 
     'corsheaders.middleware.CorsMiddleware', 
 ]
-ALLOWED_HOSTS = ['domainname.test', 'www.domainname.test', '192.168.88.177','10.0.2.2']
+ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149','10.0.2.2']
  
 CORS_ALLOW_ALL_ORIGINS = True
 
