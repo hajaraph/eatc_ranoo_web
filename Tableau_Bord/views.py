@@ -1,6 +1,9 @@
 from datetime import timedelta
+
+from django.db import connection
 from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q
 from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
+from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -12,7 +15,7 @@ from Main_Courante.models import StatutMC
 
 
 @authentification_requis
-@role_requis('Administratuer', 'Gestionnaire', 'Autre')
+@role_requis('Administrateur', 'Gestionnaire', 'Autre')
 def tableau_bord(request, *args, **kwargs):
     font = 'custom-font'
     region = request.GET.get('region')
@@ -34,6 +37,8 @@ def tableau_bord(request, *args, **kwargs):
             region_id=region).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
+
+        factures = Facture.objects.filter(num_contrat__cp_commune__region=region)
         chiffres = Paiement.objects.filter(facture__num_contrat__cp_commune__region=region)
 
     elif date_deb and date_fin:
@@ -42,6 +47,9 @@ def tableau_bord(request, *args, **kwargs):
         ).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
+
+        factures = Facture.objects.filter(date_facture__range=[date_deb, date_fin])
+        main_courante = StatutMC.objects.filter(date_status__range=[date_deb, date_fin])
         chiffres = Paiement.objects.filter(facture__relevecompteur__date_releve__range=[date_deb, date_fin])
 
     elif region and date_deb and date_fin:
@@ -51,8 +59,14 @@ def tableau_bord(request, *args, **kwargs):
             contrat__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
+
+        factures = Facture.objects.filter(
+            num_contrat__cp_commune__region=region,
+            date_facture__range=[date_deb, date_fin]
+        )
+
         chiffres = Paiement.objects.filter(
-            facture__num_contrat__cp_commune__region_id=region,
+            facture__num_contrat__cp_commune__region=region,
             facture__relevecompteur__date_releve__range=[date_deb, date_fin]
         )
 
@@ -158,10 +172,16 @@ def tableau_bord(request, *args, **kwargs):
     return render(request, 'all_page/tableau_bord.html', context)
 
 
-def export(request):
-    font = 'custom-font'
+def importe(request):
+    if request.method == "POST":
+        try:
+            sql_file = request.FILES.get("sql_file")
+            sql_content = sql_file.read().decode("utf-8")
+            with connection.cursor() as cursor:
+                cursor.execute(sql_content)
+            return HttpResponse("Importation réussie.")
+        except Exception as e:
+            error_message = f"Erreur lors de l'importation du fichier SQL : {str(e)}"
+            return HttpResponse(error_message, status=500)
 
-    context = {
-        'font_export': font
-    }
-    return render(request, 'all_page/export.html', context)
+    return render(request, 'bdd_upload.html')

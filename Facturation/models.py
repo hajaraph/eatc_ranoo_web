@@ -1,9 +1,10 @@
 from django.db import models
 from django.utils import timezone
 
-import Clients.models
-import Compteurs.models
-import Login.models
+from Clients.communes import Commune
+from Clients.models import Contrat
+from Compteurs.models import ReleveCompteur
+from Login.models import Utilisateur
 
 
 class Tarif(models.Model):
@@ -11,7 +12,7 @@ class Tarif(models.Model):
     prix_m3 = models.FloatField(blank=False)
     tva = models.FloatField(blank=False)
     nb_jour_echeance_fct = models.IntegerField(blank=False)
-    cp_commune = models.ForeignKey(Clients.models.Commune, on_delete=models.CASCADE,
+    cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE,
                                    blank=False, related_name='communes')
 
 
@@ -32,8 +33,8 @@ class Facture(models.Model):
     restant_precedant = models.FloatField(null=True, blank=True)
     restant_nouvel = models.FloatField(null=True, blank=True)
     statut = models.BooleanField(default=False)
-    num_contrat = models.ForeignKey(Clients.models.Contrat, on_delete=models.CASCADE, blank=False)
-    relevecompteur = models.ForeignKey(Compteurs.models.ReleveCompteur, on_delete=models.CASCADE,
+    num_contrat = models.ForeignKey(Contrat, on_delete=models.CASCADE, blank=False)
+    relevecompteur = models.ForeignKey(ReleveCompteur, on_delete=models.CASCADE,
                                        related_name='factures', blank=False)
 
 
@@ -61,8 +62,8 @@ class Avoir(models.Model):
     id_avoir = models.BigAutoField(primary_key=True)
     montant_avoir = models.FloatField(blank=False)
     date_avoir = models.DateField(default=timezone.now, blank=False)
-    utilisateur = models.ForeignKey(Login.models.Utilisateur, on_delete=models.CASCADE, blank=False)
-    num_contrat = models.ForeignKey(Clients.models.Contrat, on_delete=models.CASCADE,
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, blank=False)
+    num_contrat = models.ForeignKey(Contrat, on_delete=models.CASCADE,
                                     related_name='avoirs', blank=False)
 
 
@@ -70,5 +71,5 @@ class Restant(models.Model):
     id_restant = models.BigAutoField(primary_key=True)
     restant = models.FloatField(blank=False)
     date_restant = models.DateField(default=timezone.now, blank=False)
-    num_contrat = models.ForeignKey(Clients.models.Contrat, on_delete=models.CASCADE,
+    num_contrat = models.ForeignKey(Contrat, on_delete=models.CASCADE,
                                     related_name='restants', blank=False)

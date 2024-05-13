@@ -1,11 +1,8 @@
 import re
-import os
-import calendar
 import pandas as pd
 from django.db.models import Count
 from django.db.models import Q
-from datetime import datetime, time
-from django.utils.timezone import make_aware
+from datetime import datetime, time 
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -21,13 +18,42 @@ from .serializer import MissionSerializer, PaiementSerializer, FactureSerializer
 
 from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
-from Compteurs.views import relever
+from Compteurs.views import relever, ReleveMod
 from Facturation.models import Facture, MontantHT
-from Facturation.views import facture_creation, paiement, Calcule
+from Facturation.views import facture_creation, paiement
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
 from pandas.tseries.offsets import MonthEnd
 from Parametre.views import enregistre_historique
+
+
+def calculer_nombre_relever_effectuer(cp_commune_id):
+    # Calcul du nombre total de compteurs
+    nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
+
+    # Calcul de la fin du mois actuel en utilisant pandas
+    end_of_month = (
+            pd.to_datetime('now')
+            .to_period('M')
+            .to_timestamp()
+            + MonthEnd(0)
+    )
+
+    # Filtrer les contrats avec des relevés dans le mois actuel
+    contrat_data = (
+        Contrat.objects
+        .filter(cp_commune_id=cp_commune_id)
+        .annotate(releve_count=Count('num_compteur__relevecompteurs',
+                                     filter=Q(num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
+        .distinct()
+    )
+
+    contrat_list = list(contrat_data)
+
+    # Calculer le nombre_relever_effectuer
+    nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
+
+    return nombre_total_compteur, nombre_relever_effectuer
 
 
 @api_view(['GET'])
@@ -48,29 +74,7 @@ def accueil(request):
         statut=True
     ).count()
 
-    nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
-
-    # Calcul de la fin du mois actuel en utilisant pandas
-    end_of_month = (
-        pd.to_datetime('now')
-        .to_period('M')
-        .to_timestamp()
-        + MonthEnd(0)
-    )
-
-    # Filtrer les contrats avec des relevés dans le mois actuel
-    contrat_data = (
-        Contrat.objects
-        .filter(cp_commune_id=cp_commune_id)
-        .annotate(releve_count=Count('num_compteur__relevecompteurs',
-                                     filter=Q(num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
-        .distinct()
-    )
-
-    contrat_list = list(contrat_data)
-
-    # Calculer le nombre_relever_effectuer
-    nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
+    nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
 
     # print(nombre_total_facture_impayer);
     # print(nombre_total_facture_payer);
@@ -150,8 +154,8 @@ def relever_client(request):
                 'client_id': int(client.id_client),
                 'date_releve': releve.date_releve,
                 'volume': releve.volume,
-                'conso': releve.conso, 
-                'image_compteur':  releve.image_compteur.url if releve.image_compteur else 'null',
+                'conso': releve.conso,
+                'image_compteur': releve.image_compteur.url if releve.image_compteur else 'null',
                 # Ajouter d'autres informations sur le relevé au besoin
             }
 
@@ -159,7 +163,7 @@ def relever_client(request):
             facture = Facture.objects.filter(relevecompteur=releve).first()
             if facture:
                 # Si une facture est associée, enregistrer le statut de la facture dans le dictionnaire
-                releve_dict['etatFacture'] = 'Payé' if facture.statut else 'Impayé' 
+                releve_dict['etatFacture'] = 'Payé' if facture.statut else 'Impayé'
             else:
                 # Si aucune facture n'est associée, enregistrer "Pas de facture"
                 releve_dict['etatFacture'] = 'Pas de facture'
@@ -235,17 +239,41 @@ class Missions(APIView):
 
 
     @staticmethod
-    @parser_classes((MultiPartParser, FormParser))    
+    @parser_classes((MultiPartParser, FormParser))
     def post(request):
         serializer = MissionSerializer(data=request.data)
         utilisateur = request.user.id_utilisateur
 
-        if serializer.is_valid():
-            compteur_id = serializer.validated_data.get('num_compteur')
-            date_releve = serializer.validated_data.get('date_releve')
-            volume = serializer.validated_data.get('volume')
-            image_compteur = request.FILES.get('image_compteur')
+        if not serializer.is_valid():
+            return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+        id_releve = serializer.validated_data.get('releve_id')
+        compteur_id = serializer.validated_data.get('num_compteur')
+        date_releve = serializer.validated_data.get('date_releve')
+        volume = serializer.validated_data.get('volume')
+        image_compteur = request.FILES.get('image_compteur')
+
+        if id_releve is not None:
+            compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
+            dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
+
+            if dernier_releve.volume >= volume:
+                return JsonResponse({
+                        'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            if date_releve <= dernier_releve.date_releve:
+                return JsonResponse({'erreur': "Veuillez fournir une date valide"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+
+            mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur, dernier_releve)
+            facture_creation(date_releve, compteur.num_compteur, mod_releve)
+
+            return JsonResponse({
+                        'enregistre': 'Mise à jour effectuer avec succès !'
+                    }, status=status.HTTP_201_CREATED)
+
+        else:
             if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
                 return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
                                     status=status.HTTP_400_BAD_REQUEST)
@@ -256,9 +284,12 @@ class Missions(APIView):
                 if date_releve <= dernier_volume.date_releve:
                     return JsonResponse({'erreur': "Veuillez fournir une date valide"},
                                         status=status.HTTP_400_BAD_REQUEST)
+
                 if dernier_volume.volume > volume:
-                    return JsonResponse({'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"},
-                                        status=status.HTTP_400_BAD_REQUEST)
+                    return JsonResponse({
+                            'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
                 else:
                     conso = volume - dernier_volume.volume
             else:
@@ -269,13 +300,10 @@ class Missions(APIView):
 
             facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
 
-            historique = f"Relever et Facture d'un compteur {compteur_id}"
-            enregistre_historique(request, historique, utilisateur)
+        historique = f"Relever et Facture d'un compteur {compteur_id}"
+        enregistre_historique(request, historique, utilisateur)
 
-            return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
-
-        else:
-            return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
 
 
 # Details Facture #
@@ -285,7 +313,6 @@ class FactureDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @staticmethod
-
     def get(request):
         id_releve = request.GET.get('id_releve')
 
@@ -295,21 +322,21 @@ class FactureDetail(APIView):
             return JsonResponse({'error': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}, status=404)
 
         montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
-        taxes = montant_ht.tarif.taxes.all()
-        taxe_montant = Calcule.montant_taxe(montant_ht.tarif, releve.relevecompteur.conso)
+        # taxes = montant_ht.tarif.taxes.all()
+        # taxe_montant = Calcule.montant_taxe(montant_ht.tarif, releve.relevecompteur.conso)
 
-        taxes = [
-            {
-                'nom_taxe': taxe.nom_taxe,
-                'montant_taxe': montant_taxe
-            }
-            for taxe, montant_taxe in zip(taxes, taxe_montant)
-        ]
-        avoir_avant = releve.avoir_avant if releve.avoir_avant is not None else 0.0
-        avoir_utilise = releve.avoir_utilise if releve.avoir_utilise is not None else 0.0
-        restant_precedant = releve.restant_precedant if releve.restant_precedant is not None else 0.0
-        restant_nouvel = releve.restant_nouvel if releve.restant_nouvel is not None else 0.0
-        montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc is not None else 0.0
+        # taxes = [
+        #     {
+        #         'nom_taxe': taxe.nom_taxe,
+        #         'montant_taxe': montant_taxe
+        #     }
+        #     for taxe, montant_taxe in zip(taxes, taxe_montant)
+        # ]
+        avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
+        avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
+        restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
+        restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
+        montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
 
         if montant_total_ttc == 0.0 or restant_nouvel == 0.0 or restant_nouvel == 0.0:
             montant_payer = 0.0
@@ -329,18 +356,15 @@ class FactureDetail(APIView):
             'restant_precedant': restant_precedant,
             'montant_payer': montant_payer,
             'montant_total_ttc': montant_total_ttc,
-            'statut': 'Payé' if releve.statut else 'Impayé',
+            'statut': 'Payé' if releve.statut else 'Impayé', 
         }
 
         return JsonResponse({'facture': facture})
-
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
         # Imprimer les données reçues dans la requête
-        
-        
         serializerpaiement = PaiementSerializer(data=request.data)
         serializerrelever = FactureSerializer(data=request.data)
 
@@ -348,26 +372,28 @@ class FactureDetail(APIView):
             id_releve = request.data.get('relevecompteur_id')
             montant_payer = float(request.data.get('paiement'))
             utilisateur_id = request.user.id_utilisateur
-            
+
             # Vérifier si le paiement est supérieur ou égal à 0.1
             if montant_payer >= 0.1:
                 # Imprimer les données extraites et validées
                 print("ID Relevé :", id_releve)
                 print("Montant à payer :", montant_payer)
                 print("ID Utilisateur :", utilisateur_id)
-                
+
                 # Appeler la fonction paiement et imprimer le résultat
                 resultat_paiement = paiement(request, id_releve, montant_payer, utilisateur_id)
                 print("Résultat du paiement :", resultat_paiement)
-                
+
                 return JsonResponse({'message': 'Paiement effectué avec succès !'})
             else:
-                return JsonResponse({'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'}, status=400)
+                return JsonResponse({'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'},
+                                    status=400)
         else:
             return JsonResponse({
                 'message_paiement': serializerpaiement.errors,
                 'message_releve': serializerrelever.errors
             })
+
 
 def get_missions_details(toutes_missions):
     missions_details = []
@@ -465,12 +491,12 @@ class SynchronisationView(APIView):
     @staticmethod
     def sync_mission(mission_data, commune_usrs):
 
-        date_releve = mission_data.get('date_releve')
+        # date_releve = mission_data.get('date_releve')
         volume = mission_data.get('volume')
         num_compteur = mission_data.get('num_compteur')
         utilisateur_id = mission_data.get('utilisateur_id')
 
-        end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
+        # end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
 
         try:
             utilisateur = Utilisateur.objects.get(id_utilisateur=utilisateur_id)
@@ -484,15 +510,15 @@ class SynchronisationView(APIView):
             dernier_volume = dernier_releve.volume if dernier_releve else 0
             conso = volume - dernier_volume if dernier_volume else volume
 
-            mission, created = ReleveCompteur.objects.update_or_create(
-                date_releve=date_releve,
-                num_compteur=compteur,
-                defaults={
-                    'volume': volume,
-                    'conso': conso,
-                    'utilisateur': utilisateur
-                }
-            )
+            # mission, created = ReleveCompteur.objects.update_or_create(
+            #     date_releve=date_releve,
+            #     num_compteur=compteur,
+            #     defaults={
+            #         'volume': volume,
+            #         'conso': conso,
+            #         'utilisateur': utilisateur
+            #     }
+            # )
 
             contrats_commune = Contrat.objects.filter(cp_commune_id=commune_usrs).select_related(
                 'client', 'num_compteur'
@@ -500,29 +526,30 @@ class SynchronisationView(APIView):
                 conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
                 volume_dernier_releve=Sum('num_compteur__relevecompteurs__volume')
             )
-
+            mission_dicts = []
             for contrat in contrats_commune:
                 dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
                     max_date=Max('date_releve'))
                 contrat.date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else None
-
                 # Comparaison des mois pour définir le statut
                 if contrat.date_releve is not None:
                     contrat.statut = 1
                 else:
                     contrat.statut = 0
-            mission_dict = {
-                'utilisateur_id': utilisateur_id,
-                'nom_client': contrat.client.nom_client,
-                'prenom_client': contrat.client.prenom_client,
-                'adresse_client': contrat.client.adresse_client,
-                'num_compteur': contrat.num_compteur_id,
-                'conso_dernier_releve': contrat.conso_dernier_releve,
-                'volume_dernier_releve': contrat.volume_dernier_releve,
-                'date_releve': contrat.date_releve,
-                'statut': contrat.statut
-            }
-            return mission_dict
+                mission_dict = {
+                    'utilisateur_id': utilisateur_id,
+                    'nom_client': contrat.client.nom_client,
+                    'prenom_client': contrat.client.prenom_client,
+                    'adresse_client': contrat.client.adresse_client,
+                    'num_compteur': contrat.num_compteur_id,
+                    'conso_dernier_releve': contrat.conso_dernier_releve,
+                    'volume_dernier_releve': contrat.volume_dernier_releve,
+                    'date_releve': contrat.date_releve,
+                    'statut': contrat.statut
+                }
+                mission_dicts.append(mission_dict)
+
+            return mission_dicts
 
     @staticmethod
     def get_accueil_data(request):
@@ -530,31 +557,13 @@ class SynchronisationView(APIView):
         non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
         realise = MainCourante.objects.filter(statuts__realise=True).count()
         total_anomalie = non_traite + realise
-        nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
 
-        end_of_month = (
-                pd.to_datetime('now')
-                .to_period('M')
-                .to_timestamp()
-                + MonthEnd(0)
-        )
+        nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
 
-        contrat_data = (
-            Contrat.objects
-            .filter(cp_commune_id=cp_commune_id)
-            .annotate(releve_count=Count('num_compteur__relevecompteurs',
-                                         filter=Q(
-                                             num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
-            .distinct()
-        )
-
-        contrat_list = list(contrat_data)
-        nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
-
-        accueil = {
+        accueils = {
             'totale_anomalie': total_anomalie,
             'realise': realise,
             'nombre_total_compteur': nombre_total_compteur,
             'nombre_relever_effectuer': nombre_relever_effectuer,
         }
-        return accueil
+        return accueils

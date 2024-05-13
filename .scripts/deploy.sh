@@ -20,7 +20,7 @@ python manage.py collectstatic --noinput
 
 echo "Running Database migration"
 python manage.py makemigrations
-python manage.py migrate
+python manage.py migrate 
  
 # Deactivate Virtual Env
 deactivate

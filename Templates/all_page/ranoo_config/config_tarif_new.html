@@ -18,37 +18,33 @@
         <div class="row">
             <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <input type="text" name="prix_m3" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                    <input type="text" name="prix_m3" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
                     <label for="prix_m3">Prix / m&#179;</label>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-4 mt-4">
+        <div class="row mt-4" id="afficher_taxe">
+            <div class="col-md-4">
                 <div class="form-floating">
-                    <input type="text" name="taxe_co" id="taxe_co" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
-                    <label for="taxe_co">Taxe Communal</label>
+                    <input type="text" name="nom_taxe" id="nom_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
+                    <label for="nom_taxe">Nom Taxe</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input type="text" name="taux_taxe" id="taux_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
+                    <label for="taux_taxe">Taux (%)</label>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-4 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="redevance_bs" id="redevance_bs" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
-                    <label for="redevance_bs">Redevance Branchement Social</label>
-                </div>
-            </div>
-            <div class="col-md-4 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="redevance_fr" id="redevance_fr" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
-                    <label for="redevance_fr">Redevance Fond de Renouvellement</label>
-                </div>
-            </div>
+        <div class="btn btn-sm btn-success  mt-3" id="add_taxe">
+            <i class="fas fa-plus"></i>
+            Plus Taxe
         </div>
         <div class="row mt-4">
             <div class="col-md-4">
                 <div class="form-floating">
-                    <input type="text" name="tva" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                    <input type="text" name="tva" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
                     <label for="tva">TVA</label>
                 </div>
             </div>
@@ -56,7 +52,7 @@
         <div class="row">
             <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <input type="text" name="nb_jour_echeance_fct" id="nb_jour_echeance_fct" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                    <input type="text" name="nb_jour_echeance_fct" id="nb_jour_echeance_fct" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
                     <label for="nb_jour_echeance_fct">Nombre Jour Echeance Facture</label>
                 </div>
             </div>

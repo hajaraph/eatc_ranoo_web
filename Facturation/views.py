@@ -69,8 +69,6 @@ def facture_etat_detail(request, num_facture):
 
     # Requete pour chaque detail
     factures = Facture.objects.get(num_facture=num_facture)
-    fact_dernier = Facture.objects.filter(
-        num_contrat__num_compteur_id=factures.num_contrat.num_compteur_id).latest('date_facture')
     paiements = Paiement.objects.filter(facture__num_facture=num_facture)
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
     tarif = Tarif.objects.get(cp_commune_id=factures.num_contrat.cp_commune_id)
@@ -89,7 +87,6 @@ def facture_etat_detail(request, num_facture):
         'facture': factures,
         'paiement': paiements,
         'montant': montant,
-        'fact': fact_dernier,
         'taxes_montants': taxes_montants,
         'date_echeance': date_echeance
     }
@@ -233,6 +230,7 @@ def facture_creation(date_facture, num_compteur, releve):
             total_conso_ht = tarif.prix_m3 * consommation
             total_conso_ttc = (total_conso_ht * tarif.tva) / 100
             total_conso_ttc += total_conso_ht
+
             montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
             taxe = sum(Calcule.montant_taxe(tarif, consommation))
             Calcule.montantttc(total_conso_ttc + taxe, montant_ht)
