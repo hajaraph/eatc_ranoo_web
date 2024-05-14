@@ -4,4 +4,4 @@ __pycache__/
 
 Rel_Compteur/settings.py
 .scripts 
-static/media/
+static/media/ 
