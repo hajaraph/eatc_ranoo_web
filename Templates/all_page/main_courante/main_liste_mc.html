@@ -64,40 +64,42 @@
                 </tr>
             </thead>
             <tbody>
-            {% for row in main %}
+            {% for row, statut in main %}
                 <tr>
-                    <td>{{ row.main_courante.pk }}</td>
-                    <td>{{ row.main_courante.type_anomalie }}</td>
                     <td>
-                    {% if row.non_traite %}
+                        <a href="{% url 'detail_mc' row.pk %}" class="text-decoration-none" title="Détail">{{ row.pk }}</a>
+                    </td>
+                    <td>{{ row.type_anomalie }}</td>
+                    <td>
+                    {% if statut.non_traite %}
                         <span class="badge bg-info">Non Traité</span>
-                    {% elif row.en_cours %}
+                    {% elif statut.en_cours %}
                         <span class="badge bg-primary">
                             <i class="fas fa-spinner"></i>
                             En Cours
                         </span>
-                    {% elif row.realise %}
+                    {% elif statut.realise %}
                         <span class="badge bg-success">
                             <i class="fas fa-check-circle"></i>
                             Realisé
                         </span>
                     {% endif %}
                     </td>
-                    <td>{{ row.main_courante.date_mc|date:'d/m/Y' }}</td>
+                    <td>{{ row.date_mc|date:'d/m/Y' }}</td>
                     <td>
-                        {% if row.main_courante.photo_anomalie %}
-                            <a href="{{ row.main_courante.photo_anomalie.url }}"><i class="fas fa-image"></i> Click ici</a>
+                        {% if row.photo_anomalie %}
+                            <a href="{{ row.photo_anomalie.url }}"><i class="fas fa-image"></i> Click ici</a>
                         {% endif %}
                     </td>
                     <td>
                         {{ row.main_courante.utilisateur.nom_utilisateur }}
-                        <span class="badge bg-primary">{{ row.main_courante.utilisateur.role.role }}</span>
+                        <span class="badge bg-primary">{{ row.utilisateur.role.role }}</span>
                     </td>
                     <td>
-                        <a href="{% url 'detail_mc' row.main_courante.pk %}" class="btn btn-primary btn-sm">
+                        <a href="{% url 'detail_mc' row.pk %}" class="btn btn-primary btn-sm">
                             <i class="fas fa-info-circle"></i>
                         </a>
-                        {% if row.realise %}
+                        {% if statut.realise %}
                             <a href="{% url 'supprimer_mc' row.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Etes-vous sûr de vouloir supprimer ce MC ?')">
                                 <i class="fas fa-trash-alt"></i>
                             </a>

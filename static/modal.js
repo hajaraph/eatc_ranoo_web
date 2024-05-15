@@ -3,7 +3,7 @@ $(document).ready(function(){
         searching: true,
         "order": [],
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json',
+            url: '/static/fr-FR.json',
         },
     });
     // Hide automatique le message après quelque seconde
@@ -23,11 +23,7 @@ $(document).ready(function(){
         }
         champ.val(numericValue);
     }
-<<<<<<< HEAD
-    let champ = $('#paiement, #prix_m3, #tva, #taxe_co, #redevance_bs, #redevance_fr')
-=======
     let champ = $('#paiement, #prix_m3, #tva, #taux_taxe')
->>>>>>> feature/test
     champ.on('input',function() {
         traiterChamp($(this));
     });

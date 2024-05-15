@@ -46,7 +46,7 @@ MIDDLEWARE = [
 ]
 
 
-ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149','10.0.2.2']
+ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149', '10.0.2.2']
  
 CORS_ALLOW_ALL_ORIGINS = True
 

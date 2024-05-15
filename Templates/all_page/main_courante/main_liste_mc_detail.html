@@ -105,12 +105,12 @@
                     Supprimer
                 </a>
                 {% if not statut.en_cours and not statut.realise %}
-                    <a href="{% url 'lance_mc' statut.pk %}" class="btn btn-primary mx-4" onclick="return confirm('Vous voulez vraiment lancé ce MC ?')">
+                    <a href="{% url 'lance_mc' main.pk %}" class="btn btn-primary mx-4" onclick="return confirm('Vous voulez vraiment lancé ce MC ?')">
                         <i class="fas fa-spinner"></i>
                         Lancer MC
                     </a>
                 {% elif not statut.realise %}
-                    <a href="{% url 'valide_mc' statut.pk %}" class="btn btn-success mx-4" onclick="return confirm('Etes-vous sûr de vouloir Validé ce MC ?')">
+                    <a href="{% url 'valide_mc' main.pk %}" class="btn btn-success mx-4" onclick="return confirm('Etes-vous sûr de vouloir Validé ce MC ?')">
                         <i class="fas fa-check-circle"></i>
                         Valider MC
                     </a>
@@ -134,7 +134,7 @@
             {% endif %}
         </form>
     {% if statut.en_cours %}
-        <form action="{% url 'suivie' statut.pk %}" method="post">
+        <form action="{% url 'suivie' main.pk %}" method="post">
             {% csrf_token %}
             <div class="row mt-4">
                 <div class="border-bottom w-100">
@@ -162,7 +162,7 @@
                                 <span class="badge bg-primary">{{ suivie.utilisateur.role.role }}</span>
                             </td>
                             <td>
-                                <a href="{% url 'supp_suivie' suivie.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Etes-vous sûr de vouloir supprimer ce commentaire ?')">
+                                <a href="{% url 'supp_suivie' suivie.main_courante.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Etes-vous sûr de vouloir supprimer ce commentaire ?')">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
