@@ -1,7 +1,12 @@
 debug.log
-
-__pycache__/
+.gitignore
 
 Rel_Compteur/settings.py
 .scripts 
-static/media/
+
+static/media/ 
+
+
+*.log
+*.pyc
+__pycache__/

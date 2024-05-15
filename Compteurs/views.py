@@ -188,7 +188,7 @@ def compteur_releve(request):
     }
     return render(request, 'all_page/compteurs/compteurs.html', context)
 
-
+ 
 class ReleveNew(View):
     @staticmethod
     @authentification_requis
@@ -205,8 +205,12 @@ class ReleveNew(View):
             'compteur': compteur
         }
         return render(request, 'all_page/compteurs/compteurs.html', context)
+<<<<<<< HEAD
     
     
+=======
+
+>>>>>>> develop
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
