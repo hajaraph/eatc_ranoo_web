@@ -205,12 +205,6 @@ class ReleveNew(View):
             'compteur': compteur
         }
         return render(request, 'all_page/compteurs/compteurs.html', context)
-<<<<<<< HEAD
-    
-    
-=======
-
->>>>>>> develop
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
