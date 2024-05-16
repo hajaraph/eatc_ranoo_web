@@ -49,5 +49,17 @@
     <script src="{% static 'datatable/datatables.min.js' %}"></script>
     <script src="{% static 'fontawesome/js/all.js' %}"></script>
     <script src="{% static 'modal.js' %}"></script>
+    <script src="{% static 'dselect.js' %}"></script>
+    <script>
+        let select_box_client = document.querySelector('#client_id');
+        let select_box_compteur = document.querySelector('#num_compteur');
+
+        dselect(select_box_client, {
+            search: true
+        });
+        dselect(select_box_compteur, {
+            search: true
+        });
+    </script>
 </body>
 </html>

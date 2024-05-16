@@ -45,21 +45,4 @@ $(document).ready(function(){
         $(this).val(numericValue);
     });
 
-    // function formatNumberWithSpaces(number) {
-    //     const parts = number.toString().split('.');
-    //     const integerPart = parts[0];
-    //     const decimalPart = parts[1] || "";
-
-    //     // Ajoute un espace tous les trois chiffres à partir de la virgule
-    //     let formattedIntegerPart = integerPart.replace(/\B(?=(\d{3})+(?=,))/g, " ");
-
-    //     return formattedIntegerPart + (decimalPart.length > 0 ? ',' + decimalPart : "");
-    // }
-
-    // let chifres = $('#chiffres .chiffre')
-    // const valeur_original = chifres.text();
-    // const formattedValue = formatNumberWithSpaces(valeur_original);
-
-    // // Mettre à jour la div avec la valeur formatée
-    // chifres.text(formattedValue);
 });
