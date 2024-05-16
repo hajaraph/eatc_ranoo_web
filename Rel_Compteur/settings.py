@@ -46,16 +46,16 @@ MIDDLEWARE = [
 ]
 
 
-ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149', '10.0.2.2', '127.0.0.1']
- 
+ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149', '10.0.2.2']
+
 CORS_ALLOW_ALL_ORIGINS = True
 
-CORS_ALLOW_CREDENTIALS = True 
+CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
-    'http://localhost:3000', 
-    
+    'http://localhost:3000',
+
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -88,8 +88,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
-        'USER': 'postgres',
-        'PASSWORD': '12121212',
+        'USER': 'eatcrano',
+        'PASSWORD': 'eatc301',
         'HOST': 'localhost',
         'PORT': '5432',
     }
