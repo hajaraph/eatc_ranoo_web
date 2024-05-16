@@ -83,7 +83,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Rel_Compteur.wsgi.application'
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -94,7 +93,6 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
 
 CACHES = {
     'default': {
