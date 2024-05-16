@@ -46,7 +46,7 @@ MIDDLEWARE = [
 ]
 
 
-ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149', '10.0.2.2']
+ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149', '10.0.2.2', '127.0.0.1']
  
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -88,8 +88,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
-        'USER': 'eatcrano',
-        'PASSWORD': 'eatc301',
+        'USER': 'postgres',
+        'PASSWORD': '12121212',
         'HOST': 'localhost',
         'PORT': '5432',
     }
