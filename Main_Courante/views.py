@@ -31,16 +31,22 @@ def main_liste_mc(request):
     if datedeb and datefin:
         if datedeb > datefin:
             messages.warning(request, f'La Date Début ne doit pas être superieure à la Date Fin !')
-            main_courante = StatutMC.objects.all()
+            main_courante = MainCourante.objects.all()
         else:
-            main_courante = StatutMC.objects.filter(main_courante__date_mc__range=[datedeb, datefin])
+            main_courante = MainCourante.objects.filter(date_mc__range=[datedeb, datefin])
     else:
-        main_courante = StatutMC.objects.all()
+        main_courante = MainCourante.objects.all()
+
+    main_courante_statut = []
+    for main_courantes in main_courante:
+        statut = main_courantes.statuts.get()
+        main_courante_statut.append((main_courantes, statut))
+
     context = {
         'title_main': title,
         'active': active,
         'font_main': font,
-        'main': main_courante,
+        'main': main_courante_statut,
         'non_traite': non_traite,
         'realise': realise,
         'en_cours': en_cours
@@ -126,7 +132,7 @@ class MainCouranteNew(View):
 
 @authentification_requis
 def lance_mc(request, pk):
-    statut = StatutMC.objects.get(pk=pk)
+    statut = StatutMC.objects.get(main_courante_id=pk)
     date_now = timezone.now()
     statut.date_status = date_now
     statut.en_cours = True
@@ -138,7 +144,7 @@ def lance_mc(request, pk):
 
 @authentification_requis
 def valide_mc(request, pk):
-    statut = StatutMC.objects.get(pk=pk)
+    statut = StatutMC.objects.get(main_courante_id=pk)
     date_now = timezone.now()
     statut.date_status = date_now
     statut.realise = True

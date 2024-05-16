@@ -3,7 +3,7 @@ $(document).ready(function(){
         searching: true,
         "order": [],
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json',
+            url: '/static/fr-FR.json',
         },
     });
     // Hide automatique le message après quelque seconde
