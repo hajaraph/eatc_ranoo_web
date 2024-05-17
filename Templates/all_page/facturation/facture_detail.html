@@ -189,7 +189,7 @@
                         <p class="text-center text-secondary"><strong>{{ facture.montant_total_ttc }} Ar</strong></p>
                     </div>
                 </div>
-                {% if not facture.statut %}
+                {% if facture.restant_nouvel %}
                     <div class="d-flex justify-content-end mt-4 mx-1">
                         <div class="mb-2">
                             <a href="" class="btn btn-warning">
