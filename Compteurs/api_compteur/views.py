@@ -200,18 +200,20 @@ class Missions(APIView):
             )
         )
 
+        date_releve = 0
+        statut = 0
         for contrat in contrats_commune: 
             dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).order_by('date_releve').last()
             if dernier_releve:
-                contrat.date_releve = dernier_releve.date_releve
+                date_releve = dernier_releve.date_releve
                 if dernier_releve.date_releve.month == datetime.now().month and dernier_releve.date_releve.year == datetime.now().year:
-                    contrat.statut = 2
+                    statut = 2
                 else:
-                    contrat.statut = 0
-            elif contrat.date_releve and contrat.date_releve.month != end_of_month.month:
-                contrat.statut = 0
+                    statut = 0
+            elif date_releve and date_releve.month != end_of_month.month:
+                statut = 0
             else: 
-                contrat.statut = 0
+                statut = 0
 
         liste_contrats_info = []
 
@@ -226,7 +228,7 @@ class Missions(APIView):
                 'conso_dernier_releve': contrat.conso_dernier_releve,
                 'volume_dernier_releve': dernier_releve.volume if dernier_releve else None,
                 'date_releve': dernier_releve.date_releve if dernier_releve else None,
-                'statut': contrat.statut
+                'statut': statut
             }
             liste_contrats_info.append(contrat_info)
 
@@ -235,8 +237,6 @@ class Missions(APIView):
     def get(self, request):
         liste_contrats_info = self.get_liste_mission(request)
         return JsonResponse({'compteurs_liste': liste_contrats_info})
-
-
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
