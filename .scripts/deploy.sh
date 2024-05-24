@@ -5,7 +5,7 @@ echo "Deployment started ..."
 
 # Pull the latest version of the app
 echo "Pulling the latest changes from the main branch..."
-git pull origin main --no-rebase
+git pull origin main --no-rebase 
 echo "New changes copied to the server!"
 
 # Activate Virtual Env
