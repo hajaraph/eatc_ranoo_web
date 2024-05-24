@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Deployment started ..."
+echo "Deployment started ..." 
 
 # Pull the latest version of the app
 echo "Pulling the latest changes from the main branch..."
