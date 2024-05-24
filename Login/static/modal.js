@@ -6,6 +6,7 @@ $(document).ready(function(){
             url: '/static/fr-FR.json',
         },
     });
+    $('.dataTables_filter input[type="search"]').css('height', '150px');
     // Hide automatique le message après quelque seconde
     $("#alert").animate({
         opacity: 1,
