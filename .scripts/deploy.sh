@@ -4,26 +4,32 @@ set -e
 echo "Deployment started ..."
 
 # Pull the latest version of the app
-git pull origin main
-echo "New changes copied to server !"
+echo "Pulling the latest changes from the main branch..."
+git pull origin main --no-rebase
+echo "New changes copied to the server!"
 
 # Activate Virtual Env
+echo "Activating virtual environment 'myenv'..."
 source /home/eatc/myenv/bin/activate 
-echo "Virtual env 'myenv' Activated !"
 
-echo "Installing Dependencies..."
+# Move to the project directory
 cd /home/eatc/eatc_ranoo/
+
+# Install dependencies
+echo "Installing Dependencies..."
 pip install -r requirements.txt --no-input
 
+# Serve Static Files
 echo "Serving Static Files..."
 python manage.py collectstatic --noinput
 
-echo "Running Database migration"
+# Run Database migration
+echo "Running Database migration..."
 python manage.py makemigrations
 python manage.py migrate 
- 
+
 # Deactivate Virtual Env
+echo "Deactivating virtual environment 'myenv'..."
 deactivate
-echo "Virtual env 'myenv' Deactivated !"
 
 echo "Deployment Finished!"
