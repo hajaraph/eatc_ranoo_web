@@ -18,6 +18,12 @@
                     <span class="d-none d-sm-inline">Clients</span>
                 </a>
             </li>
+            <li title="Clients" class="nav-item custom-nav {{ font_contrat }}">
+                <a href="{% url 'client_contrat' %}" class="nav-link align-middle text-dark">
+                    <i class="fas fa-file-contract"></i>
+                    <span class="d-none d-sm-inline">Contrat</span>
+                </a>
+            </li>
             {% endif %}
             <li title="Compteurs" class="nav-item custom-nav {{ font_compteur }}">
                 <a href="{% url 'compteur_list' %}" class="nav-link align-middle text-dark">
@@ -34,13 +40,13 @@
             <li title="Main Courante" class="nav-item custom-nav {{ font_main }}">
                 <a href="{% url 'main_liste_mc' %}" class="nav-link align-middle text-dark">
                     <i class="fas fa-list-1-2"></i>
-                    <span class="d-none d-sm-inline">Main Courante</span>
+                    <span class="d-none d-sm-inline">Mains Courantes</span>
                 </a>
             </li>
             <li title="Paramètre" class="nav-item custom-nav {{ font_parametre }}">
                 <a href="{% url 'para_utilisateur' %}" class="nav-link align-middle text-dark">
                     <i class="fas fa-cog"></i>
-                    <span class="d-none d-sm-inline">Paramètre</span>
+                    <span class="d-none d-sm-inline">Paramètres</span>
                 </a>
             </li>
             {% if request.session.role_utilisateur != 'Releveur' %}

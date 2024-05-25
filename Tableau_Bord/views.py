@@ -144,13 +144,14 @@ def tableau_bord(request, *args, **kwargs):
     )
 
     # Pour obtenir seulement l'année precedant de notre requete precedant
-    annee_contrat_prec = contrats_annee_prec[0]['annee_contrat_prec'] if contrats_annee_prec else 0
+    # annee_contrat_prec = contrats_annee_prec[0]['annee_contrat_prec'] if contrats_annee_prec else 0
 
     # Pour obtenir le nombre de contrat pour l'année precedant depuis notre requete precedanat
     nb_client_prec = contrats_annee_prec[0]['nb_client_prec'] if contrats_annee_prec else 0
 
     # Pour obtenir seulement l'année actuelle de notre requete precedant
     annee_contrat_actuelle = contrats_annee_actuelle[0]['annee_contrat_actuelle'] if contrats_annee_actuelle else 0
+    annee_contrat_prec = annee_contrat_actuelle - 1
 
     # Pour obtenir le nombre de contrat pour l'année actuelle depuis notre requete precedanat
     nb_client_actuelle = contrats_annee_actuelle[0]['nb_client_actuelle'] if contrats_annee_actuelle else 0
