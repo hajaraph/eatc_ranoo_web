@@ -200,25 +200,24 @@ class Missions(APIView):
             )
         )
 
-     for contrat in contrats_commune:
-    date_releve = 0
-    statut = 0
-    
-    dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).order_by('date_releve').last()
-    if dernier_releve:
-        date_releve = dernier_releve.date_releve
-        if dernier_releve.date_releve.month == datetime.now().month and dernier_releve.date_releve.year == datetime.now().year:
-            statut = 2
-        else:
-            statut = 0
-    elif date_releve and date_releve.month != datetime.now().month:
+     date_releve = 0
         statut = 0
-    else: 
-        statut = 0
+        for contrat in contrats_commune: 
+            dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).order_by('date_releve').last()
+            if dernier_releve:
+                date_releve = dernier_releve.date_releve
+                if dernier_releve.date_releve.month == datetime.now().month and dernier_releve.date_releve.year == datetime.now().year:
+                    statut = 2
+                else:
+                    statut = 0
+            elif date_releve and date_releve.month != datetime.now().month:
+                statut = 0
+            else: 
+                statut = 0
 
-    # Mettre à jour le statut du contrat dans la base de données
-    contrat.statut = statut
-    contrat.save()
+            # Mettre à jour le statut du contrat dans la base de données
+            contrat.statut = statut
+            contrat.save()
 
 
         liste_contrats_info = []
