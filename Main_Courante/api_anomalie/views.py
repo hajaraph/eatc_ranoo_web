@@ -106,9 +106,6 @@ class DeclareMaincourate(APIView):
             # Création de l'instance de StatutMC
             StatutMC.objects.create(
                 main_courante_id=main_courante_id,
-                en_cours=status == False,
-                realise=status == False,
-                non_traite=status == False,
                 date_status=date_declaration
             )
 
