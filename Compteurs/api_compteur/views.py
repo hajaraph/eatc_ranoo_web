@@ -200,8 +200,7 @@ class Missions(APIView):
             )
         )
 
-        
-        statut = 0
+        liste_contrats_info = []
         for contrat in contrats_commune: 
             dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
                 max_date=Max('date_releve'))
@@ -212,9 +211,7 @@ class Missions(APIView):
                 contrat.statut = 0
             else:
                 contrat.statut = 1
-        liste_contrats_info = []
 
-        for contrat in contrats_commune:
             dernier_releve = contrat.num_compteur.relevecompteurs.order_by('date_releve').last()
             contrat_info = {
                 'id': dernier_releve.pk if dernier_releve else None,
@@ -225,7 +222,7 @@ class Missions(APIView):
                 'conso_dernier_releve': contrat.conso_dernier_releve,
                 'volume_dernier_releve': dernier_releve.volume if dernier_releve else None,
                 'date_releve': dernier_releve.date_releve if dernier_releve else None,
-                'statut': statut
+                'statut': contrat.statut
             }
             liste_contrats_info.append(contrat_info)
 
