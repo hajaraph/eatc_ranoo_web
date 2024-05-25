@@ -10,18 +10,21 @@
                 </div>
             </div>
         </div>
-        <div class="row mt-4" id="afficher_taxe">
+        <div class="mt-4" id="afficher_taxe">
             {% for taxe in taxes %}
-            <div class="col-md-4">
-                <div class="form-floating">
-                    <input type="text" name="nom_taxe" id="nom_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ taxe.nom_taxe }}" placeholder="" required>
-                    <label for="nom_taxe">Nom Taxe</label>
+            <div class="row">
+                <div class="col-md-4" id="nom_taxes">
+                    <div class="form-floating">
+                        <input type="text" name="nom_taxe" id="nom_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ taxe.nom_taxe }}" placeholder="">
+                        <label for="nom_taxe">Nom Taxe</label>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-floating">
-                    <input type="text" name="taux_taxe" id="taux_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ taxe.taux_taxe }}" placeholder="" required>
-                    <label for="taux_taxe">Taux (%)</label>
+                <div class="col-md-4" id="taux_taxes">
+                    <div class="form-floating">
+                        <input type="text" name="taux_taxe" id="taux_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ taxe.taux_taxe }}" placeholder="">
+                        <label for="taux_taxe">Taux (%)</label>
+                    </div>
+                    <div class="btn btn-sm btn-warning rounded-circle" id="retirer"><i class="fas fa-minus"></i></div>
                 </div>
             </div>
             <div></div>

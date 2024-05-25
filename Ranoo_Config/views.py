@@ -256,16 +256,33 @@ class TarifMod(View):
     def post(request, pk):
         prix_m3 = float(request.POST['prix_m3'])
         nom_taxes = request.POST.getlist('nom_taxe')
-        taux_taxes = [float(taux) for taux in request.POST.getlist('taux_taxe')]
+        taux_taxes = request.POST.getlist('taux_taxe')
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
         tva = float(request.POST['tva'])
 
         tarif = Tarif.objects.get(pk=pk)
-        taxes = tarif.taxes.all()
         tarif.prix_m3 = round(prix_m3, 2)
         tarif.tva = round(tva, 2)
         tarif.nb_jour_echeance_fct = nb_jour_echeance_fct
         tarif.save()
+
+        exist_taxes = {taxe.nom_taxe: taxe for taxe in tarif.taxes.all()}
+        new_taxes = []
+
+        for nom, taux in zip(nom_taxes, taux_taxes):
+            taux = round(float(taux), 2)
+            if nom in exist_taxes:
+                taxe = exist_taxes[nom]
+                taxe.taux_taxe = taux
+                taxe.save()
+            else:
+                taxe = Taxe.objects.create(nom_taxe=nom, taux_taxe=taux, tarif=tarif)
+            new_taxes.append(taxe)
+
+        # Supprimer les taxes qui ne sont plus présentes dans le formulaire
+        for nom in exist_taxes:
+            if nom not in nom_taxes:
+                exist_taxes[nom].delete()
 
         messages.success(request, f'Mofication de Tarif enregistré avec succès !')
         return redirect('config_tarif')
