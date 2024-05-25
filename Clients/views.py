@@ -321,7 +321,7 @@ def client_contrat(request):
     context = {
         'title_contrat': title,
         'active_contrat': active,
-        'font_client': font,
+        'font_contrat': font,
         'contrat': contrat
     }
     return render(request, 'all_page/clients/content_client.html', context)

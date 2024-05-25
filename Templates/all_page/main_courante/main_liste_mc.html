@@ -57,9 +57,9 @@
                     <th>ID</th>
                     <th>Type Anomalie</th>
                     <th>Statut</th>
-                    <th>Edité le</th>
-                    <th>Photo</th>
-                    <th>Declaré par</th>
+                    <th>Editée le</th>
+                    <th>Photos</th>
+                    <th>Declarée par</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -72,7 +72,7 @@
                     <td>{{ row.type_anomalie }}</td>
                     <td>
                     {% if statut.non_traite %}
-                        <span class="badge bg-info">Non Traité</span>
+                        <span class="badge bg-info">Non Traitée</span>
                     {% elif statut.en_cours %}
                         <span class="badge bg-primary">
                             <i class="fas fa-spinner"></i>
@@ -81,7 +81,7 @@
                     {% elif statut.realise %}
                         <span class="badge bg-success">
                             <i class="fas fa-check-circle"></i>
-                            Realisé
+                            Realisées
                         </span>
                     {% endif %}
                     </td>
