@@ -189,7 +189,7 @@
                         <p class="text-center text-secondary"><strong>{{ facture.montant_total_ttc }} Ar</strong></p>
                     </div>
                 </div>
-                {% if not facture.statut %}
+                {% if not facture.restant_nouvel %}
                     <div class="d-flex justify-content-end mt-4 mx-1">
                         <div class="mb-2">
                             <a href="" class="btn btn-warning">
@@ -202,7 +202,7 @@
                             </a>
                             <button id="{{ facture.relevecompteur_id }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
                                 <i class="fas fa-credit-card"></i>
-                                Paiement
+                                Paiements
                             </button>
                         </div>
                     </div>

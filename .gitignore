@@ -3,6 +3,7 @@ debug.log
 
 Rel_Compteur/settings.py
 .scripts 
+<<<<<<< HEAD
 
 static/media/ 
 
@@ -10,3 +11,6 @@ static/media/
 *.log
 *.pyc
 __pycache__/
+=======
+static/media/ 
+>>>>>>> develop

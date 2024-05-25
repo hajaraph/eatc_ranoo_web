@@ -26,7 +26,7 @@
     </div>
     <div class="d-flex flex-wrap justify-content-between my-5">
         <div class="col-md-2 border border-secondary rounded p-4">
-            <div class="text-center">Facture Edité : </div>
+            <div class="text-center">Facture Editée : </div>
             <h3 class="text-center text-secondary">{{ factures.count }}</h3>
         </div>
         <div class="col-md-2 border border-secondary rounded p-4">
@@ -72,13 +72,13 @@
                     <td>{{ facture.num_contrat.num_compteur_id }}</td>
                     <td>
                         {% if facture.statut %}
-                            <span class="badge bg-success ">Payé</span>
-                        {% else %}
                             {% if facture.restant_nouvel %}
                                 <span class="badge bg-warning text-dark">Montant Restant ({{ facture.restant_nouvel }} Ar)</span>
                             {% else %}
-                                <span class="badge bg-danger ">Impayé</span>
+                                <span class="badge bg-success ">Payé</span>
                             {% endif %}
+                        {% else %}
+                            <span class="badge bg-danger ">Impayé</span>
                         {% endif %}
                     </td>
                     <td>{{ facture.date_facture|date:"d/m/Y" }}</td>

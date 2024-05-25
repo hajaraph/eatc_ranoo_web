@@ -11,7 +11,7 @@
                         <select name="client_id" id="client_id" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
                             <option value="" selected disabled hidden>Selectionné un client</option>
                             {% for clients in client %}
-                                <option value="{{ clients.pk }}">{{ clients.pk }} | {{ clients.nom_client }} {{ clients.prenom_client }}</option>
+                                <option value="{{ clients.pk }}">{{ clients.pk }} | {{ clients.nom_client }} {% if clients.prenom_client %} {{ clients.prenom_client }} {% endif %}</option>
                             {% endfor %}
                         </select>
                         <label for="client_id">Client</label>
@@ -75,7 +75,7 @@
                                 <option value="{{ compteur.pk }}">{{ compteur.num_compteur }}</option>
                             {% endfor %}
                         </select>
-                        <label for="num_compteur">Compteur Associé</label>
+                        <label for="num_compteur">Compteur</label>
                     </div>
                 </div>
             </div>

@@ -4,11 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{% static 'logo/img.png' %}" type="image/x-icon">
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'style.css' %}">
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'datatable/datatables.min.css' %}">
     <title>{{ titre_ranoo_utilisateur }}{{ titre_new_tarif }}{{ titre_departement }}{{ titre_mod_tarif }}{{ titre_region }}{{ titre_mod_utilisateur }}{{ titre_creation_utilisateur }}{{ titre_config_tarif }}</title>
+    <style>
+        .dataTables_filter input[type="search"] {
+            height: 50px;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -54,5 +60,13 @@
     <script src="{% static 'fontawesome/js/all.js' %}"></script>
     <script src="{% static 'modal.js' %}"></script>
     <script src="{% static 'taxe.js' %}"></script>
+    <script src="{% static 'dselect.js' %}"></script>
+    <script>
+        let select_box_element = document.querySelector('#cp_commune');
+
+        dselect(select_box_element, {
+            search: true
+        });
+    </script>
 </body>
 </html>

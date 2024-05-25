@@ -46,16 +46,16 @@ MIDDLEWARE = [
 ]
 
 
-ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149','10.0.2.2']
- 
+ALLOWED_HOSTS = ['app.eatc.me', 'www.app.eatc.me', '89.116.38.149', '10.0.2.2', 'localhost']
+
 CORS_ALLOW_ALL_ORIGINS = True
 
-CORS_ALLOW_CREDENTIALS = True 
+CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
-    'http://localhost:3000', 
-    
+    'http://localhost:3000',
+
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -83,18 +83,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Rel_Compteur.wsgi.application'
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
-        'USER': 'eatcrano',
+        'USER': 'eatc_rano',
         'PASSWORD': 'eatc301',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
-
 
 CACHES = {
     'default': {
@@ -126,8 +124,6 @@ TIME_ZONE = 'Indian/Antananarivo'
 USE_I18N = True
 
 USE_TZ = True
-
-STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

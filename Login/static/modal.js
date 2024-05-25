@@ -3,9 +3,10 @@ $(document).ready(function(){
         searching: true,
         "order": [],
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json',
+            url: '/static/fr-FR.json',
         },
     });
+    $('.dataTables_filter input[type="search"]').css('height', '500px');
     // Hide automatique le message après quelque seconde
     $("#alert").animate({
         opacity: 1,
@@ -45,21 +46,4 @@ $(document).ready(function(){
         $(this).val(numericValue);
     });
 
-    // function formatNumberWithSpaces(number) {
-    //     const parts = number.toString().split('.');
-    //     const integerPart = parts[0];
-    //     const decimalPart = parts[1] || "";
-
-    //     // Ajoute un espace tous les trois chiffres à partir de la virgule
-    //     let formattedIntegerPart = integerPart.replace(/\B(?=(\d{3})+(?=,))/g, " ");
-
-    //     return formattedIntegerPart + (decimalPart.length > 0 ? ',' + decimalPart : "");
-    // }
-
-    // let chifres = $('#chiffres .chiffre')
-    // const valeur_original = chifres.text();
-    // const formattedValue = formatNumberWithSpaces(valeur_original);
-
-    // // Mettre à jour la div avec la valeur formatée
-    // chifres.text(formattedValue);
 });
