@@ -18,6 +18,10 @@
     </content>
     <orderEntry type="jdk" jdkName="Python 3.10 (eatc_ranoo)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Chart.js" level="application" />
+    <orderEntry type="library" name="date-fns" level="application" />
+    <orderEntry type="library" name="chartjs-plugin-datalabels" level="application" />
+    <orderEntry type="library" name="chartjs-adapter-date-fns" level="application" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />

@@ -188,7 +188,7 @@ def compteur_releve(request):
     }
     return render(request, 'all_page/compteurs/compteurs.html', context)
 
- 
+
 class ReleveNew(View):
     @staticmethod
     @authentification_requis
@@ -205,6 +205,7 @@ class ReleveNew(View):
             'compteur': compteur
         }
         return render(request, 'all_page/compteurs/compteurs.html', context)
+
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
@@ -232,11 +233,11 @@ class ReleveNew(View):
         # Créer un nouvel objet ReleveCompteur avec l'image mise à jour
         releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
         facture_creation(date_releve, num_compteur, releve)
-        
+
         # Historique
         message = f"Relever et Facture d'un compteur {num_compteur}"
         enregistre_historique(request, message, request.session.get('id_utilisateur'))
-        
+
         messages.success(request, f"Relevé enregistrer avec succès !")
         return redirect('compteur_detail', num_compteur)
 
@@ -302,8 +303,8 @@ class ReleveMod(View):
                 messages.warning(request, f"Vous ne pouvez pas enregistrer un relevé inferieure à la dernière !")
                 return redirect('releve_mod', pk)
             else:
-                mod_releve = request.mod_relever_facture(pk, compteur, date_releve,
-                                                         volume, image_compteur, dernier_releve)
+                mod_releve = ReleveMod.mod_relever_facture(pk, compteur, date_releve,
+                                                           volume, image_compteur, dernier_releve)
                 facture_creation(date_releve, compteur.pk, mod_releve)
                 messages.success(request, f"Relevé enregistré avec succès !")
                 return redirect('compteur_detail', compteur.pk)
@@ -317,6 +318,7 @@ def del_releve(request, pk):
     releve.delete()
     messages.success(request, f"Relevé supprimé avec succès !")
     return redirect('compteur_detail', releve.num_compteur.pk)
+
 
 # @authentification_requis
 # def client_absent(request, num_compteur):

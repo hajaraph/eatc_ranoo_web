@@ -438,6 +438,9 @@ def facture_paiement(request, *args, **kwargs):
     return JsonResponse({'message': 'Paiement effectué avec succès'})
 
 
+# def facture_export_xlsx(request):
+
+
 def generate_qr_code(request, num_facture):
     # Les données que vous voulez encoder dans le QR code (peut être un lien, du texte, etc.)
     data = num_facture
