@@ -26,7 +26,11 @@ def tableau_bord(request, *args, **kwargs):
     annee_actuelle = date_actuelle.year
     regions = Region.objects.all()
 
-    commune = Commune.objects.filter(contrat__num_compteur__relevecompteurs__date_releve__year=annee_actuelle)
+    commune = Commune.objects.filter(
+        contrat__num_compteur__relevecompteurs__date_releve__year=annee_actuelle
+    ).annotate(
+        total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
+    ).exclude(total_conso=0)
     factures = Facture.objects.filter(date_facture__year=annee_actuelle)
     main_courante = StatutMC.objects.filter(date_status__year=annee_actuelle)
 
@@ -82,9 +86,10 @@ def tableau_bord(request, *args, **kwargs):
         # Filtrer par département
         evo_conso_commune = communes.contrat_set.annotate(
             mois_releve=ExtractMonth('num_compteur__relevecompteurs__date_releve'),
-            annee_releve=ExtractYear('num_compteur__relevecompteurs__date_releve'),
+            annee_releve=ExtractYear('num_compteur__relevecompteurs__date_releve')
+        ).values('mois_releve', 'annee_releve').annotate(
             total_conso=Coalesce(Sum('num_compteur__relevecompteurs__conso'), Value(0))
-        ).order_by('mois_releve', 'annee_releve').exclude(total_conso=0)
+        ).order_by('annee_releve', 'mois_releve').exclude(total_conso=0)
 
         # Ajouter les résultats au tableau
         resultats.append(
@@ -92,9 +97,9 @@ def tableau_bord(request, *args, **kwargs):
                 'commune': f'{communes.region.region} {communes.commune}',
                 'data': [
                     {
-                        'mois_releve': entry.mois_releve,
-                        'annee_releve': entry.annee_releve,
-                        'total_conso': entry.total_conso
+                        'mois_releve': entry['mois_releve'],
+                        'annee_releve': entry['annee_releve'],
+                        'total_conso': entry['total_conso']
                     }
                     for entry in evo_conso_commune
                 ]
