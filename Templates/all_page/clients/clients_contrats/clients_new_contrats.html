@@ -14,7 +14,7 @@
                                 <option value="{{ clients.pk }}">{{ clients.pk }} | {{ clients.nom_client }} {% if clients.prenom_client %} {{ clients.prenom_client }} {% endif %}</option>
                             {% endfor %}
                         </select>
-                        <label for="client_id">Client</label>
+                        <label for="client_id">Client*</label>
                     </div>
                 </div>
             </div>
@@ -22,7 +22,7 @@
                <div class="col-md-4 mt-4">
                     <div class="form-floating">
                         <input type="text" name="adresse_contrat" id="adresse_contrat" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
-                        <label for="adresse_contrat">Adresse Contrat</label>
+                        <label for="adresse_contrat">Adresse Contrat*</label>
                     </div>
                 </div>
             </div>
@@ -35,7 +35,7 @@
                                 <option value="{{ region.region }}">{{ region.region }}</option>
                             {% endfor %}
                         </select>
-                        <label for="region">Région</label>
+                        <label for="region">Région*</label>
                     </div>
                 </div>
                 <div class="col-md-4 mt-4">
@@ -57,7 +57,7 @@
                 <div class="col-md-4 mt-4">
                     <div class="form-floating">
                         <input type="text" name="pays_contrat" id="pays_contrat" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" value="Madagascar" placeholder="" required>
-                        <label for="pays_client">Pays</label>
+                        <label for="pays_client">Pays*</label>
                     </div>
                 </div>
             </div>
@@ -75,7 +75,7 @@
                                 <option value="{{ compteur.pk }}">{{ compteur.num_compteur }}</option>
                             {% endfor %}
                         </select>
-                        <label for="num_compteur">Compteur</label>
+                        <label for="num_compteur">Compteur*</label>
                     </div>
                 </div>
             </div>
@@ -88,7 +88,7 @@
                 <div class="col-md-4 mt-4">
                     <div class="form-floating">
                         <input type="text" name="num_contrat" id="num_contrat" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
-                        <label for="num_contrat">Numéro Contrat</label>
+                        <label for="num_contrat">Numéro Contrat*</label>
                     </div>
                 </div>
             </div>
@@ -96,7 +96,7 @@
                 <div class="col-md-4 mt-4">
                     <div class="form-floating">
                         <input type="date" name="date_debut" id="date_debut" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
-                        <label for="date_debut">Date Début</label>
+                        <label for="date_debut">Date Début*</label>
                     </div>
                 </div>
                 <div class="col-md-4 mt-4">

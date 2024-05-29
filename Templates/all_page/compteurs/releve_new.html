@@ -8,7 +8,7 @@
                     <div class="col-md-8 mt-4">
                         <div class="form-floating">
                             <input type="text" name="num_compteur" id="num_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ compteur.num_compteur }}" placeholder="" readonly>
-                            <label for="num_compteur">Numéro Compteur</label>
+                            <label for="num_compteur">Numéro Compteur*</label>
                         </div>
                     </div>
                 </div>
@@ -16,7 +16,7 @@
                     <div class="col-md-8 mt-4">
                         <div class="form-floating">
                             <input type="date" name="date_releve" id="date_releve" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
-                            <label for="date_releve">Date Relevé</label>
+                            <label for="date_releve">Date Relevé*</label>
                         </div>
                     </div>
                 </div>
@@ -24,7 +24,7 @@
                     <div class="col-md-8 mt-4">
                         <div class="form-floating">
                             <input type="text" name="volume" id="volume" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
-                            <label for="volume">Volume</label>
+                            <label for="volume">Volume*</label>
                         </div>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                     <div class="col-md-8 mt-4">
                         <div class="form-floating">
                             <input type="text" name="utilisateur" id="utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ request.session.nom_utilisateur }} {{ request.session.prenom_utilisateur }}" readonly>
-                            <label for="utilisateur">Utilisateur</label>
+                            <label for="utilisateur">Utilisateur*</label>
                         </div>
                     </div>
                 </div>

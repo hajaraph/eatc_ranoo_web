@@ -147,7 +147,18 @@
             <td style="text-align: center">{{ releve_avant.volume }} m&#179;</td>
             <td style="text-align: center">{{ dernier_releve.volume }} m&#179;</td>
             <td style="text-align: center">{{ dernier_releve.conso }} m&#179;</td>
-            <td style="text-align: right">{{ montant.tarif.prix_m3 }} Ar</td>
+            <td style="text-align: right">
+                {% if typeclient == 1 %}
+                    {{ montant.tarif.prix_m3_bs }}
+                {% elif typeclient == 2 %}
+                    {{ montant.tarif.prix_m3_bp }}
+                {% elif typeclient == 3 %}
+                    {{ montant.tarif.prix_m3_k }}
+                {% else %}
+                    Prix inconnu
+                {% endif %}
+                Ar
+            </td>
             <td style="text-align: right">{{ montant.total_conso_ht }} Ar</td>
         </tr>
         <tr style="border-bottom: 1px solid #5d5d5d; padding-top: 2px">

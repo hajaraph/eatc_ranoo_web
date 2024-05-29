@@ -73,7 +73,8 @@ def facture_etat_detail(request, num_facture):
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
     tarif = Tarif.objects.get(cp_commune_id=factures.num_contrat.cp_commune_id)
     taxes = tarif.taxes.all()
-    montant_taxes = Calcule.montant_taxe(tarif, factures.relevecompteur.conso)
+    typeclient = factures.num_contrat.client.type_client_id
+    montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.relevecompteur.conso)
     taxes_montants = list(zip(taxes, montant_taxes))
 
     date_echeance = factures.relevecompteur.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
@@ -87,6 +88,7 @@ def facture_etat_detail(request, num_facture):
         'facture': factures,
         'paiement': paiements,
         'montant': montant,
+        'typeclient': typeclient,
         'taxes_montants': taxes_montants,
         'date_echeance': date_echeance
     }
@@ -177,32 +179,59 @@ class Calcule:
 
     @staticmethod
     def montantht(total_conso_ht, tarif, factures):
-        return MontantHT.objects.create(
-            total_conso_ht=round(total_conso_ht, 2),
-            tarif_id=tarif,
-            facture=factures,
-        )
+        try:
+            return MontantHT.objects.create(
+                total_conso_ht=round(total_conso_ht, 2),
+                tarif_id=tarif,
+                facture=factures,
+            )
+        except Exception as e:
+            print(f"Error creating MontantHT: {e}")
+            return None
 
     @staticmethod
     def montantttc(total_conso_ttc, montant_ht):
-        return MontantTTC.objects.create(
-            total_conso_ttc=total_conso_ttc,
-            montant_ht=montant_ht
-        )
+        try:
+            return MontantTTC.objects.create(
+                total_conso_ttc=total_conso_ttc,
+                montant_ht=montant_ht
+            )
+        except Exception as e:
+            print(f"Error creating MontantTTC: {e}")
+            return None
 
     @staticmethod
-    def cree_montant(tarif, consommation, factures):
-        total_conso_ht = tarif.prix_m3 * consommation
-        montant_taxe = sum(Calcule.montant_taxe(tarif, consommation))
-        montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
-        Calcule.montantttc(total_conso_ht + montant_taxe, montant_ht)
+    def calculate_total_conso_ht(typeclient, tarif, consommation):
+        if typeclient == 1:
+            return tarif.prix_m3_bs * consommation
+        elif typeclient == 2:
+            return tarif.prix_m3_bp * consommation
+        elif typeclient == 3:
+            return tarif.prix_m3_k * consommation
+        else:
+            raise ValueError("Invalid typeclient")
 
     @staticmethod
-    def montant_taxe(tarif, consommation):
-        montant_ht = tarif.prix_m3 * consommation
-        taxes = Taxe.objects.filter(tarif=tarif)
-        montants_taxes = [montant_ht * (taxe.taux_taxe / 100) for taxe in taxes]
-        return montants_taxes
+    def cree_montant(typeclient, tarif, consommation, factures):
+        try:
+            total_conso_ht = Calcule.calculate_total_conso_ht(typeclient, tarif, consommation)
+            montant_taxe = sum(Calcule.montant_taxe(typeclient, tarif, consommation))
+            montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
+            if montant_ht:
+                Calcule.montantttc(total_conso_ht + montant_taxe, montant_ht)
+        except Exception as e:
+            print(f"Error in cree_montant: {e}")
+
+    @staticmethod
+    def montant_taxe(typeclient, tarif, consommation):
+        try:
+            montant_ht = Calcule.calculate_total_conso_ht(typeclient, tarif, consommation)
+            taxes = Taxe.objects.filter(tarif=tarif)
+            montants_taxes = [montant_ht * (taxe.taux_taxe / 100) for taxe in taxes]
+            return montants_taxes
+        except Exception as e:
+            print(f"Error calculating taxes: {e}")
+            return []
 
 
 def facture_creation(date_facture, num_compteur, releve):
@@ -223,20 +252,20 @@ def facture_creation(date_facture, num_compteur, releve):
     tarif = Tarif.objects.get(cp_commune_id=cp_commune)
 
     if typeclient == 1:
-        Calcule.cree_montant(tarif, consommation, factures)
+        Calcule.cree_montant(typeclient, tarif, consommation, factures)
 
     elif typeclient == 2:
         if consommation >= 10:
-            total_conso_ht = tarif.prix_m3 * consommation
+            total_conso_ht = tarif.prix_m3_bp * consommation
             total_conso_ttc = (total_conso_ht * tarif.tva) / 100
             total_conso_ttc += total_conso_ht
 
             montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
-            taxe = sum(Calcule.montant_taxe(tarif, consommation))
+            taxe = sum(Calcule.montant_taxe(typeclient, tarif, consommation))
             Calcule.montantttc(total_conso_ttc + taxe, montant_ht)
 
         else:
-            Calcule.cree_montant(tarif, consommation, factures)
+            Calcule.cree_montant(typeclient, tarif, consommation, factures)
 
     num_contrat = contrat.num_contrat
     avoir = Avoir.objects.filter(num_contrat=num_contrat).first()
@@ -271,18 +300,6 @@ def facture_creation(date_facture, num_compteur, releve):
     factures.save()
 
 
-# def calculer_montants(tarif, consommation, factures, tva=False):
-#     total_conso_ht = tarif.prix_m3 * consommation
-#
-#     if tva:
-#         total_conso_ht = (total_conso_ht * tarif.tva) / 100 + total_conso_ht
-#
-#     montant_ht = montantht(total_conso_ht, tarif.pk, factures)
-#     montantttc(total_conso_ht, montant_ht)
-#
-#     return montant_ht
-
-
 @authentification_requis
 def facture_genere_pdf(request, pk):
     factures = Facture.objects.get(pk=pk)
@@ -296,7 +313,8 @@ def facture_genere_pdf(request, pk):
 
     tarif = montant.tarif
     taxes = tarif.taxes.all()
-    montant_taxes = Calcule.montant_taxe(tarif, factures.relevecompteur.conso)
+    typeclient = factures.num_contrat.client.type_client_id
+    montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.relevecompteur.conso)
     taxes_montants = list(zip(taxes, montant_taxes))
     date_paiment = dernier_releve.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
 
@@ -329,6 +347,7 @@ def facture_genere_pdf(request, pk):
     context = {
         'instance': factures,
         'montant': montant,
+        'typeclient': typeclient,
         'lettre': lettre,
         'dernier_releve': dernier_releve,
         'releve_avant': releve_avant,

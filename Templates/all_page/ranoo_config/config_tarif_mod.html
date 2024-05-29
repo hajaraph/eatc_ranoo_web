@@ -5,8 +5,24 @@
         <div class="row">
             <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <input type="text" name="prix_m3" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.prix_m3 }}" placeholder="">
-                    <label for="prix_m3">Prix / m&#179;</label>
+                    <input type="text" name="prix_m3_bs" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.prix_m3_bs }}" placeholder="" required>
+                    <label for="prix_m3">Prix / m&#179; (Branchement Social)*</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="prix_m3_bp" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.prix_m3_bp }}" placeholder="" required>
+                    <label for="prix_m3">Prix / m&#179; (Branchement Privé)*</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="prix_m3_k" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.prix_m3_k }}" placeholder="" required>
+                    <label for="prix_m3">Prix / m&#179; (Kiosque)*</label>
                 </div>
             </div>
         </div>

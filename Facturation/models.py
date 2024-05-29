@@ -9,7 +9,9 @@ from Login.models import Utilisateur
 
 class Tarif(models.Model):
     id_tarif = models.BigAutoField(primary_key=True)
-    prix_m3 = models.FloatField(blank=False)
+    prix_m3_bs = models.FloatField(blank=True, null=True)
+    prix_m3_bp = models.FloatField(blank=True, null=True)
+    prix_m3_k = models.FloatField(blank=True, null=True)
     tva = models.FloatField(blank=False)
     nb_jour_echeance_fct = models.IntegerField(blank=False)
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE,
