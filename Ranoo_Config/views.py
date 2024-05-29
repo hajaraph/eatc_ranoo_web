@@ -210,14 +210,18 @@ class TarifNew(View):
     @role_requis('Administrateur', 'Gestionnaire')
     def post(request):
         cp_commune = request.POST['cp_commune']
-        prix_m3 = float(request.POST['prix_m3'])
+        prix_m3_bs = float(request.POST['prix_m3_bs'])
+        prix_m3_bp = float(request.POST['prix_m3_bp'])
+        prix_m3_k = float(request.POST['prix_m3_k'])
         nom_taxes = request.POST.getlist('nom_taxe')
         taux_taxes = [float(taux) for taux in request.POST.getlist('taux_taxe')]
         tva = float(request.POST['tva'])
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
         tarif = Tarif.objects.create(
             cp_commune_id=cp_commune,
-            prix_m3=round(prix_m3, 2),
+            prix_m3_bs=round(prix_m3_bs, 2),
+            prix_m3_bp=round(prix_m3_bp, 2),
+            prix_m3_k=round(prix_m3_k, 2),
             tva=round(tva, 2),
             nb_jour_echeance_fct=nb_jour_echeance_fct,
         )
@@ -254,14 +258,18 @@ class TarifMod(View):
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
     def post(request, pk):
-        prix_m3 = float(request.POST['prix_m3'])
+        prix_m3_bs = float(request.POST['prix_m3_bs'])
+        prix_m3_bp = float(request.POST['prix_m3_bp'])
+        prix_m3_k = float(request.POST['prix_m3_k'])
         nom_taxes = request.POST.getlist('nom_taxe')
         taux_taxes = request.POST.getlist('taux_taxe')
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
         tva = float(request.POST['tva'])
 
         tarif = Tarif.objects.get(pk=pk)
-        tarif.prix_m3 = round(prix_m3, 2)
+        tarif.prix_m3_bs = round(prix_m3_bs, 2)
+        tarif.prix_m3_bp = round(prix_m3_bp, 2)
+        tarif.prix_m3_k = round(prix_m3_k, 2)
         tarif.tva = round(tva, 2)
         tarif.nb_jour_echeance_fct = nb_jour_echeance_fct
         tarif.save()
