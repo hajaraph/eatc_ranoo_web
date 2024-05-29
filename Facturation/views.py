@@ -6,7 +6,7 @@ import qrcode
 from django.db.models import Q
 from django.utils import timezone
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from num2words import num2words
 from django.contrib import messages
 from django.shortcuts import render
@@ -186,8 +186,7 @@ class Calcule:
                 facture=factures,
             )
         except Exception as e:
-            print(f"Error creating MontantHT: {e}")
-            return None
+            return HttpResponse(f"Error creating MontantHT: {e}")
 
     @staticmethod
     def montantttc(total_conso_ttc, montant_ht):
@@ -197,8 +196,7 @@ class Calcule:
                 montant_ht=montant_ht
             )
         except Exception as e:
-            print(f"Error creating MontantTTC: {e}")
-            return None
+            return HttpResponse(f"Error creating MontantTTC: {e}")
 
     @staticmethod
     def calculate_total_conso_ht(typeclient, tarif, consommation):
@@ -220,7 +218,7 @@ class Calcule:
             if montant_ht:
                 Calcule.montantttc(total_conso_ht + montant_taxe, montant_ht)
         except Exception as e:
-            print(f"Error in cree_montant: {e}")
+            return HttpResponse(f"Error in cree_montant: {e}")
 
     @staticmethod
     def montant_taxe(typeclient, tarif, consommation):
@@ -230,74 +228,83 @@ class Calcule:
             montants_taxes = [montant_ht * (taxe.taux_taxe / 100) for taxe in taxes]
             return montants_taxes
         except Exception as e:
-            print(f"Error calculating taxes: {e}")
-            return []
+            return HttpResponse(f"Error calculating taxes: {e}")
+
+
+def precess_avoir_restant(contrat, factures):
+    try:
+        montant = MontantTTC.objects.get(montant_ht__facture_id=factures.pk)
+        montant_total_ttc = montant.total_conso_ttc
+
+        # Check if there is a credit note (avoir)
+        avoir = Avoir.objects.filter(num_contrat=contrat.num_contrat).first()
+        if avoir:
+            factures.avoir_avant = avoir.montant_avoir
+            if montant_total_ttc >= avoir.montant_avoir:
+                montant_total_ttc -= avoir.montant_avoir
+                factures.avoir_utilise = avoir.montant_avoir
+                factures.montant_total_ttc = round(montant_total_ttc, 2)
+                avoir.delete()
+            else:
+                factures.avoir_utilise = round(montant_total_ttc, 2)
+                avoir.montant_avoir -= montant_total_ttc
+                montant_total_ttc = 0
+                avoir.save()
+                factures.montant_total_ttc = 0
+
+        # Check if there is a remaining balance (restant)
+        restant = Restant.objects.filter(num_contrat=contrat.num_contrat).first()
+        if restant:
+            montant_total_ttc += restant.restant
+            factures.restant_precedant = round(restant.restant, 2)
+            factures.montant_total_ttc = round(montant_total_ttc, 2)
+            restant.delete()
+        else:
+            factures.montant_total_ttc = round(montant_total_ttc, 2)
+
+    except Exception as e:
+        return HttpResponse(f"Error processing credit and remaining balance: {e}")
 
 
 def facture_creation(date_facture, num_compteur, releve):
-    contrat = Contrat.objects.filter(num_compteur=num_compteur).first()
-    typeclient = contrat.client.type_client.pk
-    consommation = releve.conso 
+    try:
+        contrat = Contrat.objects.filter(num_compteur=num_compteur).first()
+        if not contrat:
+            raise ValueError(f"No contract found for compteur number: {num_compteur}")
 
-    date_facture1 = date_facture.strftime("%Y%m%d")
-    num_facture = f"FACT{date_facture1}{num_compteur}"
-    factures = Facture.objects.create(
-        num_facture=num_facture,
-        date_facture=date_facture,
-        num_contrat=contrat,
-        relevecompteur_id=releve.pk
-    )
+        typeclient = contrat.client.type_client.pk
+        consommation = releve.conso
 
-    cp_commune = contrat.cp_commune_id
-    tarif = Tarif.objects.get(cp_commune_id=cp_commune)
+        # Generate the invoice number
+        date_facture_str = date_facture.strftime("%Y%m%d")
+        num_facture = f"FACT{date_facture_str}{num_compteur}"
+        factures = Facture.objects.create(
+            num_facture=num_facture,
+            date_facture=date_facture,
+            num_contrat=contrat,
+            relevecompteur_id=releve.pk
+        )
 
-    if typeclient == 1:
-        Calcule.cree_montant(typeclient, tarif, consommation, factures)
+        # Get the appropriate tariff
+        tarif = Tarif.objects.get(cp_commune_id=contrat.cp_commune_id)
 
-    elif typeclient == 2:
-        if consommation >= 10:
-            total_conso_ht = tarif.prix_m3_bp * consommation
-            total_conso_ttc = (total_conso_ht * tarif.tva) / 100
-            total_conso_ttc += total_conso_ht
-
-            montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
-            taxe = sum(Calcule.montant_taxe(typeclient, tarif, consommation))
-            Calcule.montantttc(total_conso_ttc + taxe, montant_ht)
-
-        else:
+        # Calculate the amounts based on the client type
+        if typeclient == 1 or (typeclient == 2 and consommation < 10):
             Calcule.cree_montant(typeclient, tarif, consommation, factures)
+        elif typeclient == 2 and consommation >= 10:
+            total_conso_ht = tarif.prix_m3_bp * consommation
+            total_conso_ttc = total_conso_ht + (total_conso_ht * tarif.tva / 100)
+            montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
+            if montant_ht:
+                taxe = sum(Calcule.montant_taxe(typeclient, tarif, consommation))
+                Calcule.montantttc(total_conso_ttc + taxe, montant_ht)
 
-    num_contrat = contrat.num_contrat
-    avoir = Avoir.objects.filter(num_contrat=num_contrat).first()
-    restant = Restant.objects.filter(num_contrat=num_contrat).first()
-    montant = MontantTTC.objects.get(montant_ht__facture_id=factures.pk)
+        precess_avoir_restant(contrat, factures)
 
-    montant_total_ttc = montant.total_conso_ttc
-    # Pour verifie si le contrat a un avoir
-    if avoir:
-        factures.avoir_avant = avoir.montant_avoir
-
-        if montant_total_ttc >= avoir.montant_avoir:
-            montant_total_ttc -= avoir.montant_avoir
-            factures.avoir_utilise = avoir.montant_avoir
-            factures.montant_total_ttc = round(montant_total_ttc, 2)
-            avoir.delete()
-        elif montant_total_ttc < avoir.montant_avoir:
-            factures.avoir_utilise = round(montant_total_ttc, 2)
-            montant_total_ttc = avoir.montant_avoir - montant_total_ttc
-            avoir.montant_avoir = round(montant_total_ttc, 2)
-            factures.montant_total_ttc = 0
-            avoir.save()
-
-    # Pour verifié si le client a un restant d'une facture avant
-    elif restant:
-        montant_total_ttc += restant.restant
-        factures.restant_precedant = round(restant.restant, 2)
-        factures.montant_total_ttc = round(montant_total_ttc, 2)
-        restant.delete()
-    else:
-        factures.montant_total_ttc = round(montant_total_ttc, 2)
-    factures.save()
+        factures.save()
+        return factures
+    except Exception as e:
+        return HttpResponse(f"Error creating invoice: {e}")
 
 
 @authentification_requis
