@@ -1,15 +1,17 @@
 import base64
-from datetime import timedelta
+from datetime import timedelta, datetime
 from io import BytesIO
 
 import qrcode
 from django.db.models import Q
+from django.template.loader import get_template
 from django.utils import timezone
 
 from django.http import JsonResponse, HttpResponse
 from num2words import num2words
 from django.contrib import messages
 from django.shortcuts import render
+from xhtml2pdf import pisa
 
 from Clients.models import Contrat
 from Clients.views import generate_pdf
@@ -307,64 +309,118 @@ def facture_creation(date_facture, num_compteur, releve):
         return HttpResponse(f"Error creating invoice: {e}")
 
 
+def facture_context_pdf(request, factures):
+    try:
+        montant = MontantHT.objects.get(facture=factures.pk)
+
+        num_compteur = factures.num_contrat.num_compteur_id
+        dernier_releve = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).last()
+        releve_avant = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).order_by('-date_releve')
+
+        tarif = montant.tarif
+        taxes = tarif.taxes.all()
+        typeclient = factures.num_contrat.client.type_client_id
+        montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.relevecompteur.conso)
+        taxes_montants = list(zip(taxes, montant_taxes))
+        date_paiment = dernier_releve.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
+
+        if len(releve_avant) >= 2:
+            releve_avant = releve_avant[1]
+        else:
+            releve_avant = ReleveCompteur.objects.first()
+
+        if typeclient == 2:
+            if dernier_releve.conso >= 10:
+                tva_montant = (montant.total_conso_ht * montant.tarif.tva) / 100
+            else:
+                tva_montant = 0
+        else:
+            tva_montant = 0
+
+        try:
+            nombre = float(factures.montant_total_ttc)
+            lettre = num2words(nombre, lang='fr')
+            lettre = lettre[0].upper() + lettre[1:]
+        except ValueError:
+            lettre = "Nombre invalide"
+
+        qr_code = generate_qr_code(request, factures.num_facture)
+
+        context = {
+            'instance': factures,
+            'montant': montant,
+            'typeclient': typeclient,
+            'lettre': lettre,
+            'dernier_releve': dernier_releve,
+            'releve_avant': releve_avant,
+            'montant_ht_total': round(montant.total_conso_ht, 2),
+            'montant_tva': round(tva_montant, 2),
+            'taxes_montants': taxes_montants,
+            'date_paiment': date_paiment,
+            'qr_code': qr_code
+        }
+        return context
+
+    except MontantHT.DoesNotExist:
+        return HttpResponse(f"MontantHT n'exist pas pour le facture {factures.num_facture}", content_type='text/plain')
+    except ReleveCompteur.DoesNotExist:
+        return HttpResponse(f"ReleveCompteur n'exist pas pour le numéro de compteur {factures.num_contrat.num_compteur_id}", content_type='text/plain')
+    except Exception as e:
+        return HttpResponse(f"An error occurred: {e}", content_type='text/plain')
+
+
 @authentification_requis
 def facture_genere_pdf(request, pk):
     factures = Facture.objects.get(pk=pk)
-    montant = MontantHT.objects.get(facture=pk)
+    context = facture_context_pdf(request, factures)
 
-    num_compteur = factures.num_contrat.num_compteur_id
-    dernier_releve = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).last()
-
-    # Recupère le 2ème dernier date de relevé
-    releve_avant = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).order_by('-date_releve')
-
-    tarif = montant.tarif
-    taxes = tarif.taxes.all()
-    typeclient = factures.num_contrat.client.type_client_id
-    montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.relevecompteur.conso)
-    taxes_montants = list(zip(taxes, montant_taxes))
-    date_paiment = dernier_releve.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
-
-    if len(releve_avant) >= 2:
-        releve_avant = releve_avant[1]
-    else:
-        releve_avant = ReleveCompteur.objects.first()
-
-    typeclient = factures.num_contrat.client.type_client.pk
-
-    if typeclient == 2:
-        if dernier_releve.conso >= 10:
-            tva_montant = (montant.total_conso_ht * montant.tarif.tva) / 100
-        else:
-            tva_montant = 0
-    else:
-        tva_montant = 0
-
-    # Transforme le chiffre en lettre
-    try:
-        nombre = float(factures.montant_total_ttc)
-        lettre = num2words(nombre, lang='fr')
-        lettre = lettre[0].upper() + lettre[1:]
-    except ValueError:
-        lettre = "Nombre invalide"
+    if isinstance(context, HttpResponse):
+        # Si context est une réponse HTTP, retourne-la (cela signifie qu'une erreur est survenue)
+        return context
 
     template_path = 'all_page/facturation/facture/templatepdf.html'
     filename_prefix = f'Facture_Numero_{factures.num_facture}'
-    qr_code = generate_qr_code(request, factures.num_facture)
-    context = {
-        'instance': factures,
-        'montant': montant,
-        'typeclient': typeclient,
-        'lettre': lettre,
-        'dernier_releve': dernier_releve,
-        'releve_avant': releve_avant,
-        'montant_ht_total': round(montant.total_conso_ht, 2),
-        'montant_tva': round(tva_montant, 2),
-        'taxes_montants': taxes_montants,
-        'date_paiment': date_paiment,
-        'qr_code': qr_code
-    }
     return generate_pdf(request, context, template_path, filename_prefix)
+
+
+def render_html_to_pdf(template_src, context_dict):
+    template = get_template(template_src)
+    html = template.render(context_dict)
+    return html
+
+
+@authentification_requis
+def generate_multiple_pages_pdf(request):
+    factures = Facture.objects.filter(statut=False)
+    html_sections = []
+
+    for fact in factures:
+        context = facture_context_pdf(request, fact)
+
+        if isinstance(context, HttpResponse):
+            # Si context est une réponse HTTP, retourne-la (cela signifie qu'une erreur est survenue)
+            return context
+
+        html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
+        if html:
+            html_sections.append(html)
+        else:
+            return HttpResponse(f"Error generating HTML for facture {fact.num_facture}", content_type='text/plain')
+
+    if not html_sections:
+        return HttpResponse("No valid factures to generate PDF", content_type='text/plain')
+
+    combined_html = '<div style="page-break-after: always;"></div>'.join(html_sections)
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(combined_html.encode("UTF-8")), result)
+
+    if not pdf.err:
+        filename = f"factures_{datetime.now().strftime('%Y%m%d')}.pdf"
+        response = HttpResponse(result.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    else:
+        return HttpResponse("Error generating PDF", content_type='text/plain')
 
 
 def paiement(request, id_releve, montant_payer, utilisateur_mob):
