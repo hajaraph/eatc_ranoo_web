@@ -13,6 +13,7 @@ class Tarif(models.Model):
     prix_m3_bp = models.FloatField(blank=True, null=True)
     prix_m3_k = models.FloatField(blank=True, null=True)
     tva = models.FloatField(blank=False)
+    conso_tva_app = models.FloatField(blank=True, null=True)
     nb_jour_echeance_fct = models.IntegerField(blank=False)
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE,
                                    blank=False, related_name='communes')
