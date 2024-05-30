@@ -1,7 +1,7 @@
 from django.urls import path
 
-from Facturation.views import facture, facture_restant, facture_retard, facture_avoir, facture_etat_detail,\
-    facture_genere_pdf, facture_paiement, facture_impaye, facture_paye
+from Facturation.views import facture, facture_restant, facture_retard, facture_avoir, facture_etat_detail, \
+    facture_genere_pdf, facture_paiement, facture_impaye, facture_paye, generate_multiple_pages_pdf
 
 urlpatterns = [
     path('list', facture, name='facture'),
@@ -12,5 +12,6 @@ urlpatterns = [
     path('retard', facture_retard, name='facture_retard'),
     path('avoir', facture_avoir, name='facture_avoir'),
     path('paiement', facture_paiement, name='facture_paiement'),
-    path('pdf/num_facture=<str:pk>', facture_genere_pdf, name='facture_genere_pdf')
+    path('pdf/num_facture=<str:pk>', facture_genere_pdf, name='facture_genere_pdf'),
+    path('pdf', generate_multiple_pages_pdf, name='generate_multiple_pages_pdf')
 ]
