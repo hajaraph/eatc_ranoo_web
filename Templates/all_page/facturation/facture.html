@@ -121,7 +121,6 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <input type="hidden" name="id_facture" id="id_facture" value="{{ csrf_token }}">
                                         <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
                                         <label for="date_deb">Periode du </label>
                                     </div>
@@ -187,7 +186,6 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <input type="hidden" name="id_facture" id="id_facture" value="{{ csrf_token }}">
                                         <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
                                         <label for="date_deb">Periode du </label>
                                     </div>
@@ -229,7 +227,7 @@
                     <i class="fas fa-xmark-circle"></i>
                     Annuler
                 </button>
-                <button type="button" class="btn btn-success confirmer-export" id="confirmer-export">
+                <button type="button" class="btn btn-success confirmer-export-excel" id="confirmer-export-excel">
                     <i class="fas fa-check-circle"></i>
                     Confirmer
                 </button>

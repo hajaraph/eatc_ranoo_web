@@ -23,4 +23,17 @@ $(document).ready(function () {
             });
         });
     });
+
+    $('#confirmer-export').click(function() {
+        const dateDeb = $('#date_deb').val();
+        const dateFin = $('#date_fin').val();
+        const commune = $('#commune').val();
+
+        // Construire l'URL avec les paramètres GET
+        let url = '/facture/pdf';
+        url += `?date_deb=${dateDeb}&date_fin=${dateFin}&commune=${commune}`;
+        // Ouvrir une nouvelle onglet avec l'URL générée
+        window.open(url, '_blank');
+        $('#export-pdf').modal('hide');
+    });
 });
