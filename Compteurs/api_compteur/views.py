@@ -2,7 +2,7 @@ import re
 import pandas as pd
 from django.db.models import Count
 from django.db.models import Q
-from datetime import datetime, time 
+from datetime import datetime, time
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -19,7 +19,7 @@ from .serializer import MissionSerializer, PaiementSerializer, FactureSerializer
 from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
 from Compteurs.views import relever, ReleveMod
-from Facturation.models import Facture, MontantHT
+from Facturation.models import Facture, MontantHT, Tarif
 from Facturation.views import facture_creation, paiement
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
@@ -186,7 +186,7 @@ def relever_client(request):
 class Missions(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @staticmethod 
+    @staticmethod
     def get_liste_mission(request):
         cp_commune = request.user.cp_commune_id
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
@@ -201,7 +201,7 @@ class Missions(APIView):
         )
 
         liste_contrats_info = []
-        for contrat in contrats_commune: 
+        for contrat in contrats_commune:
             dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
                 max_date=Max('date_releve'))
             contrat.date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else None
@@ -253,19 +253,18 @@ class Missions(APIView):
 
             if dernier_releve.volume >= volume:
                 return JsonResponse({
-                        'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                    'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
+                }, status=status.HTTP_400_BAD_REQUEST)
 
             if date_releve <= dernier_releve.date_releve:
-                return JsonResponse({'erreur': "Veuillez fournir une date valide"},
-                                        status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse({'erreur': "Veuillez fournir une date valide"}, status=status.HTTP_400_BAD_REQUEST)
 
             mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur, dernier_releve)
             facture_creation(date_releve, compteur.num_compteur, mod_releve)
 
             return JsonResponse({
-                        'enregistre': 'Mise à jour effectuer avec succès !'
-                    }, status=status.HTTP_201_CREATED)
+                'enregistre': 'Mise à jour effectuer avec succès !'
+            }, status=status.HTTP_201_CREATED)
 
         else:
             if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
@@ -281,8 +280,8 @@ class Missions(APIView):
 
                 if dernier_volume.volume > volume:
                     return JsonResponse({
-                            'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
-                        }, status=status.HTTP_400_BAD_REQUEST)
+                        'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
+                    }, status=status.HTTP_400_BAD_REQUEST)
 
                 else:
                     conso = volume - dernier_volume.volume
@@ -316,16 +315,7 @@ class FactureDetail(APIView):
             return JsonResponse({'error': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}, status=404)
 
         montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
-        # taxes = montant_ht.tarif.taxes.all()
-        # taxe_montant = Calcule.montant_taxe(montant_ht.tarif, releve.relevecompteur.conso)
 
-        # taxes = [
-        #     {
-        #         'nom_taxe': taxe.nom_taxe,
-        #         'montant_taxe': montant_taxe
-        #     }
-        #     for taxe, montant_taxe in zip(taxes, taxe_montant)
-        # ]
         avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
         avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
         restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
@@ -336,21 +326,33 @@ class FactureDetail(APIView):
             montant_payer = 0.0
         else:
             montant_payer = montant_total_ttc - restant_nouvel
+        # Affiche le prix du selon le type de client
+        typeclient = releve.num_contrat.client.type_client_id
+        cp_commune = releve.num_contrat.cp_commune_id
+        tarif = get_object_or_404(Tarif, cp_commune_id=cp_commune)
+        if typeclient == 1:
+            tarif_m3 = tarif.prix_m3_bp
+        elif typeclient == 2:
+            tarif_m3 = tarif.prix_m3_bs
+        elif typeclient == 3:
+            tarif_m3 = tarif.prix_m3_k
+        else:
+            tarif_m3 = 0.0
 
         facture = {
-            'id': int(releve.id_facture), 
+            'id': int(releve.id_facture),
             'relevecompteur_id': int(releve.relevecompteur_id),
             'num_facture': releve.num_facture,
             'num_compteur': int(releve.num_contrat.num_compteur_id),
             'date_facture': releve.date_facture,
             'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
-            'tarif_m3': montant_ht.tarif.prix_m3 if montant_ht.tarif is not None and montant_ht.tarif.prix_m3 is not None else 0.0,
+            'tarif_m3': tarif_m3,
             'avoir_avant': avoir_avant,
             'avoir_utilise': avoir_utilise,
             'restant_precedant': restant_precedant,
             'montant_payer': montant_payer,
             'montant_total_ttc': montant_total_ttc,
-            'statut': 'Payé' if releve.statut else 'Impayé', 
+            'statut': 'Payé' if releve.statut else 'Impayé',
         }
 
         return JsonResponse({'facture': facture})
