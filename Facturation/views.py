@@ -18,7 +18,8 @@ from Clients.models import Contrat
 from Clients.views import generate_pdf
 from Compteurs.models import ReleveCompteur
 from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
-from Login.views import authentification_requis
+from Login.views import authentification_requis, role_requis
+from Parametre.views import exporter_en_excel, enregistre_historique
 
 
 def date_range(request, model, datedeb, datefin, date_field, statut):
@@ -536,7 +537,51 @@ def facture_paiement(request, *args, **kwargs):
     return JsonResponse({'message': 'Paiement effectué avec succès'})
 
 
-# def facture_export_xlsx(request):
+@authentification_requis
+@role_requis('Administrateur', 'Gestionnaire')
+def facture_export_excel(request):
+    date_deb = request.GET.get('date_deb')
+    date_fin = request.GET.get('date_fin')
+    commune = request.GET.get('commune')
+
+    factures = Facture.objects.all()
+    nom_fichier = f"facture.xlsx"
+    if date_deb and date_fin and commune:
+        factures = factures.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
+    elif date_deb and commune:
+        factures = factures.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
+    elif date_deb:
+        factures = factures.filter(date_facture=date_deb)
+    elif commune:
+        factures = factures.filter(num_contrat__cp_commune_id=commune)
+
+    champs = [
+        'num_facture',
+        'date_facture',
+        'montant_total_ttc',
+        'avoir_avant',
+        'avoir_utilise',
+        'restant_precedant',
+        'restant_nouvel',
+        'statut',
+        'num_contrat',
+    ]
+
+    nom_colonnes = [
+        'Numéro Facture',
+        'Date Facture',
+        'Montant Total TTC',
+        'Avoir avant',
+        'Avoir Utilisé',
+        'Restant Precedant',
+        'Restant Nouvel',
+        'Status',
+        'Numéro Contrat'
+    ]
+    response = exporter_en_excel(factures, nom_fichier, champs, nom_colonnes)
+    message = f"Export de tout de facture"
+    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    return response
 
 
 def generate_qr_code(request, num_facture):
