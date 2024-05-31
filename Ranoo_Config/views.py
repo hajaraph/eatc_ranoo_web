@@ -213,6 +213,7 @@ class TarifNew(View):
         prix_m3_bs = float(request.POST['prix_m3_bs'])
         prix_m3_bp = float(request.POST['prix_m3_bp'])
         prix_m3_k = float(request.POST['prix_m3_k'])
+        conso_tva_app = float(request.POST['conso_tva_app'])
         nom_taxes = request.POST.getlist('nom_taxe')
         taux_taxes = [float(taux) for taux in request.POST.getlist('taux_taxe')]
         tva = float(request.POST['tva'])
@@ -223,6 +224,7 @@ class TarifNew(View):
             prix_m3_bp=round(prix_m3_bp, 2),
             prix_m3_k=round(prix_m3_k, 2),
             tva=round(tva, 2),
+            conso_tva_app=round(conso_tva_app, 2),
             nb_jour_echeance_fct=nb_jour_echeance_fct,
         )
         for nom_taxe, taux_taxe in zip(nom_taxes, taux_taxes):
@@ -261,6 +263,7 @@ class TarifMod(View):
         prix_m3_bs = float(request.POST['prix_m3_bs'])
         prix_m3_bp = float(request.POST['prix_m3_bp'])
         prix_m3_k = float(request.POST['prix_m3_k'])
+        conso_tva_app = float(request.POST['conso_tva_app'])
         nom_taxes = request.POST.getlist('nom_taxe')
         taux_taxes = request.POST.getlist('taux_taxe')
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
@@ -271,6 +274,7 @@ class TarifMod(View):
         tarif.prix_m3_bp = round(prix_m3_bp, 2)
         tarif.prix_m3_k = round(prix_m3_k, 2)
         tarif.tva = round(tva, 2)
+        tarif.conso_tva_app = round(conso_tva_app, 2)
         tarif.nb_jour_echeance_fct = nb_jour_echeance_fct
         tarif.save()
 
