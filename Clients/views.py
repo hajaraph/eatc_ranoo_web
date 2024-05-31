@@ -24,11 +24,13 @@ def client_liste(request):
     active = 'active'
     font = 'custom-font'
     client = Client.objects.all().order_by('pk')
+    regions = Region.objects.order_by('region').all()
     context = {
         'title_liste': title,
         'active_liste': active,
         'font_client': font,
         'client': client,
+        'regions': regions
     }
     return render(request, 'all_page/clients/content_client.html', context)
 
@@ -432,8 +434,21 @@ def supp_contrat(request, pk):
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 def export_clients(request):
+    date_deb = request.GET.get('date_deb')
+    date_fin = request.GET.get('date_fin')
+    commune = request.GET.get('commune')
+
     clients = Client.objects.all()
     nom_fichier = 'clients.xlsx'
+    if date_deb and date_fin and commune:
+        factures = factures.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
+    elif date_deb and commune:
+        factures = factures.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
+    elif date_deb:
+        factures = factures.filter(date_facture=date_deb)
+    elif commune:
+        factures = factures.filter(num_contrat__cp_commune_id=commune)
+
     champs = [
         'id_client',
         'nom_client',

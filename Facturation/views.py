@@ -13,11 +13,13 @@ from django.contrib import messages
 from django.shortcuts import render
 from xhtml2pdf import pisa
 
+from Clients.communes import Region
 from Clients.models import Contrat
 from Clients.views import generate_pdf
 from Compteurs.models import ReleveCompteur
 from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
-from Login.views import authentification_requis
+from Login.views import authentification_requis, role_requis
+from Parametre.views import exporter_en_excel, enregistre_historique
 
 
 def date_range(request, model, datedeb, datefin, date_field, statut):
@@ -52,13 +54,15 @@ def facture(request):
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
     factures = date_range(request, Facture, datedeb, datefin, 'date_facture', None)
+    region = Region.objects.order_by('region').all()
     context = {
         'title_etat': title,
         'active_etat': active,
         'font_facture': font,
         'factures': factures,
         'avoir_count': avoir,
-        'restant': restant
+        'restant': restant,
+        'regions': region
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -391,8 +395,21 @@ def render_html_to_pdf(template_src, context_dict):
 
 @authentification_requis
 def generate_multiple_pages_pdf(request):
+    date_deb = request.GET.get('date_deb')
+    date_fin = request.GET.get('date_fin')
+    commune = request.GET.get('commune')
+
     factures = Facture.objects.filter(statut=False)
     html_sections = []
+
+    if date_deb and date_fin and commune:
+        factures = factures.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
+    elif date_deb and commune:
+        factures = factures.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
+    elif date_deb:
+        factures = factures.filter(date_facture=date_deb)
+    elif commune:
+        factures = factures.filter(num_contrat__cp_commune_id=commune)
 
     for fact in factures:
         context = facture_context_pdf(request, fact)
@@ -405,10 +422,10 @@ def generate_multiple_pages_pdf(request):
         if html:
             html_sections.append(html)
         else:
-            return HttpResponse(f"Error generating HTML for facture {fact.num_facture}", content_type='text/plain')
+            return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}", content_type='text/plain')
 
     if not html_sections:
-        return HttpResponse("No valid factures to generate PDF", content_type='text/plain')
+        return HttpResponse("Aucune facture valide pour générer un PDF", content_type='text/plain')
 
     combined_html = '<div style="page-break-after: always;"></div>'.join(html_sections)
     result = BytesIO()
@@ -420,7 +437,7 @@ def generate_multiple_pages_pdf(request):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
     else:
-        return HttpResponse("Error generating PDF", content_type='text/plain')
+        return HttpResponse("Erreur lors de la génération du PDF.", content_type='text/plain')
 
 
 def paiement(request, id_releve, montant_payer, utilisateur_mob):
@@ -520,7 +537,51 @@ def facture_paiement(request, *args, **kwargs):
     return JsonResponse({'message': 'Paiement effectué avec succès'})
 
 
-# def facture_export_xlsx(request):
+@authentification_requis
+@role_requis('Administrateur', 'Gestionnaire')
+def facture_export_excel(request):
+    date_deb = request.GET.get('date_deb')
+    date_fin = request.GET.get('date_fin')
+    commune = request.GET.get('commune')
+
+    factures = Facture.objects.all()
+    nom_fichier = f"facture.xlsx"
+    if date_deb and date_fin and commune:
+        factures = factures.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
+    elif date_deb and commune:
+        factures = factures.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
+    elif date_deb:
+        factures = factures.filter(date_facture=date_deb)
+    elif commune:
+        factures = factures.filter(num_contrat__cp_commune_id=commune)
+
+    champs = [
+        'num_facture',
+        'date_facture',
+        'montant_total_ttc',
+        'avoir_avant',
+        'avoir_utilise',
+        'restant_precedant',
+        'restant_nouvel',
+        'statut',
+        'num_contrat',
+    ]
+
+    nom_colonnes = [
+        'Numéro Facture',
+        'Date Facture',
+        'Montant Total TTC',
+        'Avoir avant',
+        'Avoir Utilisé',
+        'Restant Precedant',
+        'Restant Nouvel',
+        'Status',
+        'Numéro Contrat'
+    ]
+    response = exporter_en_excel(factures, nom_fichier, champs, nom_colonnes)
+    message = f"Export de tout de facture"
+    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    return response
 
 
 def generate_qr_code(request, num_facture):

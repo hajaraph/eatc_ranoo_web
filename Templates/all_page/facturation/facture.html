@@ -43,14 +43,14 @@
         </div>
     </div>
     <div class="my-3">
-        <a href="" class="btn btn-secondary ">
+        <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#export-excel">
             <i class="fas fa-file-excel"></i>
-            Export
-        </a>
-        <a href="{% url 'generate_multiple_pages_pdf' %}" class="btn btn-success ">
+            Export Excel
+        </button>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#export-pdf">
             <i class="fas fa-file-pdf"></i>
             Export PDF
-        </a>
+        </button>
     </div>
     <div class="table-responsive p-1">
         <table class="table" id="myTable">
@@ -104,5 +104,134 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+</div>
+<div class="modal fade" id="export-pdf" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Exportation des factures au format PDF.</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNew">
+                    {% csrf_token %}
+                    <div class="container">
+                        <div class="content">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
+                                        <label for="date_deb">Periode du </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
+                                        <label for="date_fin">au </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                            <option value="" selected hidden>Selectionnez une région</option>
+                                            {% for region in regions %}
+                                                <option value="{{ region.region }}">{{ region.region }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <label for="region">Région</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                            <option value="" selected hidden></option>
+                                        </select>
+                                        <label for="cp_commune">Commune</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <i class="fas fa-xmark-circle"></i>
+                    Annuler
+                </button>
+                <button type="button" class="btn btn-success confirmer-export" id="confirmer-export">
+                    <i class="fas fa-check-circle"></i>
+                    Confirmer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="export-excel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Exportation de la liste des factures au format Excel</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNew">
+                    {% csrf_token %}
+                    <div class="container">
+                        <div class="content">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
+                                        <label for="date_deb">Periode du </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
+                                        <label for="date_fin">au </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                            <option value="" selected hidden>Selectionnez une région</option>
+                                            {% for region in regions %}
+                                                <option value="{{ region.region }}">{{ region.region }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <label for="region">Région</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                            <option value="" selected hidden></option>
+                                        </select>
+                                        <label for="cp_commune">Commune</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <i class="fas fa-xmark-circle"></i>
+                    Annuler
+                </button>
+                <button type="button" class="btn btn-success confirmer-export-excel" id="confirmer-export-excel">
+                    <i class="fas fa-check-circle"></i>
+                    Confirmer
+                </button>
+            </div>
+        </div>
     </div>
 </div>

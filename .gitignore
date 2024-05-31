@@ -10,3 +10,12 @@ static/media/
 *.log
 *.pyc
 __pycache__/
+Rel_Compteur/__pycache__/
+Clients/__pycache__/
+Compteurs/__pycache__/
+Facturation/__pycache__/
+Login/__pycache__/
+Main_Courante/__pycache__/
+Parametre/__pycache__/
+Ranoo_Config/__pycache__/
+Tableau_Bord/__pycache__/
