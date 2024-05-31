@@ -295,9 +295,9 @@ def facture_creation(date_facture, num_compteur, releve):
         tarif = Tarif.objects.get(cp_commune_id=contrat.cp_commune_id)
 
         # Calculate the amounts based on the client type
-        if typeclient == 1 or (typeclient == 2 and consommation < 10):
+        if typeclient == 1 or (typeclient == 2 and consommation < tarif.conso_tva_app):
             Calcule.cree_montant(typeclient, tarif, consommation, factures)
-        elif typeclient == 2 and consommation >= 10:
+        elif typeclient == 2 and consommation >= tarif.conso_tva_app:
             total_conso_ht = tarif.prix_m3_bp * consommation
             total_conso_ttc = total_conso_ht + (total_conso_ht * tarif.tva / 100)
             montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
