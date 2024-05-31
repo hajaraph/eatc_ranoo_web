@@ -9,6 +9,7 @@ static/media/
 
 *.log
 *.pyc
+__pycache__/
 Rel_Compteur/__pycache__/
 Clients/__pycache__/
 Compteurs/__pycache__/
