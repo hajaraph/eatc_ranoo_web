@@ -45,4 +45,14 @@ $(document).ready(function(){
         }
         $(this).val(numericValue);
     });
+
+    $('#confirmer-export-client-excel').click(function() {
+        const commune = $('#commune').val();
+        // Construire l'URL avec les paramètres GET
+        let url = '/clients/excel';
+        url += `?commune=${commune}`;
+        // Ouvrir une nouvelle onglet avec l'URL générée
+        window.open(url, '_blank');
+        $('#export-client-excel').modal('hide');
+    });
 });
