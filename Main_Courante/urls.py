@@ -1,7 +1,7 @@
 from django.urls import path
 
 from Main_Courante.views import main_liste_mc, detail_mc, MainCouranteNew, lance_mc, supprimer_mc, valide_mc, suivie, \
-    supp_suivie
+    supp_suivie, export_mc_excel
 
 urlpatterns = [
     path('liste/mc', main_liste_mc, name='main_liste_mc'),
@@ -12,5 +12,6 @@ urlpatterns = [
     path('valide/mc?=?<int:pk>', valide_mc, name='valide_mc'),
     path('nouvelle/mc', MainCouranteNew.as_view(), name='main_courante_new'),
     path('suivie/mc?<int:pk>?', suivie, name='suivie'),
-    path('suivie/supprimer?<int:pk>?', supp_suivie, name='supp_suivie')
+    path('suivie/supprimer?<int:pk>?', supp_suivie, name='supp_suivie'),
+    path('excel', export_mc_excel, name='export_mc_excel'),
 ]

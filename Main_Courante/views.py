@@ -8,6 +8,7 @@ from Clients.communes import Region
 from Clients.models import Client
 from Login.views import authentification_requis
 from Main_Courante.models import MainCourante, StatutMC, SuivieMC
+from Parametre.views import exporter_en_excel, enregistre_historique
 
 
 @authentification_requis
@@ -46,6 +47,7 @@ def main_liste_mc(request):
         'title_main': title,
         'active': active,
         'font_main': font,
+        'main_nb': main_courante.count(),
         'main': main_courante_statut,
         'non_traite': non_traite,
         'realise': realise,
@@ -125,33 +127,54 @@ class MainCouranteNew(View):
                 photo_anomalie=photos,
                 main_courante_id=main_courante.pk
             )
-
+        message = f"Creation d'une main courante"
+        enregistre_historique(request, message, request.session.get('id_utilisateur'))
         messages.success(request, 'Anomalie Enregistré avec succès !')
         return redirect('main_liste_mc')
 
 
+def update_statut_mc(request, pk, en_cours=None, non_traite=None, realise=None,
+                     success_message="Statut mis à jour avec succès !"):
+    try:
+        statut = StatutMC.objects.get(main_courante_id=pk)
+        date_now = timezone.now()
+        statut.date_status = date_now
+        if en_cours is not None:
+            statut.en_cours = en_cours
+        if non_traite is not None:
+            statut.non_traite = non_traite
+        if realise is not None:
+            statut.realise = realise
+        statut.save()
+        message = f"Statut de la main courante ID {pk} mis à jour"
+        enregistre_historique(request, message, request.session.get('id_utilisateur'))
+        messages.success(request, success_message)
+    except StatutMC.DoesNotExist:
+        messages.error(request, f"StatutMC avec ID {pk} n'existe pas")
+        return redirect('detail_mc', pk)
+    return redirect('detail_mc', pk)
+
+
 @authentification_requis
 def lance_mc(request, pk):
-    statut = StatutMC.objects.get(main_courante_id=pk)
-    date_now = timezone.now()
-    statut.date_status = date_now
-    statut.en_cours = True
-    statut.non_traite = False
-    statut.save()
-    messages.success(request, 'Traitement lancer avec succès !')
-    return redirect('detail_mc', pk)
+    return update_statut_mc(
+        request,
+        pk,
+        en_cours=True,
+        non_traite=False,
+        success_message='Traitement lancé avec succès !'
+    )
 
 
 @authentification_requis
 def valide_mc(request, pk):
-    statut = StatutMC.objects.get(main_courante_id=pk)
-    date_now = timezone.now()
-    statut.date_status = date_now
-    statut.realise = True
-    statut.en_cours = False
-    statut.save()
-    messages.success(request, 'MC realisé avec succès !')
-    return redirect('detail_mc', pk)
+    return update_statut_mc(
+        request,
+        pk,
+        en_cours=False,
+        realise=True,
+        success_message='MC réalisé avec succès !'
+    )
 
 
 @authentification_requis
@@ -163,7 +186,8 @@ def supprimer_mc(request, pk):
             photo.photo_anomalie.delete()
             photo.delete()
     main.delete()
-
+    message = f"Suppression de la main courante ID {pk}"
+    enregistre_historique(request, message, request.session.get('id_utilisateur'))
     messages.success(request, 'Supprimer avec succès !')
     return redirect('main_liste_mc')
 
@@ -184,4 +208,49 @@ def supp_suivie(request, pk):
     suivies = SuivieMC.objects.get(pk=pk)
     main_courante_id = suivies.main_courante_id
     suivies.delete()
+    message = f"Suppresion d'un suivie"
+    enregistre_historique(request, message, request.session.get('id_utilisateur'))
     return redirect('detail_mc', main_courante_id)
+
+
+def export_mc_excel(request):
+    main_courante = MainCourante.objects.order_by('id_mc').all()
+    nom_fichier = f'Main_courantes.xlsx'
+    champs = [
+        'id_mc',
+        'date_mc',
+        'type_anomalie',
+        'longitude_mc',
+        'latitude_mc',
+        'description_mc',
+        'client__nom_client',
+        'client__prenom_client',
+        'cp_commune__region__region',
+        'cp_commune__commune',
+        'cp_commune_id',
+        'statuts__non_traite',
+        'statuts__en_cours',
+        'statuts__realise'
+    ]
+
+    nom_colonnes = [
+        'ID',
+        'Date de declaration',
+        'Type anomalie',
+        'Longitude',
+        'Latitude',
+        'Description',
+        'Client Nom',
+        'Client Prénom',
+        'Region',
+        'Commune',
+        'Cp Commune',
+        'Status non traitée',
+        'Status en cours',
+        'Status realisée'
+    ]
+
+    response = exporter_en_excel(main_courante, nom_fichier, champs, nom_colonnes)
+    message = f"Export de tout les mains courantes"
+    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    return response
