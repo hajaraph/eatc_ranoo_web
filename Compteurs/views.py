@@ -320,33 +320,12 @@ def del_releve(request, pk):
     return redirect('compteur_detail', releve.num_compteur.pk)
 
 
-# @authentification_requis
-# def client_absent(request, num_compteur):
-#     utilisateur_id = request.session.get('id_utilisateur')
-#     releve = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).latest('date_releve')
-#     date_releve = timezone.now()
-#
-#     if date_releve.date() <= releve.date_releve:
-#         messages.error(request, f"Veuillez fournir une date valider pour le relevé !")
-#         return redirect('releve_new', num_compteur)
-#     else:
-#         releve_nouvel = ReleveCompteur.objects.create(
-#             num_compteur_id=num_compteur,
-#             date_releve=date_releve,
-#             volume=releve.volume,
-#             conso=0,
-#             utilisateur_id=utilisateur_id
-#         )
-#         facture_creation(date_releve, releve.num_compteur.pk, releve_nouvel.pk)
-#         messages.success(request, f"Vous ne pouvez pas enregistrer !")
-#         return redirect('compteur_detail', num_compteur)
-
-
 @authentification_requis
 def export_compteur(request):
     compteurs = Compteur.objects.all()
     nom_fichier = "compteurs.xlsx"
     champs = [
+        'contrats__client__id_client'
         'contrats__client__nom_client',
         'contrats__client__prenom_client',
         'contrats__num_contrat',
@@ -356,6 +335,7 @@ def export_compteur(request):
         'relevecompteurs__conso',
     ]
     nom_colonnes = [
+        'ID Client'
         'Nom',
         'Prénom',
         'N° Contrat',

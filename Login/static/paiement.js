@@ -45,13 +45,4 @@ $(document).ready(function () {
         window.open(url, '_blank');
         $('#export-excel').modal('hide');
     });
-
-    $('#confirmer-export-client-excel').click(function() {
-        // Construire l'URL avec les paramètres GET
-        let url = '/clients/excel';
-        url += `?date_deb=${dateDeb}&date_fin=${dateFin}&commune=${commune}`;
-        // Ouvrir une nouvelle onglet avec l'URL générée
-        window.open(url, '_blank');
-        $('#export-client-excel').modal('hide');
-    });
 });

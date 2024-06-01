@@ -95,20 +95,6 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
-                                        <label for="date_deb">Periode du </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
-                                        <label for="date_fin">au </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row mt-4">
-                                <div class="col-md-6">
-                                    <div class="form-floating">
                                         <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
                                             <option value="" selected hidden>Selectionnez une région</option>
                                             {% for region in regions %}

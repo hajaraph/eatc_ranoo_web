@@ -24,16 +24,25 @@ $(document).ready(function () {
         });
     });
 
-    $('#confirmer-export').click(function() {
-        const dateDeb = $('#date_deb').val();
-        const dateFin = $('#date_fin').val();
-        const commune = $('#commune').val();
+    const dateDeb = $('#date_deb').val();
+    const dateFin = $('#date_fin').val();
+    const commune = $('#commune').val();
 
+    $('#confirmer-export').click(function() {
         // Construire l'URL avec les paramètres GET
         let url = '/facture/pdf';
         url += `?date_deb=${dateDeb}&date_fin=${dateFin}&commune=${commune}`;
         // Ouvrir une nouvelle onglet avec l'URL générée
         window.open(url, '_blank');
         $('#export-pdf').modal('hide');
+    });
+
+    $('#confirmer-export-excel').click(function() {
+        // Construire l'URL avec les paramètres GET
+        let url = '/facture/excel';
+        url += `?date_deb=${dateDeb}&date_fin=${dateFin}&commune=${commune}`;
+        // Ouvrir une nouvelle onglet avec l'URL générée
+        window.open(url, '_blank');
+        $('#export-excel').modal('hide');
     });
 });

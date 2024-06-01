@@ -2,7 +2,6 @@ import re
 import pandas as pd
 from django.db.models import Count
 from django.db.models import Q
-from datetime import datetime, time
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -216,7 +215,7 @@ class Missions(APIView):
             contrat_info = {
                 'id': dernier_releve.pk if dernier_releve else None,
                 'nom_client': contrat.client.nom_client,
-                'prenom_client': contrat.client.prenom_client,
+                'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
                 'adresse_client': contrat.client.adresse_client,
                 'num_compteur': contrat.num_compteur_id,
                 'conso_dernier_releve': contrat.conso_dernier_releve,
@@ -505,16 +504,6 @@ class SynchronisationView(APIView):
             dernier_releve = ReleveCompteur.objects.filter(num_compteur=compteur).latest('date_releve')
             dernier_volume = dernier_releve.volume if dernier_releve else 0
             conso = volume - dernier_volume if dernier_volume else volume
-
-            # mission, created = ReleveCompteur.objects.update_or_create(
-            #     date_releve=date_releve,
-            #     num_compteur=compteur,
-            #     defaults={
-            #         'volume': volume,
-            #         'conso': conso,
-            #         'utilisateur': utilisateur
-            #     }
-            # )
 
             contrats_commune = Contrat.objects.filter(cp_commune_id=commune_usrs).select_related(
                 'client', 'num_compteur'
