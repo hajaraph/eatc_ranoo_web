@@ -125,9 +125,9 @@
             <div class="row">
                 {% for photo in photos %}
                 <div class="col-md-3 mt-4">
-                    <div class="container rounded p-1 shadow-sm border" onclick="openUrlInNewTab('{{ photo.photo_anomalie.url }}')">
+                    <a href="#" class="container rounded p-1 shadow-sm border" onclick="openUrlInNewTab('{{ photo.photo_anomalie.url }}')">
                         <img src="{{ photo.photo_anomalie.url }}" class="img-fluid rounded" alt="Photo {{ forloop.counter }}">
-                    </div>
+                    </a>
                 </div>
                 {% endfor %}
             </div>
