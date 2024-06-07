@@ -1,4 +1,3 @@
-from .services import SyncMissionService 
 import re
 import pandas as pd
 from django.db.models import Count
@@ -55,9 +54,8 @@ def calculer_nombre_relever_effectuer(cp_commune_id):
 
     return nombre_total_compteur, nombre_relever_effectuer
 
-
 @api_view(['GET'])
-@permission_classes([IsAuthenticated]) 
+@permission_classes([IsAuthenticated])
 def accueil(request):
     cp_commune_id = request.user.cp_commune_id
     non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
@@ -75,13 +73,10 @@ def accueil(request):
     ).count()
 
     nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
-    nombre_total_compteur -= nombre_relever_effectuer  # Soustraire le nombre de relevés effectués
 
-    # Vérifiez s'il y a des missions de relevé de compteurs à synchroniser
-    sync_mission_service = SyncMissionService()
-    missions_a_sync = sync_mission_service.getNumberOfMissionsToSync()
+    # Soustraire le nombre de relevés effectués du nombre total de compteurs
+    nombre_total_compteur -= nombre_relever_effectuer
 
-    # Créez une réponse JSON avec les données et la vérification des missions à synchroniser
     return JsonResponse(
         {
             'non_traite': non_traite,
@@ -91,11 +86,9 @@ def accueil(request):
             'nombre_total_compteur': nombre_total_compteur,
             'nombre_relever_effectuer': nombre_relever_effectuer,
             'nombre_total_facture_impayer': nombre_total_facture_impayer,
-            'nombre_total_facture_payer': nombre_total_facture_payer,
-            'missions_a_sync': missions_a_sync  # Ajoutez le nombre de missions à synchroniser à la réponse JSON
+            'nombre_total_facture_payer': nombre_total_facture_payer
         }
     )
-
 
 def relever_client(request):
     compteur_id = request.GET.get('num_compteur')
