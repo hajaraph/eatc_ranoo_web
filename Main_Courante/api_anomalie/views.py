@@ -102,9 +102,9 @@ class DeclareMaincourate(APIView):
         suivie = {
             'date_suivie': date_suivie,
             'commentaire_suivie': commentaire_suivie,
-            'main_courante': id_mc
+            'main_courante': id_mc,
+            'utilisateur': request.user.id_utilisateur,
         }
-        maincourante_serializer = MainCouranteSerializer(data=maincourante_data)
 
         if statut == 1:
             suivieserialize = SuivieSerializer(data=suivie)
@@ -112,8 +112,9 @@ class DeclareMaincourate(APIView):
                 suivieserialize.save()
                 return JsonResponse({'message': f'Commentaire MC ({id_mc}) enregistrées avec succès'}, status=status.HTTP_200_OK)
             else:
-                return JsonResponse({'message': maincourante_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse({'message': suivieserialize.errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
+            maincourante_serializer = MainCouranteSerializer(data=maincourante_data)
             if maincourante_serializer.is_valid():
                 main_courant = maincourante_serializer.save()
                 main_courante_id = main_courant.pk

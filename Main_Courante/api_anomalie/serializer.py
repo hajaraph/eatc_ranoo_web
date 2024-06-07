@@ -4,7 +4,6 @@ from Main_Courante.models import MainCourante, PhotoMC, SuivieMC
 
 
 class MainCouranteSerializer(serializers.ModelSerializer):
-    status = serializers.IntegerField(required=True)
 
     class Meta:
         model = MainCourante
@@ -16,17 +15,27 @@ class MainCouranteSerializer(serializers.ModelSerializer):
             'description_mc',
             'client',
             'cp_commune',
-            'utilisateur'
+            'utilisateur',
         ]
+
+    def __init__(self, *args, **kwargs):
+        super(MainCouranteSerializer, self).__init__(*args, **kwargs)
+        # Rendre tous les champs non obligatoires
+        for field in self.fields.values():
+            field.required = False
 
 
 class SuivieSerializer(serializers.ModelSerializer):
+    status = serializers.IntegerField(required=False)
+
     class Meta:
         model = SuivieMC
         fields = [
             'date_suivie',
             'commentaire_suivie',
-            'main_courante'
+            'main_courante',
+            'utilisateur',
+            'status'
         ]
 
 
