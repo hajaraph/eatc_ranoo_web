@@ -76,6 +76,7 @@ def accueil(request):
 
     # Soustraire le nombre de relevés effectués du nombre total de compteurs
     nombre_total_compteur -= nombre_relever_effectuer
+    nombre_relever_effectuer -= nombre_relever_effectuer 
 
     return JsonResponse(
         {
