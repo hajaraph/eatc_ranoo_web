@@ -325,9 +325,6 @@ def export_compteur(request):
     compteurs = Compteur.objects.all()
     nom_fichier = "compteurs.xlsx"
     champs = [
-        'contrats__client__id_client'
-        'contrats__client__nom_client',
-        'contrats__client__prenom_client',
         'contrats__num_contrat',
         'num_compteur',
         'relevecompteurs__date_releve',
@@ -335,9 +332,6 @@ def export_compteur(request):
         'relevecompteurs__conso',
     ]
     nom_colonnes = [
-        'ID Client'
-        'Nom',
-        'Prénom',
         'N° Contrat',
         'N° Compteur',
         'Date de Relevé',

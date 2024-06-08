@@ -37,14 +37,14 @@
         <div class="card mt-4">
             <div class="card-header border-0">
                 <div class="row">
-                    <div class="col-md-2">
-                        <a href="{% url 'client_detail' detail.pk %}" class="fw-bold shadow-none rounded-0 btn btn-outline-warning text-dark border-start-0 border-top-0 border-end-0 w-100 {{ active_li_liste }}">
+                    <div class="col-md-2 mt-2">
+                        <a href="{% url 'client_detail' detail.pk %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_li_liste }}">
                             Contact
                         </a>
                     </div>
                     {% if contrat %}
-                    <div class="col-md-2">
-                        <a href="{% url 'client_li_contrat' detail.pk %}" class="fw-bold shadow-none rounded-0 btn btn-outline-warning text-dark border-start-0 border-top-0 border-end-0 w-100 {{ active_li_contrat }}">
+                    <div class="col-md-2 mt-2">
+                        <a href="{% url 'client_li_contrat' detail.pk %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_li_contrat }}">
                             Contrat
                         </a>
                     </div>

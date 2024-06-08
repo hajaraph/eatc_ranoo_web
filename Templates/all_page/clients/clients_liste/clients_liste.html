@@ -1,13 +1,13 @@
 <div class="card-body">
     <div class="d-flex justify-content-between mb-5">
         <div class="mx-5 col-md">
-            <a href="{% url 'client_new' %}" class="btn btn-warning ">
+            <a href="{% url 'client_new' %}" class="btn btn-warning" style="width: 150px; height: 40px;">
                 <i class="fas fa-plus"></i>
                 Nouveau
             </a>
         </div>
         <div class="mx-5">
-            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#export-client-excel">
+            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#export-client-excel" style="width: 150px; height: 40px;">
                 <i class="fas fa-file-excel"></i>
                 Export Excel
             </button>
@@ -20,7 +20,7 @@
                     <th>ID</th>
                     <th>Nom</th>
                     <th>Prénom</th>
-                    <th>Tétéphone</th>
+                    <th>Téléphone</th>
                     <th>N° contrat</th>
                     <th>Actif</th>
                     <th>Action</th>
@@ -44,7 +44,7 @@
                     </td>
                     <td>
                         {% if clients.tel1_client %}
-                        	{{ clients.tel1_client }}
+                            {{ clients.tel1_client }}
                         {% else %}
                             <span class="bg-secondary-subtle rounded px-1 small">aucun contact</span>
                         {% endif %}
@@ -68,7 +68,7 @@
                             <i class="fas fa-info-circle"></i>
                         </a>
                         {% if request.session.role_utilisateur == 'Administrateur' %}
-                        	<a href="{% url 'client_delete' clients.pk %}" class="btn btn-danger btn-sm " onclick="return confirm('Êtes-vous sûr de vouloir supprimer le Client {{ clients.nom_client }} ?');">
+                            <a href="{% url 'client_delete' clients.pk %}" class="btn btn-danger btn-sm " onclick="return confirm('Êtes-vous sûr de vouloir supprimer le Client {{ clients.nom_client }} ?');">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                         {% endif %}
@@ -91,26 +91,24 @@
                 <form id="formNew">
                     {% csrf_token %}
                     <div class="container">
-                        <div class="content">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
-                                            <option value="" selected hidden>Selectionnez une région</option>
-                                            {% for region in regions %}
-                                                <option value="{{ region.region }}">{{ region.region }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <label for="region">Région</label>
-                                    </div>
+                        <div class="row">
+                            <div class="col-md-6 col-sm-12 mt-3">
+                                <div class="form-floating">
+                                    <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                        <option value="" selected hidden>Selectionnez une région</option>
+                                        {% for region in regions %}
+                                            <option value="{{ region.region }}">{{ region.region }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="region">Région</label>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
-                                            <option value="" selected hidden></option>
-                                        </select>
-                                        <label for="cp_commune">Commune</label>
-                                    </div>
+                            </div>
+                            <div class="col-md-6 col-sm-12 mt-3">
+                                <div class="form-floating">
+                                    <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                        <option value="" selected hidden></option>
+                                    </select>
+                                    <label for="commune">Commune</label>
                                 </div>
                             </div>
                         </div>

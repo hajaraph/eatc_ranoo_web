@@ -5,7 +5,7 @@
     <form method="post" id="formNew" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row">
-            <div class="col-md-4 mt-4">
+            <div class="col-md-4 col-sm-12 mt-4">
                 <div class="form-floating">
                     <select name="type_client_id" id="type_client" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
                         {% for types in type %}
@@ -17,40 +17,40 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-4 mt-4">
+            <div class="col-md-4 col-sm-12 mt-4">
                 <div class="form-floating">
                     <input type="text" name="nom_client" id="nom_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="Nom de Client" required>
                     <label for="nom_client">Nom*</label>
                 </div>
             </div>
-            <div class="col-md-4 mt-4">
+            <div class="col-md-4 col-sm-12 mt-4">
                 <div class="form-floating">
                     <input type="text" name="prenom_client" id="prenom_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="Prénom de Client">
                     <label for="prenom_client">Prénom</label>
                 </div>
             </div>
         </div>
-        <div class="d-flex justify-content-between mt-5">
+        <div class="d-flex justify-content-between flex-wrap mt-5">
             <label for="compte_actif">
                 <input type="checkbox" name="compte_actif" id="compte_actif" value="True" class="form-check-label" checked>
                 Compte actif
             </label>
-            <button class="btn btn-success " type="submit">
+            <button class="btn btn-success mt-2 mt-md-0" type="submit">
                 <i class="fas fa-save"></i>
                 Enregistrer
             </button>
         </div>
-        <div class="card mt-4 mt-sm-4">
+        <div class="card mt-4">
             <div class="card-header border-0">
                 <div class="row">
-                    <div class="col-md-2">
+                    <div class="col-12">
                         <h5>Contact</h5>
                     </div>
                 </div>
             </div>
             <div class="card-body mx-4">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <input type="text" name="adresse_client" id="adresse_client" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" placeholder="">
                             <label for="adresse_client">Adresse*</label>
@@ -58,7 +58,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4 mt-4">
+                    <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
                                 <option value="" selected hidden>Selectionné une région</option>
@@ -69,14 +69,14 @@
                             <label for="region">Région*</label>
                         </div>
                     </div>
-                    <div class="col-md-4 mt-4">
+                    <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
                             </select>
                             <label for="commune">Commune :</label>
                         </div>
                     </div>
-                    <div class="col-md-4 mt-4">
+                    <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <select name="cp_commune" id="cp_commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" readonly>
                             </select>
@@ -85,7 +85,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4 mt-4">
+                    <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <input type="text" name="pays_client" id="pays_client" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" value="Madagascar" placeholder="" required>
                             <label for="pays_client">Pays*</label>
@@ -93,13 +93,13 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4 mt-4">
+                    <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <input type="tel" name="tel1_client" id="tel1_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" minlength="10" maxlength="10" placeholder="">
                             <label for="tel1_client">Téléphone 1*</label>
                         </div>
                     </div>
-                    <div class="col-md-4 mt-4">
+                    <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <input type="tel" name="tel2_client" id="tel2_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" minlength="10" maxlength="10" placeholder="">
                             <label for="tel2_client">Téléphone 2</label>
@@ -107,7 +107,7 @@
                     </div>
                 </div>
                 <div class="row">
-                     <div class="col-md-4 mt-4">
+                     <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <input type="email" name="email_client" id="email_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
                             <label for="email_client">Email</label>
@@ -116,19 +116,19 @@
                 </div>
                 <div class="row mt-4" id="afficher">
                     <label for="piece_client">Piece Client :</label>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-sm-12 mt-2">
                         <div class="form-floating">
                             <input type="file" name="piece_client" id="piece_client" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" accept="image/jpeg, image/png, application/pdf">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-sm-12 mt-2">
                         <div class="form-floating">
                             <input type="text" name="designation" id="designation" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
                             <label for="designation">Designation</label>
                         </div>
                     </div>
                 </div>
-                <div class="btn btn-sm btn-success  mt-3" id="add"><i class="fas fa-plus"></i> Plus Document</div>
+                <div class="btn btn-sm btn-success mt-3" id="add"><i class="fas fa-plus"></i> Plus Document</div>
             </div>
         </div>
     </form>
