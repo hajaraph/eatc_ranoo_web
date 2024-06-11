@@ -195,7 +195,7 @@ class Missions(APIView):
         contrats_commune = (
             Contrat.objects
             .filter(cp_commune_id=cp_commune)
-            .select_related('client', 'num_compteur') 
+            .select_related('client', 'num_compteur')
             .annotate(
                 conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
             )
@@ -211,7 +211,7 @@ class Missions(APIView):
             if contrat.date_releve and contrat.date_releve.month != end_of_month.month:
                 contrat.statut = 0
             else:
-                contrat.statut = 2
+                contrat.statut = 2 
 
             dernier_releve = contrat.num_compteur.relevecompteurs.order_by('date_releve').last()
             contrat_info = {
