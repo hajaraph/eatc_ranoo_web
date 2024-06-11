@@ -14,9 +14,9 @@
                         <label for="datefin">au </label>
                     </div>
                 </div>
-                <div class="col-md-1">
+                <div class="col-md-1 col-sm-6 col-6 d-flex align-items-center justify-content-center">
                     <div class="mb-2"></div>
-                    <button class="btn btn-primary h-75 w-50" type="submit" style="width: 50px; height: 50px;">
+                    <button class="btn btn-primary" type="submit" style="width: 50px; height: 50px;">
                         <i class="fas fa-search"></i>
                     </button>
                 </div>
@@ -45,7 +45,7 @@
         </div>
     </div>
     <div class="my-3">
-        <a href="{% url 'export_mc_excel' %}" class="btn btn-secondary" style="width: 150px; height: 40px;">
+        <div class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exportmc-excel" style="width: 150px; height: 40px;">
             <i class="fas fa-file-excel"></i>
             Export
         </a>
@@ -109,5 +109,62 @@
             {% endfor %}
             </tbody>
         </table>
+    </div>
+</div>
+
+<div class="modal fade" id="exportmc-excel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Exportation des Mains Courantes en Excel</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNew">
+                    {% csrf_token %}
+                    <div class="container">
+                        <div class="content">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
+                                        <label for="date_deb">Periode du </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
+                                        <label for="date_fin">au </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select name="statut" id="statut" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                            <option value="" selected hidden>Sélectionnez un statut</option>
+                                            <option value="1">Non Traitée</option>
+                                            <option value="2">En Cours</option>
+                                            <option value="3">Réalisées</option>
+                                        </select>
+                                        <label for="region">Statut de l'anomalie</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <i class="fas fa-xmark-circle"></i>
+                    Annuler
+                </button>
+                <button type="button" class="btn btn-success confirmer-exportmc-excel" id="confirmer-exportmc-excel">
+                    <i class="fas fa-check-circle"></i>
+                    Confirmer
+                </button>
+            </div>
+        </div>
     </div>
 </div>

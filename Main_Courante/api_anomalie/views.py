@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -88,55 +89,60 @@ class DeclareMaincourate(APIView):
         print('date:', date_suivie)
         print('commentaire:', commentaire_suivie)
 
-        # Création de l'instance MainCourante
-        maincourante_data = {
-            'date_mc': date_declaration,
-            'type_anomalie': type_anomalie,
-            'longitude_mc': longitude_mc,
-            'latitude_mc': latitude_mc,
-            'description_mc': description_mc,
-            'client': client_declare,
-            'cp_commune': cp_commune,
-            'utilisateur': request.user.id_utilisateur
-        }
-        suivie = {
-            'date_suivie': date_suivie,
-            'commentaire_suivie': commentaire_suivie,
-            'main_courante': id_mc,
-            'utilisateur': request.user.id_utilisateur,
-        }
+        try:
+            with transaction.atomic():
+                maincourante_data = {
+                    'date_mc': date_declaration,
+                    'type_anomalie': type_anomalie,
+                    'longitude_mc': longitude_mc,
+                    'latitude_mc': latitude_mc,
+                    'description_mc': description_mc,
+                    'client': client_declare,
+                    'cp_commune': cp_commune,
+                    'utilisateur': request.user.id_utilisateur
+                }
+                suivie = {
+                    'date_suivie': date_suivie,
+                    'commentaire_suivie': commentaire_suivie,
+                    'main_courante': id_mc,
+                    'utilisateur': request.user.id_utilisateur,
+                }
 
-        if statut == 1:
-            suivieserialize = SuivieSerializer(data=suivie)
-            if suivieserialize.is_valid():
-                suivieserialize.save()
-                return JsonResponse({'message': f'Commentaire MC ({id_mc}) enregistrées avec succès'}, status=status.HTTP_200_OK)
-            else:
-                return JsonResponse({'message': suivieserialize.errors}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            maincourante_serializer = MainCouranteSerializer(data=maincourante_data)
-            if maincourante_serializer.is_valid():
-                main_courant = maincourante_serializer.save()
-                main_courante_id = main_courant.pk
+                if statut == 1:
+                    suivieserialize = SuivieSerializer(data=suivie)
+                    if suivieserialize.is_valid():
+                        suivieserialize.save()
+                        return JsonResponse({'message': f'Commentaire MC ({id_mc}) enregistrées avec succès'}, status=status.HTTP_200_OK)
+                    else:
+                        return JsonResponse({'message': suivieserialize.errors}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    maincourante_serializer = MainCouranteSerializer(data=maincourante_data)
+                    if maincourante_serializer.is_valid():
+                        main_courant = maincourante_serializer.save()
+                        main_courante_id = main_courant.pk
 
-                # Création des instances de PhotoMC
-                for i, photo_data in enumerate(photos, start=1):
-                    if photo_data:
-                        photo_instance = {
-                            'photo_anomalie': photo_data,
-                            'main_courante': main_courant.pk
-                        }
-                        photo_serializer = PhotosSerializer(data=photo_instance)
-                        if photo_serializer.is_valid():
-                            photo_serializer.save()
-                        else:
-                            return JsonResponse({'message': photo_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                        # Création des instances de PhotoMC
+                        for i, photo_data in enumerate(photos, start=1):
+                            if photo_data:
+                                photo_instance = {
+                                    'photo_anomalie': photo_data,
+                                    'main_courante': main_courant.pk
+                                }
+                                photo_serializer = PhotosSerializer(data=photo_instance)
+                                if photo_serializer.is_valid():
+                                    photo_serializer.save()
+                                else:
+                                    return JsonResponse({'message': photo_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-                StatutMC.objects.create(
-                    main_courante_id=main_courante_id,
-                    date_status=date_declaration
-                )
+                        StatutMC.objects.create(
+                            main_courante_id=main_courante_id,
+                            date_status=date_declaration
+                        )
 
-                return JsonResponse({'message': 'Données enregistrées avec succès'}, status=status.HTTP_200_OK)
-            else:
-                return JsonResponse({'message': maincourante_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                        return JsonResponse({'message': 'Données enregistrées avec succès'}, status=status.HTTP_200_OK)
+                    else:
+                        return JsonResponse({'message': maincourante_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as e:
+            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
