@@ -214,7 +214,36 @@ def supp_suivie(request, pk):
 
 
 def export_mc_excel(request):
+    date_deb = request.GET.get('date_deb')
+    date_fin = request.GET.get('date_fin')
+    statut = request.GET.get('statut')
+
     main_courante = MainCourante.objects.order_by('id_mc').all()
+    if date_deb and date_fin:
+        if statut:
+            if statut == 1:
+                main_courante = main_courante.filter(date_mc__range=[date_deb, date_fin], statuts__non_traite=True)
+            if statut == 2:
+                main_courante = main_courante.filter(date_mc__range=[date_deb, date_fin], statuts__en_cours=True)
+            if statut == 3:
+                main_courante = main_courante.filter(date_mc__range=[date_deb, date_fin], statuts__realise=True)
+    elif date_deb or date_fin:
+        if statut:
+            if statut == 1:
+                main_courante = main_courante.filter(date_mc__range=[date_deb or date_fin], statuts__non_traite=True)
+            if statut == 2:
+                main_courante = main_courante.filter(date_mc__range=[date_deb or date_fin], statuts__en_cours=True)
+            if statut == 3:
+                main_courante = main_courante.filter(date_mc__range=[date_deb or date_fin], statuts__realise=True)
+    else:
+        if statut:
+            if statut == 1:
+                main_courante = main_courante.filter(statuts__non_traite=True)
+            if statut == 2:
+                main_courante = main_courante.filter(statuts__en_cours=True)
+            if statut == 3:
+                main_courante = main_courante.filter(statuts__realise=True)
+
     nom_fichier = f'Main_courantes.xlsx'
     champs = [
         'id_mc',
