@@ -112,7 +112,10 @@ class DeclareMaincourate(APIView):
                     suivieserialize = SuivieSerializer(data=suivie)
                     if suivieserialize.is_valid():
                         suivieserialize.save()
-                        return JsonResponse({'message': f'Commentaire MC ({id_mc}) enregistrées avec succès'}, status=status.HTTP_200_OK)
+                        return JsonResponse(
+                            {'message': f'Commentaire MC ({id_mc}) enregistrées avec succès'},
+                            status=status.HTTP_200_OK
+                        )
                     else:
                         return JsonResponse({'message': suivieserialize.errors}, status=status.HTTP_400_BAD_REQUEST)
                 else:
