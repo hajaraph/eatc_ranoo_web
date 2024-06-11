@@ -228,6 +228,7 @@ class Missions(APIView):
             liste_contrats_info.append(contrat_info)
 
         # Trier la liste par date_releve
+        liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
 
         return liste_contrats_info
 
