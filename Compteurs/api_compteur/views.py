@@ -195,7 +195,7 @@ class Missions(APIView):
         contrats_commune = (
             Contrat.objects
             .filter(cp_commune_id=cp_commune)
-            .select_related('client', 'num_compteur')
+            .select_related('client', 'num_compteur') 
             .annotate(
                 conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
             )
@@ -226,6 +226,9 @@ class Missions(APIView):
                 'statut': contrat.statut
             }
             liste_contrats_info.append(contrat_info)
+
+        # Trier la liste par date_releve
+        liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['date_releve'])
 
         return liste_contrats_info
 
