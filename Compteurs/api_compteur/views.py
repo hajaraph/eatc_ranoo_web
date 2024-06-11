@@ -213,7 +213,7 @@ class Missions(APIView):
             else:
                 contrat.statut = 2 
 
-            dernier_releve = contrat.num_compteur.relevecompteurs.order_by('date_releve').last()
+            dernier_releve = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
             contrat_info = {
                 'id': dernier_releve.pk if dernier_releve else None,
                 'nom_client': contrat.client.nom_client,
@@ -228,7 +228,6 @@ class Missions(APIView):
             liste_contrats_info.append(contrat_info)
 
         # Trier la liste par date_releve
-        liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id_releve'])
 
         return liste_contrats_info
 
