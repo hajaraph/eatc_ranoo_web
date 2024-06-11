@@ -110,7 +110,7 @@ class CompteurDetail(View):
         active = 'active'
         font = 'custom-font'
         compteur = Compteur.objects.get(pk=pk)
-        releve = compteur.relevecompteurs.all()
+        releve = compteur.relevecompteurs.order_by('id_releve').all()
         contrat = compteur.contrats
 
         title = f'Compteurs | Detail de {compteur.num_compteur}'

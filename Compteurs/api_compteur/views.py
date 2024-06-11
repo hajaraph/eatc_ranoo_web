@@ -132,7 +132,7 @@ def relever_client(request):
         client_info = {
             'id': client.id_client,
             'nom': client.nom_client,
-            'prenom': client.prenom_client,
+            'prenom': client.prenom_client if client.prenom_client else '',
             'adresse': client.adresse_client,
             'commune': client.cp_commune.commune,
             'region': client.cp_commune.region.region,
