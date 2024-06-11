@@ -101,14 +101,14 @@ class DeclareMaincourate(APIView):
                     'cp_commune': cp_commune,
                     'utilisateur': request.user.id_utilisateur
                 }
-                suivie = {
-                    'date_suivie': date_suivie,
-                    'commentaire_suivie': commentaire_suivie,
-                    'main_courante': id_mc,
-                    'utilisateur': request.user.id_utilisateur,
-                }
 
                 if statut == 1:
+                    suivie = {
+                        'date_suivie': date_suivie,
+                        'commentaire_suivie': commentaire_suivie,
+                        'main_courante': id_mc,
+                        'utilisateur': request.user.id_utilisateur,
+                    }
                     suivieserialize = SuivieSerializer(data=suivie)
                     if suivieserialize.is_valid():
                         suivieserialize.save()
