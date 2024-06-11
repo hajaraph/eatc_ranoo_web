@@ -8,13 +8,13 @@
                    <h6 class="col">
                        Statut :
                        {% if facture.statut %}
-                           <span class="badge bg-success">Payé</span>
-                       {% else %}
                            {% if facture.restant_nouvel %}
                                <span class="badge bg-warning text-dark">Montant Restant ({{ facture.restant_nouvel }} Ar)</span>
                            {% else %}
-                               <span class="badge bg-danger">Impayé</span>
+                               <span class="badge bg-success">Payé</span>
                            {% endif %}
+                       {% else %}
+                           <span class="badge bg-danger">Impayé</span>
                        {% endif %}
                    </h6>
                    <h6 class="col">Relance : 0</h6>
