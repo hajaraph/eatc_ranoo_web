@@ -98,90 +98,94 @@ def relever_client(request):
     compteur_id = request.GET.get('num_compteur')
 
     try:
-        # Récupérer le compteur correspondant à l'ID fourni
-        compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
+        with transaction.atomic():
+            # Récupérer le compteur correspondant à l'ID fourni
+            compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
 
-        # Récupérer les informations sur le compteur
-        compteur_info = {
-            'id': int(compteur.num_compteur),
-            'marque': compteur.marque_compteur,
-            'modele': compteur.modele_compteur,
-            # Ajouter d'autres informations sur le compteur au besoin
-        }
-
-        # Récupérer le contrat associé au compteur
-        contrat = get_object_or_404(Contrat, num_compteur=compteur)
-
-        # Extraire le numéro du contrat
-        contrat_nums = contrat.num_contrat
-        num_contrat = re.search(r'\d+', contrat_nums).group()
-
-        # Récupérer les informations sur le contrat
-        contrat_info = {
-            'id': int(num_contrat),  # Utiliser l'ID en tant qu'entier
-            'numero_contrat': contrat.num_contrat,
-            'date_debut': contrat.date_debut,
-            'date_fin': contrat.date_fin,
-            'adresse_contrat': contrat.adresse_contrat,
-            'pays_contrat': contrat.pays_contrat,
-            # Ajouter d'autres informations sur le contrat au besoin
-        }
-
-        # Récupérer les informations sur le client associé au contrat
-        client = contrat.client
-        client_info = {
-            'id': client.id_client,
-            'nom': client.nom_client,
-            'prenom': client.prenom_client if client.prenom_client else '',
-            'adresse': client.adresse_client,
-            'commune': client.cp_commune.commune,
-            'region': client.cp_commune.region.region,
-            'tephone1': client.tel1_client,
-            'tephone2': client.tel2_client,
-            'actif': client.compte_actif
-            # Ajouter d'autres informations sur le client au besoin
-        }
-
-        # Récupérer les relevés de compteurs associés au compteur, triés par date décroissante
-        releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
-
-        releves_list = []
-        for releve in releves_data:
-            releve_dict = {
-                'id': int(releve.id_releve),
-                'id_releve': int(releve.id_releve),
-                'compteur_id': int(compteur.num_compteur),
-                'contrat_id': int(num_contrat),
-                'client_id': int(client.id_client),
-                'date_releve': releve.date_releve,
-                'volume': releve.volume,
-                'conso': releve.conso,
-                'image_compteur': releve.image_compteur.url if releve.image_compteur else 'null',
-                # Ajouter d'autres informations sur le relevé au besoin
+            # Récupérer les informations sur le compteur
+            compteur_info = {
+                'id': int(compteur.num_compteur),
+                'marque': compteur.marque_compteur,
+                'modele': compteur.modele_compteur,
+                # Ajouter d'autres informations sur le compteur au besoin
             }
 
-            # Récupérer la facture associée au relevé
-            facture = Facture.objects.filter(relevecompteur=releve).first()
-            if facture:
-                # Si une facture est associée, enregistrer le statut de la facture dans le dictionnaire
-                releve_dict['etatFacture'] = 'Payé' if facture.statut else 'Impayé'
-            else:
-                # Si aucune facture n'est associée, enregistrer "Pas de facture"
-                releve_dict['etatFacture'] = 'Pas de facture'
+            # Récupérer le contrat associé au compteur
+            contrat = get_object_or_404(Contrat, num_compteur=compteur)
 
-            releves_list.append(releve_dict)
+            # Extraire le numéro du contrat
+            contrat_nums = contrat.num_contrat
+            num_contrat = re.search(r'\d+', contrat_nums).group()
 
-        return JsonResponse({
-            'compteur': compteur_info,
-            'contrat': contrat_info,
-            'client': client_info,
-            'releves': releves_list
-        })
+            # Récupérer les informations sur le contrat
+            contrat_info = {
+                'id': int(num_contrat),  # Utiliser l'ID en tant qu'entier
+                'numero_contrat': contrat.num_contrat,
+                'date_debut': contrat.date_debut,
+                'date_fin': contrat.date_fin,
+                'adresse_contrat': contrat.adresse_contrat,
+                'pays_contrat': contrat.pays_contrat,
+                # Ajouter d'autres informations sur le contrat au besoin
+            }
 
+            # Récupérer les informations sur le client associé au contrat
+            client = contrat.client
+            client_info = {
+                'id': client.id_client,
+                'nom': client.nom_client,
+                'prenom': client.prenom_client if client.prenom_client else '',
+                'adresse': client.adresse_client,
+                'commune': client.cp_commune.commune,
+                'region': client.cp_commune.region.region,
+                'tephone1': client.tel1_client,
+                'tephone2': client.tel2_client,
+                'actif': client.compte_actif
+                # Ajouter d'autres informations sur le client au besoin
+            }
+
+            # Récupérer les relevés de compteurs associés au compteur, triés par date décroissante
+            releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
+
+            releves_list = []
+            for releve in releves_data:
+                releve_dict = {
+                    'id': int(releve.id_releve),
+                    'id_releve': int(releve.id_releve),
+                    'compteur_id': int(compteur.num_compteur),
+                    'contrat_id': int(num_contrat),
+                    'client_id': int(client.id_client),
+                    'date_releve': releve.date_releve,
+                    'volume': releve.volume,
+                    'conso': releve.conso,
+                    'image_compteur': releve.image_compteur.url if releve.image_compteur else 'null',
+                    # Ajouter d'autres informations sur le relevé au besoin
+                }
+
+                # Récupérer la facture associée au relevé
+                facture = Facture.objects.filter(relevecompteur=releve).first()
+                if facture:
+                    # Si une facture est associée, enregistrer le statut de la facture dans le dictionnaire
+                    releve_dict['etatFacture'] = 'Payé' if facture.statut else 'Impayé'
+                else:
+                    # Si aucune facture n'est associée, enregistrer "Pas de facture"
+                    releve_dict['etatFacture'] = 'Pas de facture'
+
+                releves_list.append(releve_dict)
+
+            return JsonResponse({
+                'compteur': compteur_info,
+                'contrat': contrat_info,
+                'client': client_info,
+                'releves': releves_list
+            })
     except Compteur.DoesNotExist:
         return JsonResponse({'error': 'Compteur non trouvé'}, status=404)
     except Contrat.DoesNotExist:
         return JsonResponse({'error': 'Contrat non trouvé'}, status=404)
+    except ValueError as e:
+        return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class Missions(APIView):
@@ -233,8 +237,14 @@ class Missions(APIView):
         return liste_contrats_info
 
     def get(self, request):
-        liste_contrats_info = self.get_liste_mission(request)
-        return JsonResponse({'compteurs_liste': liste_contrats_info})
+        try:
+            with transaction.atomic():
+                liste_contrats_info = self.get_liste_mission(request)
+                return JsonResponse({'compteurs_liste': liste_contrats_info})
+        except ValueError as e:
+            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
@@ -319,54 +329,61 @@ class FactureDetail(APIView):
     @staticmethod
     def get(request):
         id_releve = request.GET.get('id_releve')
+        try:
+            with transaction.atomic():
+                releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
 
-        releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
+                if not releve:
+                    return JsonResponse({'error': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}, status=404)
 
-        if not releve:
-            return JsonResponse({'error': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}, status=404)
+                montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
 
-        montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
+                avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
+                avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
+                restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
+                restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
+                montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
 
-        avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
-        avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
-        restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
-        restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
-        montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
+                if montant_total_ttc == 0.0 or restant_nouvel == 0.0 or restant_nouvel == 0.0:
+                    montant_payer = 0.0
+                else:
+                    montant_payer = montant_total_ttc - restant_nouvel
+                # Affiche le prix du selon le type de client
+                typeclient = releve.num_contrat.client.type_client_id
+                cp_commune = releve.num_contrat.cp_commune_id
+                tarif = get_object_or_404(Tarif, cp_commune_id=cp_commune)
+                if typeclient == 1:
+                    tarif_m3 = tarif.prix_m3_bp
+                elif typeclient == 2:
+                    tarif_m3 = tarif.prix_m3_bs
+                elif typeclient == 3:
+                    tarif_m3 = tarif.prix_m3_k
+                else:
+                    tarif_m3 = 0.0
 
-        if montant_total_ttc == 0.0 or restant_nouvel == 0.0 or restant_nouvel == 0.0:
-            montant_payer = 0.0
-        else:
-            montant_payer = montant_total_ttc - restant_nouvel
-        # Affiche le prix du selon le type de client
-        typeclient = releve.num_contrat.client.type_client_id
-        cp_commune = releve.num_contrat.cp_commune_id
-        tarif = get_object_or_404(Tarif, cp_commune_id=cp_commune)
-        if typeclient == 1:
-            tarif_m3 = tarif.prix_m3_bp
-        elif typeclient == 2:
-            tarif_m3 = tarif.prix_m3_bs
-        elif typeclient == 3:
-            tarif_m3 = tarif.prix_m3_k
-        else:
-            tarif_m3 = 0.0
+                facture = {
+                    'id': int(releve.id_facture),
+                    'relevecompteur_id': int(releve.relevecompteur_id),
+                    'num_facture': releve.num_facture,
+                    'num_compteur': int(releve.num_contrat.num_compteur_id),
+                    'date_facture': releve.date_facture,
+                    'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
+                    'tarif_m3': tarif_m3,
+                    'avoir_avant': avoir_avant,
+                    'avoir_utilise': avoir_utilise,
+                    'restant_precedant': restant_precedant,
+                    'montant_payer': montant_payer,
+                    'montant_total_ttc': montant_total_ttc,
+                    'statut': 'Payé' if releve.statut else 'Impayé',
+                }
 
-        facture = {
-            'id': int(releve.id_facture),
-            'relevecompteur_id': int(releve.relevecompteur_id),
-            'num_facture': releve.num_facture,
-            'num_compteur': int(releve.num_contrat.num_compteur_id),
-            'date_facture': releve.date_facture,
-            'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
-            'tarif_m3': tarif_m3,
-            'avoir_avant': avoir_avant,
-            'avoir_utilise': avoir_utilise,
-            'restant_precedant': restant_precedant,
-            'montant_payer': montant_payer,
-            'montant_total_ttc': montant_total_ttc,
-            'statut': 'Payé' if releve.statut else 'Impayé',
-        }
-
-        return JsonResponse({'facture': facture})
+                return JsonResponse({'facture': facture})
+        except Facture.DoesNotExist:
+            return JsonResponse({'error': 'Facture non trouvé'}, status=404)
+        except ValueError as e:
+            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
@@ -375,31 +392,37 @@ class FactureDetail(APIView):
         serializerpaiement = PaiementSerializer(data=request.data)
         serializerrelever = FactureSerializer(data=request.data)
 
-        if serializerpaiement.is_valid() and serializerrelever.is_valid():
-            id_releve = request.data.get('relevecompteur_id')
-            montant_payer = float(request.data.get('paiement'))
-            utilisateur_id = request.user.id_utilisateur
+        try:
+            with transaction.atomic():
+                if serializerpaiement.is_valid() and serializerrelever.is_valid():
+                    id_releve = request.data.get('relevecompteur_id')
+                    montant_payer = float(request.data.get('paiement'))
+                    utilisateur_id = request.user.id_utilisateur
 
-            # Vérifier si le paiement est supérieur ou égal à 0.1
-            if montant_payer >= 0.1:
-                # Imprimer les données extraites et validées
-                print("ID Relevé :", id_releve)
-                print("Montant à payer :", montant_payer)
-                print("ID Utilisateur :", utilisateur_id)
+                    # Vérifier si le paiement est supérieur ou égal à 0.1
+                    if montant_payer >= 0.1:
+                        # Imprimer les données extraites et validées
+                        print("ID Relevé :", id_releve)
+                        print("Montant à payer :", montant_payer)
+                        print("ID Utilisateur :", utilisateur_id)
 
-                # Appeler la fonction paiement et imprimer le résultat
-                resultat_paiement = paiement(request, id_releve, montant_payer, utilisateur_id)
-                print("Résultat du paiement :", resultat_paiement)
+                        # Appeler la fonction paiement et imprimer le résultat
+                        resultat_paiement = paiement(request, id_releve, montant_payer, utilisateur_id)
+                        print("Résultat du paiement :", resultat_paiement)
 
-                return JsonResponse({'message': 'Paiement effectué avec succès !'})
-            else:
-                return JsonResponse({'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'},
-                                    status=400)
-        else:
-            return JsonResponse({
-                'message_paiement': serializerpaiement.errors,
-                'message_releve': serializerrelever.errors
-            })
+                        return JsonResponse({'message': 'Paiement effectué avec succès !'})
+                    else:
+                        return JsonResponse({'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'},
+                                            status=400)
+                else:
+                    return JsonResponse({
+                        'message_paiement': serializerpaiement.errors,
+                        'message_releve': serializerrelever.errors
+                    })
+        except ValueError as e:
+            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def get_missions_details(toutes_missions):
