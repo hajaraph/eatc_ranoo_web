@@ -69,11 +69,14 @@ def accueil(request):
         relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
         statut=False
     ).count()
+
     nombre_total_facture_payer = Facture.objects.filter(
         relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
         statut=True
     ).count()
-
+    nombre_total_facture_impayer -= nombre_total_facture_payer
+    nombre_total_facture_payer -= nombre_total_facture_payer
+    
     nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
 
     # Soustraire le nombre de relevés effectués du nombre total de compteurs
