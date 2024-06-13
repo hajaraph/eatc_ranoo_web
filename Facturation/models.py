@@ -33,6 +33,7 @@ class Facture(models.Model):
     montant_total_ttc = models.FloatField(null=True, blank=True)
     avoir_avant = models.FloatField(null=True, blank=True)
     avoir_utilise = models.FloatField(null=True, blank=True)
+    avoir_nouveau = models.FloatField(null=True, blank=True)
     restant_precedant = models.FloatField(null=True, blank=True)
     restant_nouvel = models.FloatField(null=True, blank=True)
     statut = models.BooleanField(default=False)
@@ -74,5 +75,6 @@ class Restant(models.Model):
     id_restant = models.BigAutoField(primary_key=True)
     restant = models.FloatField(blank=False)
     date_restant = models.DateField(default=timezone.now, blank=False)
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, blank=True, null=True)
     num_contrat = models.ForeignKey(Contrat, on_delete=models.CASCADE,
                                     related_name='restants', blank=False)

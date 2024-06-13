@@ -192,6 +192,17 @@
                             <td class="text-right text-danger">{{ facture.restant_nouvel }} Ar</td>
                         </tr>
                         {% endif %}
+                        {% if facture.avoir_nouveau %}
+                        <tr class="border-bottom fw-bold">
+                            <td>
+                                <span class="text-dark">Montant Avoir</span>
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-right text-dark">{{ facture.avoir_nouveau }} Ar</td>
+                        </tr>
+                        {% endif %}
                     </tbody>
                 </table>
                 <div class="d-flex justify-content-end mx-1">
