@@ -471,7 +471,7 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
             Avoir.objects.create(
                 montant_avoir=round(net_paye, 2),
                 utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob,
-                num_contrat=num_contrat
+                num_contrat_id=num_contrat
             )
 
     else:
