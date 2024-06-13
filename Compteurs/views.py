@@ -216,30 +216,35 @@ class ReleveNew(View):
         image_compteur = request.FILES.get('image_compteur')
         utilisateur = request.session.get('id_utilisateur')
 
-        dernier_volume = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).latest('date_releve')
+        try:
+            dernier_volume = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).latest('date_releve')
 
-        if dernier_volume:
-            if date_releve <= dernier_volume.date_releve:
-                messages.error(request, f"Veuillez fournir une date valide !")
-                return redirect('releve_new', num_compteur)
-            elif dernier_volume.volume > volume:
-                messages.error(request, f"Assurez-vous de saisir les chiffres correctement et réessayez !")
-                return redirect('releve_new', num_compteur)
+            if dernier_volume:
+                if date_releve <= dernier_volume.date_releve:
+                    messages.error(request, f"Veuillez fournir une date valide !")
+                    return redirect('releve_new', num_compteur)
+                elif dernier_volume.volume > volume:
+                    messages.error(request, f"Assurez-vous de saisir les chiffres correctement et réessayez !")
+                    return redirect('releve_new', num_compteur)
+                else:
+                    conso = volume - dernier_volume.volume
             else:
-                conso = volume - dernier_volume.volume
-        else:
-            conso = volume
+                conso = volume
 
-        # Créer un nouvel objet ReleveCompteur avec l'image mise à jour
-        releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
-        facture_creation(date_releve, num_compteur, releve)
+            # Créer un nouvel objet ReleveCompteur avec l'image mise à jour
+            releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
+            facture_creation(date_releve, num_compteur, releve)
 
-        # Historique
-        message = f"Relever et Facture d'un compteur {num_compteur}"
-        enregistre_historique(request, message, request.session.get('id_utilisateur'))
+            # Historique
+            message = f"Relever et Facture d'un compteur {num_compteur}"
+            enregistre_historique(request, message, request.session.get('id_utilisateur'))
 
-        messages.success(request, f"Relevé enregistrer avec succès !")
-        return redirect('compteur_detail', num_compteur)
+            messages.success(request, f"Relevé enregistrer avec succès !")
+            return redirect('compteur_detail', num_compteur)
+
+        except ReleveCompteur.DoesNotExist:
+            messages.error(request, f"Date du dernier relevé inexistant dans la base !")
+            return redirect('releve_new', num_compteur)
 
 
 def relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur):
