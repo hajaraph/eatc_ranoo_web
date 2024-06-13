@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from num2words import num2words
 from django.contrib import messages
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from xhtml2pdf import pisa
 
 from Clients.communes import Region
@@ -96,7 +96,7 @@ def facture_etat_detail(request, num_facture):
         'montant': montant,
         'typeclient': typeclient,
         'taxes_montants': taxes_montants,
-        'date_echeance': date_echeance
+        'date_echeance': date_echeance,
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -274,9 +274,7 @@ def precess_avoir_restant(contrat, factures):
 
 def facture_creation(date_facture, num_compteur, releve):
     try:
-        contrat = Contrat.objects.filter(num_compteur=num_compteur).first()
-        if not contrat:
-            raise ValueError(f"No contract found for compteur number: {num_compteur}")
+        contrat = get_object_or_404(Contrat, num_compteur_id=num_compteur)
 
         typeclient = contrat.client.type_client.pk
         consommation = releve.conso
@@ -287,7 +285,7 @@ def facture_creation(date_facture, num_compteur, releve):
         factures = Facture.objects.create(
             num_facture=num_facture,
             date_facture=date_facture,
-            num_contrat=contrat,
+            num_contrat_id=contrat.num_contrat,
             relevecompteur_id=releve.pk
         )
 
@@ -295,7 +293,7 @@ def facture_creation(date_facture, num_compteur, releve):
         tarif = Tarif.objects.get(cp_commune_id=contrat.cp_commune_id)
 
         # Calculate the amounts based on the client type
-        if typeclient == 1 or (typeclient == 2 and consommation < tarif.conso_tva_app):
+        if typeclient == 1 or (typeclient == 2 and consommation < tarif.conso_tva_app) or typeclient == 3:
             Calcule.cree_montant(typeclient, tarif, consommation, factures)
         elif typeclient == 2 and consommation >= tarif.conso_tva_app:
             total_conso_ht = tarif.prix_m3_bp * consommation
@@ -306,9 +304,10 @@ def facture_creation(date_facture, num_compteur, releve):
                 Calcule.montantttc(total_conso_ttc + taxe, montant_ht)
 
         precess_avoir_restant(contrat, factures)
-
         factures.save()
         return factures
+    except Contrat.DoesNotExist:
+        raise ValueError(f"Pas de contrat trouvé pour le numéro de compteur: {num_compteur}")
     except Exception as e:
         return HttpResponse(f"Error creating invoice: {e}")
 
@@ -446,8 +445,8 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
     net_paye = fact_paiement.montant_total_ttc - montant_payer
     num_contrat = fact_paiement.num_contrat_id
 
+    fact_paiement.statut = True
     if net_paye == 0:
-        fact_paiement.statut = True
         Paiement.objects.create(
             montant_payer=montant_payer,
             facture_id=fact_paiement.pk
@@ -455,7 +454,6 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
 
     elif net_paye < 0:
         net_paye = montant_payer - fact_paiement.montant_total_ttc
-        fact_paiement.statut = True
         Paiement.objects.create(
             montant_payer=fact_paiement.montant_total_ttc,
             facture_id=fact_paiement.pk
@@ -463,11 +461,13 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
 
         avoir = Avoir.objects.filter(num_contrat=num_contrat)
         if avoir.exists():
-            avoir = Avoir.objects.filter(num_contrat=num_contrat)
+            avoir = Avoir.objects.get(num_contrat_id=num_contrat)
             avoir.montant_avoir += round(net_paye, 2)
             avoir.utilisateur_id = utilisateur_web if utilisateur_web else utilisateur_mob,
+            fact_paiement.avoir_nouveau = avoir.montant_avoir
             avoir.save()
         else:
+            fact_paiement.avoir_nouveau = round(net_paye, 2)
             Avoir.objects.create(
                 montant_avoir=round(net_paye, 2),
                 utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob,
@@ -475,7 +475,6 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
             )
 
     else:
-        fact_paiement.statut = True
         restant = Restant.objects.filter(num_contrat=num_contrat)
         paiements = Paiement.objects.filter(facture_id=fact_paiement.pk)
         restant_value = round(net_paye, 2)
@@ -489,7 +488,6 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
             if montant_payer == restant_exist.restant:
                 restant_exist.delete()
                 paiement_restant.montant_payer += montant_payer
-                fact_paiement.statut = True
                 fact_paiement.restant_nouvel = None
 
             elif montant_payer < restant_exist.restant:
@@ -505,7 +503,6 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
                 fact_paiement.restant = round(restant_exist.restant, 2)
             else:
                 paiement_restant.montant_payer += restant_exist.restant
-                fact_paiement.statut = True
                 fact_paiement.restant_nouvel = None
                 # creation d'une nouvel avoir
                 avoir = montant_payer - restant_exist.restant
@@ -519,7 +516,8 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
         else:
             Restant.objects.create(
                 restant=round(net_paye, 2),
-                num_contrat_id=num_contrat
+                num_contrat_id=num_contrat,
+                utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob
             )
             Paiement.objects.create(
                 montant_payer=round(montant_payer, 2),
