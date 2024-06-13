@@ -367,7 +367,8 @@ def facture_context_pdf(request, factures):
     except MontantHT.DoesNotExist:
         return HttpResponse(f"MontantHT n'exist pas pour le facture {factures.num_facture}", content_type='text/plain')
     except ReleveCompteur.DoesNotExist:
-        return HttpResponse(f"ReleveCompteur n'exist pas pour le numéro de compteur {factures.num_contrat.num_compteur_id}", content_type='text/plain')
+        return HttpResponse(f"ReleveCompteur n'exist pas pour le numéro de compteur {factures.num_contrat.num_compteur_id}",
+                            content_type='text/plain')
     except Exception as e:
         return HttpResponse(f"An error occurred: {e}", content_type='text/plain')
 
@@ -421,7 +422,8 @@ def generate_multiple_pages_pdf(request):
         if html:
             html_sections.append(html)
         else:
-            return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}", content_type='text/plain')
+            return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}",
+                                content_type='text/plain')
 
     if not html_sections:
         return HttpResponse("Aucune facture valide pour générer un PDF", content_type='text/plain')
