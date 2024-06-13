@@ -53,12 +53,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
+    'http://89.116.38.149:8000',
     'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
     'http://localhost:3000',
 
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
+    'http://89.116.38.149:8000',
     'http://127.0.0.1:8000',
 
 ]
