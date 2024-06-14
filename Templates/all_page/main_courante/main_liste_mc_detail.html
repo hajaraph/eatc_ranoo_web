@@ -162,7 +162,7 @@
                                 <span class="badge bg-primary">{{ suivie.utilisateur.role.role }}</span>
                             </td>
                             <td>
-                                <a href="{% url 'supp_suivie' suivie.main_courante.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Etes-vous sûr de vouloir supprimer ce commentaire ?')">
+                                <a href="{% url 'supp_suivie' suivie.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Etes-vous sûr de vouloir supprimer ce commentaire ?')">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
