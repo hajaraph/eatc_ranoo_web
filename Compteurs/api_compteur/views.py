@@ -194,7 +194,7 @@ def relever_client(request):
 class Missions(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @staticmethod 
+    @staticmethod
     def get_liste_mission(request):
         cp_commune = request.user.cp_commune_id
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
@@ -208,43 +208,184 @@ class Missions(APIView):
             )
         )
 
-        for contrat in contrats_commune: 
-            dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).order_by('date_releve').last()
-            if dernier_releve:
-                contrat.date_releve = dernier_releve.date_releve
-                if dernier_releve.date_releve.month == datetime.now().month and dernier_releve.date_releve.year == datetime.now().year:
-                    contrat.statut = 2
-                else:
-                    contrat.statut = 0
-            elif contrat.date_releve and contrat.date_releve.month != end_of_month.month:
-                contrat.statut = 0
-            else: 
-                contrat.statut = 0
-
         liste_contrats_info = []
-
         for contrat in contrats_commune:
-            dernier_releve = contrat.num_compteur.relevecompteurs.order_by('date_releve').last()
+            dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
+                max_date=Max('date_releve'))
+            contrat.date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else None
+
+            # Comparaison des mois pour définir le statut
+            if contrat.date_releve and contrat.date_releve.month != end_of_month.month:
+                contrat.statut = 0
+            else:
+                contrat.statut = 2
+
+            dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
             contrat_info = {
-                'id': dernier_releve.pk if dernier_releve else None,
+                'id': dernier_releve_obj.pk if dernier_releve_obj else None,
                 'nom_client': contrat.client.nom_client,
-                'prenom_client': contrat.client.prenom_client,
+                'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
                 'adresse_client': contrat.client.adresse_client,
                 'num_compteur': contrat.num_compteur_id,
                 'conso_dernier_releve': contrat.conso_dernier_releve,
-                'volume_dernier_releve': dernier_releve.volume if dernier_releve else None,
-                'date_releve': dernier_releve.date_releve if dernier_releve else None,
+                'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else None,
+                'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else None,
                 'statut': contrat.statut
             }
             liste_contrats_info.append(contrat_info)
 
+        # Trier la liste par id_releve
+        liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
+
         return liste_contrats_info
 
     def get(self, request):
-        liste_contrats_info = self.get_liste_mission(request)
-        return JsonResponse({'compteurs_liste': liste_contrats_info})
+        try:
+            with transaction.atomic():
+                liste_contrats_info = self.get_liste_mission(request)
+                return JsonResponse({'compteurs_liste': liste_contrats_info})
+        except ValueError as e:
+            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    @parser_classes((MultiPartParser, FormParser))
+    def post(request):
+        serializer = MissionSerializer(data=request.data)
+        utilisateur = request.user.id_utilisateur
+
+        if not serializer.is_valid():
+            return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                id_releve = serializer.validated_data.get('releve_id')
+                compteur_id = serializer.validated_data.get('num_compteur')
+                date_releve = serializer.validated_data.get('date_releve')
+                volume = serializer.validated_data.get('volume')
+                image_compteur = request.FILES.get('image_compteur')
+
+                if id_releve is not None:
+                    compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
+                    dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
+
+                    if dernier_releve.volume >= volume:
+                        return JsonResponse({
+                            'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
+                    if date_releve <= dernier_releve.date_releve:
+                        return JsonResponse({'erreur': "Veuillez fournir une date valide"}, status=status.HTTP_400_BAD_REQUEST)
+
+                    mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
+                                                               image_compteur, dernier_releve)
+                    facture_creation(date_releve, compteur.num_compteur, mod_releve)
+
+                    return JsonResponse({
+                        'enregistre': 'Mise à jour effectuer avec succès !'
+                    }, status=status.HTTP_201_CREATED)
+
+                else:
+                    if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
+                        return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
+                                            status=status.HTTP_400_BAD_REQUEST)
+
+                    dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
+
+                    if dernier_volume:
+                        if date_releve <= dernier_volume.date_releve:
+                            return JsonResponse({'erreur': "Veuillez fournir une date valide"},
+                                                status=status.HTTP_400_BAD_REQUEST)
+
+                        if dernier_volume.volume > volume:
+                            return JsonResponse({
+                                'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                        else:
+                            conso = volume - dernier_volume.volume
+                    else:
+                        conso = volume
+
+                    releve = relever(request, dernier_volume.num_compteur_id, date_releve,
+                                     volume, conso, image_compteur, utilisateur)
+
+                    facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+
+                historique = f"Relever et Facture d'un compteur {compteur_id}"
+                enregistre_historique(request, historique, utilisateur)
+
+                return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# Details Facture #
+
+
+class FactureDetail(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @staticmethod
+    def get(request):
+        id_releve = request.GET.get('id_releve')
+        try:
+            with transaction.atomic():
+                releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
+
+                if not releve:
+                    return JsonResponse({'error': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}, status=404)
+
+                montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
+
+                avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
+                avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
+                restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
+                restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
+                montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
+
+                if montant_total_ttc == 0.0 or restant_nouvel == 0.0 or restant_nouvel == 0.0:
+                    montant_payer = 0.0
+                else:
+                    montant_payer = montant_total_ttc - restant_nouvel
+                # Affiche le prix du selon le type de client
+                typeclient = releve.num_contrat.client.type_client_id
+                cp_commune = releve.num_contrat.cp_commune_id
+                tarif = get_object_or_404(Tarif, cp_commune_id=cp_commune)
+                if typeclient == 1:
+                    tarif_m3 = tarif.prix_m3_bp
+                elif typeclient == 2:
+                    tarif_m3 = tarif.prix_m3_bs
+                elif typeclient == 3:
+                    tarif_m3 = tarif.prix_m3_k
+                else:
+                    tarif_m3 = 0.0
+
+                facture = {
+                    'id': int(releve.id_facture),
+                    'relevecompteur_id': int(releve.relevecompteur_id),
+                    'num_facture': releve.num_facture,
+                    'num_compteur': int(releve.num_contrat.num_compteur_id),
+                    'date_facture': releve.date_facture,
+                    'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
+                    'tarif_m3': tarif_m3,
+                    'avoir_avant': avoir_avant,
+                    'avoir_utilise': avoir_utilise,
+                    'restant_precedant': restant_precedant,
+                    'montant_payer': montant_payer,
+                    'montant_total_ttc': montant_total_ttc,
+                    'statut': 'Payé' if releve.statut else 'Impayé',
+                }
+
+                return JsonResponse({'facture': facture})
+        except Facture.DoesNotExist:
+            return JsonResponse({'error': 'Facture non trouvé'}, status=404)
+        except ValueError as e:
+            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
