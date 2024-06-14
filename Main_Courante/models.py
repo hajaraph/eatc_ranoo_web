@@ -40,7 +40,7 @@ class PhotoMC(models.Model):
 
 class SuivieMC(models.Model):
     id_suivie = models.BigAutoField(primary_key=True)
-    date_suivie = models.DateTimeField(db_default=Now(), blank=False)
+    date_suivie = models.DateTimeField(blank=False, null=False)
     commentaire_suivie = models.CharField(max_length=200, blank=False)
     main_courante = models.ForeignKey(MainCourante, on_delete=models.CASCADE, blank=False, related_name='suiviemcs')
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT)
