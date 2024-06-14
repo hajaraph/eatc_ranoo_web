@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.shortcuts import render, redirect
@@ -202,7 +200,7 @@ def suivie(request, pk):
     SuivieMC.objects.create(
         commentaire_suivie=commentaire,
         main_courante_id=pk,
-        date_suivie=datetime.now(),
+        date_suivie=timezone.now(),
         utilisateur_id=request.session.get('id_utilisateur')
     )
     return redirect('detail_mc', pk)
