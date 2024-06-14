@@ -220,16 +220,16 @@ class Missions(APIView):
             else:
                 contrat.statut = 2 
 
-            dernier_releve = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
+            dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
             contrat_info = {
-                'id': dernier_releve.pk if dernier_releve else None,
+                'id': dernier_releve_obj.pk if dernier_releve_obj else None,
                 'nom_client': contrat.client.nom_client,
                 'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
                 'adresse_client': contrat.client.adresse_client,
                 'num_compteur': contrat.num_compteur_id,
                 'conso_dernier_releve': contrat.conso_dernier_releve,
-                'volume_dernier_releve': dernier_releve.volume if dernier_releve else None,
-                'date_releve': dernier_releve.date_releve if dernier_releve else None,
+                'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else None,
+                'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else None,
                 'statut': contrat.statut
             }
             liste_contrats_info.append(contrat_info)
@@ -248,8 +248,6 @@ class Missions(APIView):
             return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
         serializer = MissionSerializer(data=request.data)
