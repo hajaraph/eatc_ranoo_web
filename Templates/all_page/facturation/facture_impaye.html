@@ -4,13 +4,13 @@
             <div class="row">
                 <div class="col-md-3 mb-2 mb-md-0">
                     <div class="form-floating">
-                        <input type="date" name="datedeb" id="datedeb" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                        <input type="date" name="datedeb" id="datedeb" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" value="{{ datedeb }}" required>
                         <label for="datedeb">Période du </label>
                     </div>
                 </div>
                 <div class="col-md-3 mb-2 mb-md-0">
                     <div class="form-floating">
-                        <input type="date" name="datefin" id="datefin" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                        <input type="date" name="datefin" id="datefin" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" value="{{ datefin }}" required>
                         <label for="datefin">au </label>
                     </div>
                 </div>
@@ -77,10 +77,10 @@
                     </td>
                     <td>
                         {% if not facture.statut %}
-                            <a href="{% url 'facture_genere_pdf' impaye.pk %}" class="btn btn-success btn-sm px-4">
+                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' impaye.pk %}')" class="btn btn-success btn-sm px-4">
                                 <i class="fas fa-file-pdf"></i>
                                  PDF
-                            </a>
+                            </div>
                         {% endif %}
                     </td>
                 </tr>

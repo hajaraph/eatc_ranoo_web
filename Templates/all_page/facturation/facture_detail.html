@@ -218,10 +218,10 @@
                                 <i class="fas fa-arrows-rotate"></i>
                                 Relancer
                             </a>
-                            <a href="{% url 'facture_genere_pdf' facture.pk %}" class="btn btn-success mx-4 px-4">
+                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' facture.pk %}')" class="btn btn-success mx-4 px-4">
                                 <i class="fas fa-file-pdf"></i>
                                  PDF
-                            </a>
+                            </div>
                             <button id="{{ facture.relevecompteur_id }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
                                 <i class="fas fa-credit-card"></i>
                                 Paiements

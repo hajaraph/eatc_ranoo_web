@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.shortcuts import render, redirect
@@ -51,7 +53,9 @@ def main_liste_mc(request):
         'main': main_courante_statut,
         'non_traite': non_traite,
         'realise': realise,
-        'en_cours': en_cours
+        'en_cours': en_cours,
+        'datedeb': datedeb if datedeb else '',
+        'datefin': datefin if datefin else ''
     }
     return render(request, 'all_page/main_courante/main_courante.html', context)
 
@@ -198,6 +202,7 @@ def suivie(request, pk):
     SuivieMC.objects.create(
         commentaire_suivie=commentaire,
         main_courante_id=pk,
+        date_suivie=datetime.now(),
         utilisateur_id=request.session.get('id_utilisateur')
     )
     return redirect('detail_mc', pk)

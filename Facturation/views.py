@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from num2words import num2words
 from django.contrib import messages
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from xhtml2pdf import pisa
 
 from Clients.communes import Region
@@ -62,7 +62,9 @@ def facture(request):
         'factures': factures,
         'avoir_count': avoir,
         'restant': restant,
-        'regions': region
+        'regions': region,
+        'datedeb': datedeb if datedeb else '',
+        'datefin': datefin if datefin else ''
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -115,6 +117,8 @@ def facture_paye(request):
         'active_facture_paye': active,
         'font_facture': font,
         'payes': paye,
+        'datedeb': datedeb if datedeb else '',
+        'datefin': datefin if datefin else ''
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -131,7 +135,9 @@ def facture_impaye(request):
         'title_facture_impaye': title,
         'active_facture_impaye': active,
         'font_facture': font,
-        'impayes': impaye
+        'impayes': impaye,
+        'datedeb': datedeb,
+        'datefin': datefin
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -148,7 +154,9 @@ def facture_restant(request):
         'title_facture': title,
         'active_facture': active,
         'font_facture': font,
-        'restants': restants
+        'restants': restants,
+        'datedeb': datedeb if datedeb else '',
+        'datefin': datefin if datefin else ''
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -176,7 +184,9 @@ def facture_avoir(request):
         'title_avoir': title,
         'active_avoir': active,
         'font_facture': font,
-        'avoirs': avoir
+        'avoirs': avoir,
+        'datedeb': datedeb if datedeb else '',
+        'datefin': datefin if datefin else ''
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -402,43 +412,47 @@ def generate_multiple_pages_pdf(request):
     factures = Facture.objects.filter(statut=False)
     html_sections = []
 
-    if date_deb and date_fin and commune:
-        factures = factures.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
-    elif date_deb and commune:
-        factures = factures.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
-    elif date_deb:
-        factures = factures.filter(date_facture=date_deb)
-    elif commune:
-        factures = factures.filter(num_contrat__cp_commune_id=commune)
+    if factures:
+        if date_deb and date_fin and commune:
+            factures = factures.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
+        elif date_deb and commune:
+            factures = factures.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
+        elif date_deb:
+            factures = factures.filter(date_facture=date_deb)
+        elif commune:
+            factures = factures.filter(num_contrat__cp_commune_id=commune)
 
-    for fact in factures:
-        context = facture_context_pdf(request, fact)
+        for fact in factures:
+            context = facture_context_pdf(request, fact)
 
-        if isinstance(context, HttpResponse):
-            # Si context est une réponse HTTP, retourne-la (cela signifie qu'une erreur est survenue)
-            return context
+            if isinstance(context, HttpResponse):
+                # Si context est une réponse HTTP, retourne-la (cela signifie qu'une erreur est survenue)
+                return context
 
-        html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
-        if html:
-            html_sections.append(html)
+            html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
+            if html:
+                html_sections.append(html)
+            else:
+                return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}",
+                                    content_type='text/plain')
+
+        if not html_sections:
+            return HttpResponse("Aucune facture valide pour générer un PDF", content_type='text/plain')
+
+        combined_html = '<div style="page-break-after: always;"></div>'.join(html_sections)
+        result = BytesIO()
+        pdf = pisa.pisaDocument(BytesIO(combined_html.encode("UTF-8")), result)
+
+        if not pdf.err:
+            filename = f"factures_{datetime.now().strftime('%Y%m%d')}.pdf"
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
         else:
-            return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}",
-                                content_type='text/plain')
-
-    if not html_sections:
-        return HttpResponse("Aucune facture valide pour générer un PDF", content_type='text/plain')
-
-    combined_html = '<div style="page-break-after: always;"></div>'.join(html_sections)
-    result = BytesIO()
-    pdf = pisa.pisaDocument(BytesIO(combined_html.encode("UTF-8")), result)
-
-    if not pdf.err:
-        filename = f"factures_{datetime.now().strftime('%Y%m%d')}.pdf"
-        response = HttpResponse(result.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
+            return HttpResponse("Erreur lors de la génération du PDF.", content_type='text/plain')
     else:
-        return HttpResponse("Erreur lors de la génération du PDF.", content_type='text/plain')
+        messages.warning(request, f"Pas de facture impayé !")
+        return redirect('facture')
 
 
 def paiement(request, id_releve, montant_payer, utilisateur_mob):
