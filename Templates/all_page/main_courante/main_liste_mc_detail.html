@@ -155,7 +155,7 @@
                     <tbody>
                         {% for suivie in suivies %}
                         <tr>
-                            <td>{{ suivie.date_suivie|date:'d/m/Y H:m' }}</td>
+                            <td>{{ suivie.date_suivie|date:'d/m/Y H:i' }}</td>
                             <td>{{ suivie.commentaire_suivie }}</td>
                             <td>
                                 {{ suivie.utilisateur.nom_utilisateur }}
