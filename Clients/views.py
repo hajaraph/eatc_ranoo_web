@@ -454,6 +454,7 @@ def export_clients(request):
         'tel2_client',
         'email_client',
         'compte_actif',
+        'type_client__designation_client'
     ]
     nom_colonnes = [
         'ID',
@@ -468,6 +469,7 @@ def export_clients(request):
         'Téléphone 2',
         'Mail',
         'Compte Actif',
+        'Type'
     ]
     response = exporter_en_excel(clients, nom_fichier, champs, nom_colonnes)
     message = f"Export de tout les clients"

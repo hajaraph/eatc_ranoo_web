@@ -172,7 +172,9 @@ def tableau_bord(request, *args, **kwargs):
         'nb_client_prec': nb_client_prec,
         'evo_conso': resultats,
         'factures': factures,
-        'main_courantes': main_courante
+        'main_courantes': main_courante,
+        'datedeb': date_deb if date_deb else '',
+        'datefin': date_fin if date_fin else ''
     }
 
     return render(request, 'all_page/tableau_bord.html', context)

@@ -183,7 +183,9 @@ def compteur_releve(request):
         'active_releve': active,
         'font_compteur': font,
         'zero_releve': zero_releve,
-        'releve': releve
+        'releve': releve,
+        'datedeb': datedeb if datedeb else '',
+        'datefin': datefin if datefin else '',
     }
     return render(request, 'all_page/compteurs/compteurs.html', context)
 
