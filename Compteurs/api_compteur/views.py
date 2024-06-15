@@ -216,9 +216,9 @@ class Missions(APIView):
 
             # Comparaison des mois pour définir le statut
             if contrat.date_releve and contrat.date_releve.month != end_of_month.month:
-                contrat.statut = 0
+                statut = 0
             else:
-                contrat.statut = 2
+                statut = 2
 
             dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
             contrat_info = {
@@ -230,7 +230,7 @@ class Missions(APIView):
                 'conso_dernier_releve': contrat.conso_dernier_releve,
                 'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
                 'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
-                'statut': contrat.statut
+                'statut': statut
             }
             liste_contrats_info.append(contrat_info)
 
