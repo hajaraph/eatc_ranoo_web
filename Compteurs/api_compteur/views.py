@@ -245,9 +245,9 @@ class Missions(APIView):
                 liste_contrats_info = self.get_liste_mission(request)
                 return JsonResponse({'compteurs_liste': liste_contrats_info})
         except ValueError as e:
-            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'erreur': e}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({'erreur': f"Erreur du serveur: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
