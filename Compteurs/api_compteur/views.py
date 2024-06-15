@@ -76,12 +76,12 @@ def accueil(request):
     ).count()
     nombre_total_facture_impayer -= nombre_total_facture_payer
     nombre_total_facture_payer -= nombre_total_facture_payer
-    
+
     nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
 
     # Soustraire le nombre de relevés effectués du nombre total de compteurs
     nombre_total_compteur -= nombre_relever_effectuer
-    nombre_relever_effectuer -= nombre_relever_effectuer 
+    nombre_relever_effectuer -= nombre_relever_effectuer
 
     return JsonResponse(
         {
@@ -240,15 +240,10 @@ class Missions(APIView):
         return liste_contrats_info
 
     def get(self, request):
-        try:
-            with transaction.atomic():
-                liste_contrats_info = self.get_liste_mission(request)
-                return JsonResponse({'compteurs_liste': liste_contrats_info})
-        except ValueError as e:
-            return JsonResponse({'erreur': e}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return JsonResponse({'erreur': f"Erreur du serveur: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+        liste_contrats_info = self.get_liste_mission(request)
+        return JsonResponse({'compteurs_liste': liste_contrats_info})
+
+    @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
         serializer = MissionSerializer(data=request.data)
