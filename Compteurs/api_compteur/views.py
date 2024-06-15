@@ -212,10 +212,10 @@ class Missions(APIView):
         for contrat in contrats_commune:
             dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
                 max_date=Max('date_releve'))
-            contrat.date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
+            date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
 
             # Comparaison des mois pour définir le statut
-            if contrat.date_releve and contrat.date_releve.month != end_of_month.month:
+            if date_releve and date_releve.month != end_of_month.month:
                 statut = 0
             else:
                 statut = 2
@@ -240,8 +240,14 @@ class Missions(APIView):
         return liste_contrats_info
 
     def get(self, request):
-        liste_contrats_info = self.get_liste_mission(request)
-        return JsonResponse({'compteurs_liste': liste_contrats_info})
+        try:
+            with transaction.atomic():
+                liste_contrats_info = self.get_liste_mission(request)
+                return JsonResponse({'compteurs_liste': liste_contrats_info})
+        except ValueError as e:
+            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
