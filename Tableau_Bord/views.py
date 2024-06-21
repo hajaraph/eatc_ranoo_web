@@ -122,10 +122,11 @@ def tableau_bord(request, *args, **kwargs):
     main_courante = main_courante.annotate(
         mois=ExtractMonth('main_courante__date_mc'),
         annee=ExtractYear('main_courante__date_mc'),
+    ).values('mois', 'annee').annotate(
         nb_non_traite=Count('main_courante_id', filter=Q(non_traite=True)),
         nb_realise=Count('main_courante_id', filter=Q(realise=True)),
         nb_en_cours=Count('main_courante_id', filter=Q(en_cours=True))
-    ).values('mois', 'annee', 'nb_non_traite', 'nb_realise', 'nb_en_cours').order_by('annee', 'mois')
+    ).order_by('annee', 'mois')
 
     # Filtrage de main courante non traité
     date_precedant = date_actuelle - timedelta(days=365)
