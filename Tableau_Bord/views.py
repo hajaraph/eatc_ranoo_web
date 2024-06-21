@@ -120,11 +120,11 @@ def tableau_bord(request, *args, **kwargs):
     ).order_by('annee', 'mois')
 
     main_courante = main_courante.annotate(
-        mois=ExtractMonth('date_status'),
-        annee=ExtractYear('date_status'),
-        nb_non_traite=Count('pk', filter=Q(non_traite=True)),
-        nb_realise=Count('pk', filter=Q(realise=True)),
-        nb_en_cours=Count('pk', filter=Q(en_cours=True))
+        mois=ExtractMonth('main_courante__date_mc'),
+        annee=ExtractYear('main_courante__date_mc'),
+        nb_non_traite=Count('main_courante_id', filter=Q(non_traite=True)),
+        nb_realise=Count('main_courante_id', filter=Q(realise=True)),
+        nb_en_cours=Count('main_courante_id', filter=Q(en_cours=True))
     ).values('mois', 'annee', 'nb_non_traite', 'nb_realise', 'nb_en_cours').order_by('annee', 'mois')
 
     # Filtrage de main courante non traité
@@ -156,7 +156,7 @@ def tableau_bord(request, *args, **kwargs):
 
     # Pour obtenir seulement l'année actuelle de notre requete precedant
     annee_contrat_actuelle = contrats_annee_actuelle[0]['annee_contrat_actuelle'] if contrats_annee_actuelle else 0
-    annee_contrat_prec = annee_contrat_actuelle - 1
+    annee_contrat_prec = 0 if annee_contrat_actuelle == 0 else annee_contrat_actuelle - 1
 
     # Pour obtenir le nombre de contrat pour l'année actuelle depuis notre requete precedanat
     nb_client_actuelle = contrats_annee_actuelle[0]['nb_client_actuelle'] if contrats_annee_actuelle else 0
