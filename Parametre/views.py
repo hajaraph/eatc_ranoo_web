@@ -6,7 +6,7 @@ from django.views import View
 from openpyxl.workbook import Workbook
 
 from Login.models import Utilisateur
-from Login.views import authentification_requis, role_requis
+from Login.views import authentification_requis, role_requis, deconnexion
 from Parametre.models import Historique
 
 
@@ -44,12 +44,31 @@ class ProfileModifier(View):
     @role_requis('Administrateur', 'Gestionnaire')
     def post(request):
         utilisateur = Utilisateur.objects.get(pk=request.session.get('id_utilisateur'))
+        num_utilisateur = utilisateur.num_utilisateur
+
         utilisateur.nom_utilisateur = request.POST.get('nom_utilisateur')
         utilisateur.prenom_utilisateur = request.POST.get('prenom_utilisateur')
         utilisateur.num_utilisateur = request.POST.get('num_utilisateur')
-        utilisateur.photo_utilisateur = request.FILES.get('photo_utilisateur')
-        utilisateur.save()
-        messages.success(request, 'Modification de Profile effectuer avec succès !')
+
+        if request.FILES.get('photo_utilisateur'):
+            utilisateur.photo_utilisateur = request.FILES.get('photo_utilisateur')
+        else:
+            utilisateur.photo_utilisateur.delete()
+
+        if num_utilisateur != request.POST.get('num_utilisateur'):
+            if Utilisateur.objects.filter(num_utilisateur=request.POST.get('num_utilisateur')).exists():
+                messages.error(request, 'Numéro déjà utilisé par un autre utilisateur !')
+                return redirect('profile_modifier')
+            else:
+                utilisateur.save()
+                deconnexion(request)
+        else:
+            utilisateur.save()
+            request.session['nom_utilisateur'] = request.POST.get('nom_utilisateur')
+            request.session['prenom_utilisateur'] = request.POST.get('prenom_utilisateur')
+            request.session['photo_utilisateur'] = utilisateur.photo_utilisateur.url if utilisateur.photo_utilisateur else None
+            messages.success(request, 'Modification de Profile effectuer avec succès !')
+
         return redirect('para_utilisateur')
 
 

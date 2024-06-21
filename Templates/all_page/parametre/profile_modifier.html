@@ -13,7 +13,7 @@
                         <i class="fas fa-user-circle" style="font-size: 100px"></i>
                         {% endif %}
                         <label for="image" class="btn btn-sm btn-secondary rounded-pill w-75 mt-4 shadow-none">Choisir une image</label>
-                        <input type="file" name="photo_utilisateur" id="image" class="invisible" accept="image/jpeg, image/png">
+                        <input type="file" name="photo_utilisateur" id="image" class="invisible" value="{{ request.session.photo_utilisateur }}" accept="image/jpeg, image/png">
                     </div>
                 </div>
                 <div class="col-md">
@@ -39,7 +39,7 @@
                         <div class="col-md-4 mt-4">
                              <div class="form-floating">
                                 <input type="text" name="initial_utilisateur" id="initial_utilisateur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ request.session.initial_utilisateur }}" readonly>
-                                <label for="initial_utilisateur">Initial</label>
+                                <label for="initial_utilisateur">Utilisateur créé par</label>
                             </div>
                         </div>
                         <div class="col-md-4 mt-4">
