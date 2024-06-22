@@ -109,16 +109,16 @@
 </div>
 
 <div class="modal fade" id="export-pdf" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div id="alert-container" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 1000;">
+        <div id="alert" class="alert alert-warning alert-dismissible" role="alert" style="display: none;">
+            Aucune facture impayée n'est disponible pour l'exportation.
+        </div>
+    </div>
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Exportation des factures au format PDF.</h5>
                 <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div id="alert-container" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 1000;">
-                <div id="alert" class="alert alert-warning alert-dismissible" role="alert" style="display: none;">
-                    Aucune facture impayée n'est disponible pour l'exportation.
-                </div>
             </div>
             <div class="modal-body">
                 <form id="formNew">
