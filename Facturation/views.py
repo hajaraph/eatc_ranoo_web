@@ -44,6 +44,19 @@ def date_range(request, model, datedeb, datefin, date_field, statut):
             return model.objects.all().order_by(f'-{date_field}')
 
 
+def date_range_fact_pdf(date_deb, date_fin, commune, model):
+    if date_deb and date_fin and commune:
+        return model.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
+    elif date_deb and commune:
+        return model.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
+    elif date_deb:
+        return model.filter(date_facture=date_deb)
+    elif commune:
+        return model.filter(num_contrat__cp_commune_id=commune)
+    else:
+        return model
+
+
 @authentification_requis
 def facture(request):
     title = 'Facturation | Etat Facture'
@@ -55,16 +68,18 @@ def facture(request):
     datefin = request.GET.get('datefin')
     factures = date_range(request, Facture, datedeb, datefin, 'date_facture', None)
     region = Region.objects.order_by('region').all()
+    impayer_exist = Facture.objects.filter(statut=False).exists()
     context = {
         'title_etat': title,
         'active_etat': active,
         'font_facture': font,
         'factures': factures,
+        'impayer_exist': impayer_exist,
         'avoir_count': avoir,
         'restant': restant,
         'regions': region,
         'datedeb': datedeb if datedeb else '',
-        'datefin': datefin if datefin else ''
+        'datefin': datefin if datefin else '',
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -413,14 +428,7 @@ def generate_multiple_pages_pdf(request):
     html_sections = []
 
     if factures:
-        if date_deb and date_fin and commune:
-            factures = factures.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
-        elif date_deb and commune:
-            factures = factures.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
-        elif date_deb:
-            factures = factures.filter(date_facture=date_deb)
-        elif commune:
-            factures = factures.filter(num_contrat__cp_commune_id=commune)
+        factures = date_range_fact_pdf(date_deb, date_fin, commune, factures)
 
         for fact in factures:
             context = facture_context_pdf(request, fact)
@@ -560,14 +568,7 @@ def facture_export_excel(request):
 
     factures = Facture.objects.all()
     nom_fichier = f"facture.xlsx"
-    if date_deb and date_fin and commune:
-        factures = factures.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
-    elif date_deb and commune:
-        factures = factures.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
-    elif date_deb:
-        factures = factures.filter(date_facture=date_deb)
-    elif commune:
-        factures = factures.filter(num_contrat__cp_commune_id=commune)
+    factures = date_range_fact_pdf(request, date_deb, date_fin, commune, factures)
 
     champs = [
         'num_facture',

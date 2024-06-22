@@ -1,3 +1,4 @@
+from PIL import Image
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
 from django.http import FileResponse
@@ -46,14 +47,17 @@ class ProfileModifier(View):
         utilisateur = Utilisateur.objects.get(pk=request.session.get('id_utilisateur'))
         num_utilisateur = utilisateur.num_utilisateur
 
+        if request.FILES.get('photo_utilisateur'):
+            utilisateur.photo_utilisateur.delete()
+            utilisateur.photo_utilisateur = request.FILES.get('photo_utilisateur')
+
+            utilisateur.save()
+            image_chemin = utilisateur.photo_utilisateur.path
+            compress_image(image_chemin)
+
         utilisateur.nom_utilisateur = request.POST.get('nom_utilisateur')
         utilisateur.prenom_utilisateur = request.POST.get('prenom_utilisateur')
         utilisateur.num_utilisateur = request.POST.get('num_utilisateur')
-
-        if request.FILES.get('photo_utilisateur'):
-            utilisateur.photo_utilisateur = request.FILES.get('photo_utilisateur')
-        else:
-            utilisateur.photo_utilisateur.delete()
 
         if num_utilisateur != request.POST.get('num_utilisateur'):
             if Utilisateur.objects.filter(num_utilisateur=request.POST.get('num_utilisateur')).exists():
@@ -131,6 +135,14 @@ def enregistre_historique(request, contexte, utilisateur_id):
         type_historique=contexte,
         utilisateur_id=utilisateur_id
     )
+
+
+def compress_image(image_path, quality=10):
+    # Qualité de l'image est entre 1-95
+    # 70 qualité moyenne de l'image apres compression
+    image = Image.open(image_path)
+
+    image.save(image_path, 'JPEG', quality=quality)
 
 
 def exporter_en_excel(queryset, nom_fichier, champs, nom_colonnes):
