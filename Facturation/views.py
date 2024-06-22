@@ -443,9 +443,6 @@ def generate_multiple_pages_pdf(request):
     date_fin = request.GET.get('date_fin')
     commune = request.GET.get('commune')
 
-    date_deb = datetime.strptime(date_deb, '%Y-%m-%d')
-    date_fin = datetime.strptime(date_fin, '%Y-%m-%d')
-
     factures = HistoriqueTaxe.objects.filter(facture__statut=False)
     html_sections = []
 
@@ -474,7 +471,7 @@ def generate_multiple_pages_pdf(request):
         pdf = pisa.pisaDocument(BytesIO(combined_html.encode("UTF-8")), result)
 
         if not pdf.err:
-            filename = f"Factures({date_deb.strftime('%d/%m/%Y')}-{date_fin.strftime('%d/%m/%Y')}).pdf"
+            filename = f"Factures({datetime.now().strftime('%d/%m/%Y')}).pdf"
             response = HttpResponse(result.getvalue(), content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
@@ -587,9 +584,6 @@ def facture_export_excel(request):
     date_deb = request.GET.get('date_deb')
     date_fin = request.GET.get('date_fin')
     commune = request.GET.get('commune')
-
-    date_deb = datetime.strptime(date_deb, '%Y-%m-%d')
-    date_fin = datetime.strptime(date_fin, '%Y-%m-%d')
 
     factures = HistoriqueTaxe.objects.all()
     nom_fichier = f"facture.xlsx"
