@@ -46,13 +46,15 @@ def date_range(request, model, datedeb, datefin, date_field, statut):
 
 def date_range_fact_pdf(date_deb, date_fin, commune, model):
     if date_deb and date_fin and commune:
-        return model.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
+        return model.filter(facture__date_facture__range=[date_deb, date_fin], facture__num_contrat__cp_commune_id=commune)
+    elif date_deb and date_fin:
+        return model.filter(facture__date_facture__range=[date_deb, date_fin])
     elif date_deb and commune:
-        return model.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
+        return model.filter(facture__date_facture=date_deb, facture__num_contrat__cp_commune_id=commune)
     elif date_deb:
-        return model.filter(date_facture=date_deb)
+        return model.filter(facture__date_facture=date_deb)
     elif commune:
-        return model.filter(num_contrat__cp_commune_id=commune)
+        return model.filter(facture__num_contrat__cp_commune_id=commune)
     else:
         return model
 
@@ -354,16 +356,16 @@ def facture_creation(date_facture, num_compteur, releve):
 
 def facture_context_pdf(request, factures):
     try:
-        montant = MontantHT.objects.get(facture=factures.pk)
+        montant = MontantHT.objects.get(facture=factures.facture.pk)
 
-        num_compteur = factures.num_contrat.num_compteur_id
+        num_compteur = factures.facture.num_contrat.num_compteur_id
         dernier_releve = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).last()
         releve_avant = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).order_by('-date_releve')
 
         tarif = montant.tarif
         taxes = tarif.taxes.all()
-        typeclient = factures.num_contrat.client.type_client_id
-        montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.relevecompteur.conso)
+        typeclient = factures.facture.num_contrat.client.type_client_id
+        montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.facture.relevecompteur.conso)
         taxes_montants = list(zip(taxes, montant_taxes))
         date_paiment = dernier_releve.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
 
@@ -381,14 +383,14 @@ def facture_context_pdf(request, factures):
             tva_montant = 0
 
         try:
-            nombre = float(factures.montant_total_ttc)
+            nombre = float(factures.facture.montant_total_ttc)
             lettre = num2words(nombre, lang='fr')
             lettre = lettre[0].upper() + lettre[1:]
         except ValueError:
             lettre = "Nombre invalide"
 
-        qr_code = generate_qr_code(request, factures.num_facture)
-        paiement_exist = Paiement.objects.filter(facture__id_facture=factures.pk).exists()
+        qr_code = generate_qr_code(request, factures.facture.num_facture)
+        paiement_exist = Paiement.objects.filter(facture__id_facture=factures.facture.pk).exists()
 
         context = {
             'instance': factures,
@@ -407,9 +409,9 @@ def facture_context_pdf(request, factures):
         return context
 
     except MontantHT.DoesNotExist:
-        return HttpResponse(f"MontantHT n'exist pas pour le facture {factures.num_facture}", content_type='text/plain')
+        return HttpResponse(f"MontantHT n'exist pas pour le facture {factures.facture.num_facture}", content_type='text/plain')
     except ReleveCompteur.DoesNotExist:
-        return HttpResponse(f"ReleveCompteur n'exist pas pour le numéro de compteur {factures.num_contrat.num_compteur_id}",
+        return HttpResponse(f"ReleveCompteur n'exist pas pour le numéro de compteur {factures.facture.num_contrat.num_compteur_id}",
                             content_type='text/plain')
     except Exception as e:
         return HttpResponse(f"An error occurred: {e}", content_type='text/plain')
@@ -417,7 +419,7 @@ def facture_context_pdf(request, factures):
 
 @authentification_requis
 def facture_genere_pdf(request, pk):
-    factures = Facture.objects.get(pk=pk)
+    factures = HistoriqueTaxe.objects.get(facture_id=pk)
     context = facture_context_pdf(request, factures)
 
     if isinstance(context, HttpResponse):
@@ -425,7 +427,7 @@ def facture_genere_pdf(request, pk):
         return context
 
     template_path = 'all_page/facturation/facture/templatepdf.html'
-    filename_prefix = f'Facture_Numero_{factures.num_facture}'
+    filename_prefix = f'Facture_Numero_{factures.facture.num_facture}'
     return generate_pdf(request, context, template_path, filename_prefix)
 
 
@@ -441,7 +443,10 @@ def generate_multiple_pages_pdf(request):
     date_fin = request.GET.get('date_fin')
     commune = request.GET.get('commune')
 
-    factures = Facture.objects.filter(statut=False)
+    date_deb = datetime.strptime(date_deb, '%Y-%m-%d')
+    date_fin = datetime.strptime(date_fin, '%Y-%m-%d')
+
+    factures = HistoriqueTaxe.objects.filter(facture__statut=False)
     html_sections = []
 
     if factures:
@@ -469,7 +474,7 @@ def generate_multiple_pages_pdf(request):
         pdf = pisa.pisaDocument(BytesIO(combined_html.encode("UTF-8")), result)
 
         if not pdf.err:
-            filename = f"factures_{datetime.now().strftime('%Y%m%d')}.pdf"
+            filename = f"Factures({date_deb.strftime('%d/%m/%Y')}-{date_fin.strftime('%d/%m/%Y')}).pdf"
             response = HttpResponse(result.getvalue(), content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
@@ -583,20 +588,23 @@ def facture_export_excel(request):
     date_fin = request.GET.get('date_fin')
     commune = request.GET.get('commune')
 
-    factures = Facture.objects.all()
+    date_deb = datetime.strptime(date_deb, '%Y-%m-%d')
+    date_fin = datetime.strptime(date_fin, '%Y-%m-%d')
+
+    factures = HistoriqueTaxe.objects.all()
     nom_fichier = f"facture.xlsx"
-    factures = date_range_fact_pdf(request, date_deb, date_fin, commune, factures)
+    factures = date_range_fact_pdf(date_deb, date_fin, commune, factures)
 
     champs = [
-        'num_facture',
-        'date_facture',
-        'montant_total_ttc',
-        'avoir_avant',
-        'avoir_utilise',
-        'restant_precedant',
-        'restant_nouvel',
-        'statut',
-        'num_contrat',
+        'facture__num_facture',
+        'facture__date_facture',
+        'facture__montant_total_ttc',
+        'facture__avoir_avant',
+        'facture__avoir_utilise',
+        'facture__restant_precedant',
+        'facture__restant_nouvel',
+        'facture__statut',
+        'facture__num_contrat',
     ]
 
     nom_colonnes = [

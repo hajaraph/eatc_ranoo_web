@@ -67,51 +67,51 @@
     <table class="premier">
         <tr>
             <td style="padding-top: 5px">
-                <div class="reference"><strong>Branchement : </strong>{{ instance.num_contrat.client.type_client.designation_client }}</div>
+                <div class="reference"><strong>Branchement : </strong>{{ instance.facture.num_contrat.client.type_client.designation_client }}</div>
                 <div class="nom">
                     <strong>Nom du client : </strong>
-                    {{ instance.num_contrat.client.nom_client }}
-                    {% if instance.num_contrat.client.prenom_client %}
-                        {{ instance.num_contrat.client.prenom_client }}
+                    {{ instance.facture.num_contrat.client.nom_client }}
+                    {% if instance.facture.num_contrat.client.prenom_client %}
+                        {{ instance.facture.num_contrat.client.prenom_client }}
                     {% endif %}
                 </div>
-                <div class="adresse"><strong>Adresse de consommation : </strong>{{ instance.num_contrat.client.adresse_client }}</div>
+                <div class="adresse"><strong>Adresse de consommation : </strong>{{ instance.facture.num_contrat.client.adresse_client }}</div>
                 <div>
-                    {{ instance.num_contrat.client.cp_commune.region.region }}
-                    {{ instance.num_contrat.client.cp_commune.commune }}
-                    {{ instance.num_contrat.client.cp_commune_id }}
+                    {{ instance.facture.num_contrat.client.cp_commune.region.region }}
+                    {{ instance.facture.num_contrat.client.cp_commune.commune }}
+                    {{ instance.facture.num_contrat.client.cp_commune_id }}
                 </div>
-                <div class="contrat"><strong>N° de Contrat : </strong>{{ instance.num_contrat_id }}</div>
-                <div class="compteur"><strong>N° de Compteur : </strong>{{ instance.num_contrat.num_compteur_id }}</div>
+                <div class="contrat"><strong>N° de Contrat : </strong>{{ instance.facture.num_contrat_id }}</div>
+                <div class="compteur"><strong>N° de Compteur : </strong>{{ instance.facture.num_contrat.num_compteur_id }}</div>
             </td>
             <td style="padding-top: 5px">
                 <div>
                     <strong>
-                        {{ instance.num_contrat.client.nom_client }}
-                         {% if instance.num_contrat.client.prenom_client %}
-                            {{ instance.num_contrat.client.prenom_client }}
+                        {{ instance.facture.num_contrat.client.nom_client }}
+                         {% if instance.facture.num_contrat.client.prenom_client %}
+                            {{ instance.facture.num_contrat.client.prenom_client }}
                         {% endif %}
                     </strong>
                 </div>
                 <div>
                     <strong>
-                        {{ instance.num_contrat.adresse_contrat }}
+                        {{ instance.facture.num_contrat.adresse_contrat }}
                     </strong>
                 </div>
                 <div>
                     <strong>
-                        {{ instance.num_contrat.cp_commune.region.region }}
-                        {{ instance.num_contrat.cp_commune.commune }}
+                        {{ instance.facture.num_contrat.cp_commune.region.region }}
+                        {{ instance.facture.num_contrat.cp_commune.commune }}
                     </strong>
                 </div>
                 <div>
                     <strong>
-                        {{ instance.num_contrat.cp_commune_id }}
+                        {{ instance.facture.num_contrat.cp_commune_id }}
                     </strong>
                 </div>
                 <div class="facture">
-                    <div class="nomfact"><strong>FACTURE D'EAU DU {{ instance.date_facture|date:'d/m/Y' }}</strong></div>
-                    <div class="numfact"><strong>N° {{ instance.num_facture }}</strong></div>
+                    <div class="nomfact"><strong>FACTURE D'EAU DU {{ instance.facture.date_facture|date:'d/m/Y' }}</strong></div>
+                    <div class="numfact"><strong>N° {{ instance.facture.num_facture }}</strong></div>
                 </div>
             </td>
         </tr>
@@ -169,13 +169,13 @@
             <th></th>
             <th></th>
         </tr>
-        {% for taxe, montant_taxe in taxes_montants %}        
+        {% for taxe in instance.taxes_appliquees %}
         <tr style="padding-top: 5px;">
             <td>{{ taxe.nom_taxe }}</td>
             <td style="text-align: center"></td>
             <td style="text-align: center"></td>
             <td style="text-align: center"></td>
-            <td style="text-align: right">{{ montant_taxe }} Ar</td>
+            <td style="text-align: right">{{ taxe.montant_taxe }} Ar</td>
             <td style="text-align: right"></td>
         </tr>
         {% endfor %}
@@ -196,8 +196,8 @@
             <th></th>
             <th></th>
             <th style="text-align: right">
-                {% if instance.avoir_avant %}
-                    {{ instance.avoir_avant }}
+                {% if instance.facture.avoir_avant %}
+                    {{ instance.facture.avoir_avant }}
                 {% else %}
                     0
                 {% endif %} Ar
@@ -210,8 +210,8 @@
             <td></td>
             <td></td>
             <td style="text-align: right">
-                {% if instance.avoir_utilise %}
-                    {{ instance.avoir_utilise }}
+                {% if instance.facture.avoir_utilise %}
+                    {{ instance.facture.avoir_utilise }}
                 {% else %}
                     0
                 {% endif %} Ar
@@ -224,8 +224,8 @@
             <th></th>
             <th></th>
             <th style="text-align: right">
-                {% if instance.restant_precedant %}
-                    {{ instance.restant_precedant }}
+                {% if instance.facture.restant_precedant %}
+                    {{ instance.facture.restant_precedant }}
                 {% else %}
                     0
                 {% endif %}
@@ -240,8 +240,8 @@
             <td></td>
             <td></td>
             <td style="text-align: right">
-                {% if instance.restant_precedant %}
-                    {{ instance.restant_precedant }}
+                {% if instance.facture.restant_precedant %}
+                    {{ instance.facture.restant_precedant }}
                 {% else %}
                     0
                 {% endif %}
@@ -268,7 +268,7 @@
     <table>
         <tr style="background-color: #cfd2d3; padding: 5px 2px 2px 2px">
             <th style="text-align: left">TOTAL TTC</th>
-            <th style="text-align: right; letter-spacing: 1px; padding-right: 6px">{{ instance.montant_total_ttc }} Ar</th>
+            <th style="text-align: right; letter-spacing: 1px; padding-right: 6px">{{ instance.facture.montant_total_ttc }} Ar</th>
         </tr>
     </table>
     <div style="margin-top: 8px">
@@ -282,29 +282,29 @@
             <tr style="padding-top: 10px; border: 0">
                 <td style="text-decoration: underline; letter-spacing: 1px">Titulaire :</td>
                 <td>
-                    N° Facture : {{ instance.num_facture }}
+                    N° Facture : {{ instance.facture.num_facture }}
                     <img style="width: 40px; height: 40px;" src="data:image/png;base64,{{ qr_code }}" alt="">
                 </td>
             </tr>
             <tr style="border: 0; padding-top: 2px">
                 <td>
                     <div>
-                        {{ instance.num_contrat.client.nom_client }}
-                         {% if instance.num_contrat.client.prenom_client %}
-                            {{ instance.num_contrat.client.prenom_client }}
+                        {{ instance.facture.num_contrat.client.nom_client }}
+                         {% if instance.facture.num_contrat.client.prenom_client %}
+                            {{ instance.facture.num_contrat.client.prenom_client }}
                         {% endif %}
                     </div>
-                    <div>{{ instance.num_contrat.client.adresse_client }}</div>
+                    <div>{{ instance.facture.num_contrat.client.adresse_client }}</div>
                     <div>
-                        {{ instance.num_contrat.client.cp_commune.region.region }}
-                        {{ instance.num_contrat.client.cp_commune.commune }}
-                        {{ instance.num_contrat.client.cp_commune_id }}
+                        {{ instance.facture.num_contrat.client.cp_commune.region.region }}
+                        {{ instance.facture.num_contrat.client.cp_commune.commune }}
+                        {{ instance.facture.num_contrat.client.cp_commune_id }}
                     </div>
                 </td>
                 <td>
                     <div>
-                        <div>N° Contrat : {{ instance.num_contrat_id }}</div>
-                        <div>N° Compteur : {{ instance.num_contrat.num_compteur_id }}</div>
+                        <div>N° Contrat : {{ instance.facture.num_contrat_id }}</div>
+                        <div>N° Compteur : {{ instance.facture.num_contrat.num_compteur_id }}</div>
                     </div>
                     <div>Référence unique de Mandat :</div>
                 </td>
@@ -323,7 +323,7 @@
                     {% endif %}</td>
                 <td>
                     <p style="background-color: #cfd2d3; padding: 5px 0 0 0; font-weight: bold; text-align: justify-all; letter-spacing: 1px">
-                        Montant TTC à régler : {{ instance.montant_total_ttc }} Ar
+                        Montant TTC à régler : {{ instance.facture.montant_total_ttc }} Ar
                     </p>
                 </td>
             </tr>
