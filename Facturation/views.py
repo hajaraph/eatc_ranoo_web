@@ -373,6 +373,7 @@ def facture_context_pdf(request, factures):
             lettre = "Nombre invalide"
 
         qr_code = generate_qr_code(request, factures.num_facture)
+        paiement_exist = Paiement.objects.filter(facture__id_facture=factures.pk).exists()
 
         context = {
             'instance': factures,
@@ -385,6 +386,7 @@ def facture_context_pdf(request, factures):
             'montant_tva': round(tva_montant, 2),
             'taxes_montants': taxes_montants,
             'date_paiment': date_paiment,
+            'paiement_exist': paiement_exist,
             'qr_code': qr_code
         }
         return context

@@ -317,20 +317,23 @@
                 </td>
             </tr>
             <tr style="border: 0;">
-                <td>EATC SARL</td>
+                <td>EATC SARL
+                    {% if paiement_exist %}
+                        <img src="static/logo/tampon_paye.png" alt="Tampon" style="text-align: right; width: 70px; height: 30px">
+                    {% endif %}</td>
                 <td>
                     <p style="background-color: #cfd2d3; padding: 5px 0 0 0; font-weight: bold; text-align: justify-all; letter-spacing: 1px">
                         Montant TTC à régler : {{ instance.montant_total_ttc }} Ar
                     </p>
                 </td>
             </tr>
-            <tr style="border: 0">
+            <tr style="border: 0; margin-top: 5px">
                 <td>BP 4155</td>
-                <td></td>
+                <td><strong>{{ lettre }} Ariary</strong></td>
             </tr>
             <tr style="border: 0">
                 <td>Antananarivo 101</td>
-                <td><strong>{{ lettre }} Ariary</strong></td>
+                <td></td>
             </tr>
         </table>
         <table  style="margin-right: 50px; margin-left: 50px; border-top: 0; text-align: center; font-size: 10px; padding: 3px 0 3px 0">
