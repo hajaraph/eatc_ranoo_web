@@ -42,6 +42,13 @@ class Facture(models.Model):
                                        related_name='factures', blank=False)
 
 
+class HistoriqueTaxe(models.Model):
+    id_hist_taxe = models.BigAutoField(primary_key=True)
+    facture = models.ForeignKey(Facture, on_delete=models.CASCADE, related_name='factures', blank=True, null=True)
+    tarif = models.ForeignKey(Tarif, on_delete=models.CASCADE, related_name='tarifs', blank=True, null=True)
+    taxes_appliquees = models.JSONField(blank=True, null=True)
+
+
 class MontantHT(models.Model):
     id_montant_ht = models.BigAutoField(primary_key=True)
     total_conso_ht = models.FloatField(blank=False)

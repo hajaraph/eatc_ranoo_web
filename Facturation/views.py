@@ -17,7 +17,7 @@ from Clients.communes import Region
 from Clients.models import Contrat
 from Clients.views import generate_pdf
 from Compteurs.models import ReleveCompteur
-from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
+from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe, HistoriqueTaxe
 from Login.views import authentification_requis, role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 
@@ -91,16 +91,16 @@ def facture_etat_detail(request, num_facture):
     active = 'active'
 
     # Requete pour chaque detail
-    factures = Facture.objects.get(num_facture=num_facture)
+    factures = HistoriqueTaxe.objects.get(facture__num_facture=num_facture)
     paiements = Paiement.objects.filter(facture__num_facture=num_facture)
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
-    tarif = Tarif.objects.get(cp_commune_id=factures.num_contrat.cp_commune_id)
+    tarif = Tarif.objects.get(cp_commune_id=factures.facture.num_contrat.cp_commune_id)
     taxes = tarif.taxes.all()
-    typeclient = factures.num_contrat.client.type_client_id
-    montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.relevecompteur.conso)
+    typeclient = factures.facture.num_contrat.client.type_client_id
+    montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.facture.relevecompteur.conso)
     taxes_montants = list(zip(taxes, montant_taxes))
 
-    date_echeance = factures.relevecompteur.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
+    date_echeance = factures.facture.relevecompteur.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
     if paiements.exists():
         paiements = Paiement.objects.get(facture__num_facture=num_facture)
 
@@ -108,7 +108,7 @@ def facture_etat_detail(request, num_facture):
         'title_etat_detail': title,
         'active_etat': active,
         'font_facture': font,
-        'facture': factures,
+        'factures': factures,
         'paiement': paiements,
         'montant': montant,
         'typeclient': typeclient,
@@ -259,7 +259,7 @@ class Calcule:
             montants_taxes = [montant_ht * (taxe.taux_taxe / 100) for taxe in taxes]
             return montants_taxes
         except Exception as e:
-            return HttpResponse(f"Error calculating taxes: {e}")
+            return HttpResponse(f"Erreur lors de calcule des taxes: {e}")
 
 
 def precess_avoir_restant(contrat, factures):
@@ -314,10 +314,25 @@ def facture_creation(date_facture, num_compteur, releve):
             relevecompteur_id=releve.pk
         )
 
-        # Get the appropriate tariff
         tarif = Tarif.objects.get(cp_commune_id=contrat.cp_commune_id)
+        taxes = Taxe.objects.filter(tarif_id=tarif.id_tarif)
+        montant_ht = Calcule.calculate_total_conso_ht(typeclient, tarif, consommation)
+        taxes_appliquees = [
+            {
+                "id_taxe": taxe.id_taxe,
+                "nom_taxe": taxe.nom_taxe,
+                "montant_taxe": montant_ht * (taxe.taux_taxe / 100)
+            }
+            for taxe in taxes
+        ]
 
-        # Calculate the amounts based on the client type
+        HistoriqueTaxe.objects.create(
+            facture_id=factures.id_facture,
+            tarif_id=tarif.id_tarif,
+            taxes_appliquees=taxes_appliquees
+        )
+
+        # Calculat montant TTC selon client type
         if typeclient == 1 or (typeclient == 2 and consommation < tarif.conso_tva_app) or typeclient == 3:
             Calcule.cree_montant(typeclient, tarif, consommation, factures)
         elif typeclient == 2 and consommation >= tarif.conso_tva_app:
