@@ -29,6 +29,7 @@ class Taxe(models.Model):
 class Facture(models.Model):
     id_facture = models.BigAutoField(primary_key=True)
     num_facture = models.CharField(max_length=50, blank=False)
+    date_facture_precedant = models.DateField(blank=True, null=True)
     date_facture = models.DateField(blank=False)
     montant_total_ttc = models.FloatField(null=True, blank=True)
     avoir_avant = models.FloatField(null=True, blank=True)
@@ -37,16 +38,12 @@ class Facture(models.Model):
     restant_precedant = models.FloatField(null=True, blank=True)
     restant_nouvel = models.FloatField(null=True, blank=True)
     statut = models.BooleanField(default=False)
+    taxes_appliquees = models.JSONField(blank=True, null=True)
+    date_echeance = models.DateField(blank=True, null=True)
+    tva_appliquer = models.FloatField(blank=True, null=True)
     num_contrat = models.ForeignKey(Contrat, on_delete=models.CASCADE, blank=False)
     relevecompteur = models.ForeignKey(ReleveCompteur, on_delete=models.CASCADE,
                                        related_name='factures', blank=False)
-
-
-class HistoriqueTaxe(models.Model):
-    id_hist_taxe = models.BigAutoField(primary_key=True)
-    facture = models.ForeignKey(Facture, on_delete=models.CASCADE, related_name='factures', blank=True, null=True)
-    tarif = models.ForeignKey(Tarif, on_delete=models.CASCADE, related_name='tarifs', blank=True, null=True)
-    taxes_appliquees = models.JSONField(blank=True, null=True)
 
 
 class MontantHT(models.Model):

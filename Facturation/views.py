@@ -16,8 +16,8 @@ from xhtml2pdf import pisa
 from Clients.communes import Region
 from Clients.models import Contrat
 from Clients.views import generate_pdf
-from Compteurs.models import ReleveCompteur
-from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe, HistoriqueTaxe
+from Compteurs.models import ReleveCompteur, Compteur
+from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
 from Login.views import authentification_requis, role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 
@@ -46,15 +46,15 @@ def date_range(request, model, datedeb, datefin, date_field, statut):
 
 def date_range_fact_pdf(date_deb, date_fin, commune, model):
     if date_deb and date_fin and commune:
-        return model.filter(facture__date_facture__range=[date_deb, date_fin], facture__num_contrat__cp_commune_id=commune)
+        return model.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
     elif date_deb and date_fin:
-        return model.filter(facture__date_facture__range=[date_deb, date_fin])
+        return model.filter(date_facture__range=[date_deb, date_fin])
     elif date_deb and commune:
-        return model.filter(facture__date_facture=date_deb, facture__num_contrat__cp_commune_id=commune)
-    elif date_deb:
-        return model.filter(facture__date_facture=date_deb)
+        return model.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
+    elif date_deb or date_fin:
+        return model.filter(date_facture=date_deb or date_fin)
     elif commune:
-        return model.filter(facture__num_contrat__cp_commune_id=commune)
+        return model.filter(num_contrat__cp_commune_id=commune)
     else:
         return model
 
@@ -93,16 +93,11 @@ def facture_etat_detail(request, num_facture):
     active = 'active'
 
     # Requete pour chaque detail
-    factures = HistoriqueTaxe.objects.get(facture__num_facture=num_facture)
+    factures = Facture.objects.get(num_facture=num_facture)
     paiements = Paiement.objects.filter(facture__num_facture=num_facture)
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
-    tarif = Tarif.objects.get(cp_commune_id=factures.facture.num_contrat.cp_commune_id)
-    taxes = tarif.taxes.all()
-    typeclient = factures.facture.num_contrat.client.type_client_id
-    montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.facture.relevecompteur.conso)
-    taxes_montants = list(zip(taxes, montant_taxes))
+    typeclient = factures.num_contrat.client.type_client_id
 
-    date_echeance = factures.facture.relevecompteur.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
     if paiements.exists():
         paiements = Paiement.objects.get(facture__num_facture=num_facture)
 
@@ -114,8 +109,6 @@ def facture_etat_detail(request, num_facture):
         'paiement': paiements,
         'montant': montant,
         'typeclient': typeclient,
-        'taxes_montants': taxes_montants,
-        'date_echeance': date_echeance,
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -302,23 +295,16 @@ def precess_avoir_restant(contrat, factures):
 def facture_creation(date_facture, num_compteur, releve):
     try:
         contrat = get_object_or_404(Contrat, num_compteur_id=num_compteur)
+        tarif = Tarif.objects.get(cp_commune_id=contrat.cp_commune_id)
+        taxes = Taxe.objects.filter(tarif_id=tarif.id_tarif)
 
         typeclient = contrat.client.type_client.pk
         consommation = releve.conso
-
-        # Generate the invoice number
-        date_facture_str = date_facture.strftime("%Y%m%d")
-        num_facture = f"FACT{date_facture_str}{num_compteur}"
-        factures = Facture.objects.create(
-            num_facture=num_facture,
-            date_facture=date_facture,
-            num_contrat_id=contrat.num_contrat,
-            relevecompteur_id=releve.pk
-        )
-
-        tarif = Tarif.objects.get(cp_commune_id=contrat.cp_commune_id)
-        taxes = Taxe.objects.filter(tarif_id=tarif.id_tarif)
         montant_ht = Calcule.calculate_total_conso_ht(typeclient, tarif, consommation)
+        dernier_releve = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).order_by('-date_releve')[1]
+
+        date_echeance = dernier_releve.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
+
         taxes_appliquees = [
             {
                 "id_taxe": taxe.id_taxe,
@@ -328,19 +314,29 @@ def facture_creation(date_facture, num_compteur, releve):
             for taxe in taxes
         ]
 
-        HistoriqueTaxe.objects.create(
-            facture_id=factures.id_facture,
-            tarif_id=tarif.id_tarif,
-            taxes_appliquees=taxes_appliquees
+        date_facture_str = date_facture.strftime("%Y%m%d")
+        num_facture = f"FACT{date_facture_str}{num_compteur}"
+        factures = Facture.objects.create(
+            num_facture=num_facture,
+            date_facture_precedant=dernier_releve.date_releve,
+            date_facture=date_facture,
+            taxes_appliquees=taxes_appliquees,
+            date_echeance=date_echeance,
+            num_contrat_id=contrat.num_contrat,
+            relevecompteur_id=releve.pk
         )
 
-        # Calculat montant TTC selon client type
+        # Calcul montant TTC selon client type
         if typeclient == 1 or (typeclient == 2 and consommation < tarif.conso_tva_app) or typeclient == 3:
             Calcule.cree_montant(typeclient, tarif, consommation, factures)
+
         elif typeclient == 2 and consommation >= tarif.conso_tva_app:
             total_conso_ht = tarif.prix_m3_bp * consommation
-            total_conso_ttc = total_conso_ht + (total_conso_ht * tarif.tva / 100)
+            tva = (total_conso_ht * tarif.tva) / 100
+            total_conso_ttc = total_conso_ht + tva
             montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
+            factures.tva_appliquer = tva
+
             if montant_ht:
                 taxe = sum(Calcule.montant_taxe(typeclient, tarif, consommation))
                 Calcule.montantttc(total_conso_ttc + taxe, montant_ht)
@@ -356,70 +352,48 @@ def facture_creation(date_facture, num_compteur, releve):
 
 def facture_context_pdf(request, factures):
     try:
-        montant = MontantHT.objects.get(facture=factures.facture.pk)
-
-        num_compteur = factures.facture.num_contrat.num_compteur_id
-        dernier_releve = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).last()
-        releve_avant = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).order_by('-date_releve')
-
-        tarif = montant.tarif
-        taxes = tarif.taxes.all()
-        typeclient = factures.facture.num_contrat.client.type_client_id
-        montant_taxes = Calcule.montant_taxe(typeclient, tarif, factures.facture.relevecompteur.conso)
-        taxes_montants = list(zip(taxes, montant_taxes))
-        date_paiment = dernier_releve.date_releve + timedelta(days=tarif.nb_jour_echeance_fct)
-
-        if len(releve_avant) >= 2:
-            releve_avant = releve_avant[1]
-        else:
-            releve_avant = ReleveCompteur.objects.first()
-
-        if typeclient == 2:
-            if dernier_releve.conso >= 10:
-                tva_montant = (montant.total_conso_ht * montant.tarif.tva) / 100
-            else:
-                tva_montant = 0
-        else:
-            tva_montant = 0
+        montant = MontantHT.objects.get(facture=factures.pk)
+        typeclient = factures.num_contrat.client.type_client_id
+        num_compteur = factures.num_contrat.num_compteur_id
+        compteur = Compteur.objects.get(pk=num_compteur)
+        reveler_precedant = get_object_or_404(compteur.relevecompteurs, date_releve=factures.date_facture_precedant)
+        relever_actuel = get_object_or_404(compteur.relevecompteurs, date_releve=factures.date_facture)
 
         try:
-            nombre = float(factures.facture.montant_total_ttc)
+            nombre = float(factures.montant_total_ttc)
             lettre = num2words(nombre, lang='fr')
             lettre = lettre[0].upper() + lettre[1:]
         except ValueError:
             lettre = "Nombre invalide"
 
-        qr_code = generate_qr_code(request, factures.facture.num_facture)
-        paiement_exist = Paiement.objects.filter(facture__id_facture=factures.facture.pk).exists()
+        qr_code = generate_qr_code(request, factures.num_facture)
+        paiement_exist = Paiement.objects.filter(facture_id=factures.pk).exists()
 
         context = {
             'instance': factures,
             'montant': montant,
             'typeclient': typeclient,
             'lettre': lettre,
-            'dernier_releve': dernier_releve,
-            'releve_avant': releve_avant,
+            'reveler_precedant': reveler_precedant,
+            'relever_actuel': relever_actuel,
             'montant_ht_total': round(montant.total_conso_ht, 2),
-            'montant_tva': round(tva_montant, 2),
-            'taxes_montants': taxes_montants,
-            'date_paiment': date_paiment,
             'paiement_exist': paiement_exist,
             'qr_code': qr_code
         }
         return context
 
     except MontantHT.DoesNotExist:
-        return HttpResponse(f"MontantHT n'exist pas pour le facture {factures.facture.num_facture}", content_type='text/plain')
+        return HttpResponse(f"MontantHT n'exist pas pour le facture {factures.num_facture}", content_type='text/plain')
     except ReleveCompteur.DoesNotExist:
-        return HttpResponse(f"ReleveCompteur n'exist pas pour le numéro de compteur {factures.facture.num_contrat.num_compteur_id}",
-                            content_type='text/plain')
+        return HttpResponse(f"ReleveCompteur n'exist pas pour le numéro de compteur "
+                            f"{factures.num_contrat.num_compteur_id}", content_type='text/plain')
     except Exception as e:
         return HttpResponse(f"An error occurred: {e}", content_type='text/plain')
 
 
 @authentification_requis
-def facture_genere_pdf(request, pk):
-    factures = HistoriqueTaxe.objects.get(facture_id=pk)
+def facture_genere_pdf(request, num_facture):
+    factures = Facture.objects.get(num_facture=num_facture)
     context = facture_context_pdf(request, factures)
 
     if isinstance(context, HttpResponse):
@@ -427,7 +401,7 @@ def facture_genere_pdf(request, pk):
         return context
 
     template_path = 'all_page/facturation/facture/templatepdf.html'
-    filename_prefix = f'Facture_Numero_{factures.facture.num_facture}'
+    filename_prefix = f"{factures.num_facture}-({datetime.now().strftime('%d/%m/%Y')})"
     return generate_pdf(request, context, template_path, filename_prefix)
 
 
@@ -443,7 +417,7 @@ def generate_multiple_pages_pdf(request):
     date_fin = request.GET.get('date_fin')
     commune = request.GET.get('commune')
 
-    factures = HistoriqueTaxe.objects.filter(facture__statut=False)
+    factures = Facture.objects.filter(statut=False)
     html_sections = []
 
     if factures:
@@ -460,11 +434,10 @@ def generate_multiple_pages_pdf(request):
             if html:
                 html_sections.append(html)
             else:
-                return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}",
-                                    content_type='text/plain')
+                return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}")
 
         if not html_sections:
-            return HttpResponse("Aucune facture valide pour générer un PDF", content_type='text/plain')
+            return HttpResponse("Aucune facture valide pour générer un PDF")
 
         combined_html = '<div style="page-break-after: always;"></div>'.join(html_sections)
         result = BytesIO()
@@ -476,7 +449,7 @@ def generate_multiple_pages_pdf(request):
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
         else:
-            return HttpResponse("Erreur lors de la génération du PDF.", content_type='text/plain')
+            return HttpResponse("Erreur lors de la génération du PDF.")
     else:
         messages.warning(request, f"Pas de facture impayé !")
         return redirect('facture')
@@ -585,20 +558,20 @@ def facture_export_excel(request):
     date_fin = request.GET.get('date_fin')
     commune = request.GET.get('commune')
 
-    factures = HistoriqueTaxe.objects.all()
+    factures = Facture.objects.all()
     nom_fichier = f"facture.xlsx"
     factures = date_range_fact_pdf(date_deb, date_fin, commune, factures)
 
     champs = [
-        'facture__num_facture',
-        'facture__date_facture',
-        'facture__montant_total_ttc',
-        'facture__avoir_avant',
-        'facture__avoir_utilise',
-        'facture__restant_precedant',
-        'facture__restant_nouvel',
-        'facture__statut',
-        'facture__num_contrat',
+        'num_facture',
+        'date_facture',
+        'montant_total_ttc',
+        'avoir_avant',
+        'avoir_utilise',
+        'restant_precedant',
+        'restant_nouvel',
+        'statut',
+        'num_contrat',
     ]
 
     nom_colonnes = [

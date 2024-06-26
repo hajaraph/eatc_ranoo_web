@@ -52,7 +52,13 @@
                     </td>
                     <td>{{ paye.num_contrat.num_compteur_id }}</td>
                     <td>
-                        <span class="badge bg-success">Payé</span>
+                        {% if paye.statut %}
+                            {% if paye.restant_nouvel %}
+                                <span class="badge bg-warning text-dark">Montant Restant ({{ paye.restant_nouvel }} Ar)</span>
+                            {% else %}
+                            	<span class="badge bg-success">Payé</span>
+                            {% endif %}
+                        {% endif %}
                     </td>
                     <td>{{ paye.date_facture|date:"d/m/Y" }}</td>
                     <td>{{ paye.montant_total_ttc }} Ar</td>
@@ -62,7 +68,7 @@
                     </td>
                     <td>
                         {% if not facture.statut %}
-                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' paye.pk %}')" class="btn btn-success btn-sm px-4">
+                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' paye.num_facture %}')" class="btn btn-success btn-sm px-4">
                                 <i class="fas fa-file-pdf"></i>
                                  PDF
                             </div>

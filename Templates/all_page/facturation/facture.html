@@ -96,7 +96,7 @@
                         <a href="{% url 'facture_etat_detail' facture.num_facture %}" class="btn btn-primary btn-sm ">
                             <i class="fas fa-info-circle"></i>
                         </a>
-                        <button type="button" class="btn btn-success btn-sm" onclick="openUrlInNewTab('{% url 'facture_genere_pdf' facture.pk %}')">
+                        <button type="button" class="btn btn-success btn-sm" onclick="openUrlInNewTab('{% url 'facture_genere_pdf' facture.num_facture %}')">
                             <i class="fas fa-file-pdf"></i>
                              PDF
                         </button>

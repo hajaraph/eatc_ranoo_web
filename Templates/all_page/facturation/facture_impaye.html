@@ -63,11 +63,7 @@
                     </td>
                     <td>{{ impaye.num_contrat.num_compteur_id }}</td>
                     <td>
-                        {% if impaye.restant_nouvel %}
-                            <span class="badge bg-warning text-dark">Montant Restant ({{ impaye.restant_nouvel }} Ar)</span>
-                        {% else %}
-                            <span class="badge bg-danger">Impayé</span>
-                        {% endif %}
+                        <span class="badge bg-danger">Impayé</span>
                     </td>
                     <td>{{ impaye.date_facture|date:"d/m/Y" }}</td>
                     <td>{{ impaye.montant_total_ttc }} Ar</td>
@@ -77,7 +73,7 @@
                     </td>
                     <td>
                         {% if not facture.statut %}
-                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' impaye.pk %}')" class="btn btn-success btn-sm px-4">
+                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' impaye.num_facture %}')" class="btn btn-success btn-sm px-4">
                                 <i class="fas fa-file-pdf"></i>
                                  PDF
                             </div>

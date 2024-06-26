@@ -13,6 +13,6 @@ urlpatterns = [
     path('avoir', facture_avoir, name='facture_avoir'),
     path('paiement', facture_paiement, name='facture_paiement'),
     path('excel', facture_export_excel, name='facture_export_excel'),
-    path('pdf/num_facture=<str:pk>', facture_genere_pdf, name='facture_genere_pdf'),
+    path('pdf/num_facture=<str:num_facture>', facture_genere_pdf, name='facture_genere_pdf'),
     path('pdf', generate_multiple_pages_pdf, name='generate_multiple_pages_pdf')
 ]
