@@ -62,7 +62,7 @@ $(document).ready(function(){
         const statut = $('#statut').val();
         // Construire l'URL avec les paramètres GET
         let url = '/main_courante/excel';
-        url += `?date_deb=${date_deb}&date_fin=${date_deb}&statut=${statut}`;;
+        url += `?date_deb=${date_deb}&date_fin=${date_fin}&statut=${statut}`;
         // Ouvrir une nouvelle onglet avec l'URL générée
         window.open(url, '_blank');
         $('#exportmc-excel').modal('hide');

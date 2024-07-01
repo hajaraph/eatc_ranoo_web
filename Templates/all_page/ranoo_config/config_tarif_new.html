@@ -5,7 +5,7 @@
         <div class="row">
             <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <select name="cp_commune" id="cp_commune" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                    <select name="cp_commune" id="cp_commune" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0 cp_commune" required>
                         <option value="" selected hidden>Selectionné la commune</option>
                         {% for commune in communes %}
                             <option value="{{ commune.pk }}">{{ commune.region.region }} {{ commune.commune }}</option>

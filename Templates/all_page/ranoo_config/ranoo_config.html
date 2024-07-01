@@ -55,14 +55,14 @@
     </div>
     <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
     <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'fontawesome/js/all.js' %}"></script>
     <script src="{% static 'client/modal.js' %}"></script>
     <script src="{% static 'datatable/datatables.min.js' %}"></script>
-    <script src="{% static 'fontawesome/js/all.js' %}"></script>
     <script src="{% static 'modal.js' %}"></script>
     <script src="{% static 'taxe.js' %}"></script>
     <script src="{% static 'dselect.js' %}"></script>
     <script>
-        let select_box_element = document.querySelector('#cp_commune');
+        let select_box_element = document.querySelector('.cp_commune');
 
         dselect(select_box_element, {
             search: true
