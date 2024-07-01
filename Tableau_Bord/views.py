@@ -1,4 +1,5 @@
 from datetime import timedelta
+from operator import itemgetter
 
 from django.db import connection
 from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q
@@ -84,12 +85,14 @@ def tableau_bord(request, *args, **kwargs):
 
     for communes in commune:
         # Filtrer par département
-        evo_conso_commune = communes.contrat_set.annotate(
+        evo_conso_commune = list(communes.contrat_set.annotate(
             mois_releve=ExtractMonth('num_compteur__relevecompteurs__date_releve'),
             annee_releve=ExtractYear('num_compteur__relevecompteurs__date_releve')
         ).values('mois_releve', 'annee_releve').annotate(
             total_conso=Coalesce(Sum('num_compteur__relevecompteurs__conso'), Value(0))
-        ).order_by('mois_releve', 'annee_releve').exclude(total_conso=0)
+        ).exclude(total_conso=0))
+
+        evo_conso_commune.sort(key=itemgetter('annee_releve', 'mois_releve'))
 
         # Ajouter les résultats au tableau
         resultats.append(
