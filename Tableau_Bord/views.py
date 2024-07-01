@@ -89,7 +89,7 @@ def tableau_bord(request, *args, **kwargs):
             annee_releve=ExtractYear('num_compteur__relevecompteurs__date_releve')
         ).values('mois_releve', 'annee_releve').annotate(
             total_conso=Coalesce(Sum('num_compteur__relevecompteurs__conso'), Value(0))
-        ).order_by('annee_releve', 'mois_releve').exclude(total_conso=0)
+        ).order_by('mois_releve', 'annee_releve').exclude(total_conso=0)
 
         # Ajouter les résultats au tableau
         resultats.append(
