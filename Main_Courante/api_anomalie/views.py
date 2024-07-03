@@ -54,7 +54,7 @@ class DeclareMaincourate(APIView):
                 'cp_commune': str(main_courante.main_courante.cp_commune_id) if main_courante.main_courante.cp_commune_id else '',
                 'commune': str(
                     main_courante.main_courante.cp_commune.commune) if main_courante.main_courante.cp_commune_id else '',
-                'status': 0 if main_courante.non_traite else (1 if main_courante.en_cours else 2 if main_courante.realise else 3),
+                'status': 0 if main_courante.non_traite else (1 if main_courante.en_cours else 2),
                 **photo_attributes,
             }
             main_courante_list.append(main_courante_info)

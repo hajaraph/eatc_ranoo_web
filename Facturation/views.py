@@ -587,7 +587,7 @@ def facture_export_excel(request):
     ]
     response = exporter_en_excel(factures, nom_fichier, champs, nom_colonnes)
     message = f"Export de tout de facture"
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     return response
 
 

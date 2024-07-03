@@ -95,7 +95,7 @@ class CompteurNew(View):
             )
             # Historique
             message = f"Creation d'un compteur numéro {num_compteur}"
-            enregistre_historique(request, message, request.session.get('id_utilisateur'))
+            enregistre_historique(message, request.session.get('id_utilisateur'))
 
             messages.success(request, f"Compteur enregistrer avec succès !")
             return redirect('compteur_list')
@@ -141,7 +141,7 @@ class CompteurDetail(View):
         mod_compteur.save()
         # Historique
         message = f"Modification de compteur numéro {pk}"
-        enregistre_historique(request, message, request.session.get('id_utilisateur'))
+        enregistre_historique(message, request.session.get('id_utilisateur'))
 
         messages.success(request, f"Modification du Compteur numéro {mod_compteur.num_compteur} avec succès !")
         return redirect('compteur_list')
@@ -154,7 +154,7 @@ def compteur_supp(request, pk):
     compteur.delete()
     # Historique
     message = f"Suppression de compteur numéro {pk}"
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
 
     messages.success(request, f'Compteur supprimé avec succès !')
     return redirect('compteur_list')
@@ -238,7 +238,7 @@ class ReleveNew(View):
 
             # Historique
             message = f"Relever et Facture d'un compteur {num_compteur}"
-            enregistre_historique(request, message, request.session.get('id_utilisateur'))
+            enregistre_historique(message, request.session.get('id_utilisateur'))
 
             messages.success(request, f"Relevé enregistrer avec succès !")
             return redirect('compteur_detail', num_compteur)
@@ -346,7 +346,7 @@ def export_compteur(request):
     ]
     response = exporter_en_excel(compteurs, nom_fichier, champs, nom_colonnes)
     message = f"Export de tout les compteurs"
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     return response
 
 
@@ -368,5 +368,5 @@ def export_relever(request, num_compteur):
     ]
     response = exporter_en_excel(relevecompteur, nom_fichier, champs, nom_colonnes)
     message = f"Export de tout les compteurs"
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     return response

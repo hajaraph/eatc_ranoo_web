@@ -130,7 +130,7 @@ class MainCouranteNew(View):
                 main_courante_id=main_courante.pk
             )
         message = f"Creation d'une main courante"
-        enregistre_historique(request, message, request.session.get('id_utilisateur'))
+        enregistre_historique(message, request.session.get('id_utilisateur'))
         messages.success(request, 'Anomalie Enregistré avec succès !')
         return redirect('main_liste_mc')
 
@@ -149,7 +149,7 @@ def update_statut_mc(request, pk, en_cours=None, non_traite=None, realise=None,
             statut.realise = realise
         statut.save()
         message = f"Statut de la main courante ID {pk} mis à jour"
-        enregistre_historique(request, message, request.session.get('id_utilisateur'))
+        enregistre_historique(message, request.session.get('id_utilisateur'))
         messages.success(request, success_message)
     except StatutMC.DoesNotExist:
         messages.error(request, f"StatutMC avec ID {pk} n'existe pas")
@@ -189,7 +189,7 @@ def supprimer_mc(request, pk):
             photo.delete()
     main.delete()
     message = f"Suppression de la main courante ID {pk}"
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     messages.success(request, 'Supprimer avec succès !')
     return redirect('main_liste_mc')
 
@@ -212,7 +212,7 @@ def supp_suivie(request, pk):
     main_courante_id = suivies.main_courante_id
     suivies.delete()
     message = f"Suppresion d'un suivie"
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     return redirect('detail_mc', main_courante_id)
 
 
@@ -284,5 +284,5 @@ def export_mc_excel(request):
 
     response = exporter_en_excel(main_courante, nom_fichier, champs, nom_colonnes)
     message = f"Export de tout les mains courantes"
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     return response

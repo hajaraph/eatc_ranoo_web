@@ -26,6 +26,7 @@ Django==5.0.4
 django-browser-reload==1.12.1
 django-chartjs==2.3.0
 django-cors-headers==4.3.1
+django-extensions==3.2.3
 django-rest-framework==0.1.0
 django-xhtml2pdf==0.0.4
 djangorestframework==3.15.1
@@ -37,7 +38,7 @@ freetype-py==2.4.0
 html5lib==1.1
 idna==3.6
 kombu==5.3.7
-lxml==5.1.0
+lxml==5.2.2
 num2word==1.0.1
 num2words==0.5.13
 numpy==1.26.4
