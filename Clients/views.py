@@ -108,7 +108,7 @@ class ClientNew(View):
             messages.success(request, f'Client enregistré avec succès !')
             historique = f'Creation du Client {client.nom_client} {client.prenom_client}'
             # Historique
-            enregistre_historique(request, historique, request.session.get('id_utilisateur'))
+            enregistre_historique(historique, request.session.get('id_utilisateur'))
             return redirect('client_liste')
 
         else:
@@ -178,7 +178,7 @@ class ClientDetail(View):
                 designation=design
             )
         # Historique
-        enregistre_historique(request, historique, request.session.get('id_utilisateur'))
+        enregistre_historique(historique, request.session.get('id_utilisateur'))
         messages.success(request, f"Le client {msg} est modifié avec succès !")
         return redirect('client_detail', pk)
 
@@ -196,7 +196,7 @@ def delete_client(request, pk):
     client.piececlients.all().delete()
     client.delete()
     # Historique
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     messages.success(request, "Client supprimer avec succès !")
     return redirect('client_liste')
 
@@ -212,7 +212,7 @@ def supp_file_client(request, pk):
     file.pieces_client.delete()
     file.delete()
     # Historique
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     messages.success(request, f"Pièces supprimé avec succès !")
     return redirect('client_detail', file.client_id)
 
@@ -307,7 +307,7 @@ class ClientContrat(View):
         )
         # Historique
         message = f"Modification de contrat numéro - {num_contrat}"
-        enregistre_historique(request, message, request.session.get('id_utilisateur'))
+        enregistre_historique(message, request.session.get('id_utilisateur'))
 
         messages.success(request, f"Le client {client.nom_client} {client.prenom_client} est modifié avec succès !")
         return redirect('client_li_contrat', pk)
@@ -408,7 +408,7 @@ class ContratNew(View):
                     )
                     messages.success(request, f"Contrat crée avec succès !")
                 # Historique
-                enregistre_historique(request, historique, request.session.get('id_utilisateur'))
+                enregistre_historique(historique, request.session.get('id_utilisateur'))
                 return redirect('client_contrat')
             else:
                 messages.warning(request, f"Le numéro de contrat est déjà utilisé dans un autre !")
@@ -426,7 +426,7 @@ def supp_contrat(request, pk):
     client_id = contrat.client.pk
     contrat.delete()
     historie = f"Le contrat numéro {num_contrat} a été supprimer"
-    enregistre_historique(request, historie, request.session.get('id_utilisateur'))
+    enregistre_historique(historie, request.session.get('id_utilisateur'))
     messages.success(request, f"Contrat numero {num_contrat} supprimer avec succès !")
     return redirect('client_detail', client_id)
 
@@ -473,7 +473,7 @@ def export_clients(request):
     ]
     response = exporter_en_excel(clients, nom_fichier, champs, nom_colonnes)
     message = f"Export de tout les clients"
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     return response
 
 
@@ -484,7 +484,7 @@ def genere_pdf_contrat(request, pk):
     contrat = Contrat.objects.get(pk=pk)
     nom_fichier_prefix = f'Contrat_de_{contrat.client.nom_client}'
     message = f"Export de contrat numéro {pk}"
-    enregistre_historique(request, message, request.session.get('id_utilisateur'))
+    enregistre_historique(message, request.session.get('id_utilisateur'))
     context = {
         'instance': contrat,
     }
