@@ -266,11 +266,8 @@ class Missions(APIView):
         # Envoyer les données à Celery
         result = process_releve.delay(request.data, file_data, utilisateur)
 
-        return JsonResponse({'message': 'Données en attente de traitement', 'task_id': result.id},
+        return JsonResponse({'message': 'Données en traitement', 'task_id': result.id},
                             status=status.HTTP_202_ACCEPTED)
-
-
-# Details Facture #
 
 
 class FactureDetail(APIView):
