@@ -265,7 +265,6 @@ class Missions(APIView):
 
         # Envoyer les données à Celery
         result = process_releve.delay(request.data, file_data, utilisateur)
-        check_task_status(request, result.id)
 
         return JsonResponse({'message': 'Données en attente de traitement', 'task_id': result.id},
                             status=status.HTTP_202_ACCEPTED)
