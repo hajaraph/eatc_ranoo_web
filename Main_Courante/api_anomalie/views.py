@@ -14,7 +14,7 @@ class DeclareMaincourate(APIView):
 
     @staticmethod
     def get(request):
-        main_courantes = StatutMC.objects.exclude(realise=False).all()
+        main_courantes = StatutMC.objects.exclude(realise=True).all()
 
         main_courante_list = []
         commentaire = []
