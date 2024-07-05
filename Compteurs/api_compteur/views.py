@@ -16,7 +16,6 @@ from django.shortcuts import get_object_or_404
 
 from Clients.models import Contrat
 from Tasks.tasks import process_releve
-from Tasks.views import check_task_status
 
 from .serializer import MissionSerializer, PaiementSerializer, FactureSerializer
 from Compteurs.models import Compteur, ReleveCompteur
