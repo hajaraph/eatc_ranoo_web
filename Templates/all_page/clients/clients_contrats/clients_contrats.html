@@ -21,7 +21,11 @@
             <tbody>
             {% for contrats in contrat %}
                 <tr>
-                    <td>{{ contrats.num_contrat }}</td>
+                    <td>
+                        <a href="#" onclick="openUrlInNewTab('{% url 'genere_pdf_contrat' contrats.num_contrat %}')" class="text-decoration-none contrat">
+                            {{ contrats.num_contrat }}
+                        </a>
+                    </td>
                     <td>{{ contrats.client.nom_client }}</td>
                     <td>
                         {% if contrats.client.prenom_client %}
