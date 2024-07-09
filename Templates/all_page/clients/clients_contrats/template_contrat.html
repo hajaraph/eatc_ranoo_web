@@ -4,95 +4,162 @@
     <meta charset="UTF-8">
     <title>Contrat entre le client et EATC</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-        }
-        h1 {
-            font-size: 18px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .contract-section {
-            margin-bottom: 20px;
-        }
-        .contract-section h2 {
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-        .contract-section p {
-            margin-bottom: 5px;
-        }
-        .contract-section ul {
-            margin-bottom: 5px;
-            padding-left: 20px;
-        }
-        .signature {
-            margin-top: 40px;
-            text-align: center;
-        }
-        .signature p {
-            margin-bottom: 5px;
+        @page  {
+            margin: 50px 90px;
         }
     </style>
-</head>
-<body>
-    <h1>Contrat entre le client et EATC</h1>
+<body style="text-align: justify">
+    <img src="static/logo/logo.png" style="width: 80px; height: 80px;" alt="EATC">
+    <h3 style="text-align: center; padding-top: 5px">CONTRAT ABONNEMENT EAU</h3>
 
-    <div class="contract-section">
-        <h2>1. Parties au contrat</h2>
-        <p>Entre :</p>
-        <ul>
-            <li>Nom du client : {{ instance.client.nom_client }} {{ instance.client.prenom_client }}</li>
-            <li>Adresse du client : {{ instance.client.adresse_client }}</li>
-        </ul>
-        <p>Et :</p>
-        <ul>
-            <li>Nom d'EATC : </li>
-            <li>Adresse d'EATC : </li>
-        </ul>
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 1 : Parties contractantes - Objet du Contrat</strong>
+    </div>
+    <p>Le présent contrat est établi le {{ instance.date_debut|date:'d/m/Y' }} en deux (02) exemplaires,</p>
+    <p>Sout le numero de contrat {{ instance.num_contrat }}</p>
+
+    <strong>Entre le Délégataire</strong>
+    <p>
+        L’entreprise EATC-A Délégataire du système d’alimentation en eau dans la commune de {{ instance.cp_commune.region.region }} {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }};
+        Ayant son siège local à Lot AV 173 Bis Loharanombato – Antananarivo 101, Madagascar
+    </p>
+
+    <p style="text-align: right">d'une part</p>
+
+    <strong>Et l’abonné</strong>
+    <p>
+        Monsieur/ Madame <strong>{{ instance.client.nom_client }} {% if instance.client.prenom_client %} {{ instance.client.prenom_client }} {% endif %}</strong> domicilié à {{ instance.adresse_contrat }},
+        commune de {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }},
+        région de {{ instance.cp_commune.region.region }}
+    </p>
+
+    <p style="text-align: right">d’autre part.</p>
+
+    <p>a pour objet de connecter l’abonné au réseau de distribution du système d’alimentation en eau de la Commune</p>
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 2 : Durée de contrat :</strong>
+    </div>
+    <p>
+        Le présent contrat entre en vigueur lorsqu’il est signé entre les deux parties et que l’abonné commence à puiser l’eau au niveau du compteur.
+        La durée du contrat est indéterminée jusqu’à sa résiliation.
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 3 : Limite de propriété :</strong>
+    </div>
+    <p>
+        La propriété de l’abonné est limitée aux équipements dont il a acheté auprès du Délégataire ou
+        des autres fournisseurs pour assurer le raccordement de l’abonné au réseau d’alimentation en eau potable de {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }}
+    </p>
+    <p>
+        Tous nouveaux branchements dont la prise s’effectue dans cette limite de propriété nécessite une autorisation de l’abonné.
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 4 : Compteur associé au contrat</strong>
+    </div>
+    <p>
+        Le présent contrat est associé à un compteur unique portant le numéro : {{ instance.num_contrat }}
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 5 : Nature de service</strong>
+    </div>
+    <p>
+        Le type de service offert à l’abonné est :
+    </p>
+    <div style="padding-left: 20px">
+        <p>- {{ instance.client.type_client.designation_client }}</p>
+    </div>
+    <p>Le prix de chaque type de service est affiché dans les locaux du Délégataire.</p>
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 6 : Mode de facturation.</strong>
     </div>
 
-    <div class="contract-section">
-        <h2>2. Description des services</h2>
-        <p>Les services fournis par EATC seront les suivants :</p>
-        <ul>
-            <li>Description du service 1</li>
-            <li>Description du service 2</li>
-            <li>Description du service 3</li>
-            <!-- Ajouter plus de descriptions de services si nécessaire -->
-        </ul>
+    <p>
+        Les relevés se feront mensuellement et seront suivi de la facturation basée sur le détail de prix
+        de la consommation permettant aux abonnés la régularisation des volumes consommés.
+    </p>
+
+    <p>
+        Le Délégataire est chargé de mettre en œuvre le recouvrement des factures qu’il a émises.
+        En cas de non-paiement par les abonnés, il se conforme strictement aux dispositions prévues par le règlement du service.
+        En particulier, aucune interruption de la fourniture de l’eau, ni aucune poursuite judiciaire ne peut être engagée avant que
+        les abonnés n’aient disposé du temps nécessaire pour régulariser leur situation après une mise en demeure qui leur est notifié par le Délégataire.
+    </p>
+    <p>
+        En cas de non-paiement, si les abonnés ne régularisent pas leur situation après mise en demeure,
+        le Délégataire est autorisé à mettre en œuvre tous les moyens légaux pour assurer le recouvrement des factures.
+    </p>
+    <p>
+        Le Délégataire est autorisé à faire supporter par les abonnés les dépenses occasionnées par lui pour recouvrer leurs factures impayées.
+        Les produits correspondants apparaissent en recette dans le compte rendu financier.
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 7 : Modalité de règlement</strong>
+    </div>
+    <p>
+        L’abonné est tenu de régler la consommation de l’eau conformément à la facture émise par le Délégataire et de respecter le délai de paiement.
+    </p>
+    <p>
+        Tout frais causé par le retard de paiement est à la charge de l’abonné.
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 8 : Contrôle de l’abonnement</strong>
+    </div>
+    <p>Les deux parties sont responsables de l’abonnement :</p>
+    <div style="padding-left: 20px">
+        <p>- La vérification du relevé du compteur correspondant au volume puisé ;</p>
+        <p>- L’entretien des équipements dans la limite de propriété ;</p>
     </div>
 
-    <div class="contract-section">
-        <h2>3. Durée du contrat</h2>
-        <p>Le contrat entre le client et EATC aura une durée de {{ instance.date_debut }}.</p>
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 9 : Fin de contrat</strong>
     </div>
-
-    <div class="contract-section">
-        <h2>4. Paiement</h2>
-        <p>Le client s'engage à effectuer les paiements selon les termes et conditions convenus.</p>
-        <p>Les détails de paiement sont les suivants :</p>
-        <ul>
-            <li>Description du paiement 1</li>
-            <li>Description du paiement 2</li>
-            <li>Description du paiement 3</li>
-        </ul>
+    <p>
+        Chacune des parties pourra résilier le contrat par lettre recommandée avec accusé de réception en respectant un délai de trois mois,
+        en indiquant le motif de résiliation.
+    </p>
+    <p>Les motifs de résiliations par l’abonné sont :</p>
+    <div style="padding-left: 20px">
+        <p>- Volonté de désabonner par son propre gré ;</p>
+        <p>- Impossibilité de payer les factures ;</p>
     </div>
+    <p>
+        Le seul motif de résiliation par le Délégataire est le non-paiement des factures de plus de trois mois suite à des lettres de mise en demeure.
+    </p>
 
-    <div class="contract-section">
-        <h2>5. Signature</h2>
-        <div class="signature">
-            <p>Pour le client : {{ instance.client.nom_client }} {{ instance.client.prenom_client }}</p>
-            <p>Date : </p>
-            <p>Signature : _______________________</p>
-        </div>
-        <div class="signature">
-            <p>Pour EATC :</p>
-            <p>Date : </p>
-            <p>Signature : _______________________</p>
-        </div>
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Article 10 : Litige</strong>
     </div>
+    <p>
+        Tout litige résultant ou se rapportant au présent contrat, doit être réglé à l'amiable entre les parties contractantes.
+    </p>
+    <p>
+        A défaut d'un règlement à l'amiable, le litige sera définitivement réglé selon le règlement de conciliation et d'arbitrage des institutions
+        compétentes de la République de Madagascar.
+    </p>
 
+    <p style="padding-top: 20px">
+        Fait à {{ instance.adresse_contrat }} le {{ instance.date_debut|date:'d/m/Y' }}:
+    </p>
+
+    <table style="padding-top: 10px; text-align: center">
+        <tr>
+            <th>Le Délégataire</th>
+            <th>L’abonné</th>
+        </tr>
+        <tr>
+            <td>Représenté par : SANJAMASINAVALONA Aldon</td>
+            <td>{{ instance.client.nom_client }} {% if instance.client.prenom_client %} {{ instance.client.prenom_client }} {% endif %}</td>
+        </tr>
+        <tr>
+            <td>
+                <img src="static/logo/img1.png" style="width: 150px; height: 50px;"  alt="">
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

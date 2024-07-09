@@ -55,4 +55,16 @@ $(document).ready(function(){
         window.open(url, '_blank');
         $('#export-client-excel').modal('hide');
     });
+
+    $('#confirmer-exportmc-excel').click(function() {
+        const date_deb = $('#date_deb').val();
+        const date_fin = $('#date_fin').val();
+        const statut = $('#statut').val();
+        // Construire l'URL avec les paramètres GET
+        let url = '/main_courante/excel';
+        url += `?date_deb=${date_deb}&date_fin=${date_fin}&statut=${statut}`;
+        // Ouvrir une nouvelle onglet avec l'URL générée
+        window.open(url, '_blank');
+        $('#exportmc-excel').modal('hide');
+    });
 });
