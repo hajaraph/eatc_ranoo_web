@@ -1,4 +1,4 @@
 from __future__ import absolute_import, unicode_literals
-from Tasks.celery import app as celery_app
+from Rel_Compteur.celery import app as celery_app
 
 __all__ = ('celery_app',)

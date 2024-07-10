@@ -1,3 +1,4 @@
+import logging
 from celery import shared_task
 from django.core.files.base import ContentFile
 
@@ -9,9 +10,11 @@ from Compteurs.models import Compteur, ReleveCompteur
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 
+logger = logging.getLogger(__name__)
+
 
 @shared_task
-def process_releve(data, file_data, id_utilisateur):
+def process_releve(data, file, id_utilisateur):
     serializer = MissionSerializer(data=data)
 
     if not serializer.is_valid():
@@ -23,7 +26,10 @@ def process_releve(data, file_data, id_utilisateur):
             compteur_id = serializer.validated_data.get('num_compteur')
             date_releve = serializer.validated_data.get('date_releve')
             volume = serializer.validated_data.get('volume')
-            image_compteur = ContentFile(file_data['content'], file_data['name']) if file_data else None
+            image_compteur = file.get('image_compteur')
+
+            if image_compteur:
+                image_compteur = ContentFile(image_compteur.read(), name=image_compteur.name)
 
             if id_releve is not None:
                 compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
@@ -35,7 +41,6 @@ def process_releve(data, file_data, id_utilisateur):
                 if date_releve <= dernier_releve.date_releve:
                     return {'status': 'error', 'message': "Veuillez fournir une date valide"}
 
-                # Process the modification and creation
                 mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur,
                                                            dernier_releve)
                 facture_creation(date_releve, compteur.num_compteur, mod_releve)
