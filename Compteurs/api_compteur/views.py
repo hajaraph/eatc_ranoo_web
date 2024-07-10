@@ -15,7 +15,7 @@ from Clients.models import Contrat
 from Login.models import Utilisateur
 
 from .serializer import PaiementSerializer, FactureSerializer
-from Tasks.tasks import process_releve, get_liste_mission
+from Tasks.tasks import TaskMission
 
 from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
@@ -101,7 +101,6 @@ def relever_client(request):
 
     try:
         with transaction.atomic():
-            # Récupérer le compteur correspondant à l'ID fourni
             compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
 
             # Récupérer les informations sur le compteur
@@ -109,7 +108,6 @@ def relever_client(request):
                 'id': int(compteur.num_compteur),
                 'marque': compteur.marque_compteur,
                 'modele': compteur.modele_compteur,
-                # Ajouter d'autres informations sur le compteur au besoin
             }
 
             # Récupérer le contrat associé au compteur
@@ -121,16 +119,14 @@ def relever_client(request):
 
             # Récupérer les informations sur le contrat
             contrat_info = {
-                'id': int(num_contrat),  # Utiliser l'ID en tant qu'entier
+                'id': int(num_contrat),
                 'numero_contrat': contrat.num_contrat,
                 'date_debut': contrat.date_debut,
                 'date_fin': contrat.date_fin,
                 'adresse_contrat': contrat.adresse_contrat,
                 'pays_contrat': contrat.pays_contrat,
-                # Ajouter d'autres informations sur le contrat au besoin
             }
 
-            # Récupérer les informations sur le client associé au contrat
             client = contrat.client
             client_info = {
                 'id': client.id_client,
@@ -145,7 +141,6 @@ def relever_client(request):
                 # Ajouter d'autres informations sur le client au besoin
             }
 
-            # Récupérer les relevés de compteurs associés au compteur, triés par date décroissante
             releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
 
             releves_list = []
@@ -160,7 +155,6 @@ def relever_client(request):
                     'volume': releve.volume,
                     'conso': releve.conso,
                     'image_compteur': releve.image_compteur.url if releve.image_compteur else 'null',
-                    # Ajouter d'autres informations sur le relevé au besoin
                 }
 
                 # Récupérer la facture associée au relevé
@@ -201,7 +195,7 @@ class Missions(APIView):
                 end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
 
                 # Lancer la tâche Celery et attendre son résultat
-                task = get_liste_mission.delay(cp_commune, end_of_month)
+                task = TaskMission.process_liste_mission.delay(cp_commune, end_of_month)
                 result = task.get(timeout=10)  # Vous pouvez ajuster le timeout selon vos besoins
 
                 return JsonResponse({'compteurs_liste': result})
@@ -218,7 +212,7 @@ class Missions(APIView):
             file = request.FILES
             utilisateur = request.user.id_utilisateur
 
-            tache = process_releve.delay(data, file, utilisateur)
+            tache = TaskMission.process_releve.delay(data, file, utilisateur)
             return JsonResponse(
                 {'message': 'La tâche a été soumise avec succès', 'id_tache': tache.id},
                 status=status.HTTP_202_ACCEPTED
