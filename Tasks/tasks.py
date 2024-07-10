@@ -1,7 +1,12 @@
 import logging
+
+import pandas as pd
 from celery import shared_task
 from django.core.files.base import ContentFile
+from django.db.models import Max, Sum
+from pandas.tseries.offsets import MonthEnd
 
+from Clients.models import Contrat
 from Compteurs.api_compteur.serializer import MissionSerializer
 from Compteurs.views import relever, ReleveMod
 from Facturation.views import facture_creation
@@ -11,6 +16,49 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 
 logger = logging.getLogger(__name__)
+
+
+@shared_task
+def get_liste_mission(cp_commune, end_of_month):
+    contrats_commune = (
+        Contrat.objects
+        .filter(cp_commune_id=cp_commune)
+        .select_related('client', 'num_compteur')
+        .annotate(
+            conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
+        )
+    )
+
+    liste_contrats_info = []
+    for contrat in contrats_commune:
+        dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
+            max_date=Max('date_releve'))
+        date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
+
+        # Comparaison des mois pour définir le statut
+        if date_releve and date_releve.month != end_of_month.month:
+            statut = 0
+        else:
+            statut = 2
+
+        dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
+        contrat_info = {
+            'id': dernier_releve_obj.pk if dernier_releve_obj else '',
+            'nom_client': contrat.client.nom_client,
+            'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
+            'adresse_client': contrat.client.adresse_client,
+            'num_compteur': contrat.num_compteur_id,
+            'conso_dernier_releve': contrat.conso_dernier_releve,
+            'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
+            'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
+            'statut': statut
+        }
+        liste_contrats_info.append(contrat_info)
+
+    # Trier la liste par id_releve
+    liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
+
+    return liste_contrats_info
 
 
 @shared_task
