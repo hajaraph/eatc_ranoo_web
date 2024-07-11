@@ -143,8 +143,8 @@ class Missions(APIView):
 
         try:
             tache_list = []
-            for data, files in zip(data_list, files):
-                tache = TaskMission.process_releve.delay(data, files, utilisateur)
+            for data, file in zip(data_list, files):
+                tache = TaskMission.process_releve.delay(data, file, utilisateur)
                 tache_list.append(tache.id)
 
             return JsonResponse(
