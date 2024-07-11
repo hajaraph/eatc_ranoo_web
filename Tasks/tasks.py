@@ -279,7 +279,7 @@ class TaskFactureDetail:
 
                 # Vérifier si le paiement est supérieur ou égal à 0.1
                 if montant_payer >= 0.1:
-                    paiement(None, id_releve, montant_payer, utilisateur_id)
+                    paiement(id_releve, montant_payer, utilisateur_id)
                     return {'status': 'success', 'message': 'Paiement effectué avec succès !'}
                 else:
                     return {'status': 'error', 'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'}

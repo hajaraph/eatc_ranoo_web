@@ -33,3 +33,5 @@ echo "Deactivating virtual environment 'myenv'..."
 deactivate
 
 echo "Deployment Finished!"
+
+celery -A Tasks worker --pool=solo -l info -E

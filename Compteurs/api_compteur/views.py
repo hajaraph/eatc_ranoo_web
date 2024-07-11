@@ -184,11 +184,11 @@ class FactureDetail(APIView):
     def post(request):
         id_releve = request.data.get('relevecompteur_id')
         montant_payer = float(request.data.get('paiement'))
-        utilisateur_id = request.user.id_utilisateur
+        utilisateur = request.user.id_utilisateur
 
         try:
-            TaskFactureDetail.process_facture_paiement.delay(id_releve, montant_payer, utilisateur_id)
-            return JsonResponse({'mandeha': 'mandeha'})
+            TaskFactureDetail.process_facture_paiement.delay(id_releve, montant_payer, utilisateur)
+            return JsonResponse({'message': "tâche mis en attente !"})
         except ValueError as e:
             return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:

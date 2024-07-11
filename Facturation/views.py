@@ -455,8 +455,7 @@ def generate_multiple_pages_pdf(request):
         return redirect('facture')
 
 
-def paiement(request, id_releve, montant_payer, utilisateur_mob):
-    utilisateur_web = request.session.get('id_utilisateur')
+def paiement(id_releve, montant_payer, utilisateur):
     fact_paiement = Facture.objects.get(relevecompteur_id=id_releve)
     net_paye = fact_paiement.montant_total_ttc - montant_payer
     num_contrat = fact_paiement.num_contrat_id
@@ -479,14 +478,14 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
         if avoir.exists():
             avoir = Avoir.objects.get(num_contrat_id=num_contrat)
             avoir.montant_avoir += round(net_paye, 2)
-            avoir.utilisateur_id = utilisateur_web if utilisateur_web else utilisateur_mob,
+            avoir.utilisateur_id = utilisateur,
             fact_paiement.avoir_nouveau = avoir.montant_avoir
             avoir.save()
         else:
             fact_paiement.avoir_nouveau = round(net_paye, 2)
             Avoir.objects.create(
                 montant_avoir=round(net_paye, 2),
-                utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob,
+                utilisateur_id=utilisateur,
                 num_contrat_id=num_contrat
             )
 
@@ -524,7 +523,7 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
                 avoir = montant_payer - restant_exist.restant
                 Avoir.objects.create(
                     montant_avoir=round(avoir, 2),
-                    utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob,
+                    utilisateur_id=utilisateur,
                     num_contrat_id=num_contrat
                 )
                 restant_exist.delete()
@@ -533,7 +532,7 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
             Restant.objects.create(
                 restant=round(net_paye, 2),
                 num_contrat_id=num_contrat,
-                utilisateur_id=utilisateur_web if utilisateur_web else utilisateur_mob
+                utilisateur_id=utilisateur
             )
             Paiement.objects.create(
                 montant_payer=round(montant_payer, 2),
@@ -546,7 +545,8 @@ def paiement(request, id_releve, montant_payer, utilisateur_mob):
 def facture_paiement(request, *args, **kwargs):
     id_releve = request.POST['id_releve']
     montant_payer = float(request.POST['paiement'])
-    paiement(request, id_releve, montant_payer, None)
+    utilisateur = request.session.get('id_utilisateur')
+    paiement(id_releve, montant_payer, utilisateur)
     messages.success(request, 'Facture payé avec succès !')
     return JsonResponse({'message': 'Paiement effectué avec succès'})
 
