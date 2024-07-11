@@ -142,13 +142,10 @@ class Missions(APIView):
         utilisateur = request.user.id_utilisateur
 
         try:
-            tache_list = []
-            for data, file in zip(data_list, files):
-                tache = TaskMission.process_releve.delay(data, file, utilisateur)
-                tache_list.append(tache.id)
+            tache = TaskMission.process_releve.delay(data_list, files, utilisateur)
 
             return JsonResponse(
-                {'message': 'La tâche a été soumise avec succès', 'id_tache': tache_list},
+                {'message': 'La tâche a été soumise avec succès', 'id_tache': tache.id},
                 status=status.HTTP_202_ACCEPTED
             )
 
