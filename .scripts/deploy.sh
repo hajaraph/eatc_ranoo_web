@@ -29,9 +29,6 @@ echo "Running database migrations..."
 python manage.py makemigrations
 python manage.py migrate
 
-#echo "Starting Celery worker..."
-#celery -A Tasks worker --pool=solo -l info -E
-
 # Deactivate Virtual Env
 echo "Deactivating virtual environment 'myenv'..."
 deactivate
