@@ -81,9 +81,6 @@ class TaskMission:
                 volume = serializer.validated_data.get('volume')
                 image_compteur = file.get('image_compteur')
 
-                if image_compteur:
-                    image_compteur = ContentFile(image_compteur.read(), name=image_compteur.name)
-
                 if id_releve is not None:
                     compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
                     dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]

@@ -137,14 +137,17 @@ class Missions(APIView):
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
-        data = request.data
+        data_list = request.data
         file = request.FILES
         utilisateur = request.user.id_utilisateur
 
         try:
-            tache = TaskMission.process_releve.delay(data, file, utilisateur)
+            tache_list = []
+            for data in data_list:
+                tache = TaskMission.process_releve.delay(data, file, utilisateur)
+                tache_list.append(tache.id)
             return JsonResponse(
-                {'message': 'La tâche a été soumise avec succès', 'id_tache': tache.id},
+                {'message': 'La tâche a été soumise avec succès', 'id_tache': tache_list},
                 status=status.HTTP_202_ACCEPTED
             )
 
