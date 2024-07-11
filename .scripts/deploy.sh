@@ -34,4 +34,5 @@ deactivate
 
 echo "Deployment Finished!"
 
+cd /home/eatc/eatc_ranoo/
 celery -A Tasks worker --pool=solo -l info -E
