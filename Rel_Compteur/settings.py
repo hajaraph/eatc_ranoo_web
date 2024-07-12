@@ -190,7 +190,7 @@ ADMIN_ENABLED = False
 # SESSION_COOKIE_SECURE = False
 
 # Configurations de Celery
-CELERY_BROKER_URL = 'redis://89.116.38.149:6379'
+CELERY_BROKER_URL = 'redis://89.116.38.149:8000'
 CELERY_RESULT_BACKEND = 'django-db'
 
 CELERY_ACCEPT_CONTENT = ['json']
