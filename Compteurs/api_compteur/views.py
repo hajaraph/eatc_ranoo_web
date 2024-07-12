@@ -102,7 +102,7 @@ def relever_client(request):
     try:
         # Lancer la tâche Celery et attendre son résultat
         tache = process_compteur_details.delay(compteur_id)
-        resultat = tache.get(timeout=10)  # Vous pouvez ajuster le timeout selon vos besoins
+        resultat = tache.get(timeout=10)  # ajuster le timeout selon vos besoins
 
         return JsonResponse(resultat)
     except Compteur.DoesNotExist:
@@ -126,7 +126,7 @@ class Missions(APIView):
         try:
             # Lancer la tâche Celery et attendre son résultat
             tache = TaskMission.process_liste_mission.delay(cp_commune, end_of_month)
-            resultat = tache.get(timeout=10)  # Vous pouvez ajuster le timeout selon vos besoins
+            resultat = tache.get(timeout=10)  # ajuster le timeout selon vos besoins
 
             return JsonResponse({'compteurs_liste': resultat})
         except ValueError as e:
@@ -138,14 +138,16 @@ class Missions(APIView):
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
         data_list = request.data
-        files = request.FILES
         utilisateur = request.user.id_utilisateur
 
         try:
-            tache = TaskMission.process_releve.delay(data_list, files, utilisateur)
+            tache_list = []
+            for data in data_list:
+                tache = TaskMission.process_releve.delay(data, utilisateur)
+                tache_list.append(tache.id)
 
             return JsonResponse(
-                {'message': 'La tâche a été soumise avec succès', 'id_tache': tache.id},
+                {'message': 'La tâche a été soumise avec succès', 'id_tache': tache_list},
                 status=status.HTTP_202_ACCEPTED
             )
 

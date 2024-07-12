@@ -233,7 +233,7 @@ class ReleveNew(View):
                 conso = volume
 
             # Créer un nouvel objet ReleveCompteur avec l'image mise à jour
-            releve = relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
+            releve = relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
             facture_creation(date_releve, num_compteur, releve)
 
             # Historique
@@ -248,7 +248,7 @@ class ReleveNew(View):
             return redirect('releve_new', num_compteur)
 
 
-def relever(request, num_compteur, date_releve, volume, conso, image_compteur, utilisateur):
+def relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateur):
     return ReleveCompteur.objects.create(
         num_compteur_id=num_compteur,
         date_releve=date_releve,
