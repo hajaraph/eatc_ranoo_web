@@ -1,12 +1,11 @@
 import re
 
 from celery import shared_task
-from django.core.files.base import ContentFile
 from django.db.models import Max, Sum
 
 from Clients.models import Contrat
 from Compteurs.api_compteur.serializer import MissionSerializer
-from Compteurs.views import relever, ReleveMod
+from Compteurs.views import relever
 from Facturation.models import Facture, Tarif, MontantHT
 from Facturation.views import facture_creation, paiement
 from Parametre.views import enregistre_historique
@@ -44,7 +43,7 @@ class TaskMission:
 
                     dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
                     contrat_info = {
-                        'id': dernier_releve_obj.pk if dernier_releve_obj else '',
+                        'id': str(dernier_releve_obj.pk) if dernier_releve_obj else '',
                         'nom_client': contrat.client.nom_client,
                         'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
                         'adresse_client': contrat.client.adresse_client,
