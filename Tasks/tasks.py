@@ -79,23 +79,6 @@ class TaskMission:
                 volume = serializer.validated_data.get('volume')
                 image_compteur = serializer.validated_data.get('image_compteur')
 
-                # if id_releve is not None:
-                #     compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
-                #     dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
-                #
-                #     if dernier_releve.volume >= volume:
-                #         return {'status': 'error', 'message': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"}
-                #
-                #     if date_releve <= dernier_releve.date_releve:
-                #         return {'status': 'error', 'message': "Veuillez fournir une date valide"}
-                #
-                #     mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur,
-                #                                                dernier_releve)
-                #     facture_creation(date_releve, compteur.num_compteur, mod_releve)
-                #
-                #     return {'status': 'success', 'message': 'Mise à jour effectuée avec succès !'}
-                #
-                # else:
                 if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
                     return {'status': 'error', 'message': "La date de relevé existe déjà dans la base de données"}
 
@@ -284,3 +267,21 @@ class TaskFactureDetail:
             raise ValueError(str(e))
         except Exception as e:
             raise Exception(str(e))
+
+# if id_releve is not None:
+#     compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
+#     dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
+#
+#     if dernier_releve.volume >= volume:
+#         return {'status': 'error', 'message': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"}
+#
+#     if date_releve <= dernier_releve.date_releve:
+#         return {'status': 'error', 'message': "Veuillez fournir une date valide"}
+#
+#     mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur,
+#                                                dernier_releve)
+#     facture_creation(date_releve, compteur.num_compteur, mod_releve)
+#
+#     return {'status': 'success', 'message': 'Mise à jour effectuée avec succès !'}
+#
+# else:

@@ -137,12 +137,15 @@ class Missions(APIView):
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
-        data_list = request.data
+        data_list = [request.data]
         utilisateur = request.user.id_utilisateur
 
         try:
             tache_list = []
             for data in data_list:
+                if 'image_compteur' in request.FILES:
+                    data['image_compteur'] = request.FILES['image_compteur']
+
                 tache = TaskMission.process_releve.delay(data, utilisateur)
                 tache_list.append(tache.id)
 
