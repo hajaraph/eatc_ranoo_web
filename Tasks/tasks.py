@@ -43,7 +43,7 @@ class TaskMission:
 
                     dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
                     contrat_info = {
-                        'id': str(dernier_releve_obj.pk) if dernier_releve_obj else '',
+                        'id': dernier_releve_obj.pk if dernier_releve_obj else '',
                         'nom_client': contrat.client.nom_client,
                         'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
                         'adresse_client': contrat.client.adresse_client,
