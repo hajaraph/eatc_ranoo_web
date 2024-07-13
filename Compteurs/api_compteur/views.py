@@ -12,17 +12,20 @@ from django.shortcuts import get_object_or_404
 
 from Clients.models import Contrat
 from Login.models import Utilisateur
+from Parametre.views import enregistre_historique
 
-from .serializer import PaiementSerializer, FactureSerializer
+from .serializer import PaiementSerializer, FactureSerializer, MissionSerializer
 from Tasks.tasks import TaskMission, process_compteur_details, TaskFactureDetail
 
 from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
 from Facturation.models import Facture, MontantHT, Tarif
-from Facturation.views import paiement
+from Facturation.views import paiement, facture_creation
 from Main_Courante.models import MainCourante
 from django.db.models import Sum, Max
 from pandas.tseries.offsets import MonthEnd
+
+from ..views import relever, ReleveMod
 
 
 def calculer_nombre_relever_effectuer(cp_commune_id):
@@ -137,28 +140,75 @@ class Missions(APIView):
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
     def post(request):
-        data_list = [request.data]
+        serializer = MissionSerializer(data=request.data)
         utilisateur = request.user.id_utilisateur
 
+        if not serializer.is_valid():
+            return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            tache_list = []
-            for data in data_list:
-                if 'image_compteur' in request.FILES:
-                    data['image_compteur'] = request.FILES['image_compteur']
+            with transaction.atomic():
+                id_releve = serializer.validated_data.get('releve_id')
+                compteur_id = serializer.validated_data.get('num_compteur')
+                date_releve = serializer.validated_data.get('date_releve')
+                volume = serializer.validated_data.get('volume')
+                image_compteur = request.FILES.get('image_compteur')
 
-                tache = TaskMission.process_releve.delay(data, utilisateur)
-                tache_list.append(tache.id)
+                if id_releve is not None:
+                    compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
+                    dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
 
-            return JsonResponse(
-                {'message': 'La tâche a été soumise avec succès', 'id_tache': tache_list},
-                status=status.HTTP_202_ACCEPTED
-            )
+                    if dernier_releve.volume >= volume:
+                        return JsonResponse({
+                            'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
+                        }, status=status.HTTP_400_BAD_REQUEST)
 
+                    if date_releve <= dernier_releve.date_releve:
+                        return JsonResponse({'erreur': "Veuillez fournir une date valide"}, status=status.HTTP_400_BAD_REQUEST)
+
+                    mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
+                                                               image_compteur, dernier_releve)
+                    facture_creation(date_releve, compteur.num_compteur, mod_releve)
+
+                    return JsonResponse({
+                        'enregistre': 'Mise à jour effectuer avec succès !'
+                    }, status=status.HTTP_201_CREATED)
+
+                else:
+                    if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
+                        return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
+                                            status=status.HTTP_400_BAD_REQUEST)
+
+                    dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
+
+                    if dernier_volume:
+                        if date_releve <= dernier_volume.date_releve:
+                            return JsonResponse({'erreur': "Veuillez fournir une date valide"},
+                                                status=status.HTTP_400_BAD_REQUEST)
+
+                        if dernier_volume.volume > volume:
+                            return JsonResponse({
+                                'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                        else:
+                            conso = volume - dernier_volume.volume
+                    else:
+                        conso = volume
+
+                    releve = relever(dernier_volume.num_compteur_id, date_releve,
+                                     volume, conso, image_compteur, utilisateur)
+
+                    facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+
+                historique = f"Relever et Facture d'un compteur {compteur_id}"
+                enregistre_historique(historique, utilisateur)
+
+                return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return JsonResponse(
-                {'erreur': f"Une erreur s'est produite: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Details Facture #
