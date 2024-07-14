@@ -55,15 +55,13 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     'http://89.116.38.149:8000',
-    'http://127.0.0.1:8000',  # Ajoutez l'URL de votre application Flutter ici
+    'http://127.0.0.1:8000',
     'http://localhost:3000',
-
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     'http://89.116.38.149:8000',
     'http://127.0.0.1:8000',
-
 ]
 
 ROOT_URLCONF = 'Rel_Compteur.urls'
@@ -90,8 +88,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rel_compteur',
-        'USER': 'eatcrano',
-        'PASSWORD': 'eatc301',
+        'USER': 'postgres',
+        'PASSWORD': '12121212',
+        # 'USER': 'eatcrano',
+        # 'PASSWORD': 'eatc301',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -227,4 +227,3 @@ CELERY_TIMEZONE = 'UTC'
 #         },
 #     },
 # }
-
