@@ -11,18 +11,14 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 
 from Clients.models import Contrat
-from Login.models import Utilisateur
 from Parametre.views import enregistre_historique
 
-from .serializer import PaiementSerializer, FactureSerializer, MissionSerializer
+from .serializer import MissionSerializer
 from Tasks.tasks import TaskMission, process_compteur_details, TaskFactureDetail
-
-from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
 from Compteurs.models import Compteur, ReleveCompteur
-from Facturation.models import Facture, MontantHT, Tarif
-from Facturation.views import paiement, facture_creation
+from Facturation.models import Facture
+from Facturation.views import facture_creation
 from Main_Courante.models import MainCourante
-from django.db.models import Sum, Max
 from pandas.tseries.offsets import MonthEnd
 
 from ..views import relever, ReleveMod
@@ -66,17 +62,14 @@ def accueil(request):
     en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
     total_anomalie = non_traite + en_cours
 
-    nombre_total_facture_impayer = Facture.objects.filter(
-        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
-        statut=False
-    ).count()
+    nombre_facture = Facture.objects.filter(relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id).count()
 
     nombre_total_facture_payer = Facture.objects.filter(
         relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
-        statut=True
-    ).count()
-    nombre_total_facture_impayer = nombre_total_facture_impayer - nombre_total_facture_payer
-    nombre_total_facture_payer -= nombre_total_facture_payer
+        statut=True).count()
+
+    nombre_total_facture_impayer = nombre_facture - nombre_total_facture_payer
+    nombre_total_facture_payer = nombre_facture - nombre_total_facture_impayer
 
     nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
 
@@ -135,7 +128,10 @@ class Missions(APIView):
         except ValueError as e:
             return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse(
+                {'erreur': f"Erreur du serveur: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
@@ -244,7 +240,10 @@ class FactureDetail(APIView):
         except ValueError as e:
             return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse(
+                {'erreur': f"Erreur du serveur: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 def get_missions_details(toutes_missions):
@@ -291,121 +290,3 @@ def get_missions_details(toutes_missions):
             'releves': releves_list
         })
     return missions_details
-
-
-class SynchronisationView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, format=None):
-        # Récupérer les données JSON envoyées dans la requête
-        data = request.data
-        commune_users = request.user.cp_commune_id
-
-        utilisateurs_data = data.get('utilisateurs', [])
-        missions_data = data.get('missions', [])
-
-        utilisateurs_synchronises = []
-        missions_synchronisees = []
-
-        utilisateurs_sync = self.sync_utilisateur()
-        utilisateurs_synchronises.extend(utilisateurs_sync)
-
-        # Synchronisation des missions
-        for mission_data in missions_data:
-            mission_sync = self.sync_mission(mission_data, commune_users)
-            missions_synchronisees.append(mission_sync)
-
-        # Récupérer toutes les missions dans la base de données associées à l'utilisateur actuel
-        toutes_missions = ReleveCompteur.objects.filter(utilisateur=request.user).values(
-            'date_releve', 'volume', 'conso', 'num_compteur__num_compteur', 'utilisateur_id'
-        )
-
-        # Récupérer les détails des missions
-        missions_details = get_missions_details(toutes_missions)
-
-        # Récupérer les données d'accueil
-        accueil_data = self.get_accueil_data(request)
-
-        # Retourner les utilisateurs, les missions synchronisées, les détails des missions et les données d'accueil
-        return JsonResponse({
-            'utilisateurs': utilisateurs_synchronises,
-            'missions': missions_synchronisees,
-            'missions_details': missions_details,
-            'acceuil': accueil_data,
-        })
-
-    @staticmethod
-    def sync_utilisateur():
-        users = Utilisateur.objects.filter(role_id=3)
-        serializer = UtilisateurSerializerWithLastToken(users, many=True)
-        return serializer.data
-
-    @staticmethod
-    def sync_mission(mission_data, commune_usrs):
-
-        # date_releve = mission_data.get('date_releve')
-        volume = mission_data.get('volume')
-        num_compteur = mission_data.get('num_compteur')
-        utilisateur_id = mission_data.get('utilisateur_id')
-
-        # end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
-
-        try:
-            utilisateur = Utilisateur.objects.get(id_utilisateur=utilisateur_id)
-        except Utilisateur.DoesNotExist:
-            utilisateur = None
-
-        if utilisateur:
-            compteur, created = Compteur.objects.get_or_create(num_compteur=num_compteur)
-
-            dernier_releve = ReleveCompteur.objects.filter(num_compteur=compteur).latest('date_releve')
-            dernier_volume = dernier_releve.volume if dernier_releve else 0
-            conso = volume - dernier_volume if dernier_volume else volume
-
-            contrats_commune = Contrat.objects.filter(cp_commune_id=commune_usrs).select_related(
-                'client', 'num_compteur'
-            ).annotate(
-                conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
-                volume_dernier_releve=Sum('num_compteur__relevecompteurs__volume')
-            )
-            mission_dicts = []
-            for contrat in contrats_commune:
-                dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
-                    max_date=Max('date_releve'))
-                contrat.date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else None
-                # Comparaison des mois pour définir le statut
-                if contrat.date_releve is not None:
-                    contrat.statut = 1
-                else:
-                    contrat.statut = 0
-                mission_dict = {
-                    'utilisateur_id': utilisateur_id,
-                    'nom_client': contrat.client.nom_client,
-                    'prenom_client': contrat.client.prenom_client,
-                    'adresse_client': contrat.client.adresse_client,
-                    'num_compteur': contrat.num_compteur_id,
-                    'conso_dernier_releve': contrat.conso_dernier_releve,
-                    'volume_dernier_releve': contrat.volume_dernier_releve,
-                    'date_releve': contrat.date_releve,
-                    'statut': contrat.statut
-                }
-                mission_dicts.append(mission_dict)
-
-            return mission_dicts
-
-    @staticmethod
-    def get_accueil_data(request):
-        cp_commune_id = request.user.cp_commune_id
-        non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
-        realise = MainCourante.objects.filter(statuts__realise=True).count()
-        total_anomalie = non_traite + realise
-
-        nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
-
-        accueils = {
-            'totale_anomalie': total_anomalie,
-            'realise': realise,
-            'nombre_total_compteur': nombre_total_compteur,
-            'nombre_relever_effectuer': nombre_relever_effectuer,
-        }
-        return accueils
