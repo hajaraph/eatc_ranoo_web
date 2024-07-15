@@ -207,7 +207,7 @@ class Calcule:
     def montantht(total_conso_ht, tarif, factures):
         try:
             return MontantHT.objects.create(
-                total_conso_ht=round(total_conso_ht, 2),
+                total_conso_ht=round(total_conso_ht, 0),
                 tarif_id=tarif,
                 facture=factures,
             )
@@ -269,10 +269,10 @@ def precess_avoir_restant(contrat, factures):
             if montant_total_ttc >= avoir.montant_avoir:
                 montant_total_ttc -= avoir.montant_avoir
                 factures.avoir_utilise = avoir.montant_avoir
-                factures.montant_total_ttc = round(montant_total_ttc, 2)
+                factures.montant_total_ttc = round(montant_total_ttc, 0)
                 avoir.delete()
             else:
-                factures.avoir_utilise = round(montant_total_ttc, 2)
+                factures.avoir_utilise = round(montant_total_ttc, 0)
                 avoir.montant_avoir -= montant_total_ttc
                 montant_total_ttc = 0
                 avoir.save()
@@ -282,11 +282,11 @@ def precess_avoir_restant(contrat, factures):
         restant = Restant.objects.filter(num_contrat=contrat.num_contrat).first()
         if restant:
             montant_total_ttc += restant.restant
-            factures.restant_precedant = round(restant.restant, 2)
-            factures.montant_total_ttc = round(montant_total_ttc, 2)
+            factures.restant_precedant = round(restant.restant, 0)
+            factures.montant_total_ttc = round(montant_total_ttc, 0)
             restant.delete()
         else:
-            factures.montant_total_ttc = round(montant_total_ttc, 2)
+            factures.montant_total_ttc = round(montant_total_ttc, 0)
 
     except Exception as e:
         return HttpResponse(f"Error processing credit and remaining balance: {e}")
@@ -376,7 +376,7 @@ def facture_context_pdf(request, factures):
             'lettre': lettre,
             'reveler_precedant': reveler_precedant,
             'relever_actuel': relever_actuel,
-            'montant_ht_total': round(montant.total_conso_ht, 2),
+            'montant_ht_total': round(montant.total_conso_ht, 0),
             'paiement_exist': paiement_exist,
             'qr_code': qr_code
         }
@@ -477,12 +477,12 @@ def paiement(id_releve, montant_payer, utilisateur):
         avoir = Avoir.objects.filter(num_contrat=num_contrat)
         if avoir.exists():
             avoir = Avoir.objects.get(num_contrat_id=num_contrat)
-            avoir.montant_avoir += round(net_paye, 2)
+            avoir.montant_avoir += round(net_paye, 0)
             avoir.utilisateur_id = utilisateur,
             fact_paiement.avoir_nouveau = avoir.montant_avoir
             avoir.save()
         else:
-            fact_paiement.avoir_nouveau = round(net_paye, 2)
+            fact_paiement.avoir_nouveau = round(net_paye, 0)
             Avoir.objects.create(
                 montant_avoir=round(net_paye, 2),
                 utilisateur_id=utilisateur,
@@ -492,7 +492,7 @@ def paiement(id_releve, montant_payer, utilisateur):
     else:
         restant = Restant.objects.filter(num_contrat=num_contrat)
         paiements = Paiement.objects.filter(facture_id=fact_paiement.pk)
-        restant_value = round(net_paye, 2)
+        restant_value = round(net_paye, 0)
         fact_paiement.restant_nouvel = restant_value
 
         # Verifie si il exist déjà un restant et un paiement déjà fait
@@ -507,7 +507,7 @@ def paiement(id_releve, montant_payer, utilisateur):
 
             elif montant_payer < restant_exist.restant:
                 restant_exist.restant -= montant_payer
-                restant_exist.restant = round(restant_exist.restant, 2)
+                restant_exist.restant = round(restant_exist.restant, 0)
                 restant_exist.date_restant = timezone.now()
                 fact_paiement.restant_nouvel = restant_exist.restant
                 restant_exist.save()
@@ -515,14 +515,14 @@ def paiement(id_releve, montant_payer, utilisateur):
                 paiement_restant.montant_payer += montant_payer
                 paiement_restant.date_paiement = timezone.now()
 
-                fact_paiement.restant = round(restant_exist.restant, 2)
+                fact_paiement.restant = round(restant_exist.restant, 0)
             else:
                 paiement_restant.montant_payer += restant_exist.restant
                 fact_paiement.restant_nouvel = None
                 # creation d'une nouvel avoir
                 avoir = montant_payer - restant_exist.restant
                 Avoir.objects.create(
-                    montant_avoir=round(avoir, 2),
+                    montant_avoir=round(avoir, 0),
                     utilisateur_id=utilisateur,
                     num_contrat_id=num_contrat
                 )
@@ -530,12 +530,12 @@ def paiement(id_releve, montant_payer, utilisateur):
             paiement_restant.save()
         else:
             Restant.objects.create(
-                restant=round(net_paye, 2),
+                restant=round(net_paye, 0),
                 num_contrat_id=num_contrat,
                 utilisateur_id=utilisateur
             )
             Paiement.objects.create(
-                montant_payer=round(montant_payer, 2),
+                montant_payer=round(montant_payer, 0),
                 facture_id=fact_paiement.pk
             )
     fact_paiement.save()
