@@ -30,18 +30,19 @@ def calculer_nombre_relever_effectuer(cp_commune_id):
 
     # Calcul de la fin du mois actuel en utilisant pandas
     end_of_month = (
-            pd.to_datetime('now')
-            .to_period('M')
-            .to_timestamp()
-            + MonthEnd(0)
+        pd.to_datetime('now')
+        .to_period('M')
+        .to_timestamp()
+        + MonthEnd(0)
     )
 
     # Filtrer les contrats avec des relevés dans le mois actuel
     contrat_data = (
         Contrat.objects
         .filter(cp_commune_id=cp_commune_id)
-        .annotate(releve_count=Count('num_compteur__relevecompteurs',
-                                     filter=Q(num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
+        .annotate(releve_count=Count(
+            'num_compteur__relevecompteurs',
+            filter=Q(num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
         .distinct()
     )
 
@@ -50,7 +51,23 @@ def calculer_nombre_relever_effectuer(cp_commune_id):
     # Calculer le nombre_relever_effectuer
     nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
 
-    return nombre_total_compteur, nombre_relever_effectuer
+    nombre_facture = Facture.objects.filter(
+        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id
+    ).count()
+
+    nombre_total_facture_payer = Facture.objects.filter(
+        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
+        statut=True
+    ).count()
+
+    nombre_total_facture_impayer = nombre_facture - nombre_total_facture_payer
+    nombre_total_facture_payer = nombre_facture - nombre_total_facture_impayer
+
+    # Soustraire le nombre de relevés effectués du nombre total de compteurs
+    nombre_total_compteur -= nombre_relever_effectuer
+    nombre_relever_effectuer -= nombre_relever_effectuer
+
+    return nombre_total_compteur, nombre_relever_effectuer, nombre_total_facture_impayer, nombre_total_facture_payer
 
 
 @api_view(['GET'])
@@ -62,20 +79,8 @@ def accueil(request):
     en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
     total_anomalie = non_traite + en_cours
 
-    nombre_facture = Facture.objects.filter(relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id).count()
-
-    nombre_total_facture_payer = Facture.objects.filter(
-        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
-        statut=True).count()
-
-    nombre_total_facture_impayer = nombre_facture - nombre_total_facture_payer
-    nombre_total_facture_payer = nombre_facture - nombre_total_facture_impayer
-
-    nombre_total_compteur, nombre_relever_effectuer = calculer_nombre_relever_effectuer(cp_commune_id)
-
-    # Soustraire le nombre de relevés effectués du nombre total de compteurs
-    nombre_total_compteur -= nombre_relever_effectuer
-    nombre_relever_effectuer -= nombre_relever_effectuer
+    nombre_total_compteur, nombre_relever_effectuer, nombre_total_facture_impayer, nombre_total_facture_payer\
+        = calculer_nombre_relever_effectuer(cp_commune_id)
 
     return JsonResponse(
         {
@@ -160,7 +165,8 @@ class Missions(APIView):
                         }, status=status.HTTP_400_BAD_REQUEST)
 
                     if date_releve <= dernier_releve.date_releve:
-                        return JsonResponse({'erreur': "Veuillez fournir une date valide"}, status=status.HTTP_400_BAD_REQUEST)
+                        return JsonResponse({'erreur': "Veuillez fournir une date valide"},
+                                            status=status.HTTP_400_BAD_REQUEST)
 
                     mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
                                                                image_compteur, dernier_releve)
@@ -204,7 +210,8 @@ class Missions(APIView):
         except ValueError as e:
             return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Details Facture #
@@ -225,7 +232,8 @@ class FactureDetail(APIView):
         except ValueError as e:
             return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
