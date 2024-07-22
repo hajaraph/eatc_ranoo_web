@@ -84,24 +84,13 @@ class DeclareMaincourate(APIView):
         date_suivie = data.get('date_suivie')
         commentaire_suivie = data.get('commentaire_suivie')
 
-        print('status:', statut)
-        print('id:', id_mc)
-        print('date:', date_suivie)
-        print('commentaire:', commentaire_suivie)
+        # print('status:', statut)
+        # print('id:', id_mc)
+        # print('date:', date_suivie)
+        # print('commentaire:', commentaire_suivie)
 
         try:
             with transaction.atomic():
-                maincourante_data = {
-                    'date_mc': date_declaration,
-                    'type_anomalie': type_anomalie,
-                    'longitude_mc': longitude_mc,
-                    'latitude_mc': latitude_mc,
-                    'description_mc': description_mc,
-                    'client': client_declare,
-                    'cp_commune': cp_commune,
-                    'utilisateur': request.user.id_utilisateur
-                }
-
                 if statut == 1:
                     suivie = {
                         'date_suivie': date_suivie,
@@ -110,6 +99,7 @@ class DeclareMaincourate(APIView):
                         'utilisateur': request.user.id_utilisateur,
                     }
                     suivieserialize = SuivieSerializer(data=suivie)
+
                     if suivieserialize.is_valid():
                         suivieserialize.save()
                         return JsonResponse(
@@ -119,7 +109,18 @@ class DeclareMaincourate(APIView):
                     else:
                         return JsonResponse({'message': suivieserialize.errors}, status=status.HTTP_400_BAD_REQUEST)
                 else:
+                    maincourante_data = {
+                        'date_mc': date_declaration,
+                        'type_anomalie': type_anomalie,
+                        'longitude_mc': longitude_mc,
+                        'latitude_mc': latitude_mc,
+                        'description_mc': description_mc,
+                        'client': client_declare,
+                        'cp_commune': cp_commune,
+                        'utilisateur': request.user.id_utilisateur
+                    }
                     maincourante_serializer = MainCouranteSerializer(data=maincourante_data)
+
                     if maincourante_serializer.is_valid():
                         main_courant = maincourante_serializer.save()
                         main_courante_id = main_courant.pk
@@ -135,7 +136,10 @@ class DeclareMaincourate(APIView):
                                 if photo_serializer.is_valid():
                                     photo_serializer.save()
                                 else:
-                                    return JsonResponse({'message': photo_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                                    return JsonResponse(
+                                        {'message': photo_serializer.errors},
+                                        status=status.HTTP_400_BAD_REQUEST
+                                    )
 
                         StatutMC.objects.create(
                             main_courante_id=main_courante_id,
@@ -144,8 +148,14 @@ class DeclareMaincourate(APIView):
 
                         return JsonResponse({'message': 'Données enregistrées avec succès'}, status=status.HTTP_200_OK)
                     else:
-                        return JsonResponse({'message': maincourante_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                        return JsonResponse(
+                            {'message': maincourante_serializer.errors},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
         except ValueError as e:
             return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse(
+                {'erreur': f"Erreur du serveur: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
