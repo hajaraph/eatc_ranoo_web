@@ -26,6 +26,7 @@ class DeclareMaincourate(APIView):
             if suivie.exists():
                 for suivi in suivie:
                     commentaires = {
+                        'id': suivi.pk,
                         'id_mc': suivi.main_courante_id,
                         'id_suivie': suivi.pk,
                         'date_suivie': suivi.date_suivie.strftime('%Y-%m-%d %H:%M'),
