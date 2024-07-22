@@ -154,7 +154,7 @@ def suivie_mc(request):
                     'date_suivie': date_suivie,
                     'commentaire_suivie': commentaire_suivie,
                     'main_courante': id_mc,
-                    'utilisateur': request.user.id_utilisateur,
+                    'utilisateur': request.user.id_utilisateur
                 }
                 suivieserialize = SuivieSerializer(data=suivie)
 
