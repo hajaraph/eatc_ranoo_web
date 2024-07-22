@@ -26,7 +26,6 @@ class MainCouranteSerializer(serializers.ModelSerializer):
 
 
 class SuivieSerializer(serializers.ModelSerializer):
-    status = serializers.IntegerField(required=False)
     date_suivie = serializers.DateTimeField(required=False)
     commentaire_suivie = serializers.CharField(required=False)
 
@@ -37,7 +36,6 @@ class SuivieSerializer(serializers.ModelSerializer):
             'commentaire_suivie',
             'main_courante',
             'utilisateur',
-            'status'
         ]
 
 
