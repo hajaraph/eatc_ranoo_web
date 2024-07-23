@@ -96,7 +96,8 @@ class TaskMission:
                 else:
                     conso = volume
 
-                releve = relever(dernier_volume.num_compteur_id, date_releve, volume, conso, image_compteur, utilisateur)
+                releve = relever(dernier_volume.num_compteur_id, date_releve,
+                                 volume, conso, image_compteur, utilisateur)
                 facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
 
                 historique = f"Relever et Facture d'un compteur {compteur_id}"
@@ -202,7 +203,8 @@ class TaskFactureDetail:
                 releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
 
                 if not releve:
-                    return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
+                    return {'status': 'error',
+                            'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
 
                 montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
 

@@ -1,4 +1,5 @@
 import pandas as pd
+from celery.result import AsyncResult
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import Q
@@ -104,6 +105,7 @@ def relever_client(request):
         # Lancer la tâche Celery et attendre son résultat
         tache = process_compteur_details.delay(compteur_id)
         resultat = tache.get(timeout=10)  # ajuster le timeout selon vos besoins
+        tache.forget()
 
         return JsonResponse(resultat)
     except Compteur.DoesNotExist:
@@ -126,8 +128,9 @@ class Missions(APIView):
 
         try:
             # Lancer la tâche Celery et attendre son résultat
-            tache = TaskMission.process_liste_mission.delay(cp_commune, end_of_month)
-            resultat = tache.get(timeout=10)  # ajuster le timeout selon vos besoins
+            tache = TaskMission.process_liste_mission.apply_async(args=[cp_commune, end_of_month])
+            resultat = tache.get(timeout=10)
+            tache.forget()
 
             return JsonResponse({'compteurs_liste': resultat})
         except ValueError as e:
@@ -224,8 +227,10 @@ class FactureDetail(APIView):
     def get(request):
         id_releve = request.GET.get('id_releve')
         try:
-            tache = TaskFactureDetail.precess_facture_list.delay(id_releve)
+            tache = TaskFactureDetail.precess_facture_list.apply_async(args=[id_releve])
             resultat = tache.get(timeout=10)
+            tache.forget()
+
             return JsonResponse({'facture': resultat})
         except Facture.DoesNotExist:
             return JsonResponse({'error': 'Facture non trouvé'}, status=404)
