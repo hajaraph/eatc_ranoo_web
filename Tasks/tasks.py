@@ -204,50 +204,52 @@ class TaskFactureDetail:
     @shared_task()
     def precess_facture_list(id_releve):
         try:
-            releve = Facture.objects.select_related(
-                'num_contrat__client',
-                'num_contrat__cp_commune'
-            ).get(relevecompteur_id=id_releve)
+            with transaction.atomic():
+                releve = Facture.objects.select_related(
+                    'num_contrat__client',
+                    'num_contrat__cp_commune'
+                ).get(relevecompteur_id=id_releve)
 
-            if not releve:
-                return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
+                if not releve:
+                    return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé '
+                                                          'spécifié'}
 
-            montant_ht = MontantHT.objects.get(facture_id=releve.id_facture)
+                montant_ht = MontantHT.objects.get(facture_id=releve.id_facture)
 
-            avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
-            avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
-            restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
-            restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
-            montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
+                avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
+                avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
+                restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
+                restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
+                montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
 
-            montant_payer = 0.0 if montant_total_ttc == 0.0 or restant_nouvel == 0.0 \
-                else montant_total_ttc - restant_nouvel
+                montant_payer = 0.0 if montant_total_ttc == 0.0 or restant_nouvel == 0.0 \
+                    else montant_total_ttc - restant_nouvel
 
-            typeclient = releve.num_contrat.client.type_client_id
-            cp_commune = releve.num_contrat.cp_commune_id
-            tarif = Tarif.objects.filter(cp_commune_id=cp_commune).first()
-            tarif_m3 = {
-                1: tarif.prix_m3_bp,
-                2: tarif.prix_m3_bs,
-                3: tarif.prix_m3_k
-            }.get(typeclient, 0.0) if tarif else 0.0
+                typeclient = releve.num_contrat.client.type_client_id
+                cp_commune = releve.num_contrat.cp_commune_id
+                tarif = Tarif.objects.filter(cp_commune_id=cp_commune).first()
+                tarif_m3 = {
+                    1: tarif.prix_m3_bp,
+                    2: tarif.prix_m3_bs,
+                    3: tarif.prix_m3_k
+                }.get(typeclient, 0.0) if tarif else 0.0
 
-            facture = {
-                'id': int(releve.id_facture),
-                'relevecompteur_id': int(releve.relevecompteur_id),
-                'num_facture': releve.num_facture,
-                'num_compteur': int(releve.num_contrat.num_compteur_id),
-                'date_facture': releve.date_facture,
-                'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
-                'tarif_m3': tarif_m3,
-                'avoir_avant': avoir_avant,
-                'avoir_utilise': avoir_utilise,
-                'restant_precedant': restant_precedant,
-                'montant_payer': montant_payer,
-                'montant_total_ttc': montant_total_ttc,
-                'statut': 'Payé' if releve.statut else 'Impayé',
-            }
-            return facture
+                facture = {
+                    'id': int(releve.id_facture),
+                    'relevecompteur_id': int(releve.relevecompteur_id),
+                    'num_facture': releve.num_facture,
+                    'num_compteur': int(releve.num_contrat.num_compteur_id),
+                    'date_facture': releve.date_facture,
+                    'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
+                    'tarif_m3': tarif_m3,
+                    'avoir_avant': avoir_avant,
+                    'avoir_utilise': avoir_utilise,
+                    'restant_precedant': restant_precedant,
+                    'montant_payer': montant_payer,
+                    'montant_total_ttc': montant_total_ttc,
+                    'statut': 'Payé' if releve.statut else 'Impayé',
+                }
+                return facture
 
         except Facture.DoesNotExist:
             return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
