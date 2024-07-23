@@ -127,7 +127,6 @@ class Missions(APIView):
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
 
         try:
-            # Lancer la tâche Celery et attendre son résultat
             tache = TaskMission.process_liste_mission.apply_async(args=[cp_commune, end_of_month])
             resultat = tache.get(timeout=10)
             tache.forget()
@@ -227,7 +226,7 @@ class FactureDetail(APIView):
     def get(request):
         id_releve = request.GET.get('id_releve')
         try:
-            tache = TaskFactureDetail.precess_facture_list.apply(args=[id_releve])
+            tache = TaskFactureDetail.precess_facture_list.apply_async(args=[id_releve])
             resultat = tache.get(timeout=10)
             tache.forget()
 

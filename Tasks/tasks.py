@@ -1,6 +1,7 @@
 import re
 
 from celery import shared_task
+from django.core.cache import cache
 from django.db.models import Max, Sum
 
 from Clients.models import Contrat
@@ -16,53 +17,57 @@ from django.shortcuts import get_object_or_404
 
 class TaskMission:
     @staticmethod
-    @shared_task()
+    @shared_task(ignore_result=True)
     def process_liste_mission(cp_commune, end_of_month):
-        try:
-            with transaction.atomic():
-                contrats_commune = (
-                    Contrat.objects
-                    .filter(cp_commune_id=cp_commune)
-                    .select_related('client', 'num_compteur')
-                    .annotate(
-                        conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
+        cache_key = f"process_liste_mission_{cp_commune}_{end_of_month}"
+        liste_contrats_info = cache.get(cache_key)
+
+        if liste_contrats_info is None:
+            try:
+                with transaction.atomic():
+                    contrats_commune = (
+                        Contrat.objects
+                        .filter(cp_commune_id=cp_commune)
+                        .select_related('client', 'num_compteur')
+                        .prefetch_related('num_compteur__relevecompteurs')
+                        .annotate(
+                            conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
+                        )
                     )
-                )
 
-                liste_contrats_info = []
-                for contrat in contrats_commune:
-                    dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
-                        max_date=Max('date_releve'))
-                    date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
+                    liste_contrats_info = []
+                    for contrat in contrats_commune:
+                        dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
+                            max_date=Max('date_releve'))
+                        date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
 
-                    # Comparaison des mois pour définir le statut
-                    if date_releve and date_releve.month != end_of_month.month:
-                        statut = 0
-                    else:
-                        statut = 2
+                        # Comparaison des mois pour définir le statut
+                        statut = 0 if date_releve and date_releve.month != end_of_month.month else 2
 
-                    dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
-                    contrat_info = {
-                        'id': dernier_releve_obj.pk if dernier_releve_obj else '',
-                        'nom_client': contrat.client.nom_client,
-                        'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
-                        'adresse_client': contrat.client.adresse_client,
-                        'num_compteur': contrat.num_compteur_id,
-                        'conso_dernier_releve': contrat.conso_dernier_releve,
-                        'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
-                        'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
-                        'statut': statut
-                    }
-                    liste_contrats_info.append(contrat_info)
+                        dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
+                        contrat_info = {
+                            'id': dernier_releve_obj.pk if dernier_releve_obj else '',
+                            'nom_client': contrat.client.nom_client,
+                            'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
+                            'adresse_client': contrat.client.adresse_client,
+                            'num_compteur': contrat.num_compteur_id,
+                            'conso_dernier_releve': contrat.conso_dernier_releve,
+                            'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
+                            'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
+                            'statut': statut
+                        }
+                        liste_contrats_info.append(contrat_info)
 
-                # Trier la liste par id_releve
-                liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
-                return liste_contrats_info
+                    # Trier la liste par id_releve
+                    liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
+                    cache.set(cache_key, liste_contrats_info, timeout=3600)  # Cache for 1 hour
 
-        except ValueError as e:
-            return {'status': 'error', 'message': str(e)}
-        except Exception as e:
-            return {'status': 'error', 'message': f"Erreur du serveur: {str(e)}"}
+            except ValueError as e:
+                return {'status': 'error', 'message': str(e)}
+            except Exception as e:
+                return {'status': 'error', 'message': f"Erreur du serveur: {str(e)}"}
+
+        return liste_contrats_info
 
     @staticmethod
     @shared_task
@@ -196,57 +201,54 @@ def process_compteur_details(compteur_id):
 class TaskFactureDetail:
 
     @staticmethod
-    @shared_task
+    @shared_task(ignore_result=True)
     def precess_facture_list(id_releve):
         try:
-            with transaction.atomic():
-                releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
+            releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
 
-                if not releve:
-                    return {'status': 'error',
-                            'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
+            if not releve:
+                return {'status': 'error',
+                        'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
 
-                montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
+            montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
 
-                avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
-                avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
-                restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
-                restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
-                montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
+            avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
+            avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
+            restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
+            restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
+            montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
 
-                if montant_total_ttc == 0.0 or restant_nouvel == 0.0 or restant_nouvel == 0.0:
-                    montant_payer = 0.0
-                else:
-                    montant_payer = montant_total_ttc - restant_nouvel
-                # Affiche le prix du selon le type de client
-                typeclient = releve.num_contrat.client.type_client_id
-                cp_commune = releve.num_contrat.cp_commune_id
-                tarif = get_object_or_404(Tarif, cp_commune_id=cp_commune)
-                if typeclient == 1:
-                    tarif_m3 = tarif.prix_m3_bp
-                elif typeclient == 2:
-                    tarif_m3 = tarif.prix_m3_bs
-                elif typeclient == 3:
-                    tarif_m3 = tarif.prix_m3_k
-                else:
-                    tarif_m3 = 0.0
+            if montant_total_ttc == 0.0 or restant_nouvel == 0.0 or restant_nouvel == 0.0:
+                montant_payer = 0.0
+            else:
+                montant_payer = montant_total_ttc - restant_nouvel
 
-                facture = {
-                    'id': int(releve.id_facture),
-                    'relevecompteur_id': int(releve.relevecompteur_id),
-                    'num_facture': releve.num_facture,
-                    'num_compteur': int(releve.num_contrat.num_compteur_id),
-                    'date_facture': releve.date_facture,
-                    'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
-                    'tarif_m3': tarif_m3,
-                    'avoir_avant': avoir_avant,
-                    'avoir_utilise': avoir_utilise,
-                    'restant_precedant': restant_precedant,
-                    'montant_payer': montant_payer,
-                    'montant_total_ttc': montant_total_ttc,
-                    'statut': 'Payé' if releve.statut else 'Impayé',
-                }
-                return facture
+            typeclient = releve.num_contrat.client.type_client_id
+            cp_commune = releve.num_contrat.cp_commune_id
+            tarif = get_object_or_404(Tarif, cp_commune_id=cp_commune)
+            tarif_m3 = {
+                1: tarif.prix_m3_bp,
+                2: tarif.prix_m3_bs,
+                3: tarif.prix_m3_k
+            }.get(typeclient, 0.0)
+
+            facture = {
+                'id': int(releve.id_facture),
+                'relevecompteur_id': int(releve.relevecompteur_id),
+                'num_facture': releve.num_facture,
+                'num_compteur': int(releve.num_contrat.num_compteur_id),
+                'date_facture': releve.date_facture,
+                'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
+                'tarif_m3': tarif_m3,
+                'avoir_avant': avoir_avant,
+                'avoir_utilise': avoir_utilise,
+                'restant_precedant': restant_precedant,
+                'montant_payer': montant_payer,
+                'montant_total_ttc': montant_total_ttc,
+                'statut': 'Payé' if releve.statut else 'Impayé',
+            }
+            return facture
+
         except ValueError as e:
             raise ValueError(str(e))
         except Exception as e:
