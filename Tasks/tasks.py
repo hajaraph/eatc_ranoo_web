@@ -196,7 +196,7 @@ def process_compteur_details(compteur_id):
 class TaskFactureDetail:
 
     @staticmethod
-    @shared_task
+    @shared_task(ignore_result=True)
     def precess_facture_list(id_releve):
         try:
             with transaction.atomic():
