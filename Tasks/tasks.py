@@ -2,7 +2,7 @@ import re
 
 from celery import shared_task
 from django.core.cache import cache
-from django.db.models import Max, Sum
+from django.db.models import Max, Sum, Prefetch
 
 from Clients.models import Contrat
 from Compteurs.api_compteur.serializer import MissionSerializer
@@ -204,13 +204,15 @@ class TaskFactureDetail:
     @shared_task()
     def precess_facture_list(id_releve):
         try:
-            releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
+            releve = Facture.objects.select_related(
+                'num_contrat__client',
+                'num_contrat__cp_commune'
+            ).get(relevecompteur_id=id_releve)
 
             if not releve:
-                return {'status': 'error',
-                        'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
+                return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
 
-            montant_ht = get_object_or_404(MontantHT, facture_id=releve.id_facture)
+            montant_ht = MontantHT.objects.get(facture_id=releve.id_facture)
 
             avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
             avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
@@ -218,19 +220,17 @@ class TaskFactureDetail:
             restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
             montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
 
-            if montant_total_ttc == 0.0 or restant_nouvel == 0.0 or restant_nouvel == 0.0:
-                montant_payer = 0.0
-            else:
-                montant_payer = montant_total_ttc - restant_nouvel
+            montant_payer = 0.0 if montant_total_ttc == 0.0 or restant_nouvel == 0.0 \
+                else montant_total_ttc - restant_nouvel
 
             typeclient = releve.num_contrat.client.type_client_id
             cp_commune = releve.num_contrat.cp_commune_id
-            tarif = get_object_or_404(Tarif, cp_commune_id=cp_commune)
+            tarif = Tarif.objects.filter(cp_commune_id=cp_commune).first()
             tarif_m3 = {
                 1: tarif.prix_m3_bp,
                 2: tarif.prix_m3_bs,
                 3: tarif.prix_m3_k
-            }.get(typeclient, 0.0)
+            }.get(typeclient, 0.0) if tarif else 0.0
 
             facture = {
                 'id': int(releve.id_facture),
@@ -249,10 +249,12 @@ class TaskFactureDetail:
             }
             return facture
 
-        except ValueError as e:
-            raise ValueError(str(e))
+        except Facture.DoesNotExist:
+            return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
+        except MontantHT.DoesNotExist:
+            return {'status': 'error', 'message': 'Le montant HT n\'a pas été trouvé pour l\'ID de facture spécifié'}
         except Exception as e:
-            raise Exception(str(e))
+            return {'status': 'error', 'message': f"Erreur du serveur: {str(e)}"}
 
     @staticmethod
     @shared_task
