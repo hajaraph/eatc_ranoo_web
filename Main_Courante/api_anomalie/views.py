@@ -143,7 +143,7 @@ class DeclareMaincourate(APIView):
 
 @api_view(['POST'])
 def suivie_mc(request):
-    statut = request.data.get('status')
+    statut = request.data.get('statut')
     id_mc = request.data.get('id_mc')
     date_suivie = request.data.get('date_suivie')
     commentaire_suivie = request.data.get('commentaire_suivie')
