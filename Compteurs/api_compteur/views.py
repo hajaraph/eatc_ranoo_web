@@ -248,7 +248,9 @@ class FactureDetail(APIView):
         utilisateur = request.user.id_utilisateur
 
         try:
-            TaskFactureDetail.process_facture_paiement.delay(id_releve, montant_payer, utilisateur)
+            tache = TaskFactureDetail.process_facture_paiement.delay(id_releve, montant_payer, utilisateur)
+            tache.forget()
+
             return JsonResponse({'message': "tâche mis en attente !"})
         except ValueError as e:
             return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
