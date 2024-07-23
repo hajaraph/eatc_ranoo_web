@@ -196,7 +196,7 @@ def process_compteur_details(compteur_id):
 class TaskFactureDetail:
 
     @staticmethod
-    @shared_task(ignore_result=True)
+    @shared_task
     def precess_facture_list(id_releve):
         try:
             releve = get_object_or_404(Facture, relevecompteur_id=id_releve)

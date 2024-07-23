@@ -227,7 +227,7 @@ class FactureDetail(APIView):
     def get(request):
         id_releve = request.GET.get('id_releve')
         try:
-            tache = TaskFactureDetail.precess_facture_list.apply_async(args=[id_releve])
+            tache = TaskFactureDetail.precess_facture_list.apply(args=[id_releve])
             resultat = tache.get(timeout=10)
 
             return JsonResponse({'facture': resultat})
