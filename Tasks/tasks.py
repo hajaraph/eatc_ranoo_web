@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404
 
 class TaskMission:
     @staticmethod
-    @shared_task(ignore_result=True)
+    @shared_task()
     def process_liste_mission(cp_commune, end_of_month):
         cache_key = f"process_liste_mission_{cp_commune}_{end_of_month}"
         liste_contrats_info = cache.get(cache_key)
@@ -201,7 +201,7 @@ def process_compteur_details(compteur_id):
 class TaskFactureDetail:
 
     @staticmethod
-    @shared_task(ignore_result=True)
+    @shared_task()
     def precess_facture_list(id_releve):
         try:
             releve = get_object_or_404(Facture, relevecompteur_id=id_releve)
