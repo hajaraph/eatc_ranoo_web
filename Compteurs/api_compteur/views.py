@@ -229,6 +229,7 @@ class FactureDetail(APIView):
         try:
             tache = TaskFactureDetail.precess_facture_list.apply(args=[id_releve])
             resultat = tache.get(timeout=10)
+            tache.forget()
 
             return JsonResponse({'facture': resultat})
         except Facture.DoesNotExist:
