@@ -183,11 +183,11 @@ AUTH_USER_MODEL = 'Login.Utilisateur'
 
 ADMIN_ENABLED = False
 
-SECURE_SSL_REDIRECT = True
-
-CSRF_COOKIE_SECURE = True
-
-SESSION_COOKIE_SECURE = True
+# SECURE_SSL_REDIRECT = True
+#
+# CSRF_COOKIE_SECURE = True
+#
+# SESSION_COOKIE_SECURE = True
 
 # Configurations de Celery
 CELERY_BROKER_URL = 'redis://localhost:6379'
