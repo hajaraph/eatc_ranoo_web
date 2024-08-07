@@ -60,6 +60,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
+    'https://app.eatc.me',
     'http://89.116.38.149:8000',
     'http://127.0.0.1:8000',
     'http://localhost:3000',
@@ -69,6 +70,14 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     'http://89.116.38.149:8000',
     'http://127.0.0.1:8000',
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://app.eatc.me',
+    'https://www.app.eatc.me',
+]
+
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'Lax'
 
 ROOT_URLCONF = 'Rel_Compteur.urls'
 
@@ -188,12 +197,6 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = 'Login.Utilisateur'
 
 ADMIN_ENABLED = False
-
-# SECURE_SSL_REDIRECT = True
-#
-# CSRF_COOKIE_SECURE = True
-#
-# SESSION_COOKIE_SECURE = True
 
 # Configurations de Celery
 CELERY_BROKER_URL = 'redis://localhost:6379'
