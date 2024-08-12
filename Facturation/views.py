@@ -303,7 +303,7 @@ def facture_creation(date_facture, num_compteur, releve):
         montant_ht = Calcule.calculate_total_conso_ht(typeclient, tarif, consommation)
         relever = ReleveCompteur.objects.filter(num_compteur_id=num_compteur)
         dernier_releve = relever.order_by('-date_releve')[1]
-        date_relever = dernier_releve.latest('date_releve').date_releve
+        date_relever = relever.latest('date_releve').date_releve
 
         date_echeance = date_relever + timedelta(days=tarif.nb_jour_echeance_fct)
 
