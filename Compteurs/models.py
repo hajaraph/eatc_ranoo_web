@@ -1,6 +1,6 @@
 from django.db import models
 
-from Login.models import Utilisateur
+from Tenants.models import Utilisateur
 
 
 def upload_to_compteur(instance, filename):

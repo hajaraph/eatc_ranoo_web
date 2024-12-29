@@ -4,9 +4,9 @@ from django.db.models import ProtectedError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
-from Clients.communes import Commune, Region
+from Acommune.models import Region, Commune
 from Facturation.models import Tarif, Taxe
-from Login.models import Utilisateur, Role, Initial
+from Tenants.models import Utilisateur, Role, Initial
 from Login.views import authentification_requis, role_requis
 
 

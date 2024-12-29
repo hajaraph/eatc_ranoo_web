@@ -13,13 +13,13 @@ from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from xhtml2pdf import pisa
 
-from Clients.communes import Region
 from Clients.models import Contrat
 from Clients.views import generate_pdf
 from Compteurs.models import ReleveCompteur, Compteur
 from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
 from Login.views import authentification_requis, role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
+from Acommune.models import Region
 
 
 def date_range(request, model, datedeb, datefin, date_field, statut):

@@ -2,9 +2,9 @@ from django.db import models
 from django.db.models.functions import Now
 from django.utils import timezone
 
-from Clients.communes import Commune
+from Acommune.models import Commune
 from Clients.models import Client
-from Login.models import Utilisateur
+from Tenants.models import Utilisateur
 
 
 def upload_to_mc(instance, filename):

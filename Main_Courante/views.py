@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.views import View
 
-from Clients.communes import Region
+from Acommune.models import Region
 from Clients.models import Client
 from Login.views import authentification_requis
 from Main_Courante.models import MainCourante, StatutMC, SuivieMC

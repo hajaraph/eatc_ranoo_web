@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from Compteurs.api_compteur.views import Missions
 from Login.api_auth.serializer import UtilisateurSerializer, UtilisateurSerializerWithLastToken
-from Login.models import Utilisateur
+from Tenants.models import Utilisateur
 from Main_Courante.models import StatutMC
 
 

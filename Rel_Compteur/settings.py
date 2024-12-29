@@ -11,28 +11,39 @@ SECRET_KEY = 'django-insecure-iy)pk3bxm664w4$_vxm)$0$9&!grq0h%f*8!^sshd(f53uo25b
 
 DEBUG = True
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
+# Applications partagées entre tous les tenants
+SHARED_APPS = [
+    'django_tenants',
+    'Tenants',
     'django.contrib.contenttypes',
+    'django.contrib.auth',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_extensions', 
-    'Tableau_Bord',
-    'Clients',
-    'Compteurs', 
-    'Login',
-    'Facturation',
-    'Main_Courante',
-    'Parametre',
-    'Ranoo_Config',
+    'django.contrib.admin',
+    'django_extensions',
     'django_browser_reload',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'django_celery_results'
+    'django_celery_results',
+    'Acommune',
+    'Login'
 ]
+
+# Applications spécifiques aux tenants
+TENANT_APPS = [
+    'Clients',
+    'Compteurs',
+    'Facturation',
+    'Main_Courante',
+    'Parametre',
+    'Tableau_Bord'
+]
+
+INSTALLED_APPS = SHARED_APPS + TENANT_APPS
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -43,7 +54,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_browser_reload.middleware.BrowserReloadMiddleware',
-    'corsheaders.middleware.CorsMiddleware', 
+    'corsheaders.middleware.CorsMiddleware',
+    'django_tenants.middleware.main.TenantMainMiddleware',
 ]
 
 
@@ -100,14 +112,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Rel_Compteur.wsgi.application'
 
+DATABASE_ROUTERS = [
+    'django_tenants.routers.TenantSyncRouter'
+]
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django_tenants.postgresql_backend',
         'NAME': 'rel_compteur',
-        # 'USER': 'postgres',
-        # 'PASSWORD': '12121212',
-        'USER': 'eatcrano',
-        'PASSWORD': 'eatc301',
+        'USER': 'postgres',
+        'PASSWORD': '12121212',
+        # 'USER': 'eatcrano',
+        # 'PASSWORD': 'eatc301',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -182,6 +198,7 @@ REST_FRAMEWORK = {
     ]
 }
 
+# Configuration JWT
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -195,9 +212,7 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
-AUTH_USER_MODEL = 'Login.Utilisateur'
-
-ADMIN_ENABLED = False
+AUTH_USER_MODEL = 'Tenants.Utilisateur'
 
 # Configurations de Celery
 CELERY_BROKER_URL = 'redis://localhost:6379'
@@ -208,32 +223,29 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
+TENANT_MODEL = "Tenants.Entreprise"
+TENANT_DOMAIN_MODEL = "Tenants.Domain"
+
+PUBLIC_SCHEMA_URLCONF = 'Rel_Compteur.urls'
+
 # LOGGING = {
 #     'version': 1,
 #     'disable_existing_loggers': False,
 #     'handlers': {
-#         'file': {
-#             'level': 'DEBUG',
-#             'class': 'logging.FileHandler',
-#             'filename': 'django.log',  # Chemin absolu vers le fichier de logs
-#             'formatter': 'verbose',
-#         },
-#     },
-#     'formatters': {
-#         'verbose': {
-#             'format': '%(asctime)s %(levelname)s %(module)s %(message)s'
+#         'console': {
+#             'class': 'logging.StreamHandler',
 #         },
 #     },
 #     'loggers': {
 #         'django': {
-#             'handlers': ['file'],
-#             'level': 'DEBUG',
+#             'handlers': ['console'],
+#             'level': 'INFO',
 #             'propagate': True,
 #         },
-#         'your_app': {
-#             'handlers': ['file'],
+#         'Tenants.middleware': {
+#             'handlers': ['console'],
 #             'level': 'DEBUG',
-#             'propagate': True,
+#             'propagate': False,
 #         },
 #     },
 # }

@@ -1,10 +1,10 @@
 from django.db import models
 from django.utils import timezone
 
-from Clients.communes import Commune
+from Acommune.models import Commune
 from Clients.models import Contrat
 from Compteurs.models import ReleveCompteur
-from Login.models import Utilisateur
+from Tenants.models import Utilisateur
 
 
 class Tarif(models.Model):

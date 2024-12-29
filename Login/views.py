@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 
 
-from Login.models import Utilisateur, Initial
+from Tenants.models import Utilisateur, Initial
 
 
 # Fonction decorateur pour verifie si un utilisateur et connecté ou pas avant d'acceder a un url
@@ -70,6 +70,8 @@ class Authentification(View):
                     request.session['initial_utilisateur'] = (initial.utilisateur_createur.nom_utilisateur +
                                                               ' ' +
                                                               initial.utilisateur_createur.prenom_utilisateur)
+
+                    request.session['entreprise'] = utilisateur.entreprise_id
                     if sauvegarder:
                         # La session expirera lorsque l'utilisateur fermera son navigateur
                         request.session.set_expiry(None)

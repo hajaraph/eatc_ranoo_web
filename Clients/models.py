@@ -1,9 +1,8 @@
 from django.db import models
 
-from Clients.communes import Commune
 from Compteurs.models import Compteur
-from Login.models import Utilisateur
-
+from Tenants.models import Utilisateur
+from Acommune.models import Commune
 
 def upload_to_client(instance, filename):
     return f'clients/{instance.client.id_client}/{filename}'
