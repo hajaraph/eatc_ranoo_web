@@ -20,46 +20,42 @@ from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Resta
 from Login.views import authentification_requis, role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 from Acommune.models import Region
+from Tenants.middleware import schema_use
 
 
-def date_range(request, model, datedeb, datefin, date_field, statut):
+def date_range(request, model, datedeb, datefin, date_field, statut=None):
+    if datedeb and datefin and datedeb > datefin:
+        messages.warning(request, 'La Date Début ne doit pas être supérieure à la Date Fin !')
+        return model.objects.all().order_by(f'-{date_field}')
+
+    filters = Q()
     if datedeb and datefin:
-        if datedeb > datefin:
-            messages.warning(request, f'La Date Début ne doit pas être supérieure à la Date Fin !')
-            return model.objects.all().order_by(f'-{date_field}')
-        else:
-            if statut == 'paye':
-                return model.objects.filter(statut=True)
-            elif statut == 'impaye':
-                return model.objects.filter(statut=False)
-            else:
-                filter_query = Q(**{f"{date_field}__range": [datedeb, datefin]})
-                return model.objects.filter(filter_query)
-    else:
-        if statut == 'paye':
-            return model.objects.filter(statut=True)
-        elif statut == 'impaye':
-            return model.objects.filter(statut=False)
-        else:
-            return model.objects.all().order_by(f'-{date_field}')
+        filters &= Q(**{f"{date_field}__range": [datedeb, datefin]})
+
+    if statut == 'paye':
+        filters &= Q(statut=True)
+    elif statut == 'impaye':
+        filters &= Q(statut=False)
+
+    return model.objects.filter(filters).order_by(f'-{date_field}')
 
 
 def date_range_fact_pdf(date_deb, date_fin, commune, model):
-    if date_deb and date_fin and commune:
-        return model.filter(date_facture__range=[date_deb, date_fin], num_contrat__cp_commune_id=commune)
-    elif date_deb and date_fin:
-        return model.filter(date_facture__range=[date_deb, date_fin])
-    elif date_deb and commune:
-        return model.filter(date_facture=date_deb, num_contrat__cp_commune_id=commune)
+    filters = Q()
+
+    if date_deb and date_fin:
+        filters &= Q(date_facture__range=[date_deb, date_fin])
     elif date_deb or date_fin:
-        return model.filter(date_facture=date_deb or date_fin)
-    elif commune:
-        return model.filter(num_contrat__cp_commune_id=commune)
-    else:
-        return model
+        filters &= Q(date_facture=date_deb or date_fin)
+
+    if commune:
+        filters &= Q(num_contrat__cp_commune_id=commune)
+
+    return model.filter(filters)
 
 
 @authentification_requis
+@schema_use
 def facture(request):
     title = 'Facturation | Etat Facture'
     font = 'custom-font'
@@ -68,7 +64,7 @@ def facture(request):
     restant = Restant.objects.count()
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
-    factures = date_range(request, Facture, datedeb, datefin, 'date_facture', None)
+    factures = date_range(request, Facture, datedeb, datefin, 'date_facture')
     region = Region.objects.order_by('region').all()
     impayer_exist = Facture.objects.filter(statut=False).exists()
     context = {
@@ -87,6 +83,7 @@ def facture(request):
 
 
 @authentification_requis
+@schema_use
 def facture_etat_detail(request, num_facture):
     title = 'Facturation | Etat Facture | Détail'
     font = 'custom-font'
@@ -114,13 +111,14 @@ def facture_etat_detail(request, num_facture):
 
 
 @authentification_requis
+@schema_use
 def facture_paye(request):
     title = 'Facturation | Payé'
     font = 'custom-font'
     active = 'active'
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
-    paye = date_range(request, Facture, datedeb, datefin, 'date_restant', 'paye')
+    paye = date_range(request, Facture, datedeb, datefin, 'date_facture', 'paye')
 
     context = {
         'title_facture_paye': title,
@@ -134,13 +132,14 @@ def facture_paye(request):
 
 
 @authentification_requis
+@schema_use
 def facture_impaye(request):
     title = 'Facturation | Impayé'
     font = 'custom-font'
     active = 'active'
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
-    impaye = date_range(request, Facture, datedeb, datefin, 'date_restant', 'impaye')
+    impaye = date_range(request, Facture, datedeb, datefin, 'date_facture', 'impaye')
     context = {
         'title_facture_impaye': title,
         'active_facture_impaye': active,
@@ -153,13 +152,14 @@ def facture_impaye(request):
 
 
 @authentification_requis
+@schema_use
 def facture_restant(request):
     title = 'Facturation | Facture'
     font = 'custom-font'
     active = 'active'
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
-    restants = date_range(request, Restant, datedeb, datefin, 'date_restant', None)
+    restants = date_range(request, Restant, datedeb, datefin, 'date_restant')
     context = {
         'title_facture': title,
         'active_facture': active,
@@ -172,6 +172,7 @@ def facture_restant(request):
 
 
 @authentification_requis
+@schema_use
 def facture_retard(request):
     title = 'Facturation | Retard'
     font = 'custom-font'
@@ -183,13 +184,14 @@ def facture_retard(request):
 
 
 @authentification_requis
+@schema_use
 def facture_avoir(request):
     title = 'Facturation | Avoir'
     font = 'custom-font'
     active = 'active'
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
-    avoir = date_range(request, Avoir, datedeb, datefin, 'date_avoir', None)
+    avoir = date_range(request, Avoir, datedeb, datefin, 'date_avoir')
     context = {
         'title_avoir': title,
         'active_avoir': active,
@@ -394,6 +396,7 @@ def facture_context_pdf(request, factures):
 
 
 @authentification_requis
+@schema_use
 def facture_genere_pdf(request, num_facture):
     factures = Facture.objects.get(num_facture=num_facture)
     context = facture_context_pdf(request, factures)
@@ -414,6 +417,7 @@ def render_html_to_pdf(template_src, context_dict):
 
 
 @authentification_requis
+@schema_use
 def generate_multiple_pages_pdf(request):
     date_deb = request.GET.get('date_deb')
     date_fin = request.GET.get('date_fin')
@@ -544,6 +548,7 @@ def paiement(id_releve, montant_payer, utilisateur):
 
 
 @authentification_requis
+@schema_use
 def facture_paiement(request, *args, **kwargs):
     id_releve = request.POST['id_releve']
     montant_payer = float(request.POST['paiement'])
@@ -555,6 +560,7 @@ def facture_paiement(request, *args, **kwargs):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def facture_export_excel(request):
     date_deb = request.GET.get('date_deb')
     date_fin = request.GET.get('date_fin')

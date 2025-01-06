@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from Compteurs.api_compteur.views import Missions
 from Login.api_auth.serializer import UtilisateurSerializer, UtilisateurSerializerWithLastToken
+from Tenants.middleware import schema_use
 from Tenants.models import Utilisateur
 from Main_Courante.models import StatutMC
 
@@ -72,6 +73,7 @@ def get_users(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@schema_use
 def donne_tout(request):
     utilisateurs = Utilisateur.objects.filter(role_id=3)
     utilisateur_liste = [

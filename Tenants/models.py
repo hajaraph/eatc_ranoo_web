@@ -29,7 +29,7 @@ class Utilisateur(AbstractUser):
     id_utilisateur = models.BigAutoField(primary_key=True)
     nom_utilisateur = models.CharField(max_length=30, blank=False)
     prenom_utilisateur = models.CharField(max_length=50, blank=False)
-    num_utilisateur = models.TextField(max_length=10, blank=False)
+    num_utilisateur = models.CharField(max_length=10, blank=False, unique=True)
     photo_utilisateur = models.ImageField(upload_to=upload_to_utilisateur, blank=True, null=True)
     cree_le = models.DateField(db_default=Now())
     statut = models.BooleanField(db_default=True, blank=False, null=False)
