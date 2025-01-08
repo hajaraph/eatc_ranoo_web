@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 
 from Clients.models import Contrat
 from Parametre.views import enregistre_historique
-from Tenants.middleware import schema_use
+from Tenants.middleware import schema_use_api
 
 from .serializer import MissionSerializer
 from Tasks.tasks import TaskMission, process_compteur_details, TaskFactureDetail
@@ -73,7 +73,7 @@ def calculer_nombre_relever_effectuer(cp_commune_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-@schema_use
+@schema_use_api
 def accueil(request):
     cp_commune_id = request.user.cp_commune_id
     non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
@@ -99,7 +99,7 @@ def accueil(request):
 
 
 @api_view(['GET'])
-@schema_use
+@schema_use_api
 def relever_client(request):
     compteur_id = request.GET.get('num_compteur')
 
@@ -124,7 +124,7 @@ class Missions(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @staticmethod
-    @schema_use
+    @schema_use_api
     def get(request):
         cp_commune = request.user.cp_commune_id
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
@@ -145,7 +145,7 @@ class Missions(APIView):
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
-    @schema_use
+    @schema_use_api
     def post(request):
         serializer = MissionSerializer(data=request.data)
         utilisateur = request.user.id_utilisateur
@@ -227,7 +227,7 @@ class FactureDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @staticmethod
-    @schema_use
+    @schema_use_api
     def get(request):
         id_releve = request.GET.get('id_releve')
         try:
@@ -246,7 +246,7 @@ class FactureDetail(APIView):
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
-    @schema_use
+    @schema_use_api
     def post(request):
         id_releve = request.data.get('relevecompteur_id')
         montant_payer = float(request.data.get('paiement'))

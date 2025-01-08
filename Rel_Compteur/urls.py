@@ -14,6 +14,7 @@ urlpatterns = [
     path('main_courante/', include('Main_Courante.urls')),
     path('parametre/', include('Parametre.urls')),
     path('ranoo_config/', include('Ranoo_Config.urls')),
+
     path('api/', include([
         path('', include('Login.api_auth.urls')),
         path('', include('Compteurs.api_compteur.urls')),
