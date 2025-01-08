@@ -75,6 +75,7 @@ def schema_use_api(view_func):
             )
 
         entreprise_id = getattr(request.user, 'entreprise_id', None)
+
         if not entreprise_id:
             return Response(
                 {"detail": "Aucune entreprise n'est associée à votre compte."},
