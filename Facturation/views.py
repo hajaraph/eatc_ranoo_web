@@ -21,6 +21,7 @@ from Login.views import authentification_requis, role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 from Acommune.models import Region
 from Tenants.middleware import schema_use
+from Tenants.models import Entreprise
 
 
 def date_range(request, model, datedeb, datefin, date_field, statut=None):
@@ -244,7 +245,7 @@ class Calcule:
             montant_taxe = sum(Calcule.montant_taxe(typeclient, tarif, consommation))
             montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
             if montant_ht:
-                Calcule.montantttc(total_conso_ht + montant_taxe, montant_ht)
+                Calcule.montantttc(total_conso_ht + montant_taxe + tarif.prix_location_compteur, montant_ht)
         except Exception as e:
             return HttpResponse(f"Error in cree_montant: {e}")
 
@@ -402,11 +403,18 @@ def facture_genere_pdf(request, num_facture):
     context = facture_context_pdf(request, factures)
 
     if isinstance(context, HttpResponse):
-        # Si context est une réponse HTTP, retourne-la (cela signifie qu'une erreur est survenue)
         return context
 
-    template_path = 'all_page/facturation/facture/templatepdf.html'
+    id_entreprise = request.session.get('entreprise')
+    entreprise = Entreprise.objects.get(pk=id_entreprise)
+
+    if entreprise.schema_name == "eatc":
+        template_path = 'all_page/facturation/facture/templatepdf.html'
+    else:
+        template_path = 'all_page/facturation/facture/templatenoeatc.html'
+
     filename_prefix = f"{factures.num_facture}-({datetime.now().strftime('%d/%m/%Y')})"
+
     return generate_pdf(request, context, template_path, filename_prefix)
 
 
@@ -436,7 +444,13 @@ def generate_multiple_pages_pdf(request):
                 # Si context est une réponse HTTP, retourne-la (cela signifie qu'une erreur est survenue)
                 return context
 
-            html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
+            id_entreprise = request.session.get('entreprise')
+            entrepries = Entreprise.objects.get(pk=id_entreprise)
+            if entrepries.schema_name == "eatc":
+                html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
+            else:
+                html = render_html_to_pdf('all_page/facturation/facture/templatenoeatc.html', context)
+
             if html:
                 html_sections.append(html)
             else:
@@ -600,7 +614,6 @@ def facture_export_excel(request):
 
 
 def generate_qr_code(request, num_facture):
-    # Les données que vous voulez encoder dans le QR code (peut être un lien, du texte, etc.)
     data = num_facture
 
     # Création de l'objet QR code

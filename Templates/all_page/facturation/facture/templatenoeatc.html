@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Facture numéro {{ instance.num_facture }}</title>
+</head>
+<body style="font-size: 8px">
+    <div>
+        <table>
+            <tr>
+                <td style="border: 1px solid black; margin-left: 5px">
+                    <div>
+                        Facture n° : {{ instance.num_facture}}
+                    </div>
+                    <div>
+                        Mois de : {{ relever_actuel.date_releve|date:"d/m/Y" }}
+                    </div>
+                </td>
+                <td colspan="2">
+                    <table>
+                        <tr>
+                            <td style="width: 25%"></td>
+                            <td>
+                                <div>
+                                    <div style="text-align: center; font-size: 12px; font-weight: bold; text-decoration: underline">
+                                        Facture d'eau
+                                    </div>
+                                    <div>
+                                        Type client : {{ instance.num_contrat.client.type_client.designation_client }}
+                                    </div>
+                                    <div>
+                                        Nom client : {{ instance.num_contrat.client.nom_client }}
+                                                {% if instance.num_contrat.client.prenom_client %}
+                                                    {{ instance.num_contrat.client.prenom_client }}
+                                                {% endif %}
+                                    </div>
+                                    <div>
+                                        Adresse : {{ instance.num_contrat.client.cp_commune.commune }}
+                                    </div>
+                                    <div>
+                                        Code client : {{ instance.num_contrat.client.id_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="width: 25%"></td>
+                        </tr>
+                    </table>
+                </td>
+                <td style="font-size: 12px; font-weight: bold; text-align: center">
+                    REÇU
+                </td>
+            </tr>
+        </table>
+        <div>
+            <table>
+                <tr style="padding-top: 2px">
+                    <td style="width: 25%"></td>
+                    <td style="width: 4px;"></td>
+                    <td style="text-align: center; border: 1px solid black; " colspan="3">Index (m&#179)</td>
+                    <td style="text-align: center; border: 1px solid black; " colspan="3">Consommation (m&#179)</td>
+                    <td style="width: 4px"></td>
+                    <td rowspan="5" style="border: 1px solid black; margin-left: 5px">
+                        <table>
+                            <tr>
+                                <td style="width: 40%">
+                                    <div>
+                                        Facture n :
+                                    </div>
+                                    <div>
+                                        Mois de :
+                                    </div>
+                                    <div>
+                                        Code Client :
+                                    </div>
+                                    <div>
+                                        N° Compteur :
+                                    </div>
+                                    <div>
+                                        Net à Payer :
+                                    </div>
+                                    <div>
+                                        Payé le :
+                                    </div>
+                                    <div>
+                                        N° reçu :
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        {{ instance.num_facture}}
+                                    </div>
+                                    <div>
+                                        {{ relever_actuel.date_releve|date:"d/m/Y" }}
+                                    </div>
+                                    <div>
+                                        {{ instance.num_contrat.client.id_client }}
+                                    </div>
+                                    <div>
+                                        {{ instance.num_contrat.num_compteur_id }}
+                                    </div>
+                                    <div>
+                                        {{ instance.montant_total_ttc }} Ar
+                                    </div>
+                                    <div>
+                                        __________
+                                    </div>
+                                    <div>
+                                        __________
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="border-top: 1px solid black; border-left: 1px solid black; border-right: 1px solid black; margin-left: 5px; padding-top: 2px; width: 25%">
+                        <div>
+                            Date de présentation : {{ relever_actuel.date_releve|date:"d/m/Y" }}
+                        </div>
+                    </td>
+                    <td style="width: 4px;"></td>
+                    <td style="border: 1px solid black; margin-left: 5px; padding-top: 2px">
+                        Ancien
+                    </td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ reveler_precedant.volume }}</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ reveler_precedant.date_releve|date:"d/m/Y" }}</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">Quantité</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">P.U (Ar)</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">Montant (Ar)</td>
+                </tr>
+                <tr>
+                    <td style="border-bottom: 1px solid black; border-left: 1px solid black; border-right: 1px solid black; margin-left: 5px">
+                        <div>
+                            Payer avant : {{ instance.date_echeance|date:'d/m/Y' }}
+                        </div>
+                    </td>
+                    <td style="width: 4px;"></td>
+                    <td style="border: 1px solid black; width: 8%; margin-left: 5px; padding-top: 2px">Nouveau</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.volume }}</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.date_releve|date:"d/m/Y" }}</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.conso }}</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">
+                        {% if typeclient == 1 %}
+                                {{ montant.tarif.prix_m3_bs }}
+                            {% elif typeclient == 2 %}
+                                {{ montant.tarif.prix_m3_bp }}
+                            {% elif typeclient == 3 %}
+                                {{ montant.tarif.prix_m3_k }}
+                            {% else %}
+                                Prix inconnu
+                            {% endif %}
+                    </td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">
+                        {{ instance.montant_total_ttc }}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        <div>
+                            <span style="font-weight: bold">Arrêté à la somme de :</span> {{ lettre }} Ariary
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Payé le :</td>
+                    <td></td>
+                    <td style="text-align: center" colspan="6">
+                        Le Responsable
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2" style="background-color: #e1e1e1"></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

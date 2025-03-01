@@ -3,6 +3,7 @@ from functools import wraps
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import resolve
+from django.utils.deprecation import MiddlewareMixin
 from django_tenants.utils import schema_exists, schema_context
 from rest_framework import status
 from rest_framework.response import Response
@@ -10,29 +11,40 @@ from rest_framework.response import Response
 from Tenants.models import Entreprise
 
 
-class TenantMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
+# class TenantMiddleware:
+#     def __init__(self, get_response):
+#         self.get_response = get_response
+#
+#     def __call__(self, request):
+#         current_url = resolve(request.path_info).url_name
+#
+#         # URLs exclues du middleware
+#         excluded_urls = ['admin:index', 'admin:login', 'authentification']
+#
+#         # Si l'URL est dans les URLs exclues ou commence par /admin/
+#         if current_url in excluded_urls or request.path.startswith('/admin/'):
+#             return self.get_response(request)
+#
+#         # Vérification de l'utilisateur
+#         if request.user.is_authenticated:
+#             if request.user.is_superuser:
+#                 return redirect('/admin/')
+#         else:
+#             messages.error(request, "Veuillez vous authentifier.")
+#             return redirect('authentification')
+#
+#         return self.get_response(request)
 
-    def __call__(self, request):
-        current_url = resolve(request.path_info).url_name
 
-        # URLs exclues du middleware
-        excluded_urls = ['admin:index', 'admin:login', 'authentification']
+class CustomSessionMiddleware(MiddlewareMixin):
 
-        # Si l'URL est dans les URLs exclues ou commence par /admin/
-        if current_url in excluded_urls or request.path.startswith('/admin/'):
-            return self.get_response(request)
-
-        # Vérification de l'utilisateur
-        if request.user.is_authenticated:
-            if request.user.is_superuser:
-                return redirect('/admin/')
+    @staticmethod
+    def process_request(request):
+        if request.path.startswith('/admin/'):
+            request.session_cookie_name = 'admin_sessionid'
         else:
-            messages.error(request, "Veuillez vous authentifier.")
-            return redirect('authentification')
+            request.session_cookie_name = 'client_sessionid'
 
-        return self.get_response(request)
 
 
 def schema_use(view_func):
