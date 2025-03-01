@@ -41,7 +41,6 @@ html5lib==1.1
 idna==3.7
 kombu==5.3.7
 lxml==5.2.2
-mysqlclient==2.2.6
 num2word==1.0.1
 num2words==0.5.13
 numpy==1.26.4
