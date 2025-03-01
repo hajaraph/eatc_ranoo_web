@@ -4,19 +4,21 @@ from django.db.models import ProtectedError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
-from Clients.communes import Commune, Region
+from Acommune.models import Region, Commune
 from Facturation.models import Tarif, Taxe
-from Login.models import Utilisateur, Role, Initial
+from Tenants.middleware import schema_use
+from Tenants.models import Utilisateur, Role, Initial
 from Login.views import authentification_requis, role_requis
 
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def config_utilisateur(request):
     titre = 'Ranoo Config | Utilisateur'
     active = 'active'
     font = 'custom-font'
-    data = Initial.objects.all()
+    data = Initial.objects.filter(utilisateur_cree__entreprise_id=request.session.get('entreprise'))
 
     contexte = {
         'titre_ranoo_utilisateur': titre,
@@ -31,15 +33,16 @@ class NouvelUtilisateur(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request):
         titre = 'Parametre | Utilisateur | Crée un compte'
         active = 'active'
         font = 'custom-font'
         # Pour exclure le role si ce n'est pas un administrateur qui creer le compte
         if request.session.get('role_utilisateur') == 'Administrateur':
-            role = Role.objects.all()
+            role = Role.objects.all().order_by('role')
         else:
-            role = Role.objects.all().exclude(role='Administrateur')
+            role = Role.objects.all().order_by('role').exclude(role='Administrateur')
 
         regions = Region.objects.all()
         contexte = {
@@ -54,6 +57,7 @@ class NouvelUtilisateur(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request):
         nom_utilisateur = request.POST['nom_utilisateur']
         prenom_utilisateur = request.POST['prenom_utilisateur']
@@ -73,6 +77,7 @@ class NouvelUtilisateur(View):
                         prenom_utilisateur=prenom_utilisateur,
                         num_utilisateur=num_utilisateur,
                         password=make_password(motpasse_utilisateur),
+                        entreprise_id=request.session.get('entreprise'),
                         role_id=role_id
                     )
 
@@ -83,6 +88,7 @@ class NouvelUtilisateur(View):
                         prenom_utilisateur=prenom_utilisateur,
                         num_utilisateur=num_utilisateur,
                         password=make_password(motpasse_utilisateur),
+                        entreprise_id=request.session.get('entreprise'),
                         cp_commune_id=cp_commune,
                         role_id=role_id
                     )
@@ -106,6 +112,7 @@ class UtilisateurMod(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request, pk):
         active = 'active'
         font = 'custom-font'
@@ -131,6 +138,7 @@ class UtilisateurMod(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request, pk):
         nom_utilisateur = request.POST['nom_utilisateur']
         prenom_utilisateur = request.POST['prenom_utilisateur']
@@ -161,6 +169,7 @@ class UtilisateurMod(View):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def sup_utilisateur(request, pk):
     utilisateur = Utilisateur.objects.get(pk=pk)
     utilisateur_supprimer = f"{utilisateur.nom_utilisateur} {utilisateur.prenom_utilisateur}"
@@ -174,6 +183,7 @@ def sup_utilisateur(request, pk):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def config_tarif(request):
     titre = 'Ranoo Config | Tarif'
     active = 'active'
@@ -192,6 +202,7 @@ class TarifNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request):
         titre = 'Ranoo Config | Tarif | Nouveau'
         active = 'active'
@@ -208,16 +219,16 @@ class TarifNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request):
         cp_commune = request.POST['cp_commune']
         prix_m3_bs = float(request.POST['prix_m3_bs'])
         prix_m3_bp = float(request.POST['prix_m3_bp'])
         prix_m3_k = float(request.POST['prix_m3_k'])
-        conso_tva_app = float(request.POST['conso_tva_app'])
-        nom_taxes = request.POST.getlist('nom_taxe')
-        taux_taxes = [float(taux) for taux in request.POST.getlist('taux_taxe')]
-        tva = float(request.POST['tva'])
+        conso_tva_app = float(request.POST['conso_tva_app']) if request.POST['conso_tva_app'] else 0
+        tva = float(request.POST['tva']) if request.POST['tva'] else 0
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
+        prix_location_compteur = request.POST['prix_location_compteur']
         tarif = Tarif.objects.create(
             cp_commune_id=cp_commune,
             prix_m3_bs=round(prix_m3_bs, 2),
@@ -226,13 +237,18 @@ class TarifNew(View):
             tva=round(tva, 2),
             conso_tva_app=round(conso_tva_app, 2),
             nb_jour_echeance_fct=nb_jour_echeance_fct,
+            prix_location_compteur=prix_location_compteur,
         )
-        for nom_taxe, taux_taxe in zip(nom_taxes, taux_taxes):
-            Taxe.objects.create(
-                nom_taxe=nom_taxe,
-                taux_taxe=round(float(taux_taxe), 2),
-                tarif_id=tarif.pk
-            )
+
+        nom_taxes = request.POST.getlist('nom_taxe')
+        taux_taxes = [taux for taux in request.POST.getlist('taux_taxe')]
+        if nom_taxes != [''] and taux_taxes != ['']:
+            for nom_taxe, taux_taxe in zip(nom_taxes, taux_taxes):
+                Taxe.objects.create(
+                    nom_taxe=nom_taxe,
+                    taux_taxe=round(float(taux_taxe), 2),
+                    tarif_id=tarif.pk
+                )
         messages.success(request, f'Enregistré avec succès !')
         return redirect('config_tarif')
 
@@ -241,6 +257,7 @@ class TarifMod(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request, pk):
         titre = 'Ranoo Config | Tarif Modifier'
         active = 'active'
@@ -259,6 +276,7 @@ class TarifMod(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request, pk):
         prix_m3_bs = float(request.POST['prix_m3_bs'])
         prix_m3_bp = float(request.POST['prix_m3_bp'])
@@ -302,6 +320,7 @@ class TarifMod(View):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def region(request):
     titre = 'Ranoo Config | Région'
     active = 'active'
@@ -320,6 +339,7 @@ class CommuneNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request):
         titre = 'Ranoo Config | Région | Nouveau Département'
         active = 'active'
@@ -336,6 +356,7 @@ class CommuneNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request):
         regions = request.POST['region']
         commune = request.POST['commune']
@@ -357,6 +378,7 @@ class CommuneNew(View):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def supp_commune(request, pk):
     commune = Commune.objects.get(pk=pk)
     commune.delete()

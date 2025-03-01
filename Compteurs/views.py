@@ -9,9 +9,11 @@ from Facturation.models import Facture
 from Facturation.views import facture_creation
 from Login.views import authentification_requis, role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
+from Tenants.middleware import schema_use
 
 
 @authentification_requis
+@schema_use
 def compteur_liste(request):
     title = 'Compteurs | Liste'
     active = 'active'
@@ -51,6 +53,7 @@ class CompteurNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request):
         title = 'Compteurs | Nouveau'
         active = 'active'
@@ -65,6 +68,7 @@ class CompteurNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request):
         num_compteur = request.POST['num_compteur']
         marque_compteur = request.POST['marque_compteur']
@@ -105,6 +109,7 @@ class CompteurDetail(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+    @schema_use
     def get(request, pk):
         active = 'active'
         font = 'custom-font'
@@ -127,6 +132,7 @@ class CompteurDetail(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+    @schema_use
     def post(request, pk):
         mod_compteur = Compteur.objects.get(pk=pk)
         marque_compteur = request.POST['marque_compteur']
@@ -149,6 +155,7 @@ class CompteurDetail(View):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def compteur_supp(request, pk):
     compteur = Compteur.objects.get(pk=pk)
     compteur.delete()
@@ -162,6 +169,7 @@ def compteur_supp(request, pk):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+@schema_use
 def compteur_releve(request):
     title = 'Compteurs | Relevé'
     active = 'active'
@@ -194,6 +202,7 @@ class ReleveNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+    @schema_use
     def get(request, num_compteur):
         compteur = Compteur.objects.get(pk=num_compteur)
         title = f'Compteur Numéro : {compteur.num_compteur} | Relevé | Nouveau'
@@ -210,6 +219,7 @@ class ReleveNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+    @schema_use
     def post(request, num_compteur):
         date_releve = request.POST.get('date_releve')
         date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
@@ -263,6 +273,7 @@ class ReleveMod(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+    @schema_use
     def get(request, pk):
         releve = ReleveCompteur.objects.get(pk=pk)
         title = f"Relevé | Détail | "
@@ -293,6 +304,7 @@ class ReleveMod(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+    @schema_use
     def post(request, pk):
         date_releve = request.POST['date_releve']
         date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
@@ -318,6 +330,7 @@ class ReleveMod(View):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+@schema_use
 def del_releve(request, pk):
     releve = get_object_or_404(ReleveCompteur, pk=pk)
     releve.image_compteur.delete()
@@ -327,6 +340,7 @@ def del_releve(request, pk):
 
 
 @authentification_requis
+@schema_use
 def export_compteur(request):
     compteurs = Compteur.objects.all()
     nom_fichier = "compteurs.xlsx"
@@ -351,6 +365,7 @@ def export_compteur(request):
 
 
 @authentification_requis
+@schema_use
 def export_relever(request, num_compteur):
     relevecompteur = ReleveCompteur.objects.filter(num_compteur_id=num_compteur)
     nom_fichier = f"Relever_de_{num_compteur}.xlsx"

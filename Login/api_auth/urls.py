@@ -6,5 +6,4 @@ urlpatterns = [
     path('authentification', authentification),
     path('getUsers/', get_users),
     path('serveurTest/', check_server, name='check_server_availability'),
-    path('donnee', donne_tout) 
 ]

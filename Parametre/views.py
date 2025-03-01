@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from openpyxl.workbook import Workbook
 
-from Login.models import Utilisateur
+from Tenants.models import Utilisateur
 from Login.views import authentification_requis, role_requis, deconnexion
 from Parametre.models import Historique
 

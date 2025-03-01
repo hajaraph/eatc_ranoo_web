@@ -10,14 +10,14 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('Compteurs', '0001_initial'),
+        ('Parametre', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='relevecompteur',
+            model_name='historique',
             name='utilisateur',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
         ),
     ]

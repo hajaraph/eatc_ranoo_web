@@ -1,7 +1,6 @@
 debug.log
 .gitignore
 
-Rel_Compteur/settings.py
 .scripts
 
 static/media/ 
@@ -19,3 +18,4 @@ Main_Courante/__pycache__/
 Parametre/__pycache__/
 Ranoo_Config/__pycache__/
 Tableau_Bord/__pycache__/
+.venv

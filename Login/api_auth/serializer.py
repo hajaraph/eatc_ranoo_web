@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from Login.models import Utilisateur
+from Tenants.models import Utilisateur
 
 
 class UtilisateurSerializer(serializers.ModelSerializer):

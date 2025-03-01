@@ -9,7 +9,8 @@ from rest_framework.response import Response
 
 from Compteurs.api_compteur.views import Missions
 from Login.api_auth.serializer import UtilisateurSerializer, UtilisateurSerializerWithLastToken
-from Login.models import Utilisateur
+from Tenants.middleware import schema_use_api
+from Tenants.models import Utilisateur
 from Main_Courante.models import StatutMC
 
 
@@ -40,7 +41,6 @@ def authentification(request):
                                 'nom_utilisateur': utilisateur.nom_utilisateur,
                                 'prenom_utilisateur': utilisateur.prenom_utilisateur,
                                 'num_utilisateur': utilisateur.num_utilisateur,
-                                'password': utilisateur.password,
                                 'role': utilisateur.role.role,
                                 'region': utilisateur.cp_commune.region.region,
                                 'commune': utilisateur.cp_commune.commune,
@@ -72,6 +72,7 @@ def get_users(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@schema_use_api
 def donne_tout(request):
     utilisateurs = Utilisateur.objects.filter(role_id=3)
     utilisateur_liste = [

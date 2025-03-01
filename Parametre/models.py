@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models.functions import Now
 
-from Login.models import Utilisateur
+from Tenants.models import Utilisateur
 
 
 class Historique(models.Model):

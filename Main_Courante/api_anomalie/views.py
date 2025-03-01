@@ -7,12 +7,14 @@ from rest_framework.views import APIView
 from rest_framework.decorators import parser_classes, api_view
 from Main_Courante.api_anomalie.serializer import MainCouranteSerializer, PhotosSerializer, SuivieSerializer
 from Main_Courante.models import StatutMC, PhotoMC, SuivieMC
+from Tenants.middleware import schema_use_api
 
 
 class DeclareMaincourate(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @staticmethod
+    @schema_use_api
     def get(request):
         main_courantes = StatutMC.objects.exclude(realise=True).all()
 
@@ -70,6 +72,7 @@ class DeclareMaincourate(APIView):
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))
+    @schema_use_api
     def post(request):
         # Récupération des données de la requête
         data = request.data
@@ -142,6 +145,7 @@ class DeclareMaincourate(APIView):
 
 
 @api_view(['POST'])
+@schema_use_api
 def suivie_mc(request):
     statut = request.data.get('statut')
     id_mc = request.data.get('id_mc')

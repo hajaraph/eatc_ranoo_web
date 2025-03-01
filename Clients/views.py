@@ -1,5 +1,6 @@
 import os
 import re
+from io import BytesIO
 
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
@@ -9,16 +10,18 @@ from datetime import datetime
 from django.views import View
 from xhtml2pdf import pisa
 
-from Clients.communes import Region, Commune
-from Clients.models import Client, PieceClient, Contrat, TypeClient
+from Clients.models import Client, PieceClient, Contrat, TypeClient, Commune
 from Compteurs.models import Compteur
 from Facturation.models import Tarif
 from Login.views import authentification_requis, role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
+from Acommune.models import Region
+from Tenants.middleware import schema_use
 
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire', 'Autre')
+@schema_use
 def client_liste(request):
     title = 'Clients | Liste'
     active = 'active'
@@ -63,6 +66,7 @@ class ClientNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request):
         title = 'Nouveau Client'
         active = 'active'
@@ -81,6 +85,7 @@ class ClientNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request):
         client_data = extract_client_data(request)
         tel = Client.objects.filter(tel1_client=client_data['tel1_client'])
@@ -126,6 +131,7 @@ class ClientDetail(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request, pk, *args, **kwargs):
         client_detail = Client.objects.get(pk=pk)
         pieces_client = client_detail.piececlients.all()
@@ -152,6 +158,7 @@ class ClientDetail(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request, pk, *args, **kwargs):
         client_data = extract_client_data(request)
         client = Client.objects.get(pk=pk)
@@ -185,6 +192,7 @@ class ClientDetail(View):
 
 @authentification_requis
 @role_requis('Administrateur')
+@schema_use
 def delete_client(request, pk):
     client = Client.objects.get(pk=pk)
     message = f"Client ID {client.pk} - Suppression du profil de {client.nom_client} {client.prenom_client}"
@@ -203,6 +211,7 @@ def delete_client(request, pk):
 
 @authentification_requis
 @role_requis('Administrateur')
+@schema_use
 def supp_file_client(request, pk):
     file = get_object_or_404(PieceClient, pk=pk)
 
@@ -221,6 +230,7 @@ class ClientContrat(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request, pk, *args, **kwargs):
         active = 'active'
         font = 'custom-font'
@@ -265,6 +275,7 @@ class ClientContrat(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request, pk, *args, **kwargs):
         nom_client = request.POST['nom_client']
         prenom_client = request.POST['prenom_client']
@@ -315,6 +326,7 @@ class ClientContrat(View):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def client_contrat(request):
     title = 'Clients | Contrats'
     active = 'active'
@@ -333,6 +345,7 @@ class ContratNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request):
         title = 'Clients | Contrats | Nouveau'
         active = 'active'
@@ -354,6 +367,7 @@ class ContratNew(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request):
         contrat = extract_contrat_data(request)
         client_id = request.POST['client_id']
@@ -420,6 +434,7 @@ class ContratNew(View):
 
 @authentification_requis
 @role_requis('Administrateur')
+@schema_use
 def supp_contrat(request, pk):
     contrat = get_object_or_404(Contrat, pk=pk)
     num_contrat = contrat.num_contrat
@@ -433,6 +448,7 @@ def supp_contrat(request, pk):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def export_clients(request):
     commune = request.GET.get('commune')
 
@@ -479,6 +495,7 @@ def export_clients(request):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def genere_pdf_contrat(request, pk):
     template_path = 'all_page/clients/clients_contrats/template_contrat.html'
     contrat = Contrat.objects.get(pk=pk)
@@ -492,11 +509,22 @@ def genere_pdf_contrat(request, pk):
 
 
 def generate_pdf(request, context, template_path, nom_fichier_prefix):
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'filename="{nom_fichier_prefix}.pdf"'
+    # Crée un buffer en mémoire pour stocker le PDF généré
+    pdf_buffer = BytesIO()
+
     template = get_template(template_path)
     html = template.render(context)
-    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    # Crée le PDF dans le buffer en mémoire
+    pisa_status = pisa.CreatePDF(html, dest=pdf_buffer)
+
     if pisa_status.err:
-        return HttpResponse("Error in " + html)
+        return HttpResponse("Error in generating PDF", status=500)
+
+    # Réinitialise le buffer pour lire les données PDF
+    pdf_buffer.seek(0)
+
+    response = HttpResponse(pdf_buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{nom_fichier_prefix}.pdf"'
+
     return response

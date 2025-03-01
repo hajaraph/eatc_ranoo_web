@@ -2,7 +2,7 @@ import re
 
 from celery import shared_task
 from django.core.cache import cache
-from django.db.models import Max, Sum, Prefetch
+from django.db.models import Max, Sum
 
 from Clients.models import Contrat
 from Compteurs.api_compteur.serializer import MissionSerializer
