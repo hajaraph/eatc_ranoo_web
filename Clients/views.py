@@ -1,5 +1,6 @@
 import os
 import re
+from io import BytesIO
 
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
@@ -508,11 +509,22 @@ def genere_pdf_contrat(request, pk):
 
 
 def generate_pdf(request, context, template_path, nom_fichier_prefix):
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'filename="{nom_fichier_prefix}.pdf"'
+    # Crée un buffer en mémoire pour stocker le PDF généré
+    pdf_buffer = BytesIO()
+
     template = get_template(template_path)
     html = template.render(context)
-    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    # Crée le PDF dans le buffer en mémoire
+    pisa_status = pisa.CreatePDF(html, dest=pdf_buffer)
+
     if pisa_status.err:
-        return HttpResponse("Error in " + html)
+        return HttpResponse("Error in generating PDF", status=500)
+
+    # Réinitialise le buffer pour lire les données PDF
+    pdf_buffer.seek(0)
+
+    response = HttpResponse(pdf_buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{nom_fichier_prefix}.pdf"'
+
     return response

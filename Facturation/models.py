@@ -12,9 +12,10 @@ class Tarif(models.Model):
     prix_m3_bs = models.FloatField(blank=True, null=True)
     prix_m3_bp = models.FloatField(blank=True, null=True)
     prix_m3_k = models.FloatField(blank=True, null=True)
-    tva = models.FloatField(blank=False)
-    conso_tva_app = models.FloatField(blank=True, null=True)
+    tva = models.FloatField(blank=True, null=True, default=0)
+    conso_tva_app = models.FloatField(blank=True, null=True, default=0)
     nb_jour_echeance_fct = models.IntegerField(blank=False)
+    prix_location_compteur = models.FloatField(blank=True, null=True, default=0)
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE,
                                    blank=False, related_name='communes')
 
@@ -22,7 +23,7 @@ class Tarif(models.Model):
 class Taxe(models.Model):
     id_taxe = models.BigAutoField(primary_key=True)
     nom_taxe = models.CharField(max_length=100, default='Taxe', null=False, blank=False)
-    taux_taxe = models.FloatField(null=False, blank=False)
+    taux_taxe = models.FloatField(null=False, blank=False, default=0)
     tarif = models.ForeignKey(Tarif, on_delete=models.CASCADE, related_name='taxes', blank=False)
 
 

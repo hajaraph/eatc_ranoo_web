@@ -228,6 +228,12 @@ TENANT_DOMAIN_MODEL = "Tenants.Domain"
 
 PUBLIC_SCHEMA_URLCONF = 'Rel_Compteur.urls'
 
+SESSION_COOKIE_NAME = 'client_sessionid'  # Par défaut pour les clients
+
+# Middleware pour l'admin
+ADMIN_SESSION_COOKIE_NAME = 'admin_sessionid'
+
+
 # LOGGING = {
 #     'version': 1,
 #     'disable_existing_loggers': False,

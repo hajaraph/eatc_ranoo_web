@@ -225,11 +225,10 @@ class TarifNew(View):
         prix_m3_bs = float(request.POST['prix_m3_bs'])
         prix_m3_bp = float(request.POST['prix_m3_bp'])
         prix_m3_k = float(request.POST['prix_m3_k'])
-        conso_tva_app = float(request.POST['conso_tva_app'])
-        nom_taxes = request.POST.getlist('nom_taxe')
-        taux_taxes = [float(taux) for taux in request.POST.getlist('taux_taxe')]
-        tva = float(request.POST['tva'])
+        conso_tva_app = float(request.POST['conso_tva_app']) if request.POST['conso_tva_app'] else 0
+        tva = float(request.POST['tva']) if request.POST['tva'] else 0
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
+        prix_location_compteur = request.POST['prix_location_compteur']
         tarif = Tarif.objects.create(
             cp_commune_id=cp_commune,
             prix_m3_bs=round(prix_m3_bs, 2),
@@ -238,13 +237,18 @@ class TarifNew(View):
             tva=round(tva, 2),
             conso_tva_app=round(conso_tva_app, 2),
             nb_jour_echeance_fct=nb_jour_echeance_fct,
+            prix_location_compteur=prix_location_compteur,
         )
-        for nom_taxe, taux_taxe in zip(nom_taxes, taux_taxes):
-            Taxe.objects.create(
-                nom_taxe=nom_taxe,
-                taux_taxe=round(float(taux_taxe), 2),
-                tarif_id=tarif.pk
-            )
+
+        nom_taxes = request.POST.getlist('nom_taxe')
+        taux_taxes = [taux for taux in request.POST.getlist('taux_taxe')]
+        if nom_taxes != [''] and taux_taxes != ['']:
+            for nom_taxe, taux_taxe in zip(nom_taxes, taux_taxes):
+                Taxe.objects.create(
+                    nom_taxe=nom_taxe,
+                    taux_taxe=round(float(taux_taxe), 2),
+                    tarif_id=tarif.pk
+                )
         messages.success(request, f'Enregistré avec succès !')
         return redirect('config_tarif')
 
