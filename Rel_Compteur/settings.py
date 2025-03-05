@@ -56,6 +56,7 @@ MIDDLEWARE = [
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django_tenants.middleware.main.TenantMainMiddleware',
+    'Tenants.middleware.AdminSchemaMiddleware'
 ]
 
 
@@ -212,8 +213,6 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
-AUTH_USER_MODEL = 'Tenants.Utilisateur'
-
 # Configurations de Celery
 CELERY_BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND = 'django-db'
@@ -225,9 +224,10 @@ CELERY_TIMEZONE = 'UTC'
 
 TENANT_MODEL = "Tenants.Entreprise"
 TENANT_DOMAIN_MODEL = "Tenants.Domain"
-
-PUBLIC_SCHEMA_URLCONF = 'Rel_Compteur.urls'
 PUBLIC_SCHEMA_NAME = "public"
+AUTH_USER_MODEL = "Tenants.Utilisateur"
+SITE_ID = 1
+
 
 # LOGGING = {
 #     'version': 1,
