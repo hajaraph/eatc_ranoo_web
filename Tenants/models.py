@@ -1,3 +1,5 @@
+from asyncio.log import logger
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.template.defaultfilters import slugify
@@ -29,7 +31,7 @@ class Utilisateur(AbstractUser):
     id_utilisateur = models.BigAutoField(primary_key=True)
     nom_utilisateur = models.CharField(max_length=30, blank=False, verbose_name='Nom')
     prenom_utilisateur = models.CharField(max_length=50, blank=False, verbose_name='Prénom')
-    num_utilisateur = models.CharField(max_length=10, blank=False, verbose_name='Contact')
+    num_utilisateur = models.CharField(max_length=10, blank=False, verbose_name='Contact', unique=True)
     photo_utilisateur = models.ImageField(upload_to=upload_to_utilisateur, blank=True, null=True)
     cree_le = models.DateField(auto_now_add=True)
     statut = models.BooleanField(db_default=True, blank=False, null=False, verbose_name='Active')
@@ -43,29 +45,36 @@ class Utilisateur(AbstractUser):
     last_name = 'prenom_utilisateur'
     is_active = 'statut'
     DATE_JOINED_FIELD = 'cree_le'
+    email = models.EmailField(max_length=254, blank=True, null=True, unique=True)
 
     def save(self, *args, **kwargs):
+        logger.info(f"Starting save for utilisateur: {self.username or 'no username'}, pk={self.pk}")
+
+        # Génération du username si nécessaire
         if not self.username:
             username_suggestion = f"{self.prenom_utilisateur}".lower()
             username = slugify(username_suggestion)
-
             counter = 1
             original_username = username
             while Utilisateur.objects.filter(username=username).exists():
                 username = f"{original_username}{counter}"
                 counter += 1
-
             self.username = username
+            logger.info(f"Generated username: {self.username}")
 
-        # Si l'utilisateur est nouveau ou son mot de passe a changé, on le hache
+        # Gestion du mot de passe
         if self.pk is None or not Utilisateur.objects.filter(pk=self.pk).exists():
+            logger.info("Setting password for new utilisateur")
             self.set_password(self.password)
-            return True
         else:
-            original_password = Utilisateur.objects.get(pk=self.pk).password
-            if self.password != original_password:
+            original = Utilisateur.objects.get(pk=self.pk)
+            if self.password != original.password:
+                logger.info("Updating password for existing utilisateur")
                 self.set_password(self.password)
-            return False
+
+        # Sauvegarde dans la base
+        super().save(*args, **kwargs)
+        logger.info(f"Utilisateur saved with id_utilisateur: {self.id_utilisateur}")
 
 
 class Initial(models.Model):

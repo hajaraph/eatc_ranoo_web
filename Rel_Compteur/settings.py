@@ -55,7 +55,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'django_tenants.middleware.main.TenantMainMiddleware',
+    # 'django_tenants.middleware.main.TenantMainMiddleware',
 ]
 
 
@@ -212,8 +212,6 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
-AUTH_USER_MODEL = 'Tenants.Utilisateur'
-
 # Configurations de Celery
 CELERY_BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND = 'django-db'
@@ -225,28 +223,25 @@ CELERY_TIMEZONE = 'UTC'
 
 TENANT_MODEL = "Tenants.Entreprise"
 TENANT_DOMAIN_MODEL = "Tenants.Domain"
+AUTH_USER_MODEL = "Tenants.Utilisateur"
 
-PUBLIC_SCHEMA_URLCONF = 'Rel_Compteur.urls'
-PUBLIC_SCHEMA_NAME = "public"
-
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['console'],
-#             'level': 'INFO',
-#             'propagate': True,
-#         },
-#         'Tenants.middleware': {
-#             'handlers': ['console'],
-#             'level': 'DEBUG',
-#             'propagate': False,
-#         },
-#     },
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'Tenants': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
