@@ -1,6 +1,9 @@
+import asyncio
+import time
 from asyncio.log import logger
 
 import pandas as pd
+from asgiref.sync import async_to_sync, sync_to_async
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import Q
@@ -107,144 +110,131 @@ def relever_client(request):
     compteur_id = request.GET.get('num_compteur')
 
     try:
-        # Lancer la tâche Celery et attendre son résultat
-        tache = process_compteur_details.delay(compteur_id)
-        resultat = tache.get(timeout=10)  # ajuster le timeout selon vos besoins
-        tache.forget()
-
+        resultat = process_compteur_details(compteur_id)
+        logger.info(f"Résultat obtenu pour compteur_id={compteur_id}")
         return JsonResponse(resultat)
-    except Compteur.DoesNotExist:
-        return JsonResponse({'error': 'Compteur non trouvé'}, status=404)
-    except Contrat.DoesNotExist:
-        return JsonResponse({'error': 'Contrat non trouvé'}, status=404)
     except ValueError as e:
-        return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        logger.error(f"Erreur de valeur: {str(e)}")
+        return JsonResponse({'erreur': str(e)}, status=400)
     except Exception as e:
-        return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.error(f"Erreur inattendue: {str(e)}")
+        return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
 
 
 class Missions(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
     @staticmethod
     @schema_use_api
-    def get(request):
-        logger.info("Début de la requête GET /api/missions")
+    @async_to_sync  # Convertit la coroutine en fonction synchrone pour DRF
+    async def get(request):
+        logger.info("Début get")
+        start_time = time.time()
         cp_commune = request.user.cp_commune_id
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
-        schema_name = request.user.entreprise.schema_name
-        logger.info(f"Schéma du tenant: {schema_name}")
+        offset = int(request.query_params.get('offset', 0))
+        logger.info(f"Fin get: {time.time() - start_time:.2f}s")
 
         try:
-            offset = int(request.query_params.get('offset', 0))
-        except ValueError:
-            return Response({'erreur': 'Offset invalide'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            import time
-            start_time = time.time()
-            result = TaskMission.process_liste_mission(cp_commune, end_of_month, schema_name, offset=offset, limit=50)
-
-            if isinstance(result, dict) and result.get('status') == 'error':
+            result = await TaskMission.process_liste_mission(cp_commune, end_of_month, offset=offset, limit=50)
+            if 'status' in result and result['status'] == 'error':
                 return Response({'erreur': result['message']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            # Format compatible avec l'app mobile
-            response_data = {
-                'compteurs_liste': result['liste']
-            }
-            # Si l'app mobile peut gérer ces champs, ils sont ajoutés, sinon ignorés
+            response_data = {'compteurs_liste': result['liste']}
             if result['has_more']:
                 response_data['has_more'] = True
                 response_data['next_offset'] = result['next_offset']
-
             return Response(response_data, status=status.HTTP_200_OK)
-
         except Exception as e:
             logger.error(f"Erreur inattendue: {str(e)}", exc_info=True)
-            return Response(
-                {'erreur': f"Erreur du serveur: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
+            return Response({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
-    @parser_classes((MultiPartParser, FormParser))
     @schema_use_api
-    def post(request):
-        serializer = MissionSerializer(data=request.data)
-        utilisateur = request.user.id_utilisateur
+    @async_to_sync  # Convertit la coroutine en fonction synchrone pour DRF
+    async def post(request):
+        logger.info("Début de la requête POST /api/missions")
 
-        if not serializer.is_valid():
-            return JsonResponse({'erreur': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        # Accès à request.user dans un contexte synchrone grâce à @async_to_sync
+        utilisateur = request.user.id_utilisateur
+        serializer = await sync_to_async(MissionSerializer)(data=request.data)
+
+        is_valid = await sync_to_async(serializer.is_valid)()
+        if not is_valid:
+            errors = await sync_to_async(lambda: serializer.errors)()
+            return JsonResponse({'erreur': errors}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            with transaction.atomic():
-                id_releve = serializer.validated_data.get('releve_id')
-                compteur_id = serializer.validated_data.get('num_compteur')
-                date_releve = serializer.validated_data.get('date_releve')
-                volume = serializer.validated_data.get('volume')
-                image_compteur = request.FILES.get('image_compteur')
+            @sync_to_async
+            def process_post():
+                with transaction.atomic():
+                    validated_data = serializer.validated_data
+                    id_releve = validated_data.get('releve_id')
+                    compteur_id = validated_data.get('num_compteur')
+                    date_releve = validated_data.get('date_releve')
+                    volume = validated_data.get('volume')
+                    image_compteur = request.FILES.get('image_compteur')
 
-                if id_releve is not None:
-                    compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
-                    dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
+                    if id_releve is not None:
+                        compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
+                        dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
 
-                    if dernier_releve.volume >= volume:
-                        return JsonResponse({
-                            'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
-                        }, status=status.HTTP_400_BAD_REQUEST)
+                        if dernier_releve.volume >= volume:
+                            return JsonResponse({
+                                'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
+                            }, status=status.HTTP_400_BAD_REQUEST)
 
-                    if date_releve <= dernier_releve.date_releve:
-                        return JsonResponse({'erreur': "Veuillez fournir une date valide"},
-                                            status=status.HTTP_400_BAD_REQUEST)
-
-                    mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
-                                                               image_compteur, dernier_releve)
-                    facture_creation(date_releve, compteur.num_compteur, mod_releve)
-
-                    return JsonResponse({
-                        'enregistre': 'Mise à jour effectuer avec succès !'
-                    }, status=status.HTTP_201_CREATED)
-
-                else:
-                    if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
-                        return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
-                                            status=status.HTTP_400_BAD_REQUEST)
-
-                    dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
-
-                    if dernier_volume:
-                        if date_releve <= dernier_volume.date_releve:
+                        if date_releve <= dernier_releve.date_releve:
                             return JsonResponse({'erreur': "Veuillez fournir une date valide"},
                                                 status=status.HTTP_400_BAD_REQUEST)
 
-                        if dernier_volume.volume > volume:
-                            return JsonResponse({
-                                'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
-                            }, status=status.HTTP_400_BAD_REQUEST)
+                        mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
+                                                                   image_compteur, dernier_releve)
+                        facture_creation(date_releve, compteur.num_compteur, mod_releve)
 
-                        else:
-                            conso = volume - dernier_volume.volume
+                        return JsonResponse({
+                            'enregistre': 'Mise à jour effectuée avec succès !'
+                        }, status=status.HTTP_201_CREATED)
+
                     else:
-                        conso = volume
+                        if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
+                            return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
+                                                status=status.HTTP_400_BAD_REQUEST)
 
-                    releve = relever(dernier_volume.num_compteur_id, date_releve,
-                                     volume, conso, image_compteur, utilisateur)
+                        dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
 
-                    facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+                        if dernier_volume:
+                            if date_releve <= dernier_volume.date_releve:
+                                return JsonResponse({'erreur': "Veuillez fournir une date valide"},
+                                                    status=status.HTTP_400_BAD_REQUEST)
 
-                historique = f"Relever et Facture d'un compteur {compteur_id}"
-                enregistre_historique(historique, utilisateur)
+                            if dernier_volume.volume > volume:
+                                return JsonResponse({
+                                    'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
+                                }, status=status.HTTP_400_BAD_REQUEST)
 
-                return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
+                            conso = volume - dernier_volume.volume
+                        else:
+                            conso = volume
+
+                        releve = relever(dernier_volume.num_compteur_id, date_releve,
+                                         volume, conso, image_compteur, utilisateur)
+                        facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+
+                    historique = f"Relever et Facture d'un compteur {compteur_id}"
+                    enregistre_historique(historique, utilisateur)
+
+                    return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
+
+            response = await process_post()
+            return response
         except ValueError as e:
             return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.error(f"Erreur inattendue dans post: {str(e)}", exc_info=True)
             return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-# Details Facture #
 
 
 class FactureDetail(APIView):
