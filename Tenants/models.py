@@ -45,7 +45,6 @@ class Utilisateur(AbstractUser):
     last_name = 'prenom_utilisateur'
     is_active = 'statut'
     DATE_JOINED_FIELD = 'cree_le'
-    email = models.EmailField(max_length=254, blank=True, null=True, unique=True)
 
     def save(self, *args, **kwargs):
         logger.info(f"Starting save for utilisateur: {self.username or 'no username'}, pk={self.pk}")
