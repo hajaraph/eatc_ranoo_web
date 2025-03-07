@@ -55,8 +55,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'django_tenants.middleware.main.TenantMainMiddleware',
-    'Tenants.middleware.AdminSchemaMiddleware'
+    # 'django_tenants.middleware.main.TenantMainMiddleware',
 ]
 
 
@@ -224,29 +223,25 @@ CELERY_TIMEZONE = 'UTC'
 
 TENANT_MODEL = "Tenants.Entreprise"
 TENANT_DOMAIN_MODEL = "Tenants.Domain"
-PUBLIC_SCHEMA_NAME = "public"
 AUTH_USER_MODEL = "Tenants.Utilisateur"
-SITE_ID = 1
 
-
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['console'],
-#             'level': 'INFO',
-#             'propagate': True,
-#         },
-#         'Tenants.middleware': {
-#             'handlers': ['console'],
-#             'level': 'DEBUG',
-#             'propagate': False,
-#         },
-#     },
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'Tenants': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
