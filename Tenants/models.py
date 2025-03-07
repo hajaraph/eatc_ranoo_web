@@ -47,7 +47,7 @@ class Utilisateur(AbstractUser):
     DATE_JOINED_FIELD = 'cree_le'
 
     def save(self, *args, **kwargs):
-        logger.info(f"Starting save for utilisateur: {self.username or 'no username'}, pk={self.pk}")
+        logger.info(f"Commencement de la sauvegarde utilisateur: {self.username or 'no username'}, pk={self.pk}")
 
         # Génération du username si nécessaire
         if not self.username:
@@ -59,21 +59,21 @@ class Utilisateur(AbstractUser):
                 username = f"{original_username}{counter}"
                 counter += 1
             self.username = username
-            logger.info(f"Generated username: {self.username}")
+            logger.info(f"Generation username: {self.username}")
 
         # Gestion du mot de passe
         if self.pk is None or not Utilisateur.objects.filter(pk=self.pk).exists():
-            logger.info("Setting password for new utilisateur")
+            logger.info("Parametre de mot de pass pour utilisateur")
             self.set_password(self.password)
         else:
             original = Utilisateur.objects.get(pk=self.pk)
             if self.password != original.password:
-                logger.info("Updating password for existing utilisateur")
+                logger.info("Mise a jour de la mot de pass utilisateur")
                 self.set_password(self.password)
 
         # Sauvegarde dans la base
         super().save(*args, **kwargs)
-        logger.info(f"Utilisateur saved with id_utilisateur: {self.id_utilisateur}")
+        logger.info(f"Utilisateur sauvé avec id_utilisateur: {self.id_utilisateur}")
 
 
 class Initial(models.Model):
