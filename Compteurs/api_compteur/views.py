@@ -1,3 +1,5 @@
+from asyncio.log import logger
+
 import pandas as pd
 from django.db import transaction
 from django.db.models import Count
@@ -7,6 +9,7 @@ from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 
@@ -126,22 +129,43 @@ class Missions(APIView):
     @staticmethod
     @schema_use_api
     def get(request):
+        logger.info("Début de la requête GET /api/missions")
         cp_commune = request.user.cp_commune_id
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
+        schema_name = request.user.entreprise.schema_name
+        logger.info(f"Schéma du tenant: {schema_name}")
 
         try:
-            tache = TaskMission.process_liste_mission.apply_async(args=[cp_commune, end_of_month])
-            resultat = tache.get(timeout=10)
-            tache.forget()
+            offset = int(request.query_params.get('offset', 0))
+        except ValueError:
+            return Response({'erreur': 'Offset invalide'}, status=status.HTTP_400_BAD_REQUEST)
 
-            return JsonResponse({'compteurs_liste': resultat})
-        except ValueError as e:
-            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            import time
+            start_time = time.time()
+            result = TaskMission.process_liste_mission(cp_commune, end_of_month, schema_name, offset=offset, limit=50)
+
+            if isinstance(result, dict) and result.get('status') == 'error':
+                return Response({'erreur': result['message']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # Format compatible avec l'app mobile
+            response_data = {
+                'compteurs_liste': result['liste']
+            }
+            # Si l'app mobile peut gérer ces champs, ils sont ajoutés, sinon ignorés
+            if result['has_more']:
+                response_data['has_more'] = True
+                response_data['next_offset'] = result['next_offset']
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
         except Exception as e:
-            return JsonResponse(
+            logger.error(f"Erreur inattendue: {str(e)}", exc_info=True)
+            return Response(
                 {'erreur': f"Erreur du serveur: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
     @staticmethod
     @parser_classes((MultiPartParser, FormParser))

@@ -1,3 +1,4 @@
+from asyncio.log import logger
 from functools import wraps
 
 from django.contrib import messages
@@ -39,14 +40,7 @@ def schema_use(view_func):
 def schema_use_api(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return Response(
-                {"detail": "Vous devez être connecté pour accéder à cette ressource."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
         entreprise_id = getattr(request.user, 'entreprise_id', None)
-
         if not entreprise_id:
             return Response(
                 {"detail": "Aucune entreprise n'est associée à votre compte."},
