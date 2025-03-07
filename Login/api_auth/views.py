@@ -16,50 +16,45 @@ from Main_Courante.models import StatutMC
 
 @api_view(['POST'])
 def authentification(request):
-    serializer = UtilisateurSerializer(data=request.data)
-    if serializer.is_valid():
-        num_utilisateur = serializer.validated_data['num_utilisateur']
-        motpasse_utilisateur = serializer.validated_data['password']
+    num_utilisateur = request.data.get('num_utilisateur')
+    motpasse_utilisateur = request.data.get('password')
 
-        try:
-            utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
+    if not num_utilisateur or not motpasse_utilisateur:
+        return Response(
+            {"detail": "Les champs 'num_utilisateur' et 'password' sont requis."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-            if check_password(motpasse_utilisateur, utilisateur.password):
-                if utilisateur.role.role == "Releveur":
-                    refresh_token = RefreshToken.for_user(utilisateur)
-                    access_token = refresh_token.access_token
+    try:
+        utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
+        if check_password(motpasse_utilisateur, utilisateur.password):
+            if utilisateur.role.role == "Releveur":
+                refresh_token = RefreshToken.for_user(utilisateur)
+                access_token = refresh_token.access_token
 
-                    # Mettre à jour le dernier token dans le modèle Utilisateur
-                    utilisateur.last_token = str(access_token)
-                    utilisateur.save()
+                utilisateur.last_token = str(access_token)
+                utilisateur.save()
 
-                    return JsonResponse(
-                        {
-                            'access_token': str(access_token),
-                            'info_utilisateur': {
-                                'id_utilisateur': utilisateur.id_utilisateur,
-                                'nom_utilisateur': utilisateur.nom_utilisateur,
-                                'prenom_utilisateur': utilisateur.prenom_utilisateur,
-                                'num_utilisateur': utilisateur.num_utilisateur,
-                                'role': utilisateur.role.role,
-                                'region': utilisateur.cp_commune.region.region,
-                                'commune': utilisateur.cp_commune.commune,
-                                'cp_commune': utilisateur.cp_commune_id,
-                                'last_token': utilisateur.last_token
-                            }
-                        }
-                    )
-                else:
-                    raise AuthenticationFailed("Veuillez vous connecter dans l'application web !")
-
+                return Response({
+                    'access_token': str(access_token),
+                    'info_utilisateur': {
+                        'id_utilisateur': utilisateur.id_utilisateur,
+                        'nom_utilisateur': utilisateur.nom_utilisateur,
+                        'prenom_utilisateur': utilisateur.prenom_utilisateur,
+                        'num_utilisateur': utilisateur.num_utilisateur,
+                        'role': utilisateur.role.role,
+                        'region': utilisateur.cp_commune.region.region,
+                        'commune': utilisateur.cp_commune.commune,
+                        'cp_commune': utilisateur.cp_commune_id,
+                        'last_token': utilisateur.last_token
+                    }
+                }, status=status.HTTP_200_OK)
             else:
-                raise AuthenticationFailed('Mot de passe incorrect !')
-
-        except Utilisateur.DoesNotExist:
-            raise AuthenticationFailed("Votre Compte n'existe pas !")
-
-    else:
-        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                raise AuthenticationFailed("Veuillez vous connecter dans l'application web !")
+        else:
+            raise AuthenticationFailed('Mot de passe incorrect !')
+    except Utilisateur.DoesNotExist:
+        raise AuthenticationFailed("Votre compte n'existe pas !")
 
 
 @api_view(['GET'])

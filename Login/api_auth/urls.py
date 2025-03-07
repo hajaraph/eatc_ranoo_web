@@ -1,6 +1,6 @@
 from django.urls import path
 
-from Login.api_auth.views import authentification,get_users ,donne_tout,check_server
+from Login.api_auth.views import authentification,get_users, check_server
 
 urlpatterns = [
     path('authentification', authentification),

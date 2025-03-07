@@ -105,7 +105,7 @@ class NouvelUtilisateur(View):
 
         else:
             messages.error(request, f'Votre numéro est déjà utilisé !')
-        return redirect('creation_compte')
+        return redirect('nouvel_utilisateur')
 
 
 class UtilisateurMod(View):
