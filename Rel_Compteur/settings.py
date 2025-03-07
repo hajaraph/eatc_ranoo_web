@@ -76,17 +76,20 @@ CORS_ALLOWED_ORIGINS = [
     'https://www.app.eatc.me',
     'http://89.116.38.149:8000',
     'http://127.0.0.1:8000',
-    'http://localhost:3000',
+    'http://localhost:8000'
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     'http://89.116.38.149:8000',
     'http://127.0.0.1:8000',
+    'http://localhost:8000'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://app.eatc.me',
     'https://www.app.eatc.me',
+    'http://127.0.0.1:8000',
+    'http://localhost:8000'
 ]
 
 CSRF_COOKIE_SECURE = True
@@ -120,10 +123,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django_tenants.postgresql_backend',
         'NAME': 'rel_compteur',
-        # 'USER': 'postgres',
-        # 'PASSWORD': '12121212',
-        'USER': 'eatcrano',
-        'PASSWORD': 'eatc301',
+        'USER': 'postgres',
+        'PASSWORD': '12121212',
+        # 'USER': 'eatcrano',
+        # 'PASSWORD': 'eatc301',
         'HOST': 'localhost',
         'PORT': '5432',
     }
