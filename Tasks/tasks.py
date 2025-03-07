@@ -1,6 +1,7 @@
 import re
 from asyncio.log import logger
 
+from asgiref.sync import sync_to_async
 from celery import shared_task
 from django.core.cache import cache
 from django.db.models import Max, Sum
@@ -18,59 +19,61 @@ from django.shortcuts import get_object_or_404
 
 class TaskMission:
     @staticmethod
-    def process_liste_mission(cp_commune, end_of_month, schema_name, offset=0, limit=50):
-        logger.info(
-            f"Début de process_liste_mission pour cp_commune={cp_commune}, schema={schema_name}, offset={offset}, limit={limit}")
-
-        cache_key = f"process_liste_mission_{cp_commune}_{end_of_month}_{offset}_{limit}"
+    async def process_liste_mission(cp_commune, end_of_month, offset=0, limit=50):
+        logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}, offset={offset}, limit={limit}")
+        cache_key = f"process_liste_mission_{cp_commune}_{end_of_month.strftime('%Y%m%d')}_{offset}_{limit}"
         result = cache.get(cache_key)
 
         if result is None:
             try:
-                with transaction.atomic():
-                    # Compte total pour savoir s'il y a plus
-                    total_contrats = Contrat.objects.filter(cp_commune_id=cp_commune).count()
-                    contrats_commune = (
-                        Contrat.objects
-                        .filter(cp_commune_id=cp_commune)
-                        .select_related('client', 'num_compteur')
-                        .prefetch_related('num_compteur__relevecompteurs')
-                        .annotate(
-                            conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
-                        )[offset:offset + limit]  # Pagination
-                    )
+                @sync_to_async
+                def get_contrats():
+                    with transaction.atomic():
+                        total_contrats = Contrat.objects.filter(cp_commune_id=cp_commune).count()
+                        contrats_commune = (
+                            Contrat.objects
+                            .filter(cp_commune_id=cp_commune)
+                            .select_related('client', 'num_compteur')
+                            .prefetch_related('num_compteur__relevecompteurs')
+                            .annotate(
+                                conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
+                            )[offset:offset + limit]
+                        )
 
-                    liste_contrats_info = []
-                    for contrat in contrats_commune:
-                        dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
-                            max_date=Max('date_releve'))
-                        date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
+                        liste_contrats_info = []
+                        for contrat in contrats_commune:
+                            dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
+                                max_date=Max('date_releve')
+                            )
+                            date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
 
-                        statut = 0 if date_releve and date_releve.month != end_of_month.month else 2
+                            statut = 0 if date_releve and date_releve.month != end_of_month.month else 2
 
-                        dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
-                        contrat_info = {
-                            'id': dernier_releve_obj.pk if dernier_releve_obj else '',
-                            'nom_client': contrat.client.nom_client,
-                            'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
-                            'adresse_client': contrat.client.adresse_client,
-                            'num_compteur': contrat.num_compteur_id,
-                            'conso_dernier_releve': contrat.conso_dernier_releve,
-                            'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
-                            'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
-                            'statut': statut
+                            dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
+                            contrat_info = {
+                                'id': dernier_releve_obj.pk if dernier_releve_obj else '',
+                                'nom_client': contrat.client.nom_client,
+                                'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
+                                'adresse_client': contrat.client.adresse_client,
+                                'num_compteur': contrat.num_compteur_id,
+                                'conso_dernier_releve': contrat.conso_dernier_releve,
+                                'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
+                                'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
+                                'statut': statut
+                            }
+                            liste_contrats_info.append(contrat_info)
+
+                        liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
+                        has_more = offset + limit < total_contrats
+                        return {
+                            'liste': liste_contrats_info,
+                            'has_more': has_more,
+                            'next_offset': offset + limit if has_more else None
                         }
-                        liste_contrats_info.append(contrat_info)
 
-                    liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
-                    has_more = offset + limit < total_contrats
-                    result = {
-                        'liste': liste_contrats_info,
-                        'has_more': has_more,
-                        'next_offset': offset + limit if has_more else None
-                    }
-                    cache.set(cache_key, result, timeout=3600)
-                    logger.info(f"{len(liste_contrats_info)} éléments mis en cache, has_more={has_more}")
+                result = await get_contrats()
+                cache.set(cache_key, result, timeout=3600)
+                logger.info(f"{len(result['liste'])} éléments mis en cache, has_more={result['has_more']}")
             except Exception as e:
                 logger.error(f"Erreur inattendue dans process_liste_mission: {str(e)}", exc_info=True)
                 return {'status': 'error', 'message': str(e)}
@@ -81,52 +84,59 @@ class TaskMission:
         return result
 
     @staticmethod
-    @shared_task
-    def process_releve(data, utilisateur):
-        serializer = MissionSerializer(data=data)
+    async def process_releve(data, utilisateur):
+        # Serializer reste synchrone, on l'encapsule
+        serializer = await sync_to_async(MissionSerializer)(data=data)
 
-        if not serializer.is_valid():
-            return {'status': 'error', 'message': serializer.errors}
+        # Valider le serializer dans un thread
+        is_valid = await sync_to_async(serializer.is_valid)()
+        if not is_valid:
+            errors = await sync_to_async(lambda: serializer.errors)()
+            return {'status': 'error', 'message': errors}
 
         try:
-            with transaction.atomic():
-                compteur_id = serializer.validated_data.get('num_compteur')
-                date_releve = serializer.validated_data.get('date_releve')
-                volume = serializer.validated_data.get('volume')
-                image_compteur = serializer.validated_data.get('image_compteur')
+            # Encapsuler la logique synchrone dans un thread
+            @sync_to_async
+            def process():
+                with transaction.atomic():
+                    validated_data = serializer.validated_data
+                    compteur_id = validated_data.get('num_compteur')
+                    date_releve = validated_data.get('date_releve')
+                    volume = validated_data.get('volume')
+                    image_compteur = validated_data.get('image_compteur')
 
-                if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
-                    return {'status': 'error', 'message': "La date de relevé existe déjà dans la base de données"}
+                    if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
+                        return {'status': 'error', 'message': "La date de relevé existe déjà dans la base de données"}
 
-                dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
+                    dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
 
-                if dernier_volume:
-                    if date_releve <= dernier_volume.date_releve:
-                        return {'status': 'error', 'message': "Veuillez fournir une date valide"}
+                    if dernier_volume:
+                        if date_releve <= dernier_volume.date_releve:
+                            return {'status': 'error', 'message': "Veuillez fournir une date valide"}
 
-                    if dernier_volume.volume > volume:
-                        return {'status': 'error', 'message': "Assurez-vous de saisir les chiffres correctement et "
-                                                              "réessayez !"}
+                        if dernier_volume.volume > volume:
+                            return {'status': 'error', 'message': "Assurez-vous de saisir les chiffres correctement et réessayez !"}
 
-                    conso = volume - dernier_volume.volume
-                else:
-                    conso = volume
+                        conso = volume - dernier_volume.volume
+                    else:
+                        conso = volume
 
-                releve = relever(dernier_volume.num_compteur_id, date_releve,
-                                 volume, conso, image_compteur, utilisateur)
-                facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+                    releve = relever(dernier_volume.num_compteur_id, date_releve, volume, conso, image_compteur, utilisateur)
+                    facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
 
-                historique = f"Relever et Facture d'un compteur {compteur_id}"
-                enregistre_historique(historique, utilisateur)
+                    historique = f"Relever et Facture d'un compteur {compteur_id}"
+                    enregistre_historique(historique, utilisateur)
 
-                return {'status': 'success', 'message': 'Relevé enregistré avec succès !'}
+                    return {'status': 'success', 'message': 'Relevé enregistré avec succès !'}
+
+            result = await process()
+            return result
         except ValueError as e:
             return {'status': 'error', 'message': str(e)}
         except Exception as e:
             return {'status': 'error', 'message': f"Erreur du serveur: {str(e)}"}
 
 
-@shared_task
 def process_compteur_details(compteur_id):
     try:
         with transaction.atomic():

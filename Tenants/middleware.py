@@ -1,4 +1,3 @@
-from asyncio.log import logger
 from functools import wraps
 
 from django.contrib import messages
