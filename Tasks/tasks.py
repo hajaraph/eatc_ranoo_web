@@ -1,4 +1,5 @@
 import re
+from asyncio.log import logger
 
 from celery import shared_task
 from django.core.cache import cache
@@ -17,14 +18,18 @@ from django.shortcuts import get_object_or_404
 
 class TaskMission:
     @staticmethod
-    @shared_task()
-    def process_liste_mission(cp_commune, end_of_month):
-        cache_key = f"process_liste_mission_{cp_commune}_{end_of_month}"
-        liste_contrats_info = cache.get(cache_key)
+    def process_liste_mission(cp_commune, end_of_month, schema_name, offset=0, limit=50):
+        logger.info(
+            f"Début de process_liste_mission pour cp_commune={cp_commune}, schema={schema_name}, offset={offset}, limit={limit}")
 
-        if liste_contrats_info is None:
+        cache_key = f"process_liste_mission_{cp_commune}_{end_of_month}_{offset}_{limit}"
+        result = cache.get(cache_key)
+
+        if result is None:
             try:
                 with transaction.atomic():
+                    # Compte total pour savoir s'il y a plus
+                    total_contrats = Contrat.objects.filter(cp_commune_id=cp_commune).count()
                     contrats_commune = (
                         Contrat.objects
                         .filter(cp_commune_id=cp_commune)
@@ -32,7 +37,7 @@ class TaskMission:
                         .prefetch_related('num_compteur__relevecompteurs')
                         .annotate(
                             conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
-                        )
+                        )[offset:offset + limit]  # Pagination
                     )
 
                     liste_contrats_info = []
@@ -41,7 +46,6 @@ class TaskMission:
                             max_date=Max('date_releve'))
                         date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
 
-                        # Comparaison des mois pour définir le statut
                         statut = 0 if date_releve and date_releve.month != end_of_month.month else 2
 
                         dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
@@ -58,16 +62,23 @@ class TaskMission:
                         }
                         liste_contrats_info.append(contrat_info)
 
-                    # Trier la liste par id_releve
                     liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
-                    cache.set(cache_key, liste_contrats_info, timeout=3600)  # Cache for 1 hour
-
-            except ValueError as e:
-                return {'status': 'error', 'message': str(e)}
+                    has_more = offset + limit < total_contrats
+                    result = {
+                        'liste': liste_contrats_info,
+                        'has_more': has_more,
+                        'next_offset': offset + limit if has_more else None
+                    }
+                    cache.set(cache_key, result, timeout=3600)
+                    logger.info(f"{len(liste_contrats_info)} éléments mis en cache, has_more={has_more}")
             except Exception as e:
-                return {'status': 'error', 'message': f"Erreur du serveur: {str(e)}"}
+                logger.error(f"Erreur inattendue dans process_liste_mission: {str(e)}", exc_info=True)
+                return {'status': 'error', 'message': str(e)}
+        else:
+            logger.info("Résultat récupéré depuis le cache")
 
-        return liste_contrats_info
+        logger.info(f"Tâche terminée avec {len(result['liste'])} éléments")
+        return result
 
     @staticmethod
     @shared_task
