@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -263,7 +263,7 @@ class Missions(APIView):
 
 class FactureDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     @staticmethod
     @schema_use_api
@@ -295,6 +295,7 @@ class FactureDetail(APIView):
     @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
     async def post(request):
         id_releve = request.data.get('relevecompteur_id')
+        logger.info(id_releve)
         try:
             montant_payer = float(request.data.get('paiement'))
         except (TypeError, ValueError):

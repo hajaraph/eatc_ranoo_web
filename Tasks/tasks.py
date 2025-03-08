@@ -2,7 +2,6 @@ import re
 from asyncio.log import logger
 
 from asgiref.sync import sync_to_async
-from celery import shared_task
 from django.core.cache import cache
 from django.db.models import Max, Sum
 
