@@ -1,4 +1,3 @@
-import asyncio
 import time
 from asyncio.log import logger
 
@@ -31,11 +30,8 @@ from pandas.tseries.offsets import MonthEnd
 from ..views import relever, ReleveMod
 
 
-def calculer_nombre_relever_effectuer(cp_commune_id):
-    # Calcul du nombre total de compteurs
-    nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
-
-    # Calcul de la fin du mois actuel en utilisant pandas
+async def calculer_nombre_relever_effectuer(cp_commune_id):
+    # Calcul de la fin du mois actuel avec pandas (synchrone, pas besoin de @sync_to_async)
     end_of_month = (
         pd.to_datetime('now')
         .to_period('M')
@@ -43,81 +39,109 @@ def calculer_nombre_relever_effectuer(cp_commune_id):
         + MonthEnd(0)
     )
 
-    # Filtrer les contrats avec des relevés dans le mois actuel
-    contrat_data = (
-        Contrat.objects
-        .filter(cp_commune_id=cp_commune_id)
-        .annotate(releve_count=Count(
-            'num_compteur__relevecompteurs',
-            filter=Q(num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
-        .distinct()
-    )
+    # Encapsuler les opérations synchrones à la base de données
+    @sync_to_async
+    def get_counts():
+        # Calcul du nombre total de compteurs
+        nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
 
-    contrat_list = list(contrat_data)
+        # Filtrer les contrats avec des relevés dans le mois actuel
+        contrat_data = (
+            Contrat.objects
+            .filter(cp_commune_id=cp_commune_id)
+            .annotate(releve_count=Count(
+                'num_compteur__relevecompteurs',
+                filter=Q(num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
+            .distinct()
+        )
 
-    # Calculer le nombre_relever_effectuer
-    nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
+        contrat_list = list(contrat_data)
 
-    nombre_facture = Facture.objects.filter(
-        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id
-    ).count()
+        # Calculer le nombre_relever_effectuer
+        nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
 
-    nombre_total_facture_payer = Facture.objects.filter(
-        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
-        statut=True
-    ).count()
+        # Calcul des factures
+        nombre_facture = Facture.objects.filter(
+            relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id
+        ).count()
 
-    nombre_total_facture_impayer = nombre_facture - nombre_total_facture_payer
-    nombre_total_facture_payer = nombre_facture - nombre_total_facture_impayer
+        nombre_total_facture_payer = Facture.objects.filter(
+            relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
+            statut=True
+        ).count()
 
-    # Soustraire le nombre de relevés effectués du nombre total de compteurs
-    nombre_total_compteur -= nombre_relever_effectuer
-    nombre_relever_effectuer -= nombre_relever_effectuer
+        nombre_total_facture_impayer = nombre_facture - nombre_total_facture_payer
+        nombre_total_facture_payer = nombre_facture - nombre_total_facture_impayer
 
-    return nombre_total_compteur, nombre_relever_effectuer, nombre_total_facture_impayer, nombre_total_facture_payer
+        # Soustraire le nombre de relevés effectués du nombre total de compteurs
+        nombre_total_compteur -= nombre_relever_effectuer
+        nombre_relever_effectuer -= nombre_relever_effectuer  # Note : Cette ligne semble étrange, voir ci-dessous
+
+        return (
+            nombre_total_compteur,
+            nombre_relever_effectuer,
+            nombre_total_facture_impayer,
+            nombre_total_facture_payer
+        )
+
+    # Attendre les résultats des appels synchrones
+    return await get_counts()
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @schema_use_api
-def accueil(request):
+@async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
+async def accueil(request):
+
     cp_commune_id = request.user.cp_commune_id
-    non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
-    realise = MainCourante.objects.filter(statuts__realise=True).count()
-    en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
+
+    # Encapsuler les appels synchrones à la base de données
+    @sync_to_async
+    def get_anomalie_counts():
+        non_traites = MainCourante.objects.filter(statuts__non_traite=True).count()
+        realises = MainCourante.objects.filter(statuts__realise=True).count()
+        en_courss = MainCourante.objects.filter(statuts__en_cours=True).count()
+        return non_traites, realises, en_courss
+
+    # Attendre les comptes d'anomalies
+    non_traite, realise, en_cours = await get_anomalie_counts()
     total_anomalie = non_traite + en_cours
 
-    nombre_total_compteur, nombre_relever_effectuer, nombre_total_facture_impayer, nombre_total_facture_payer\
-        = calculer_nombre_relever_effectuer(cp_commune_id)
-
-    return JsonResponse(
-        {
-            'non_traite': non_traite,
-            'realise': realise,
-            'en_cours': en_cours,
-            'totale_anomalie': total_anomalie,
-            'nombre_total_compteur': nombre_total_compteur,
-            'nombre_relever_effectuer': nombre_relever_effectuer,
-            'nombre_total_facture_impayer': nombre_total_facture_impayer,
-            'nombre_total_facture_payer': nombre_total_facture_payer
-        }
+    # Appeler la fonction asynchrone pour les compteurs et factures
+    nombre_total_compteur, nombre_relever_effectuer, nombre_total_facture_impayer, nombre_total_facture_payer = (
+        await calculer_nombre_relever_effectuer(cp_commune_id)
     )
+
+    response_data = {
+        'non_traite': non_traite,
+        'realise': realise,
+        'en_cours': en_cours,
+        'totale_anomalie': total_anomalie,
+        'nombre_total_compteur': nombre_total_compteur,
+        'nombre_relever_effectuer': nombre_relever_effectuer,
+        'nombre_total_facture_impayer': nombre_total_facture_impayer,
+        'nombre_total_facture_payer': nombre_total_facture_payer
+    }
+
+    return JsonResponse(response_data)
 
 
 @api_view(['GET'])
 @schema_use_api
-def relever_client(request):
+@async_to_sync()
+async def relever_client(request):
     compteur_id = request.GET.get('num_compteur')
 
+    if not compteur_id:
+        return JsonResponse({'erreur': "Le paramètre 'num_compteur' est requis"}, status=400)
+
     try:
-        resultat = process_compteur_details(compteur_id)
-        logger.info(f"Résultat obtenu pour compteur_id={compteur_id}")
-        return JsonResponse(resultat)
+        resultat = await process_compteur_details(compteur_id)
+        return JsonResponse(resultat, status=200)
     except ValueError as e:
-        logger.error(f"Erreur de valeur: {str(e)}")
         return JsonResponse({'erreur': str(e)}, status=400)
     except Exception as e:
-        logger.error(f"Erreur inattendue: {str(e)}")
         return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
 
 
@@ -127,7 +151,7 @@ class Missions(APIView):
 
     @staticmethod
     @schema_use_api
-    @async_to_sync  # Convertit la coroutine en fonction synchrone pour DRF
+    @async_to_sync
     async def get(request):
         logger.info("Début get")
         start_time = time.time()
@@ -152,15 +176,15 @@ class Missions(APIView):
 
     @staticmethod
     @schema_use_api
-    @async_to_sync  # Convertit la coroutine en fonction synchrone pour DRF
+    @async_to_sync
     async def post(request):
         logger.info("Début de la requête POST /api/missions")
 
         # Accès à request.user dans un contexte synchrone grâce à @async_to_sync
         utilisateur = request.user.id_utilisateur
-        serializer = await sync_to_async(MissionSerializer)(data=request.data)
+        serializer = await sync_to_async(MissionSerializer)(instance=None, data=request.data)
 
-        is_valid = await sync_to_async(serializer.is_valid)()
+        is_valid = await sync_to_async(serializer.is_valid)(raise_exception=False)
         if not is_valid:
             errors = await sync_to_async(lambda: serializer.errors)()
             return JsonResponse({'erreur': errors}, status=status.HTTP_400_BAD_REQUEST)
@@ -239,45 +263,65 @@ class Missions(APIView):
 
 class FactureDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
     @staticmethod
     @schema_use_api
-    def get(request):
+    @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
+    async def get(request):
         id_releve = request.GET.get('id_releve')
-        try:
-            tache = TaskFactureDetail.precess_facture_list.apply_async(args=[id_releve])
-            resultat = tache.get(timeout=10)
-            tache.forget()
+        if not id_releve:
+            logger.error("Paramètre 'id_releve' manquant dans la requête GET")
+            return JsonResponse({'erreur': "Le paramètre 'id_releve' est requis"}, status=400)
 
-            return JsonResponse({'facture': resultat})
-        except Facture.DoesNotExist:
-            return JsonResponse({'error': 'Facture non trouvé'}, status=404)
+        try:
+            logger.info(f"Début GET pour id_releve={id_releve}")
+            resultat = await TaskFactureDetail.process_facture_list(id_releve)
+            logger.info(f"Fin GET pour id_releve={id_releve}")
+
+            if resultat.get('status') == 'error':
+                return JsonResponse({'erreur': resultat['message']}, status=400)
+            return JsonResponse({'facture': resultat}, status=200)
+
         except ValueError as e:
-            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Erreur de valeur dans GET: {str(e)}")
+            return JsonResponse({'erreur': str(e)}, status=400)
         except Exception as e:
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Erreur inattendue dans GET: {str(e)}", exc_info=True)
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
 
     @staticmethod
-    @parser_classes((MultiPartParser, FormParser))
     @schema_use_api
-    def post(request):
+    @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
+    async def post(request):
         id_releve = request.data.get('relevecompteur_id')
-        montant_payer = float(request.data.get('paiement'))
+        try:
+            montant_payer = float(request.data.get('paiement'))
+        except (TypeError, ValueError):
+            logger.error("Paramètre 'paiement' invalide ou manquant dans la requête POST")
+            return JsonResponse({'erreur': "Le paramètre 'paiement' doit être un nombre valide"}, status=400)
+
         utilisateur = request.user.id_utilisateur
 
-        try:
-            tache = TaskFactureDetail.process_facture_paiement.delay(id_releve, montant_payer, utilisateur)
-            tache.forget()
+        if not id_releve:
+            logger.error("Paramètre 'relevecompteur_id' manquant dans la requête POST")
+            return JsonResponse({'erreur': "Le paramètre 'relevecompteur_id' est requis"}, status=400)
 
-            return JsonResponse({'message': "tâche mis en attente !"})
+        try:
+            logger.info(f"Début POST pour id_releve={id_releve}")
+            resultat = await TaskFactureDetail.process_facture_paiement(id_releve, montant_payer, utilisateur)
+            logger.info(f"Fin POST pour id_releve={id_releve}")
+
+            if resultat.get('status') == 'error':
+                return JsonResponse({'erreur': resultat['message']}, status=400)
+            return JsonResponse(resultat, status=200)
+
         except ValueError as e:
-            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Erreur de valeur dans POST: {str(e)}")
+            return JsonResponse({'erreur': str(e)}, status=400)
         except Exception as e:
-            return JsonResponse(
-                {'erreur': f"Erreur du serveur: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            logger.error(f"Erreur inattendue dans POST: {str(e)}", exc_info=True)
+            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
 
 
 def get_missions_details(toutes_missions):

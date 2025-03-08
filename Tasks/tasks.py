@@ -86,10 +86,10 @@ class TaskMission:
     @staticmethod
     async def process_releve(data, utilisateur):
         # Serializer reste synchrone, on l'encapsule
-        serializer = await sync_to_async(MissionSerializer)(data=data)
+        serializer = await sync_to_async(MissionSerializer)(instance=None, data=data)
 
         # Valider le serializer dans un thread
-        is_valid = await sync_to_async(serializer.is_valid)()
+        is_valid = await sync_to_async(serializer.is_valid)(raise_exception=False)
         if not is_valid:
             errors = await sync_to_async(lambda: serializer.errors)()
             return {'status': 'error', 'message': errors}
@@ -137,78 +137,78 @@ class TaskMission:
             return {'status': 'error', 'message': f"Erreur du serveur: {str(e)}"}
 
 
-def process_compteur_details(compteur_id):
+async def process_compteur_details(compteur_id):
     try:
-        with transaction.atomic():
-            compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
-
-            # Récupérer les informations sur le compteur
-            compteur_info = {
-                'id': int(compteur.num_compteur),
-                'marque': compteur.marque_compteur,
-                'modele': compteur.modele_compteur,
-            }
-
-            contrat = get_object_or_404(Contrat, num_compteur=compteur_id)
-
-            # Extraire le numéro du contrat
-            contrat_nums = contrat.num_contrat
-            num_contrat = re.search(r'\d+', contrat_nums).group()
-
-            # Récupérer les informations sur le contrat
-            contrat_info = {
-                'id': int(num_contrat),
-                'numero_contrat': contrat.num_contrat,
-                'date_debut': contrat.date_debut,
-                'date_fin': contrat.date_fin,
-                'adresse_contrat': contrat.adresse_contrat,
-                'pays_contrat': contrat.pays_contrat,
-            }
-
-            client = contrat.client
-            client_info = {
-                'id': client.id_client,
-                'nom': client.nom_client,
-                'prenom': client.prenom_client if client.prenom_client else '',
-                'adresse': client.adresse_client,
-                'commune': client.cp_commune.commune,
-                'region': client.cp_commune.region.region,
-                'tephone1': client.tel1_client,
-                'tephone2': client.tel2_client,
-                'actif': client.compte_actif
-            }
-
-            releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
-
-            releves_list = []
-            for releve in releves_data:
-                releve_dict = {
-                    'id': int(releve.id_releve),
-                    'id_releve': int(releve.id_releve),
-                    'compteur_id': int(compteur.num_compteur),
-                    'contrat_id': int(num_contrat),
-                    'client_id': int(client.id_client),
-                    'date_releve': releve.date_releve,
-                    'volume': releve.volume,
-                    'conso': releve.conso,
-                    'image_compteur': releve.image_compteur.url if releve.image_compteur else 'null',
+        # Encapsuler les opérations synchrones dans un thread
+        @sync_to_async
+        def get_details():
+            with transaction.atomic():
+                # Récupérer le compteur
+                compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
+                compteur_info = {
+                    'id': int(compteur.num_compteur),
+                    'marque': compteur.marque_compteur,
+                    'modele': compteur.modele_compteur,
                 }
 
-                # Récupérer la facture associée au relevé
-                facture = Facture.objects.filter(relevecompteur=releve).first()
-                if facture:
-                    releve_dict['etatFacture'] = 'Payé' if facture.statut else 'Impayé'
-                else:
-                    releve_dict['etatFacture'] = 'Pas de facture'
+                # Récupérer le contrat
+                contrat = get_object_or_404(Contrat, num_compteur=compteur_id)
+                num_contrat_match = re.search(r'\d+', contrat.num_contrat)
+                if not num_contrat_match:
+                    raise ValueError("Numéro de contrat invalide : aucun chiffre trouvé")
+                num_contrat = num_contrat_match.group()
 
-                releves_list.append(releve_dict)
+                contrat_info = {
+                    'id': int(num_contrat),
+                    'numero_contrat': contrat.num_contrat,
+                    'date_debut': contrat.date_debut,
+                    'date_fin': contrat.date_fin,
+                    'adresse_contrat': contrat.adresse_contrat,
+                    'pays_contrat': contrat.pays_contrat,
+                }
 
-            return {
-                'compteur': compteur_info,
-                'contrat': contrat_info,
-                'client': client_info,
-                'releves': releves_list
-            }
+                # Récupérer le client
+                client = contrat.client
+                client_info = {
+                    'id': client.id_client,
+                    'nom': client.nom_client,
+                    'prenom': client.prenom_client or '',
+                    'adresse': client.adresse_client,
+                    'commune': client.cp_commune.commune,
+                    'region': client.cp_commune.region.region,
+                    'telephone1': client.tel1_client,
+                    'telephone2': client.tel2_client or '',
+                    'actif': client.compte_actif
+                }
+
+                # Récupérer les relevés
+                releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
+                releves_list = [
+                    {
+                        'id': int(releve.id_releve),
+                        'id_releve': int(releve.id_releve),
+                        'compteur_id': int(compteur.num_compteur),
+                        'contrat_id': int(num_contrat),
+                        'client_id': int(client.id_client),
+                        'date_releve': releve.date_releve,
+                        'volume': releve.volume,
+                        'conso': releve.conso,
+                        'image_compteur': releve.image_compteur.url if releve.image_compteur else None,
+                        'etatFacture': 'Payé' if (facture := Facture.objects.filter(relevecompteur=releve).first()) and facture.statut else 'Impayé' if facture else 'Pas de facture'
+                    }
+                    for releve in releves_data
+                ]
+
+                return {
+                    'compteur': compteur_info,
+                    'contrat': contrat_info,
+                    'client': client_info,
+                    'releves': releves_list
+                }
+
+        resultat = await get_details()
+        return resultat
+
     except Compteur.DoesNotExist:
         raise ValueError('Compteur non trouvé')
     except Contrat.DoesNotExist:
@@ -216,84 +216,92 @@ def process_compteur_details(compteur_id):
     except ValueError as e:
         raise ValueError(str(e))
     except Exception as e:
+        logger.error(f"Erreur dans process_compteur_details pour compteur_id={compteur_id}: {str(e)}", exc_info=True)
         raise Exception(str(e))
 
 
 class TaskFactureDetail:
-
     @staticmethod
-    @shared_task()
-    def precess_facture_list(id_releve):
+    async def process_facture_list(id_releve):
         try:
-            with transaction.atomic():
-                releve = Facture.objects.select_related(
-                    'num_contrat__client',
-                    'num_contrat__cp_commune'
-                ).get(relevecompteur_id=id_releve)
+            @sync_to_async
+            def get_facture_details():
+                with transaction.atomic():
+                    releve = Facture.objects.select_related(
+                        'num_contrat__client',
+                        'num_contrat__cp_commune'
+                    ).get(relevecompteur_id=id_releve)
 
-                if not releve:
-                    return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé '
-                                                          'spécifié'}
+                    if not releve:
+                        return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
 
-                montant_ht = MontantHT.objects.get(facture_id=releve.id_facture)
+                    montant_ht = MontantHT.objects.get(facture_id=releve.id_facture)
 
-                avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
-                avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
-                restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
-                restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
-                montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
+                    avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
+                    avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
+                    restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
+                    restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
+                    montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
 
-                montant_payer = 0.0 if montant_total_ttc == 0.0 or restant_nouvel == 0.0 \
-                    else montant_total_ttc - restant_nouvel
+                    montant_payer = 0.0 if montant_total_ttc == 0.0 or restant_nouvel == 0.0 \
+                        else montant_total_ttc - restant_nouvel
 
-                typeclient = releve.num_contrat.client.type_client_id
-                cp_commune = releve.num_contrat.cp_commune_id
-                tarif = Tarif.objects.filter(cp_commune_id=cp_commune).first()
-                tarif_m3 = {
-                    1: tarif.prix_m3_bp,
-                    2: tarif.prix_m3_bs,
-                    3: tarif.prix_m3_k
-                }.get(typeclient, 0.0) if tarif else 0.0
+                    typeclient = releve.num_contrat.client.type_client_id
+                    cp_commune = releve.num_contrat.cp_commune_id
+                    tarif = Tarif.objects.filter(cp_commune_id=cp_commune).first()
+                    tarif_m3 = {
+                        1: tarif.prix_m3_bp,
+                        2: tarif.prix_m3_bs,
+                        3: tarif.prix_m3_k
+                    }.get(typeclient, 0.0) if tarif else 0.0
 
-                facture = {
-                    'id': int(releve.id_facture),
-                    'relevecompteur_id': int(releve.relevecompteur_id),
-                    'num_facture': releve.num_facture,
-                    'num_compteur': int(releve.num_contrat.num_compteur_id),
-                    'date_facture': releve.date_facture,
-                    'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
-                    'tarif_m3': tarif_m3,
-                    'avoir_avant': avoir_avant,
-                    'avoir_utilise': avoir_utilise,
-                    'restant_precedant': restant_precedant,
-                    'montant_payer': montant_payer,
-                    'montant_total_ttc': montant_total_ttc,
-                    'statut': 'Payé' if releve.statut else 'Impayé',
-                }
-                return facture
+                    facture = {
+                        'id': int(releve.id_facture),
+                        'relevecompteur_id': int(releve.relevecompteur_id),
+                        'num_facture': releve.num_facture,
+                        'num_compteur': int(releve.num_contrat.num_compteur_id),
+                        'date_facture': releve.date_facture,
+                        'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
+                        'tarif_m3': tarif_m3,
+                        'avoir_avant': avoir_avant,
+                        'avoir_utilise': avoir_utilise,
+                        'restant_precedant': restant_precedant,
+                        'montant_payer': montant_payer,
+                        'montant_total_ttc': montant_total_ttc,
+                        'statut': 'Payé' if releve.statut else 'Impayé',
+                    }
+                    return facture
+
+            resultat = await get_facture_details()
+            return resultat
 
         except Facture.DoesNotExist:
             return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
         except MontantHT.DoesNotExist:
             return {'status': 'error', 'message': 'Le montant HT n\'a pas été trouvé pour l\'ID de facture spécifié'}
         except Exception as e:
+            logger.error(f"Erreur dans process_facture_list pour id_releve={id_releve}: {str(e)}", exc_info=True)
             return {'status': 'error', 'message': f"Erreur du serveur: {str(e)}"}
 
     @staticmethod
-    @shared_task
-    def process_facture_paiement(id_releve, montant_payer, utilisateur_id):
+    async def process_facture_paiement(id_releve, montant_payer, utilisateur_id):
         try:
-            with transaction.atomic():
+            @sync_to_async
+            def process_payment():
+                with transaction.atomic():
+                    if montant_payer >= 0.1:
+                        paiement(id_releve, montant_payer, utilisateur_id)  # Assurez-vous que paiement est synchrone
+                        return {'status': 'success', 'message': 'Paiement effectué avec succès !'}
+                    else:
+                        return {'status': 'error', 'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'}
 
-                # Vérifier si le paiement est supérieur ou égal à 0.1
-                if montant_payer >= 0.1:
-                    paiement(id_releve, montant_payer, utilisateur_id)
-                    return {'status': 'success', 'message': 'Paiement effectué avec succès !'}
-                else:
-                    return {'status': 'error', 'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'}
+            resultat = await process_payment()
+            return resultat
+
         except ValueError as e:
             raise ValueError(str(e))
         except Exception as e:
+            logger.error(f"Erreur dans process_facture_paiement pour id_releve={id_releve}: {str(e)}", exc_info=True)
             raise Exception(str(e))
 
 # if id_releve is not None:
