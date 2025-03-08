@@ -23,7 +23,7 @@ SHARED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'django_extensions',
-    'django_browser_reload',
+    # 'django_browser_reload',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django_browser_reload.middleware.BrowserReloadMiddleware',
+    # 'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     # 'django_tenants.middleware.main.TenantMainMiddleware',
 ]
