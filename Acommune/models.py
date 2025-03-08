@@ -9,3 +9,6 @@ class Commune(models.Model):
     cp_commune = models.CharField(max_length=10, primary_key=True)
     commune = models.CharField(max_length=30, blank=False)
     region = models.ForeignKey(Region, on_delete=models.CASCADE, blank=False)
+
+    def __str__(self):
+        return self.region.region + " " + self.commune

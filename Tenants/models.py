@@ -26,6 +26,9 @@ class Role(models.Model):
     id_role = models.BigAutoField(primary_key=True)
     role = models.CharField(max_length=30, blank=False)
 
+    def __str__(self):
+        return self.role
+
 
 class Utilisateur(AbstractUser):
     id_utilisateur = models.BigAutoField(primary_key=True)
