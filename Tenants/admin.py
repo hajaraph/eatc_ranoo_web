@@ -1,10 +1,11 @@
 from asyncio.log import logger
 
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.db.models import ProtectedError
 from django_tenants.admin import TenantAdminMixin
-from django_tenants.utils import schema_context
+from django_tenants.utils import schema_context, get_tenant_model
 
-from Tenants.models import Entreprise, Domain, Role, Utilisateur
+from Tenants.models import Entreprise, Domain, Role, Utilisateur, Initial
 
 
 @admin.register(Entreprise)
@@ -32,15 +33,4 @@ class UtilisateurAdmin(admin.ModelAdmin):
     exclude = ('groups', 'user_permissions', 'last_token', 'date_joined', 'last_login')
 
     def save_model(self, request, obj, form, change):
-        logger.info(f"Saving utilisateur: {obj.username}, change={change}")
-        with schema_context('public'):
-            # Appliquer les données du formulaire avant la sauvegarde initiale
-            if not change:  # Si création
-                for field in form.cleaned_data:
-                    setattr(obj, field, form.cleaned_data[field])
-            # Sauvegarder l'objet
-            obj.save()
-            logger.info(f"Utilisateur saved with id_utilisateur: {obj.id_utilisateur}")
-            # Appeler super() pour gérer les relations et autres données
-            super().save_model(request, obj, form, change)
-            logger.info(f"Super save_model completed for utilisateur: {obj.username}")
+        obj.save(utilisateur_createur=request.user)

@@ -52,6 +52,8 @@ class Utilisateur(AbstractUser):
     def save(self, *args, **kwargs):
         logger.info(f"Commencement de la sauvegarde utilisateur: {self.username or 'no username'}, pk={self.pk}")
 
+        utilisateur_createur = kwargs.pop('utilisateur_createur', None)
+
         # Génération du username si nécessaire
         if not self.username:
             username_suggestion = f"{self.prenom_utilisateur}".lower()
@@ -65,18 +67,29 @@ class Utilisateur(AbstractUser):
             logger.info(f"Generation username: {self.username}")
 
         # Gestion du mot de passe
-        if self.pk is None or not Utilisateur.objects.filter(pk=self.pk).exists():
-            logger.info("Parametre de mot de pass pour utilisateur")
+        is_new_user = self.pk is None or not Utilisateur.objects.filter(pk=self.pk).exists()
+
+        if is_new_user:
+            logger.info("Parametre de mot de passe pour nouvel utilisateur")
             self.set_password(self.password)
         else:
             original = Utilisateur.objects.get(pk=self.pk)
             if self.password != original.password:
-                logger.info("Mise a jour de la mot de pass utilisateur")
+                logger.info("Mise à jour du mot de passe utilisateur")
                 self.set_password(self.password)
 
-        # Sauvegarde dans la base
+        # Sauvegarde de l'utilisateur
         super().save(*args, **kwargs)
         logger.info(f"Utilisateur sauvé avec id_utilisateur: {self.id_utilisateur}")
+
+        # Création automatique de l'instance Initial pour les nouveaux utilisateurs
+        if is_new_user:
+            logger.info(utilisateur_createur)
+            Initial.objects.create(
+                utilisateur_createur=utilisateur_createur,
+                utilisateur_cree_id=self.id_utilisateur,
+            )
+            logger.info(f"Instance Initial créée pour l'utilisateur: {self.id_utilisateur}")
 
 
 class Initial(models.Model):
