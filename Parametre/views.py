@@ -6,6 +6,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from openpyxl.workbook import Workbook
 
+from Tenants.middleware import schema_use_api, schema_use
 from Tenants.models import Utilisateur
 from Login.views import authentification_requis, role_requis, deconnexion
 from Parametre.models import Historique
@@ -13,6 +14,7 @@ from Parametre.models import Historique
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def para_utilisateur(request):
     titre = 'Parametre | Profile'
     active = 'active'
@@ -29,6 +31,7 @@ class ProfileModifier(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request):
         titre = 'Parametre | Profile'
         active = 'active'
@@ -43,6 +46,7 @@ class ProfileModifier(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request):
         utilisateur = Utilisateur.objects.get(pk=request.session.get('id_utilisateur'))
         num_utilisateur = utilisateur.num_utilisateur
@@ -78,6 +82,7 @@ class ProfileModifier(View):
 
 @authentification_requis
 @role_requis('Administrateur')
+@schema_use
 def historique(request):
     titre = 'Parametre | Historique'
     active = 'active'
@@ -96,6 +101,7 @@ class ChangerMotdePasse(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def get(request):
         titre = 'Parametre | Profile | Changer Mot de Passe'
         active = 'active'
@@ -110,6 +116,7 @@ class ChangerMotdePasse(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
     def post(request):
         ancien_motpasse = request.POST.get('ancien_motpasse')
         nouveau_motpasse = request.POST.get('nouveau_motpasse')
