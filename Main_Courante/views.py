@@ -9,9 +9,11 @@ from Clients.models import Client
 from Login.views import authentification_requis
 from Main_Courante.models import MainCourante, StatutMC, SuivieMC
 from Parametre.views import exporter_en_excel, enregistre_historique
+from Tenants.middleware import schema_use
 
 
 @authentification_requis
+@schema_use
 def main_liste_mc(request):
     title = 'Main Courante | Liste MC'
     active = 'active'
@@ -59,6 +61,7 @@ def main_liste_mc(request):
 
 
 @authentification_requis
+@schema_use
 def detail_mc(request, pk):
     title = 'Main Courante| Détail'
     active = 'active'
@@ -82,6 +85,7 @@ def detail_mc(request, pk):
 class MainCouranteNew(View):
     @staticmethod
     @authentification_requis
+    @schema_use
     def get(request):
         title = 'Main Courante | Nouvelle Anomalie'
         active = 'active'
@@ -100,6 +104,7 @@ class MainCouranteNew(View):
 
     @staticmethod
     @authentification_requis
+    @schema_use
     def post(request):
         client = request.POST['client_id']
         cp_commune = request.POST['commune'] if 'commune' in request.POST else None
@@ -158,6 +163,7 @@ def update_statut_mc(request, pk, en_cours=None, non_traite=None, realise=None,
 
 
 @authentification_requis
+@schema_use
 def lance_mc(request, pk):
     return update_statut_mc(
         request,
@@ -169,6 +175,7 @@ def lance_mc(request, pk):
 
 
 @authentification_requis
+@schema_use
 def valide_mc(request, pk):
     return update_statut_mc(
         request,
@@ -180,6 +187,7 @@ def valide_mc(request, pk):
 
 
 @authentification_requis
+@schema_use
 def supprimer_mc(request, pk):
     main = MainCourante.objects.get(pk=pk)
     if main.photomcs.exists():
@@ -195,6 +203,7 @@ def supprimer_mc(request, pk):
 
 
 @authentification_requis
+@schema_use
 def suivie(request, pk):
     commentaire = request.POST['commentaire']
     SuivieMC.objects.create(
@@ -207,6 +216,7 @@ def suivie(request, pk):
 
 
 @authentification_requis
+@schema_use
 def supp_suivie(request, pk):
     suivies = SuivieMC.objects.get(pk=pk)
     main_courante_id = suivies.main_courante_id
