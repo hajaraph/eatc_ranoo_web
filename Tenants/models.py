@@ -69,14 +69,10 @@ class Utilisateur(AbstractUser):
         # Gestion du mot de passe
         is_new_user = self.pk is None or not Utilisateur.objects.filter(pk=self.pk).exists()
 
-        if is_new_user:
-            logger.info("Parametre de mot de passe pour nouvel utilisateur")
+        original = Utilisateur.objects.get(pk=self.pk)
+        if self.password != original.password:
+            logger.info("Mise à jour du mot de passe utilisateur")
             self.set_password(self.password)
-        else:
-            original = Utilisateur.objects.get(pk=self.pk)
-            if self.password != original.password:
-                logger.info("Mise à jour du mot de passe utilisateur")
-                self.set_password(self.password)
 
         # Sauvegarde de l'utilisateur
         super().save(*args, **kwargs)

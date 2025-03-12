@@ -1,11 +1,8 @@
-from asyncio.log import logger
 
-from django.contrib import admin, messages
-from django.db.models import ProtectedError
+from django.contrib import admin
 from django_tenants.admin import TenantAdminMixin
-from django_tenants.utils import schema_context, get_tenant_model
 
-from Tenants.models import Entreprise, Domain, Role, Utilisateur, Initial
+from Tenants.models import Entreprise, Domain, Role, Utilisateur
 
 
 @admin.register(Entreprise)
