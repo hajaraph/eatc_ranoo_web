@@ -3,7 +3,7 @@ import time
 from django.db import transaction
 from django.http import JsonResponse
 from rest_framework import permissions
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, parser_classes
 from asgiref.sync import async_to_sync, sync_to_async
@@ -19,31 +19,18 @@ class DeclareMaincourate(APIView):
 
     @staticmethod
     @schema_use_api
-    @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
-    async def get(request):
+    def get(request):
         start_time = time.time()
         logger.info("Début GET DeclareMaincourate")
 
-        # Encapsuler les appels synchrones à la base de données
-        @sync_to_async
-        def get_main_courantes():
-            return list(StatutMC.objects.exclude(realise=True).all())
-
-        main_courantes = await get_main_courantes()
+        # Récupérer les données directement (synchrone)
+        main_courantes = StatutMC.objects.exclude(realise=True).all()
         main_courante_list = []
         commentaire = []
 
         for main_courante in main_courantes:
-            @sync_to_async
-            def get_photos():
-                return list(PhotoMC.objects.filter(main_courante_id=main_courante.main_courante_id))
-
-            @sync_to_async
-            def get_suivies():
-                return list(SuivieMC.objects.filter(main_courante_id=main_courante.main_courante_id))
-
-            photomc = await get_photos()
-            suivie = await get_suivies()
+            photomc = PhotoMC.objects.filter(main_courante_id=main_courante.main_courante_id)
+            suivie = SuivieMC.objects.filter(main_courante_id=main_courante.main_courante_id)
 
             if suivie:
                 for suivi in suivie:
@@ -61,7 +48,7 @@ class DeclareMaincourate(APIView):
 
             # Remplir les attributs avec les URLs des photos disponibles
             for i, photo in enumerate(photomc[:5], start=1):
-                if photo.photo_anomalie.url:
+                if photo.photo_anomalie:
                     photo_attributes[f'photo_anomalie_{i}'] = photo.photo_anomalie.url
 
             main_courante_info = {
@@ -72,9 +59,12 @@ class DeclareMaincourate(APIView):
                 'longitude_mc': str(main_courante.main_courante.longitude_mc),
                 'latitude_mc': str(main_courante.main_courante.latitude_mc),
                 'description_mc': str(main_courante.main_courante.description_mc),
-                'client_declare': str(main_courante.main_courante.client.nom_client) if main_courante.main_courante.client_id else '',
-                'cp_commune': str(main_courante.main_courante.cp_commune_id) if main_courante.main_courante.cp_commune_id else '',
-                'commune': str(main_courante.main_courante.cp_commune.commune) if main_courante.main_courante.cp_commune_id else '',
+                'client_declare': str(
+                    main_courante.main_courante.client.nom_client) if main_courante.main_courante.client_id else '',
+                'cp_commune': str(
+                    main_courante.main_courante.cp_commune_id) if main_courante.main_courante.cp_commune_id else '',
+                'commune': str(
+                    main_courante.main_courante.cp_commune.commune) if main_courante.main_courante.cp_commune_id else '',
                 'status': 0 if main_courante.non_traite else (1 if main_courante.en_cours else 2),
                 **photo_attributes,
             }
@@ -84,11 +74,12 @@ class DeclareMaincourate(APIView):
             'main_courante_list': main_courante_list,
             'commentaire': commentaire,
         })
+
         logger.info(f"Fin GET DeclareMaincourate: {time.time() - start_time:.2f}s")
         return response
 
     @staticmethod
-    @parser_classes((MultiPartParser, FormParser))
+    @parser_classes((MultiPartParser, FormParser, JSONParser))
     @schema_use_api
     @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
     async def post(request):
