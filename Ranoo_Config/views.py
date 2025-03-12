@@ -92,10 +92,6 @@ class NouvelUtilisateur(View):
                         cp_commune_id=cp_commune,
                         role_id=role_id
                     )
-                Initial.objects.create(
-                    utilisateur_createur_id=request.session.get('id_utilisateur'),
-                    utilisateur_cree_id=utilisateur_cree.pk
-                )
 
                 messages.success(request, f"Utilisateur crée avec succès !")
                 return redirect('config_utilisateur')
