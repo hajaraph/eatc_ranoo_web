@@ -21,63 +21,63 @@ class TaskMission:
     async def process_liste_mission(cp_commune, end_of_month, offset=0, limit=50):
         logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}, offset={offset}, limit={limit}")
         cache_key = f"process_liste_mission_{cp_commune}_{end_of_month.strftime('%Y%m%d')}_{offset}_{limit}"
-        result = cache.get(cache_key)
 
-        if result is None:
-            try:
-                @sync_to_async
-                def get_contrats():
-                    with transaction.atomic():
-                        total_contrats = Contrat.objects.filter(cp_commune_id=cp_commune).count()
-                        contrats_commune = (
-                            Contrat.objects
-                            .filter(cp_commune_id=cp_commune)
-                            .select_related('client', 'num_compteur')
-                            .prefetch_related('num_compteur__relevecompteurs')
-                            .annotate(
-                                conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
-                            )[offset:offset + limit]
+        try:
+            # Toujours recalculer les données, sans vérifier le cache
+            @sync_to_async
+            def get_contrats():
+                with transaction.atomic():
+                    total_contrats = Contrat.objects.filter(cp_commune_id=cp_commune).count()
+                    contrats_commune = (
+                        Contrat.objects
+                        .filter(cp_commune_id=cp_commune)
+                        .select_related('client', 'num_compteur')
+                        .prefetch_related('num_compteur__relevecompteurs')
+                        .annotate(
+                            conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
+                        )[offset:offset + limit]
+                    )
+
+                    liste_contrats_info = []
+                    for contrat in contrats_commune:
+                        dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
+                            max_date=Max('date_releve')
                         )
+                        date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
 
-                        liste_contrats_info = []
-                        for contrat in contrats_commune:
-                            dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
-                                max_date=Max('date_releve')
-                            )
-                            date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
+                        statut = 0 if date_releve and date_releve.month != end_of_month.month else 2
 
-                            statut = 0 if date_releve and date_releve.month != end_of_month.month else 2
-
-                            dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
-                            contrat_info = {
-                                'id': dernier_releve_obj.pk if dernier_releve_obj else '',
-                                'nom_client': contrat.client.nom_client,
-                                'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
-                                'adresse_client': contrat.client.adresse_client,
-                                'num_compteur': contrat.num_compteur_id,
-                                'conso_dernier_releve': contrat.conso_dernier_releve,
-                                'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
-                                'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
-                                'statut': statut
-                            }
-                            liste_contrats_info.append(contrat_info)
-
-                        liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
-                        has_more = offset + limit < total_contrats
-                        return {
-                            'liste': liste_contrats_info,
-                            'has_more': has_more,
-                            'next_offset': offset + limit if has_more else None
+                        dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
+                        contrat_info = {
+                            'id': dernier_releve_obj.pk if dernier_releve_obj else '',
+                            'nom_client': contrat.client.nom_client,
+                            'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
+                            'adresse_client': contrat.client.adresse_client,
+                            'num_compteur': contrat.num_compteur_id,
+                            'conso_dernier_releve': contrat.conso_dernier_releve,
+                            'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
+                            'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
+                            'statut': statut
                         }
+                        liste_contrats_info.append(contrat_info)
 
-                result = await get_contrats()
-                cache.set(cache_key, result, timeout=3600)
-                logger.info(f"{len(result['liste'])} éléments mis en cache, has_more={result['has_more']}")
-            except Exception as e:
-                logger.error(f"Erreur inattendue dans process_liste_mission: {str(e)}", exc_info=True)
-                return {'status': 'error', 'message': str(e)}
-        else:
-            logger.info("Résultat récupéré depuis le cache")
+                    liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
+                    has_more = offset + limit < total_contrats
+                    return {
+                        'liste': liste_contrats_info,
+                        'has_more': has_more,
+                        'next_offset': offset + limit if has_more else None
+                    }
+
+            result = await get_contrats()
+
+            # Mettre à jour le cache avec les nouvelles données à chaque fois
+            cache.set(cache_key, result, timeout=3600)
+            logger.info(f"{len(result['liste'])} éléments mis à jour dans le cache, has_more={result['has_more']}")
+
+        except Exception as e:
+            logger.error(f"Erreur inattendue dans process_liste_mission: {str(e)}", exc_info=True)
+            return {'status': 'error', 'message': str(e)}
 
         logger.info(f"Tâche terminée avec {len(result['liste'])} éléments")
         return result
