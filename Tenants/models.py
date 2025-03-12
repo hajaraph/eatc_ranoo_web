@@ -53,6 +53,17 @@ class Utilisateur(AbstractUser):
         logger.info(f"Commencement sauvegarde utilisateur: {self.num_utilisateur}")
         utilisateur_createur = kwargs.pop('utilisateur_createur', None)
 
+        if not self.username:
+            username_suggestion = f"{self.prenom_utilisateur}".lower()
+            username = slugify(username_suggestion)
+            counter = 1
+            original_username = username
+            while Utilisateur.objects.filter(username=username).exists():
+                username = f"{original_username}{counter}"
+                counter += 1
+            self.username = username
+            logger.info(f"Generation username: {self.username}")
+
         is_new_user = self.pk is None
         if is_new_user:
             logger.info("Paramètre de mot de passe pour nouvel utilisateur")
