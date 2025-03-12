@@ -68,37 +68,26 @@ class NouvelUtilisateur(View):
 
         num_exist = Utilisateur.objects.filter(num_utilisateur=num_utilisateur).exists()
         if not num_exist:
-
             if motpasse_utilisateur == confirm_motpasse_utilisateur:
+                utilisateur_connecte = Utilisateur.objects.get(id_utilisateur=request.session.get('id_utilisateur'))
+                utilisateur_data = {
+                    'nom_utilisateur': nom_utilisateur,
+                    'prenom_utilisateur': prenom_utilisateur,
+                    'num_utilisateur': num_utilisateur,
+                    'password': motpasse_utilisateur,  # On passe le mot de passe brut ici
+                    'entreprise_id': request.session.get('entreprise'),
+                    'role_id': role_id
+                }
+                if role_id not in [1, 2]:
+                    utilisateur_data['cp_commune_id'] = request.POST['commune']
 
-                if role_id == 1 or role_id == 2:
-                    utilisateur_cree = Utilisateur.objects.create(
-                        nom_utilisateur=nom_utilisateur,
-                        prenom_utilisateur=prenom_utilisateur,
-                        num_utilisateur=num_utilisateur,
-                        password=make_password(motpasse_utilisateur),
-                        entreprise_id=request.session.get('entreprise'),
-                        role_id=role_id
-                    )
+                utilisateur_cree = Utilisateur(**utilisateur_data)
+                utilisateur_cree.save(utilisateur_createur=utilisateur_connecte)
 
-                else:
-                    cp_commune = request.POST['commune']
-                    utilisateur_cree = Utilisateur.objects.create(
-                        nom_utilisateur=nom_utilisateur,
-                        prenom_utilisateur=prenom_utilisateur,
-                        num_utilisateur=num_utilisateur,
-                        password=make_password(motpasse_utilisateur),
-                        entreprise_id=request.session.get('entreprise'),
-                        cp_commune_id=cp_commune,
-                        role_id=role_id
-                    )
-
-                messages.success(request, f"Utilisateur crée avec succès !")
+                messages.success(request, f"Utilisateur créé avec succès !")
                 return redirect('config_utilisateur')
-
             else:
-                messages.error(request, f'Votre mot de passe ne se correspond pas à la confirmation !')
-
+                messages.error(request, f'Votre mot de passe ne correspond pas à la confirmation !')
         else:
             messages.error(request, f'Votre numéro est déjà utilisé !')
         return redirect('nouvel_utilisateur')

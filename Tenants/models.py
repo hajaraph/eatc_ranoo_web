@@ -50,11 +50,9 @@ class Utilisateur(AbstractUser):
     DATE_JOINED_FIELD = 'cree_le'
 
     def save(self, *args, **kwargs):
-        logger.info(f"Commencement de la sauvegarde utilisateur: {self.username or 'no username'}, pk={self.pk}")
-
+        logger.info(f"Commencement sauvegarde utilisateur: {self.num_utilisateur}")
         utilisateur_createur = kwargs.pop('utilisateur_createur', None)
 
-        # Génération du username si nécessaire
         if not self.username:
             username_suggestion = f"{self.prenom_utilisateur}".lower()
             username = slugify(username_suggestion)
@@ -66,26 +64,24 @@ class Utilisateur(AbstractUser):
             self.username = username
             logger.info(f"Generation username: {self.username}")
 
-        # Gestion du mot de passe
-        is_new_user = self.pk is None or not Utilisateur.objects.filter(pk=self.pk).exists()
-
-        original = Utilisateur.objects.get(pk=self.pk)
-        if self.password != original.password:
-            logger.info("Mise à jour du mot de passe utilisateur")
-            self.set_password(self.password)
-
-        # Sauvegarde de l'utilisateur
-        super().save(*args, **kwargs)
-        logger.info(f"Utilisateur sauvé avec id_utilisateur: {self.id_utilisateur}")
-
-        # Création automatique de l'instance Initial pour les nouveaux utilisateurs
+        is_new_user = self.pk is None
         if is_new_user:
-            logger.info(utilisateur_createur)
+            logger.info("Paramètre de mot de passe pour nouvel utilisateur")
+            self.set_password(self.password)
+        else:
+            original = Utilisateur.objects.get(pk=self.pk)
+            if self.password != original.password:
+                logger.info("Mise à jour du mot de passe utilisateur")
+                self.set_password(self.password)
+
+        super().save(*args, **kwargs)
+
+        if is_new_user and utilisateur_createur:
             Initial.objects.create(
                 utilisateur_createur=utilisateur_createur,
-                utilisateur_cree_id=self.id_utilisateur,
+                utilisateur_cree=self
             )
-            logger.info(f"Instance Initial créée pour l'utilisateur: {self.id_utilisateur}")
+            logger.info(f"Initial créé pour {self.num_utilisateur} par {utilisateur_createur}")
 
 
 class Initial(models.Model):
