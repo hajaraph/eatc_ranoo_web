@@ -24,7 +24,7 @@ $(document).ready(function(){
         }
         champ.val(numericValue);
     }
-    let champ = $('#paiement, #prix_m3, #tva, #taux_taxe')
+    let champ = $('#paiement, #prix_m3, #tva, #taux_taxe, #num_compteur')
     champ.on('input',function() {
         traiterChamp($(this));
     });
