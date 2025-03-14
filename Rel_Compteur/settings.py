@@ -62,8 +62,6 @@ MIDDLEWARE = [
 ALLOWED_HOSTS = [
     'app.eatc.me',
     'www.app.eatc.me',
-    '89.116.38.149',
-    '10.0.2.2',
     'localhost'
 ]
 
@@ -74,13 +72,13 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'https://app.eatc.me',
     'https://www.app.eatc.me',
-    'http://89.116.38.149:8000',
     'http://127.0.0.1:8000',
     'http://localhost:8000'
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    'http://89.116.38.149:8000',
+    'https://app.eatc.me',
+    'https://www.app.eatc.me',
     'http://127.0.0.1:8000',
     'http://localhost:8000'
 ]
