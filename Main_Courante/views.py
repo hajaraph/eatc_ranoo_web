@@ -226,6 +226,8 @@ def supp_suivie(request, pk):
     return redirect('detail_mc', main_courante_id)
 
 
+@authentification_requis
+@schema_use
 def export_mc_excel(request):
     date_deb = request.GET.get('date_deb')
     date_fin = request.GET.get('date_fin')
