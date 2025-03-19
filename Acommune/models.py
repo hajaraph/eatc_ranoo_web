@@ -20,4 +20,4 @@ class Commune(models.Model):
     region = models.ForeignKey(Region, on_delete=models.CASCADE, blank=False)
 
     def __str__(self):
-        return self.region.region + " " + self.commune
+        return self.region.__str__() + " " + self.commune
