@@ -4,7 +4,7 @@ from django.db.models import ProtectedError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
-from Acommune.models import Region, Commune
+from Acommune.models import Region, Commune, Province
 from Facturation.models import Tarif, Taxe
 from Tenants.middleware import schema_use
 from Tenants.models import Utilisateur, Role, Initial
@@ -44,13 +44,13 @@ class NouvelUtilisateur(View):
         else:
             role = Role.objects.all().order_by('role').exclude(role='Administrateur')
 
-        regions = Region.objects.all()
+        provinces = Province.objects.all().order_by('province')
         contexte = {
             'titre_creation_utilisateur': titre,
             'active_utilisateur': active,
             'font_rano': font,
             'role': role,
-            'regions': regions
+            'provinces': provinces
         }
         return render(request, 'all_page/ranoo_config/content.html', contexte)
 

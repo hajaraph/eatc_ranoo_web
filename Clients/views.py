@@ -130,7 +130,7 @@ class ClientDetail(View):
         client_detail = Client.objects.get(pk=pk)
         pieces_client = client_detail.piececlients.all()
         contrat = client_detail.contrats.exists()
-        region = Region.objects.order_by('region').all()
+        provinces = Province.objects.all().order_by('province')
         type_client = TypeClient.objects.all()
 
         title = f"Client | Detail | {client_detail.nom_client} {client_detail.prenom_client}"
@@ -144,7 +144,7 @@ class ClientDetail(View):
             'active_li_liste': active,
             'active_liste': active,
             'piece_client': pieces_client,
-            'regions': region,
+            'provinces': provinces,
             'type': type_client
         }
         return render(request, 'all_page/clients/content_client.html', context)
