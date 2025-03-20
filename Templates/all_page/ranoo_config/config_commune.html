@@ -11,6 +11,7 @@
         <table class="table mt-5" id="myTable">
             <thead>
                 <tr>
+                    <th>Province</th>
                     <th>Région</th>
                     <th>Commune</th>
                     <th>CP Commune</th>
@@ -20,6 +21,7 @@
             <tbody>
                 {% for row in communes %}
                 <tr>
+                    <td>{{ row.region.province.province }}</td>
                     <td>{{ row.region.region }}</td>
                     <td>{{ row.commune }}</td>
                     <td>{{ row.pk }}</td>

@@ -5,11 +5,18 @@
         <div class="row">
             <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <select name="region" id="region" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
-                        <option selected hidden>Selectionné la région</option>
-                        {% for row in regions %}
-                            <option value="{{ row.pk }}">{{ row.region }}</option>
+                    <select name="province" id="province" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                        <option selected hidden>Selectionné une province</option>
+                        {% for row in province %}
+                            <option value="{{ row.pk }}">{{ row.province }}</option>
                         {% endfor %}
+                    </select>
+                    <label for="province">Province</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <select name="region" id="region" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
                     </select>
                     <label for="region">Région</label>
                 </div>

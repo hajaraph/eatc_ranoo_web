@@ -1,12 +1,11 @@
 from django.urls import path
 
 from Clients.views import client_liste, client_contrat, ClientNew, ContratNew, ClientContrat, \
-    ClientDetail, supp_file_client, export_clients, delete_client, genere_pdf_contrat, supp_contrat, commune_list
+    ClientDetail, supp_file_client, export_clients, delete_client, genere_pdf_contrat, supp_contrat
 
 urlpatterns = [
     path('liste', client_liste, name='client_liste'),
     path('nouveau', ClientNew.as_view(), name='client_new'),
-    path('nouveau/<str:region>', commune_list, name='commune_list'),
     path('contrat', client_contrat, name='client_contrat'),
     path('contrat/nouveau', ContratNew.as_view(), name='client_new_contrat'),
     path('detail/contact=<str:pk>', ClientDetail.as_view(), name='client_detail'),

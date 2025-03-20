@@ -15,7 +15,7 @@ from Compteurs.models import Compteur
 from Facturation.models import Tarif
 from Login.views import authentification_requis, role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
-from Acommune.models import Region
+from Acommune.models import Region, Province
 from Tenants.middleware import schema_use
 
 
@@ -71,13 +71,13 @@ class ClientNew(View):
         title = 'Nouveau Client'
         active = 'active'
         font = 'custom-font'
-        region = Region.objects.order_by('region').all()
+        province = Province.objects.all().order_by('province')
         type_client = TypeClient.objects.all()
         context = {
             'title_new': title,
             'active_liste': active,
             'font_client': font,
-            'regions': region,
+            'provinces': province,
             'type': type_client
         }
         return render(request, 'all_page/clients/content_client.html', context)
@@ -119,12 +119,6 @@ class ClientNew(View):
         else:
             messages.error(request, f'Téléphone 1 déjà utiliser par un client !')
             return redirect('client_new')
-
-
-def commune_list(request, region, *args, **kwargs):
-    commune = Commune.objects.filter(region__region=region).order_by('commune').\
-        values('cp_commune', 'commune')
-    return JsonResponse({'data': list(commune)})
 
 
 class ClientDetail(View):
@@ -255,8 +249,8 @@ class ClientContrat(View):
         except Client.DoesNotExist:
             messages.warning(request, "Ce contrat n'exist pas")
 
-        region = Region.objects.order_by('region').all()
-        type_client = TypeClient.objects.all()
+        provinces = Province.objects.all().order_by('province')
+        type_client = TypeClient.objects.all().order_by('designation_client')
 
         context = {
             'title_li_contrat': title,
@@ -267,7 +261,7 @@ class ClientContrat(View):
             'contrats': contrats,
             'detail': client,
             'detail_co': contrat,
-            'regions': region,
+            'provinces': provinces,
             'type': type_client
         }
         return render(request, 'all_page/clients/content_client.html', context)
@@ -352,7 +346,7 @@ class ContratNew(View):
         font = 'custom-font'
         client = Client.objects.all()
         compteurs = Compteur.objects.exclude(contrats__isnull=False)
-        region = Region.objects.order_by('region').all()
+        provinces = Province.objects.all().order_by('province')
 
         context = {
             'title_new_contrat': title,
@@ -360,7 +354,7 @@ class ContratNew(View):
             'font_client': font,
             'client': client,
             'compteurs': compteurs,
-            'regions': region,
+            'provinces': provinces,
         }
         return render(request, 'all_page/clients/content_client.html', context)
 
