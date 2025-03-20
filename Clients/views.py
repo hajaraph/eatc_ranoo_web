@@ -3,14 +3,14 @@ import re
 from io import BytesIO
 
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import get_template
 from datetime import datetime
 from django.views import View
 from xhtml2pdf import pisa
 
-from Clients.models import Client, PieceClient, Contrat, TypeClient, Commune
+from Clients.models import Client, PieceClient, Contrat, TypeClient
 from Compteurs.models import Compteur
 from Facturation.models import Tarif
 from Login.views import authentification_requis, role_requis
@@ -276,7 +276,7 @@ class ClientContrat(View):
         num_contrat = request.POST['num_contrat'] if 'num_contrat' in request.POST else None
         contrat_data = extract_contrat_data(request)
 
-        if Client.objects.filter(pk=pk).exist():
+        if Client.objects.filter(pk=pk).exists():
             client = Client.objects.get(pk=pk)
             contrat = client.contrats.get(num_contrat=num_contrat)
         else:

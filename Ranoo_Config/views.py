@@ -192,12 +192,12 @@ class TarifNew(View):
         titre = 'Ranoo Config | Tarif | Nouveau'
         active = 'active'
         font = 'custom-font'
-        commune = Commune.objects.order_by('region', 'commune').exclude(communes__isnull=False)
+        provinces = Province.objects.all().order_by('province')
         context = {
             'titre_new_tarif': titre,
             'active_config_constates': active,
             'font_rano': font,
-            'communes': commune
+            'provinces': provinces
         }
         return render(request, 'all_page/ranoo_config/content.html', context)
 
@@ -206,7 +206,7 @@ class TarifNew(View):
     @role_requis('Administrateur', 'Gestionnaire')
     @schema_use
     def post(request):
-        cp_commune = request.POST['cp_commune']
+        cp_commune = request.POST['commune']
         prix_m3_bs = float(request.POST['prix_m3_bs'])
         prix_m3_bp = float(request.POST['prix_m3_bp'])
         prix_m3_k = float(request.POST['prix_m3_k'])
