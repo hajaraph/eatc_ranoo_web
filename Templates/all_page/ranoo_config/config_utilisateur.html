@@ -10,7 +10,6 @@
         <table class="table mt-5" id="myTable">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nom</th>
                     <th>Prénom</th>
                     <th>Téléphone</th>
@@ -24,7 +23,6 @@
             <tbody>
                 {% for row in utilisateur %}
                 <tr>
-                    <td>{{ row.utilisateur_cree.pk }}</td>
                     <td>{{ row.utilisateur_cree.nom_utilisateur }}</td>
                     <td>{{ row.utilisateur_cree.prenom_utilisateur }}</td>
                     <td>{{ row.utilisateur_cree.num_utilisateur }}</td>
