@@ -12,6 +12,9 @@ class Entreprise(TenantMixin):
     nom_entreprise = models.CharField(max_length=100)
     schema_name = models.CharField(max_length=100, verbose_name="Base de donnée")
     created_on = models.DateTimeField(auto_now_add=True, verbose_name='Date de creation')
+    
+    def __str__(self):
+        return self.nom_entreprise
 
 
 class Domain(DomainMixin):
