@@ -1,0 +1,42 @@
+<div class="card-body">
+    <div class="d-flex justify-content-between">
+        <div class="mx-5 col-md">
+            <a href="{% url 'branchement_nouvelle' %}" class="btn btn-warning" style="width: 150px; height: 40px;">
+                <i class="fas fa-plus"></i>
+                Nouveau
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive mt-5 p-1">
+        <table class="table mt-5" id="myTable">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Branchement</th>
+                    <th>TVA Appliquer</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in branchement %}
+                <tr>
+                    <td>{{ row.pk }}</td>
+                    <td>{{ row.type_client.designation_client }}</td>
+                    <td>
+                        {% if row.tva_applique %}
+                        	<i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                            <i class="fas fa-xmark-circle text-danger"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'tarif_mod' row.pk %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

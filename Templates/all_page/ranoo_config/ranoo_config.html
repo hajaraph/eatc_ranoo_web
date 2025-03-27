@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'style.css' %}">
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'datatable/datatables.min.css' %}">
-    <title>{{ titre_ranoo_utilisateur }}{{ titre_new_tarif }}{{ titre_departement }}{{ titre_mod_tarif }}{{ titre_region }}{{ titre_mod_utilisateur }}{{ titre_creation_utilisateur }}{{ titre_config_tarif }}</title>
+    <title>{{ titre_ranoo_utilisateur }}{{ titre_new_tarif }}{{ titre_departement }}{{ titre_mod_tarif }}{{ titre_region }}{{ titre_mod_utilisateur }}{{ titre_creation_utilisateur }}{{ titre_config_tarif }} {{ titre_branchement }} {{ titre_new_branchement }}</title>
     <style>
         .dataTables_filter input[type="search"] {
             height: 50px;
@@ -32,6 +32,11 @@
                              <div class="col-md-2 mt-4">
                                 <a href="{% url 'region' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_region }}">
                                     Région
+                                </a>
+                            </div>
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'branchement' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_branchement }}">
+                                    Branchement
                                 </a>
                             </div>
                             <div class="col-md-2 mt-4">

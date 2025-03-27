@@ -4,8 +4,10 @@ from django.db.models import ProtectedError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
-from Acommune.models import Region, Commune, Province
+from Acommune.models import Region, Province
+from Clients.models import TypeClient
 from Facturation.models import Tarif, Taxe
+from Ranoo_Config.models import ConfigBranchement
 from Tenants.middleware import schema_use
 from Tenants.models import Utilisateur, Role, Initial
 from Login.views import authentification_requis, role_requis
@@ -164,6 +166,59 @@ def sup_utilisateur(request, pk):
     except ProtectedError:
         messages.warning(request, f"Vous ne pouvez pas supprimer cette utilisateur car il a déjà fais des tâche !")
     return redirect('config_utilisateur')
+
+
+@authentification_requis
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def branchement(request):
+    titre = 'Ranoo Config | Branchement'
+    active = 'active'
+    font = 'custom-font'
+    branchement_list = ConfigBranchement.objects.all().order_by('type_client__designation_client')
+    context = {
+        'titre_branchement': titre,
+        'active_branchement': active,
+        'font_rano': font,
+        'branchement': branchement_list
+    }
+    return render(request, 'all_page/ranoo_config/content.html', context)
+
+
+class BrenchementConfig(View):
+    @staticmethod
+    @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
+    def get(request):
+        titre = 'Ranoo Config | Branchement | Nouveau'
+        active = 'active'
+        font = 'custom-font'
+        context = {
+            'titre_new_branchement': titre,
+            'active_branchement': active,
+            'font_rano': font,
+        }
+        return render(request, 'all_page/ranoo_config/content.html', context)
+
+    @staticmethod
+    @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
+    def post(request):
+        nom_branchement = request.POST['branchement']
+        tva_applique = request.POST.get('tva_applique')
+
+        type_client = TypeClient.objects.create(
+            designation_client=nom_branchement
+        )
+        ConfigBranchement.objects.create(
+            type_client=type_client,
+            tva_applique=tva_applique,
+        )
+
+        messages.success(request, f'Enregistré avec succès !')
+        return redirect('branchement')
 
 
 @authentification_requis

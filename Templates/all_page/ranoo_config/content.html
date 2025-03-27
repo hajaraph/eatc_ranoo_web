@@ -19,5 +19,9 @@
         {% include 'all_page/ranoo_config/config_tarif_mod.html' %}
     {% elif titre_new_tarif %}
         {% include 'all_page/ranoo_config/config_tarif_new.html' %}
+    {% elif titre_branchement %}
+        {% include 'all_page/ranoo_config/config_branchement.html' %}
+    {% elif titre_new_branchement %}
+        {% include 'all_page/ranoo_config/config_branchement_new.html' %}
     {% endif %}
 {% endblock %}
