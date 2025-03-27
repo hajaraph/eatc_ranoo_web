@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from openpyxl.workbook import Workbook
 
-from Tenants.middleware import schema_use_api, schema_use
+from Tenants.middleware import schema_use
 from Tenants.models import Utilisateur
 from Login.views import authentification_requis, role_requis, deconnexion
 from Parametre.models import Historique
@@ -123,7 +123,7 @@ class ChangerMotdePasse(View):
         confirmer_motpasse = request.POST.get('confirmer_motpasse')
 
         utilisateur = Utilisateur.objects.get(pk=request.session.get('id_utilisateur'))
-        if check_password(ancien_motpasse, utilisateur.motpasse_utilisateur):
+        if check_password(ancien_motpasse, utilisateur.password):
             if nouveau_motpasse == confirmer_motpasse:
                 utilisateur.password = make_password(nouveau_motpasse)
                 utilisateur.save()

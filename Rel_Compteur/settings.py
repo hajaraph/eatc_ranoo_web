@@ -39,6 +39,7 @@ TENANT_APPS = [
     'Facturation',
     'Main_Courante',
     'Parametre',
+    'Ranoo_Config',
     'Tableau_Bord'
 ]
 
