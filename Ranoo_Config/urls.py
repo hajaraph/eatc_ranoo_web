@@ -1,7 +1,7 @@
 from django.urls import path
 
 from Ranoo_Config.views import config_utilisateur, NouvelUtilisateur, sup_utilisateur, UtilisateurMod, \
-    config_tarif, TarifMod, TarifNew, branchement, BrenchementConfig
+    config_tarif, TarifMod, TarifNew, branchement, BrenchementConfig, get_branchement_list
 
 urlpatterns = [
     path('utilisateur', config_utilisateur, name='config_utilisateur'),
@@ -12,5 +12,6 @@ urlpatterns = [
     path('tarif/nouveau', TarifNew.as_view(), name='tarif_nouveau'),
     path('tarif/modifier?=?<int:pk>', TarifMod.as_view(), name='tarif_mod'),
     path('branchement', branchement, name='branchement'),
-    path('branchement/nouvelle', BrenchementConfig.as_view(), name='branchement_nouvelle'),
+    path('branchement/nouveau', BrenchementConfig.as_view(), name='branchement_nouveau'),
+    path('branchement/liste', get_branchement_list)
 ]

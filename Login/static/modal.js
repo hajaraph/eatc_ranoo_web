@@ -16,15 +16,24 @@ $(document).ready(function(){
 
     function traiterChamp(champ) {
         const inputValue = champ.val();
-        let numericValue = inputValue.replace(/,/g, '.');
-        numericValue = numericValue.replace(/[^\d.]/g, '');
-        const decimalCount = numericValue.split('.').length - 1;
-        if (decimalCount > 1) {
-            numericValue = numericValue.slice(0, -1);
-        }
-        champ.val(numericValue);
+        let numericValue = inputValue.replace(/,/g, '.'); // Remplace virgule par point
+            numericValue = numericValue.replace(/[^\d.]/g, ''); // Supprime tout sauf chiffres et point
+
+            // Si la saisie commence par un point, le supprimer
+            if (numericValue.startsWith('.')) {
+                numericValue = numericValue.replace('.', '');
+            }
+
+            // Limiter à un seul point décimal de manière plus robuste
+            const parts = numericValue.split('.');
+            if (parts.length > 2) {
+                numericValue = parts[0] + '.' + parts.slice(1).join(''); // Garde le premier point seulement
+            }
+
+            champ.val(numericValue);
     }
-    let champ = $('#paiement, #prix_m3, #tva, #taux_taxe, #num_compteur')
+    let champ = $('#paiement, #tva, #taux_taxe, #num_compteur')
+
     champ.on('input',function() {
         traiterChamp($(this));
     });

@@ -9,9 +9,7 @@ from Tenants.models import Utilisateur
 
 class Tarif(models.Model):
     id_tarif = models.BigAutoField(primary_key=True)
-    prix_m3_bs = models.FloatField(blank=True, null=True)
-    prix_m3_bp = models.FloatField(blank=True, null=True)
-    prix_m3_k = models.FloatField(blank=True, null=True)
+    prix_m3 = models.JSONField(blank=True, null=True)
     tva = models.FloatField(blank=True, null=True, default=0)
     conso_tva_app = models.FloatField(blank=True, null=True, default=0)
     nb_jour_echeance_fct = models.IntegerField(blank=False)

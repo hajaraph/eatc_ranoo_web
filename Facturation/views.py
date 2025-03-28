@@ -20,6 +20,7 @@ from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Resta
 from Login.views import authentification_requis, role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 from Acommune.models import Region
+from Ranoo_Config.models import ConfigBranchement
 from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
 
@@ -205,7 +206,6 @@ def facture_avoir(request):
 
 
 class Calcule:
-
     @staticmethod
     def montantht(total_conso_ht, tarif, factures):
         try:
@@ -228,21 +228,21 @@ class Calcule:
             return HttpResponse(f"Error creating MontantTTC: {e}")
 
     @staticmethod
-    def calculate_total_conso_ht(typeclient, tarif, consommation):
-        if typeclient == 1:
-            return tarif.prix_m3_bs * consommation
-        elif typeclient == 2:
-            return tarif.prix_m3_bp * consommation
-        elif typeclient == 3:
-            return tarif.prix_m3_k * consommation
-        else:
-            raise ValueError("Invalid typeclient")
+    def calculate_total_conso_ht(tarif, consommation, config):
+        try:
+            prix_m3_list = tarif.prix_m3 or []
+            # Récupérer le prix correspondant à l'id_config_branchement du type_client
+            prix_item = next((item for item in prix_m3_list if item["id"] == config.id_config_branchement), {"prix": 0})
+            prix_m3 = prix_item["prix"]
+            return prix_m3 * consommation
+        except Exception as e:
+            raise ValueError(f"Erreur lors du calcul du montant HT: {e}")
 
     @staticmethod
-    def cree_montant(typeclient, tarif, consommation, factures):
+    def cree_montant(tarif, consommation, factures, config):
         try:
-            total_conso_ht = Calcule.calculate_total_conso_ht(typeclient, tarif, consommation)
-            montant_taxe = sum(Calcule.montant_taxe(typeclient, tarif, consommation))
+            total_conso_ht = Calcule.calculate_total_conso_ht(tarif, consommation, config)
+            montant_taxe = sum(Calcule.montant_taxe(tarif, consommation, config))
             montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
             if montant_ht:
                 Calcule.montantttc(total_conso_ht + montant_taxe + tarif.prix_location_compteur, montant_ht)
@@ -250,14 +250,14 @@ class Calcule:
             return HttpResponse(f"Error in cree_montant: {e}")
 
     @staticmethod
-    def montant_taxe(typeclient, tarif, consommation):
+    def montant_taxe(tarif, consommation, config):
         try:
-            montant_ht = Calcule.calculate_total_conso_ht(typeclient, tarif, consommation)
+            montant_ht = Calcule.calculate_total_conso_ht(tarif, consommation, config)
             taxes = Taxe.objects.filter(tarif=tarif)
             montants_taxes = [montant_ht * (taxe.taux_taxe / 100) for taxe in taxes]
             return montants_taxes
         except Exception as e:
-            return HttpResponse(f"Erreur lors de calcule des taxes: {e}")
+            return HttpResponse(f"Erreur lors du calcul des taxes: {e}")
 
 
 def precess_avoir_restant(contrat, factures):
@@ -298,18 +298,26 @@ def precess_avoir_restant(contrat, factures):
 def facture_creation(date_facture, num_compteur, releve):
     try:
         contrat = get_object_or_404(Contrat, num_compteur_id=num_compteur)
-        tarif = Tarif.objects.get(cp_commune_id=contrat.cp_commune_id)
+        tarif = get_object_or_404(Tarif, cp_commune_id=contrat.cp_commune_id)
         taxes = Taxe.objects.filter(tarif_id=tarif.id_tarif)
 
-        typeclient = contrat.client.type_client.pk
+        # Récupérer le type de client et sa config
+        type_client = contrat.client.type_client_id
+        config = get_object_or_404(ConfigBranchement, type_client_id=type_client)
+        tva_applique = config.tva_applique
         consommation = releve.conso
-        montant_ht = Calcule.calculate_total_conso_ht(typeclient, tarif, consommation)
+
+        # Calculer le montant HT avec le type_client et le tarif
+        montant_ht = Calcule.calculate_total_conso_ht(tarif, consommation, config)
+
+        # Récupérer les relevés
         relever = ReleveCompteur.objects.filter(num_compteur_id=num_compteur)
-        dernier_releve = relever.order_by('-date_releve')[1]
+        dernier_releve = relever.order_by('-date_releve')[1]  # Avant-dernier relevé
         date_relever = relever.latest('date_releve').date_releve
 
         date_echeance = date_relever + timedelta(days=tarif.nb_jour_echeance_fct)
 
+        # Calculer les taxes appliquées
         taxes_appliquees = [
             {
                 "id_taxe": taxe.id_taxe,
@@ -319,8 +327,11 @@ def facture_creation(date_facture, num_compteur, releve):
             for taxe in taxes
         ]
 
+        # Générer le numéro de facture
         date_facture_str = date_facture.strftime("%Y%m%d")
         num_facture = f"FACT{date_facture_str}{num_compteur}"
+
+        # Créer la facture
         factures = Facture.objects.create(
             num_facture=num_facture,
             date_facture_precedant=dernier_releve.date_releve,
@@ -331,26 +342,32 @@ def facture_creation(date_facture, num_compteur, releve):
             relevecompteur_id=releve.pk
         )
 
-        # Calcul montant TTC selon client type
-        if typeclient == 1 or (typeclient == 2 and consommation < tarif.conso_tva_app) or typeclient == 3:
-            Calcule.cree_montant(typeclient, tarif, consommation, factures)
+        # Calcul montant TTC selon les conditions
+        prix_m3_list = tarif.prix_m3 or []
+        prix_item = next((item for item in prix_m3_list if item["id"] == config.id_config_branchement), {"prix": 0})
+        total_conso_ht = prix_item["prix"] * consommation
 
-        elif typeclient == 2 and consommation >= tarif.conso_tva_app:
-            total_conso_ht = tarif.prix_m3_bp * consommation
+        if tva_applique and consommation < tarif.conso_tva_app:
+            # Pas de TVA si consommation < conso_tva_app
+            Calcule.cree_montant(tarif, consommation, factures, config)
+        else:
+            # Appliquer la TVA si nécessaire
             tva = (total_conso_ht * tarif.tva) / 100
             total_conso_ttc = total_conso_ht + tva
-            montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
+            montant_ht_obj = Calcule.montantht(total_conso_ht, tarif.pk, factures)
             factures.tva_appliquer = tva
 
-            if montant_ht:
-                taxe = sum(Calcule.montant_taxe(typeclient, tarif, consommation))
-                Calcule.montantttc(total_conso_ttc + taxe, montant_ht)
+            if montant_ht_obj:
+                taxe = sum(Calcule.montant_taxe(tarif, consommation, config))
+                Calcule.montantttc(total_conso_ttc + taxe, montant_ht_obj)
 
         precess_avoir_restant(contrat, factures)
         factures.save()
         return factures
     except Contrat.DoesNotExist:
         raise ValueError(f"Pas de contrat trouvé pour le numéro de compteur: {num_compteur}")
+    except ConfigBranchement.DoesNotExist:
+        raise ValueError(f"ConfigBranchement non trouvé pour ce contrat et type_client: {num_compteur}")
     except Exception as e:
         return HttpResponse(f"Error creating invoice: {e}")
 

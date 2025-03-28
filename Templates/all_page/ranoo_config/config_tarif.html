@@ -14,9 +14,7 @@
                     <th>Province</th>
                     <th>Région</th>
                     <th>Commune</th>
-                    <th>Prix / m&#179; (BS)</th>
-                    <th>Prix / m&#179; (BP)</th>
-                    <th>Prix / m&#179; (K)</th>
+                    <th>Prix / m&#179;</th>
                     <th>TVA (En %)</th>
                     <th>Action</th>
                 </tr>
@@ -27,9 +25,12 @@
                     <td>{{ row.cp_commune.region.province.province }}</td>
                     <td>{{ row.cp_commune.region.region }}</td>
                     <td>{{ row.cp_commune.commune }}</td>
-                    <td>{{ row.prix_m3_bs }} Ar</td>
-                    <td>{{ row.prix_m3_bp }} Ar</td>
-                    <td>{{ row.prix_m3_k }} Ar</td>
+                    <td>
+                        {% load filtres %}
+                        {% for prix in row.prix_m3 %}
+                            {{ config_dict|get_item:prix.id }}: <strong>{{ prix.prix }} Ar</strong><br>
+                        {% endfor %}
+                    </td>
                     <td>{{ row.tva }} %</td>
                     <td>
                         <a href="{% url 'tarif_mod' row.pk %}" class="btn btn-sm btn-warning">

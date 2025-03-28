@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from django.db.models import ProtectedError
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
@@ -207,19 +208,31 @@ class BrenchementConfig(View):
     @schema_use
     def post(request):
         nom_branchement = request.POST['branchement']
-        tva_applique = request.POST.get('tva_applique')
+        tva_applique = request.POST.get('tva_applique') == 'on'
 
-        type_client = TypeClient.objects.create(
-            designation_client=nom_branchement
-        )
-        ConfigBranchement.objects.create(
-            type_client=type_client,
-            tva_applique=tva_applique,
-        )
+        if not TypeClient.objects.filter(designation_client=nom_branchement).exists():
+            type_client = TypeClient.objects.create(
+                designation_client=nom_branchement
+            )
+            ConfigBranchement.objects.create(
+                type_client=type_client,
+                tva_applique=tva_applique,
+            )
+            messages.success(request, f'Enregistré avec succès !')
+            return redirect('branchement')
+        else:
+            messages.warning(request, f'Ce branchement exist déjà !')
+            return redirect('branchement_nouveau')
 
-        messages.success(request, f'Enregistré avec succès !')
-        return redirect('branchement')
 
+@authentification_requis
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def get_branchement_list(request):
+    configs = (ConfigBranchement.objects.all().order_by('type_client__designation_client')
+               .values('id_config_branchement', 'type_client__designation_client'))
+
+    return JsonResponse({'configs': list(configs)})
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
@@ -228,12 +241,19 @@ def config_tarif(request):
     titre = 'Ranoo Config | Tarif'
     active = 'active'
     font = 'custom-font'
-    tarif = Tarif.objects.all().order_by('cp_commune__region__region', 'cp_commune__commune')
+    tarif = Tarif.objects.all().order_by('cp_commune__region__province', 'cp_commune__region__region',
+                                         'cp_commune__commune')
+
+    # Créer un dictionnaire pour associer les ID de ConfigBranchement à leurs désignations
+    config_dict = {config.id_config_branchement: config.type_client.designation_client
+                   for config in ConfigBranchement.objects.all()}
+
     context = {
         'titre_config_tarif': titre,
         'active_config_constates': active,
         'font_rano': font,
-        'tarif': tarif
+        'tarif': tarif,
+        'config_dict': config_dict  # Ajouter le dictionnaire au contexte
     }
     return render(request, 'all_page/ranoo_config/content.html', context)
 
@@ -262,18 +282,22 @@ class TarifNew(View):
     @schema_use
     def post(request):
         cp_commune = request.POST['commune']
-        prix_m3_bs = float(request.POST['prix_m3_bs'])
-        prix_m3_bp = float(request.POST['prix_m3_bp'])
-        prix_m3_k = float(request.POST['prix_m3_k'])
         conso_tva_app = float(request.POST['conso_tva_app']) if request.POST['conso_tva_app'] else 0
         tva = float(request.POST['tva']) if request.POST['tva'] else 0
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
         prix_location_compteur = request.POST['prix_location_compteur']
+
+        prix_m3 = [
+            {
+                "id": branchements.id_config_branchement,
+                "prix": round(float(request.POST.get(f'prix_m3_{branchements.id_config_branchement}', 0)), 2)
+            }
+            for branchements in ConfigBranchement.objects.all()
+        ]
+
         tarif = Tarif.objects.create(
             cp_commune_id=cp_commune,
-            prix_m3_bs=round(prix_m3_bs, 2),
-            prix_m3_bp=round(prix_m3_bp, 2),
-            prix_m3_k=round(prix_m3_k, 2),
+            prix_m3=prix_m3,
             tva=round(tva, 2),
             conso_tva_app=round(conso_tva_app, 2),
             nb_jour_echeance_fct=nb_jour_echeance_fct,
