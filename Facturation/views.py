@@ -207,57 +207,71 @@ def facture_avoir(request):
 
 class Calcule:
     @staticmethod
-    def montantht(total_conso_ht, tarif, factures):
+    def get_prix_m3(tarif, config):
+        """Récupère le prix correspondant à l'id_config_branchement dans tarif.prix_m3."""
+        prix_m3_list = tarif.prix_m3 or []
+        return next((item["prix"] for item in prix_m3_list if item["id"] == config.id_config_branchement), 0)
+
+    @staticmethod
+    def calculate_total_conso_ht(tarif, consommation, config):
+        """Calcule le montant HT total basé sur le tarif et la consommation."""
+        try:
+            prix_m3 = Calcule.get_prix_m3(tarif, config)
+            return prix_m3 * consommation
+        except Exception as e:
+            raise ValueError(f"Erreur lors du calcul du montant HT: {e}")
+
+    @staticmethod
+    def montant_taxe(tarif, total_conso_ht):
+        """Calcule les taxes appliquées sur le montant HT."""
+        try:
+            taxes = Taxe.objects.filter(tarif=tarif)
+            return [total_conso_ht * (taxe.taux_taxe / 100) for taxe in taxes]
+        except Exception as e:
+            raise ValueError(f"Erreur lors du calcul des taxes: {e}")
+
+    @staticmethod
+    def montant_ht(total_conso_ht, tarif_id, factures):
+        """Crée et retourne un objet MontantHT."""
         try:
             return MontantHT.objects.create(
                 total_conso_ht=round(total_conso_ht, 0),
-                tarif_id=tarif,
+                tarif_id=tarif_id,
                 facture=factures,
             )
         except Exception as e:
-            return HttpResponse(f"Error creating MontantHT: {e}")
+            raise ValueError(f"Erreur lors de la création de MontantHT: {e}")
 
     @staticmethod
-    def montantttc(total_conso_ttc, montant_ht):
+    def montant_ttc(total_conso_ttc, montant_ht):
+        """Crée et retourne un objet MontantTTC."""
         try:
             return MontantTTC.objects.create(
                 total_conso_ttc=total_conso_ttc,
                 montant_ht=montant_ht
             )
         except Exception as e:
-            return HttpResponse(f"Error creating MontantTTC: {e}")
+            raise ValueError(f"Erreur lors de la création de MontantTTC: {e}")
 
     @staticmethod
-    def calculate_total_conso_ht(tarif, consommation, config):
-        try:
-            prix_m3_list = tarif.prix_m3 or []
-            # Récupérer le prix correspondant à l'id_config_branchement du type_client
-            prix_item = next((item for item in prix_m3_list if item["id"] == config.id_config_branchement), {"prix": 0})
-            prix_m3 = prix_item["prix"]
-            return prix_m3 * consommation
-        except Exception as e:
-            raise ValueError(f"Erreur lors du calcul du montant HT: {e}")
-
-    @staticmethod
-    def cree_montant(tarif, consommation, factures, config):
+    def cree_montant(tarif, consommation, factures, config, appliquer_tva=False):
+        """Crée les montants HT et TTC avec ou sans TVA."""
         try:
             total_conso_ht = Calcule.calculate_total_conso_ht(tarif, consommation, config)
-            montant_taxe = sum(Calcule.montant_taxe(tarif, consommation, config))
-            montant_ht = Calcule.montantht(total_conso_ht, tarif.pk, factures)
-            if montant_ht:
-                Calcule.montantttc(total_conso_ht + montant_taxe + tarif.prix_location_compteur, montant_ht)
-        except Exception as e:
-            return HttpResponse(f"Error in cree_montant: {e}")
+            montant_taxe = sum(Calcule.montant_taxe(tarif, total_conso_ht))
+            montant_ht = Calcule.montant_ht(total_conso_ht, tarif.pk, factures)
 
-    @staticmethod
-    def montant_taxe(tarif, consommation, config):
-        try:
-            montant_ht = Calcule.calculate_total_conso_ht(tarif, consommation, config)
-            taxes = Taxe.objects.filter(tarif=tarif)
-            montants_taxes = [montant_ht * (taxe.taux_taxe / 100) for taxe in taxes]
-            return montants_taxes
+            total_conso_ttc = total_conso_ht + montant_taxe + tarif.prix_location_compteur
+            if appliquer_tva:
+                tva = (total_conso_ht * tarif.tva) / 100
+                total_conso_ttc += tva
+                factures.tva_appliquer = tva
+
+            if montant_ht:
+                Calcule.montant_ttc(total_conso_ttc, montant_ht)
+            return montant_ht
         except Exception as e:
-            return HttpResponse(f"Erreur lors du calcul des taxes: {e}")
+            raise ValueError(f"Erreur lors de la création des montants: {e}")
 
 
 def precess_avoir_restant(contrat, factures):
@@ -299,77 +313,55 @@ def facture_creation(date_facture, num_compteur, releve):
     try:
         contrat = get_object_or_404(Contrat, num_compteur_id=num_compteur)
         tarif = get_object_or_404(Tarif, cp_commune_id=contrat.cp_commune_id)
-        taxes = Taxe.objects.filter(tarif_id=tarif.id_tarif)
-
-        # Récupérer le type de client et sa config
-        type_client = contrat.client.type_client_id
-        config = get_object_or_404(ConfigBranchement, type_client_id=type_client)
-        tva_applique = config.tva_applique
+        type_client_id = contrat.client.type_client_id
+        config = get_object_or_404(ConfigBranchement, type_client_id=type_client_id)
         consommation = releve.conso
-
-        # Calculer le montant HT avec le type_client et le tarif
-        montant_ht = Calcule.calculate_total_conso_ht(tarif, consommation, config)
 
         # Récupérer les relevés
         relever = ReleveCompteur.objects.filter(num_compteur_id=num_compteur)
         dernier_releve = relever.order_by('-date_releve')[1]  # Avant-dernier relevé
         date_relever = relever.latest('date_releve').date_releve
-
         date_echeance = date_relever + timedelta(days=tarif.nb_jour_echeance_fct)
 
-        # Calculer les taxes appliquées
+        # Calculer les taxes appliquées une seule fois
+        total_conso_ht = Calcule.calculate_total_conso_ht(tarif, consommation, config)
         taxes_appliquees = [
-            {
-                "id_taxe": taxe.id_taxe,
-                "nom_taxe": taxe.nom_taxe,
-                "montant_taxe": montant_ht * (taxe.taux_taxe / 100)
-            }
-            for taxe in taxes
+            {"id_taxe": taxe.id_taxe, "nom_taxe": taxe.nom_taxe, "montant_taxe": total_conso_ht * (taxe.taux_taxe / 100)}
+            for taxe in Taxe.objects.filter(tarif_id=tarif.id_tarif)
         ]
 
         # Générer le numéro de facture
         date_facture_str = date_facture.strftime("%Y%m%d")
         num_facture = f"FACT{date_facture_str}{num_compteur}"
 
-        # Créer la facture
-        factures = Facture.objects.create(
-            num_facture=num_facture,
-            date_facture_precedant=dernier_releve.date_releve,
-            date_facture=date_facture,
-            taxes_appliquees=taxes_appliquees,
-            date_echeance=date_echeance,
-            num_contrat_id=contrat.num_contrat,
-            relevecompteur_id=releve.pk
-        )
+        # Créer la facture avec ou sans taxes selon config
+        facture_data = {
+            "num_facture": num_facture,
+            "date_facture_precedant": dernier_releve.date_releve,
+            "date_facture": date_facture,
+            "date_echeance": date_echeance,
+            "num_contrat_id": contrat.num_contrat,
+            "relevecompteur_id": releve.pk
+        }
+        if config.taxe_applique:
+            facture_data["taxes_appliquees"] = taxes_appliquees
 
-        # Calcul montant TTC selon les conditions
-        prix_m3_list = tarif.prix_m3 or []
-        prix_item = next((item for item in prix_m3_list if item["id"] == config.id_config_branchement), {"prix": 0})
-        total_conso_ht = prix_item["prix"] * consommation
+        factures = Facture.objects.create(**facture_data)
 
-        if tva_applique and consommation < tarif.conso_tva_app:
-            # Pas de TVA si consommation < conso_tva_app
-            Calcule.cree_montant(tarif, consommation, factures, config)
-        else:
-            # Appliquer la TVA si nécessaire
-            tva = (total_conso_ht * tarif.tva) / 100
-            total_conso_ttc = total_conso_ht + tva
-            montant_ht_obj = Calcule.montantht(total_conso_ht, tarif.pk, factures)
-            factures.tva_appliquer = tva
-
-            if montant_ht_obj:
-                taxe = sum(Calcule.montant_taxe(tarif, consommation, config))
-                Calcule.montantttc(total_conso_ttc + taxe, montant_ht_obj)
+        # Calcul des montants avec ou sans TVA
+        appliquer_tva = config.tva_applique and consommation >= tarif.conso_tva_app
+        Calcule.cree_montant(tarif, consommation, factures, config, appliquer_tva=appliquer_tva)
 
         precess_avoir_restant(contrat, factures)
         factures.save()
         return factures
+
     except Contrat.DoesNotExist:
-        raise ValueError(f"Pas de contrat trouvé pour le numéro de compteur: {num_compteur}")
+        return HttpResponse(f"Pas de contrat trouvé pour le numéro de compteur: {num_compteur}", status=404)
     except ConfigBranchement.DoesNotExist:
-        raise ValueError(f"ConfigBranchement non trouvé pour ce contrat et type_client: {num_compteur}")
+        return HttpResponse(f"ConfigBranchement non trouvé pour ce contrat: {num_compteur}", status=404)
     except Exception as e:
-        return HttpResponse(f"Error creating invoice: {e}")
+        return HttpResponse(f"Erreur lors de la création de la facture: {e}", status=500)
 
 
 def facture_context_pdf(request, factures):

@@ -209,6 +209,7 @@ class BrenchementConfig(View):
     def post(request):
         nom_branchement = request.POST['branchement']
         tva_applique = request.POST.get('tva_applique') == 'on'
+        taxe_applique = request.POST.get('taxe_applique') == 'on'
 
         if not TypeClient.objects.filter(designation_client=nom_branchement).exists():
             type_client = TypeClient.objects.create(
@@ -217,6 +218,7 @@ class BrenchementConfig(View):
             ConfigBranchement.objects.create(
                 type_client=type_client,
                 tva_applique=tva_applique,
+                taxe_applique=taxe_applique,
             )
             messages.success(request, f'Enregistré avec succès !')
             return redirect('branchement')
