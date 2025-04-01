@@ -13,7 +13,8 @@
                 <tr>
                     <th>Id</th>
                     <th>Branchement</th>
-                    <th>TVA Appliquer</th>
+                    <th>TVA</th>
+                    <th>Taxe</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -24,6 +25,13 @@
                     <td>{{ row.type_client.designation_client }}</td>
                     <td>
                         {% if row.tva_applique %}
+                        	<i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                            <i class="fas fa-xmark-circle text-danger"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                         {% if row.taxe_applique %}
                         	<i class="fas fa-check-circle text-success"></i>
                         {% else %}
                             <i class="fas fa-xmark-circle text-danger"></i>
