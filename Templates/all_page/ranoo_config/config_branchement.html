@@ -38,8 +38,11 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'tarif_mod' row.pk %}" class="btn btn-sm btn-warning">
+                        <a href="{% url 'branchement_mod' row.pk %}" class="btn btn-sm btn-warning">
                             <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'branchement_supp' row.type_client.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Êtes vous sûr de vouloir supprimer cette branchement ?')" title="Suppression">
+                            <i class="fas fa-trash-alt"></i>
                         </a>
                     </td>
                 </tr>

@@ -20,7 +20,7 @@ $(document).ready(function() {
                                    placeholder="" 
                                    required>
                             <label for="prix_m3_${config.id_config_branchement}">
-                                Prix / m³ (${config.type_client__designation_client})
+                                Prix / m³ (${config.type_client__designation_client})*
                             </label>
                         </div>
                     </div>

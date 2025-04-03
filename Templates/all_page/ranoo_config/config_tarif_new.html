@@ -2,87 +2,107 @@
     <h4 class="text-center mb-5">Nouveau Tarif</h4>
     <form method="post" id="formNew">
         {% csrf_token %}
-        <div class="row">
-            <div class="col-md-4 col-sm-12 mt-4">
-                <div class="form-floating">
-                    <select name="province" id="province" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
-                        <option value="" selected hidden>Selectionné une province</option>
-                        {% for province in provinces %}
-                            <option value="{{ province.province }}">{{ province.province }}</option>
-                        {% endfor %}
-                    </select>
-                    <label for="province">Province*</label>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-12 mt-4">
-                <div class="form-floating">
-                    <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
-                    </select>
-                    <label for="region">Région</label>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-12 mt-4">
-                <div class="form-floating">
-                    <select name="commune" id="commune" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
-                    </select>
-                    <label for="commune">Commune</label>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-12 mt-4">
-                <div class="form-floating">
-                    <select name="cp_commune" id="cp_commune" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" disabled>
-                    </select>
-                    <label for="cp_commune">CP Commune</label>
-                </div>
-            </div>
+        <div class="card-header bg-white mt-4">
+            <h5>Localisation</h5>
         </div>
-        <div class="row" id="rowBranchement">
-        </div>
-        <div id="afficher_taxe">
-            <div class="row taxe_groupe" id="taxe_groupe">
+        <div class="card-body">
+            <div class="row">
                 <div class="col-md-4 col-sm-12 mt-4">
                     <div class="form-floating">
-                        <input type="text" name="nom_taxe" id="nom_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
-                        <label for="nom_taxe">Nom Taxe</label>
+                        <select name="province" id="province" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
+                            <option value="" selected hidden>Selectionné une province</option>
+                            {% for province in provinces %}
+                                <option value="{{ province.province }}">{{ province.province }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="province">Province*</label>
                     </div>
                 </div>
                 <div class="col-md-4 col-sm-12 mt-4">
                     <div class="form-floating">
-                        <input type="text" name="taux_taxe" id="taux_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
-                        <label for="taux_taxe">Taux (%)</label>
+                        <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
+                        </select>
+                        <label for="region">Région</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <select name="commune" id="commune" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                        </select>
+                        <label for="commune">Commune</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <select name="cp_commune" id="cp_commune" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" disabled>
+                        </select>
+                        <label for="cp_commune">CP Commune</label>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="btn btn-sm btn-success  mt-3" id="add_taxe">
-            <i class="fas fa-plus"></i>
-            Plus Taxe
+        <div class="card-header bg-white mt-4">
+            <h5>Tarif</h5>
         </div>
-        <div class="row">
-            <div class="col-md-4 col-sm-12 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="tva" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
-                    <label for="tva">TVA (%)</label>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-12 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="conso_tva_app" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
-                    <label for="tva">Consommation Appliquer (m&#179;)</label>
-                </div>
+        <div class="card-body">
+            <div class="row" id="rowBranchement">
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-4 col-sm-12 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="nb_jour_echeance_fct" id="nb_jour_echeance_fct" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
-                    <label for="nb_jour_echeance_fct">Nombre Jour Echeance Facture*</label>
+        <div class="card-header bg-white mt-4">
+            <h5>Taxe</h5>
+        </div>
+        <div class="card-body">
+            <div id="afficher_taxe">
+                <div class="row taxe_groupe" id="taxe_groupe">
+                    <div class="col-md-4 col-sm-12 mt-4">
+                        <div class="form-floating">
+                            <input type="text" name="nom_taxe" id="nom_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
+                            <label for="nom_taxe">Nom Taxe</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-12 mt-4">
+                        <div class="form-floating">
+                            <input type="text" name="taux_taxe" id="taux_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
+                            <label for="taux_taxe">Taux (%)</label>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-4 col-sm-12 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="prix_location_compteur" id="prix_location_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
-                    <label for="prix_location_compteur">Prix Location Compteur</label>
+            <div class="btn btn-sm btn-success  mt-3" id="add_taxe">
+                <i class="fas fa-plus"></i>
+                Plus Taxe
+            </div>
+        </div>
+        <div class="card-header bg-white mt-4">
+            <h5>Autre</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="tva" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                        <label for="tva">TVA (%)</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="conso_tva_app" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                        <label for="tva">Consommation Appliquer (m&#179;)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="nb_jour_echeance_fct" id="nb_jour_echeance_fct" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                        <label for="nb_jour_echeance_fct">Nombre Jour Echeance Facture*</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="prix_location_compteur" id="prix_location_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                        <label for="prix_location_compteur">Prix Location Compteur</label>
+                    </div>
                 </div>
             </div>
         </div>

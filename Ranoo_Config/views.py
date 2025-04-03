@@ -151,6 +151,7 @@ class UtilisateurMod(View):
         utilisateur.statut = statut
         utilisateur.role_id = role_id
         utilisateur.save()
+
         messages.success(request, f"L'utilisateur {nom_utilisateur} {prenom_utilisateur} a été modifier avec succès !")
         return redirect('config_utilisateur')
 
@@ -159,10 +160,11 @@ class UtilisateurMod(View):
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def sup_utilisateur(request, pk):
-    utilisateur = Utilisateur.objects.get(pk=pk)
-    utilisateur_supprimer = f"{utilisateur.nom_utilisateur} {utilisateur.prenom_utilisateur}"
     try:
+        utilisateur = Utilisateur.objects.get(pk=pk)
+        utilisateur_supprimer = f"{utilisateur.nom_utilisateur} {utilisateur.prenom_utilisateur}"
         utilisateur.delete()
+
         messages.success(request, f"L'utilisateur {utilisateur_supprimer} a été supprimer avec succès !")
     except ProtectedError:
         messages.warning(request, f"Vous ne pouvez pas supprimer cette utilisateur car il a déjà fais des tâche !")
@@ -186,7 +188,7 @@ def branchement(request):
     return render(request, 'all_page/ranoo_config/content.html', context)
 
 
-class BrenchementConfig(View):
+class BranchementConfig(View):
     @staticmethod
     @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
@@ -235,6 +237,69 @@ def get_branchement_list(request):
                .values('id_config_branchement', 'type_client__designation_client'))
 
     return JsonResponse({'configs': list(configs)})
+
+
+class BranchementMod(View):
+    @staticmethod
+    @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
+    def get(request, pk):
+        try:
+            branchement_obj = get_object_or_404(ConfigBranchement, pk=pk)
+            titre = f'Ranoo Config | Branchement | Modification de {branchement_obj.type_client.designation_client}'
+            active = 'active'
+            font = 'custom-font'
+            context = {
+                'titre_branchement_mod': titre,
+                'active_branchement': active,
+                'font_rano': font,
+                'branchement': branchement_obj
+            }
+            return render(request, 'all_page/ranoo_config/content.html', context)
+        except ConfigBranchement.DoesNotExist:
+            messages.error(request, f"Ce branchement n'exist pas !")
+            return redirect('branchement')
+
+    @staticmethod
+    @authentification_requis
+    @role_requis('Administrateur', 'Gestionnaire')
+    @schema_use
+    def post(request, pk):
+        designation_client = request.POST['branchement']
+        tva_applique = request.POST.get('tva_applique') == 'on'
+        taxe_applique = request.POST.get('taxe_applique') == 'on'
+
+        try:
+            branchement_obj = get_object_or_404(ConfigBranchement, pk=pk)
+            branchement_obj.type_client.designation_client = designation_client
+            branchement_obj.type_client.save()
+            branchement_obj.tva_applique = tva_applique
+            branchement_obj.taxe_applique = taxe_applique
+            branchement_obj.save()
+
+            messages.success(request, f"{branchement_obj.type_client.designation_client} modifié avec succès !")
+            return redirect('branchement')
+        except ConfigBranchement.DoesNotExist:
+            messages.error(request, f"Ce branchement n'exist pas !")
+            return redirect('branchement')
+
+
+@authentification_requis
+@role_requis('Administrateur')
+@schema_use
+def branchement_supp(request, pk):
+    try:
+        branchement_obj = get_object_or_404(TypeClient, pk=pk)
+        designation_client = branchement_obj.designation_client
+        branchement_obj.delete()
+
+        messages.success(request, f"{designation_client} supprimé avec succès !")
+    except ProtectedError:
+        messages.warning(request, f"Ce branchement est déjà utilise par des clients !")
+
+    return redirect('branchement')
+
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')

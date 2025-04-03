@@ -23,8 +23,8 @@ class Client(models.Model):
     adresse_client = models.TextField(max_length=100, blank=False)
     pays_client = models.CharField(max_length=30, blank=False)
     compte_actif = models.BooleanField(default=False, blank=False)
-    cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE, related_name='clients', blank=False)
-    type_client = models.ForeignKey(TypeClient, on_delete=models.CASCADE, related_name='clients', blank=False)
+    cp_commune = models.ForeignKey(Commune, on_delete=models.PROTECT, related_name='clients', blank=False)
+    type_client = models.ForeignKey(TypeClient, on_delete=models.PROTECT, related_name='clients', blank=False)
 
 
 class PieceClient(models.Model):
