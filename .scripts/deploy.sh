@@ -27,7 +27,7 @@ python manage.py collectstatic --noinput
 # Run Database migration
 echo "Running database migrations..."
 python manage.py makemigrations
-python manage.py migrate_schemas --shared
+python manage.py migrate_schemas
 
 # Deactivate Virtual Env
 echo "Deactivating virtual environment 'myenv'..."
