@@ -24,6 +24,20 @@
                 </div>
             </div>
         </div>
+            <div class="row">
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="profession_client" id="profession_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{% if detail.profession_client %}{{ detail.profession_client }}{% endif %}" placeholder="" required>
+                        <label for="profession_client">Profession</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="nb_personne_menage" id="nb_personne_menage" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{% if detail.nb_personne_menage %}{{ detail.nb_personne_menage }}{% endif %}" placeholder="">
+                        <label for="nb_personne_menage">Nb de personnes dans le ménage</label>
+                    </div>
+                </div>
+            </div>
         <div class="d-flex justify-content-between mt-5">
             <label for="compte_actif">
                 <input type="checkbox" name="compte_actif" id="compte_actif" value="True" class="form-check-label" {% if detail.compte_actif %} checked {% endif %}>

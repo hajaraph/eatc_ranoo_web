@@ -41,14 +41,16 @@ def client_liste(request):
 def extract_client_data(request):
     return {
         'nom_client': request.POST['nom_client'],
-        'prenom_client': request.POST['prenom_client'],
+        'prenom_client': request.POST['prenom_client'] or None,
+        'profession_client': request.POST['profession_client'],
+        'nb_personne_menage': request.POST['nb_personne_menage'] or None,
         'compte_actif': request.POST.get('compte_actif', False),
         'adresse_client': request.POST['adresse_client'],
         'cp_commune': request.POST['commune'],
         'pays_client': request.POST['pays_client'],
-        'tel1_client': request.POST['tel1_client'],
-        'tel2_client': request.POST['tel2_client'],
-        'email_client': request.POST['email_client'],
+        'tel1_client': request.POST['tel1_client'] or None,
+        'tel2_client': request.POST['tel2_client'] or None,
+        'email_client': request.POST['email_client'] or None,
         'piece_client': request.FILES.getlist('piece_client'),
         'designation': request.POST.getlist('designation'),
     }
@@ -88,38 +90,50 @@ class ClientNew(View):
     @schema_use
     def post(request):
         client_data = extract_client_data(request)
-        tel = Client.objects.filter(tel1_client=client_data['tel1_client'])
 
-        if not tel.exists():
-            client = Client.objects.create(
-                nom_client=client_data['nom_client'],
-                prenom_client=client_data['prenom_client'],
-                compte_actif=client_data['compte_actif'],
-                adresse_client=client_data['adresse_client'],
-                cp_commune_id=client_data['cp_commune'],
-                pays_client=client_data['pays_client'],
-                tel1_client=client_data['tel1_client'],
-                tel2_client=client_data['tel2_client'],
-                email_client=client_data['email_client'],
-                type_client_id=request.POST['type_client_id']
+        # Vérification d'unicité uniquement si tel1_client est non vide
+        tel1_value = client_data['tel1_client']
+        if tel1_value:  # Ne vérifie que si tel1_client n'est pas None ou ''
+            tel = Client.objects.filter(tel1_client=tel1_value)
+            if tel.exists():
+                messages.error(request, f'Téléphone 1 déjà utilisé par un client !')
+                return redirect('client_new')
+
+        tel2_value = client_data['tel2_client']
+        if tel2_value:  # Ne vérifie que si tel2_client n'est pas None ou ''
+            tel = Client.objects.filter(tel2_client=tel2_value)
+            if tel.exists():
+                messages.error(request, f'Téléphone 2 déjà utilisé par un client !')
+                return redirect('client_new')
+
+        # Création du client
+        client = Client.objects.create(
+            nom_client=client_data['nom_client'],
+            prenom_client=client_data['prenom_client'],
+            profession_client=client_data['profession_client'],
+            nb_personne_menage=client_data['nb_personne_menage'],
+            compte_actif=client_data['compte_actif'],
+            adresse_client=client_data['adresse_client'],
+            cp_commune_id=client_data['cp_commune'],
+            pays_client=client_data['pays_client'],
+            tel1_client=client_data['tel1_client'],
+            tel2_client=client_data['tel2_client'],
+            email_client=client_data['email_client'],
+            type_client_id=request.POST['type_client_id']
+        )
+
+        # Ajout des pièces jointes
+        for file, design in zip(client_data['piece_client'], client_data['designation']):
+            PieceClient.objects.create(
+                client_id=client.id_client,
+                pieces_client=file,
+                designation=design
             )
 
-            for file, design in zip(client_data['piece_client'], client_data['designation']):
-                PieceClient.objects.create(
-                    client_id=client.id_client,
-                    pieces_client=file,
-                    designation=design
-                )
-            messages.success(request, f'Client enregistré avec succès !')
-            historique = f'Creation du Client {client.nom_client} {client.prenom_client}'
-            # Historique
-            enregistre_historique(historique, request.session.get('id_utilisateur'))
-            return redirect('client_liste')
-
-        else:
-            messages.error(request, f'Téléphone 1 déjà utiliser par un client !')
-            return redirect('client_new')
-
+        messages.success(request, f'Client enregistré avec succès !')
+        historique = f'Création du Client {client.nom_client} {client.prenom_client}'
+        enregistre_historique(historique, request.session.get('id_utilisateur'))
+        return redirect('client_liste')
 
 class ClientDetail(View):
     @staticmethod
