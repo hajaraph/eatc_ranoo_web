@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="rel_compteur@remote" uuid="55b7e8ef-8cd0-454e-992f-bd7393125178">
+    <data-source source="LOCAL" name="rel_compteur@localhost" uuid="b4c3735d-9f4f-4155-a0f8-a46459c844f3">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://localhost:5432/rel_compteur</jdbc-url>
-      <jdbc-additional-properties>
-        <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
-      </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="rel_compteur@localhost" uuid="b4c3735d-9f4f-4155-a0f8-a46459c844f3">
+    <data-source source="LOCAL" name="rel_compteur@remote" uuid="15736ebf-b9dc-4366-b95a-a2df7686cac4">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
