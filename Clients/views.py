@@ -135,6 +135,7 @@ class ClientNew(View):
         enregistre_historique(historique, request.session.get('id_utilisateur'))
         return redirect('client_liste')
 
+
 class ClientDetail(View):
     @staticmethod
     @authentification_requis
