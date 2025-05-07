@@ -359,7 +359,7 @@ class ContratNew(View):
         title = 'Clients | Contrats | Nouveau'
         active = 'active'
         font = 'custom-font'
-        client = Client.objects.all()
+        client = Client.objects.all().order_by('id_client')
         compteurs = Compteur.objects.exclude(contrats__isnull=False)
         provinces = Province.objects.all().order_by('province')
 
