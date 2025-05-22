@@ -445,29 +445,46 @@ def generate_multiple_pages_pdf(request):
 
     if factures:
         factures = date_range_fact_pdf(date_deb, date_fin, commune, factures)
+        id_entreprise = request.session.get('entreprise')
+        entreprise = Entreprise.objects.get(pk=id_entreprise)
+        is_eatc = entreprise.schema_name == "eatc"
 
-        for fact in factures:
-            context = facture_context_pdf(request, fact)
+        # Grouper les factures par 5 si ce n'est pas eatc
+        if not is_eatc:
+            temp_group = []
+            for idx, fact in enumerate(factures, 1):
+                context = facture_context_pdf(request, fact)
+                if isinstance(context, HttpResponse):
+                    return context
 
-            if isinstance(context, HttpResponse):
-                # Si context est une réponse HTTP, retourne-la (cela signifie qu'une erreur est survenue)
-                return context
-
-            id_entreprise = request.session.get('entreprise')
-            entrepries = Entreprise.objects.get(pk=id_entreprise)
-            if entrepries.schema_name == "eatc":
-                html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
-            else:
                 html = render_html_to_pdf('all_page/facturation/facture/templatenoeatc.html', context)
+                if html:
+                    temp_group.append(html)
+                    # Si nous avons 5 factures ou c'est la dernière facture
+                    if len(temp_group) == 5 or idx == len(factures):
+                        combined_group = ''.join(temp_group)
+                        html_sections.append(combined_group)
+                        temp_group = []
+                else:
+                    return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}")
+        else:
+            # Comportement original pour eatc
+            for fact in factures:
+                context = facture_context_pdf(request, fact)
+                if isinstance(context, HttpResponse):
+                    return context
 
-            if html:
-                html_sections.append(html)
-            else:
-                return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}")
+                html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
+                if html:
+                    html_sections.append(html)
+                else:
+                    return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}")
 
         if not html_sections:
             return HttpResponse("Aucune facture valide pour générer un PDF")
 
+        # Pour eatc, on garde le saut de page après chaque facture
+        # Pour non-eatc, on met le saut de page après chaque groupe de 5
         combined_html = '<div style="page-break-after: always;"></div>'.join(html_sections)
         result = BytesIO()
         pdf = pisa.pisaDocument(BytesIO(combined_html.encode("UTF-8")), result)
