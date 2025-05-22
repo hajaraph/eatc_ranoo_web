@@ -302,8 +302,11 @@ def precess_avoir_restant(contrat, factures):
             factures.restant_precedant = round(restant.restant, 0)
             factures.montant_total_ttc = round(montant_total_ttc, 0)
             restant.delete()
+
         else:
             factures.montant_total_ttc = round(montant_total_ttc, 0)
+
+        return None
 
     except Exception as e:
         return HttpResponse(f"Error processing credit and remaining balance: {e}")
