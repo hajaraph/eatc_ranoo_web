@@ -40,6 +40,7 @@ def client_liste(request):
 
 def extract_client_data(request):
     return {
+        'id_client': request.POST['id_client'],
         'nom_client': request.POST['nom_client'],
         'prenom_client': request.POST['prenom_client'] or None,
         'profession_client': request.POST['profession_client'],
@@ -108,6 +109,7 @@ class ClientNew(View):
 
         # Création du client
         client = Client.objects.create(
+            id_client=client_data['id_client'],
             nom_client=client_data['nom_client'],
             prenom_client=client_data['prenom_client'],
             profession_client=client_data['profession_client'],
