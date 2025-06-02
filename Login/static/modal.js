@@ -1,4 +1,8 @@
+// Import des fonctions utilitaires
+const { formaterNombreDecimal, formaterNombreEntier } = window.utils || {};
+
 $(document).ready(function(){
+    // Initialisation de DataTable
     $('#myTable').DataTable({
         searching: true,
         "order": [],
@@ -7,72 +11,39 @@ $(document).ready(function(){
         },
     });
     $('.dataTables_filter input[type="search"]').css('height', '500px');
-    // Hide automatique le message après quelque seconde
+    
+    // Gestion des messages d'alerte
     $("#alert").animate({
         opacity: 1,
-        }, 2000, function() {
-            $("#alert").delay(4000).fadeOut();
+    }, 2000, function() {
+        $("#alert").delay(4000).fadeOut();
     });
 
-    function traiterChamp(champ) {
-        const inputValue = champ.val();
-        let numericValue = inputValue.replace(/,/g, '.'); // Remplace virgule par point
-            numericValue = numericValue.replace(/[^\d.]/g, ''); // Supprime tout sauf chiffres et point
+    // Configuration des champs numériques décimaux
+    const champsDecimaux = $('#paiement, #tva, #taux_taxe, #num_compteur');
+    champsDecimaux.on('input', function() {
+        formaterNombreDecimal($(this));
+    }).trigger('input');
 
-            // Si la saisie commence par un point, le supprimer
-            if (numericValue.startsWith('.')) {
-                numericValue = numericValue.replace('.', '');
-            }
-
-            // Limiter à un seul point décimal de manière plus robuste
-            const parts = numericValue.split('.');
-            if (parts.length > 2) {
-                numericValue = parts[0] + '.' + parts.slice(1).join(''); // Garde le premier point seulement
-            }
-
-            champ.val(numericValue);
-    }
-    let champ = $('#paiement, #tva, #taux_taxe, #num_compteur')
-
-    champ.on('input',function() {
-        traiterChamp($(this));
-    });
-    champ.trigger('input');
-
+    // Configuration des champs numériques entiers (téléphones, etc.)
     $('#num_utilisateur, #tel1_client, #tel2_client').on('input', function() {
-        // Obtenir la valeur actuelle du champ de texte
-        const inputValue = $(this).val();
-
-        // Remplacer tout sauf les chiffres par une chaîne vide
-        let numericValue = inputValue.replace(/\D/g, '');
-
-        numericValue = numericValue.slice(0, 10);
-
-        const decimalCount = numericValue.split('.').length - 1;
-        if (decimalCount > 1) {
-            numericValue = numericValue.slice(0, -1); // Supprimer le dernier caractère (point en trop)
-        }
-        $(this).val(numericValue);
+        formaterNombreEntier($(this), 10);
     });
 
+    // Gestion de l'export Excel pour les clients
     $('#confirmer-export-client-excel').click(function() {
         const commune = $('#commune').val();
-        // Construire l'URL avec les paramètres GET
-        let url = '/clients/excel';
-        url += `?commune=${commune}`;
-        // Ouvrir une nouvelle onglet avec l'URL générée
+        const url = `/clients/excel?commune=${commune}`;
         window.open(url, '_blank');
         $('#export-client-excel').modal('hide');
     });
 
+    // Gestion de l'export Excel pour le main courante
     $('#confirmer-exportmc-excel').click(function() {
         const date_deb = $('#date_deb').val();
         const date_fin = $('#date_fin').val();
         const statut = $('#statut').val();
-        // Construire l'URL avec les paramètres GET
-        let url = '/main_courante/excel';
-        url += `?date_deb=${date_deb}&date_fin=${date_fin}&statut=${statut}`;
-        // Ouvrir une nouvelle onglet avec l'URL générée
+        const url = `/main_courante/excel?date_deb=${date_deb}&date_fin=${date_fin}&statut=${statut}`;
         window.open(url, '_blank');
         $('#exportmc-excel').modal('hide');
     });
