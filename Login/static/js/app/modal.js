@@ -26,7 +26,7 @@ $(document).ready(function(){
     }).trigger('input');
 
     // Configuration des champs numériques entiers (téléphones, etc.)
-    $('#num_utilisateur, #tel1_client, #tel2_client').on('input', function() {
+    $('#num_utilisateur, #tel1_client, #tel2_client, #id_client').on('input', function() {
         formaterNombreEntier($(this), 10);
     });
 

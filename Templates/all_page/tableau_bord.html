@@ -3,151 +3,267 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Tableau de Bord - RANOO</title>
+    
+    <!-- Favicon -->
     <link rel="icon" href="{% static 'logo/img.png' %}" type="image/x-icon">
+    
+    <!-- CSS -->
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
-    <title>Tableau de Bord</title>
+    
+    <!-- Données pour les graphiques -->
+    <script id="recap-conso-labels" type="application/json">
+        [
+            {% for commune in communes %}
+                "{{ commune.region.region }} {{ commune.commune }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    </script>
+    <script id="recap-conso-data" type="application/json">
+        [
+            {% for commune in communes %}
+                {{ commune.total_conso }}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    </script>
+    <script id="evo-conso-data" type="application/json">
+        [
+            {% for row in evo_conso %}
+            {
+                "label": "{{ row.commune }}",
+                "data": [
+                    {% for list in row.data %}
+                    {
+                        "x": "{% if list.mois_releve < 10 %}0{% endif %}{{ list.mois_releve }}/{{ list.annee_releve }}",
+                        "y": {{ list.total_conso }}
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    </script>
+    <script id="payment-data" type="application/json">
+        {
+            "labels": [
+                {% for facture in factures %}
+                    "{% if facture.mois < 10 %}0{% endif %}{{ facture.mois }}/{{ facture.annee }}"{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            "paid": [
+                {% for facture in factures %}
+                    {{ facture.nombre_factures_payees }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            "unpaid": [
+                {% for facture in factures %}
+                    {{ facture.nombre_factures_impayees }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        }
+    </script>
+    <script id="main-courante-data" type="application/json">
+        {
+            "labels": [
+                {% for item in main_courantes %}
+                    "{% if item.mois < 10 %}0{% endif %}{{ item.mois }}/{{ item.annee }}"{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            "notProcessed": [
+                {% for item in main_courantes %}
+                    {{ item.nb_non_traite }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            "done": [
+                {% for item in main_courantes %}
+                    {{ item.nb_realise }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            "inProgress": [
+                {% for item in main_courantes %}
+                    {{ item.nb_en_cours }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        }
+    </script>
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100 bg-light">
     <div class="container-fluid">
         <div class="row flex-nowrap">
             {% include 'navbar/navbar.html' %}
             <div class="col p-2">
                 <div class="px-4">
-                    <form>
-                        <div class="row mx-lg-5 mx-2">
-                            <div class="col-md-3 col-sm-6 mb-3">
+                    <!-- Filtres -->
+                    <form id="dashboard-filters" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-3 col-sm-6">
                                 <div class="form-floating">
                                     <select name="region" id="region" class="form-select shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
                                         <option value="" disabled selected hidden></option>
                                         {% for region in regions %}
-                                        <option value="{{ region.pk }}">{{ region.region }}</option>
+                                        <option value="{{ region.pk }}" {% if region.pk == selected_region %}selected{% endif %}>
+                                            {{ region.region }}
+                                        </option>
                                         {% endfor %}
                                     </select>
                                     <label for="region">Région</label>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="col-md-3 col-sm-6">
                                 <div class="form-floating">
-                                    <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ datedeb }}" placeholder="">
-                                    <label for="date_deb">Période du </label>
+                                    <input type="date" name="date_deb" id="date_deb" 
+                                           class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                                           value="{{ datedeb }}">
+                                    <label for="date_deb">Période du</label>
                                 </div>
                             </div>
-                            <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="col-md-3 col-sm-6">
                                 <div class="form-floating">
-                                    <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ datefin }}" placeholder="">
+                                    <input type="date" name="date_fin" id="date_fin" 
+                                           class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                                           value="{{ datefin }}">
                                     <label for="date_fin">au</label>
                                 </div>
                             </div>
-                            <div class="col-md-1 col-sm-6 col-6 d-flex align-items-center justify-content-center">
-                                <div class="mb-2"></div>
-                                <button class="btn btn-primary" type="submit" style="width: 50px; height: 50px;">
+                            <div class="col-md-1 col-sm-6 d-flex align-items-center">
+                                <button type="submit" class="btn btn-primary rounded-circle" style="width: 50px; height: 50px;">
                                     <i class="fas fa-filter"></i>
                                 </button>
                             </div>
                         </div>
                     </form>
-                    <div class="col mt-5">
-                        <div class="d-flex flex-wrap justify-content-between mt-3">
-                            <div class="col-md-3 col-sm-6 mb-3 d-flex">
-                                <div class="card bg-warning shadow-sm py-2 flex-grow-1">
-                                    <div class="card-body d-flex flex-column">
-                                        <div class="row no-gutters align-items-center flex-grow-1">
-                                            <div class="col mr-2">
-                                                <div class="text-xs fw-bold text-dark text-uppercase mb-1">
-                                                    Chiffres d'affaires :
-                                                </div>
-                                                <div id="chiffres">
-                                                    <div class="h5 mb-0 font-weight-bold text-dark chiffre">
-                                                        {{ chiffres }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <strong class="fa-2x text-dark">AR</strong>
-                                            </div>
+
+                    <!-- Cartes de statistiques -->
+                    <div class="row g-4 mb-4">
+                        <!-- Chiffre d'affaires -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="text-uppercase text-muted mb-2">Chiffre d'affaires</h6>
+                                            <h3 class="mb-0">
+                                                <span class="counter">{{ chiffres|default:0 }}</span>
+                                                <small class="text-muted">AR</small>
+                                            </h3>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6 mb-3 d-flex">
-                                <div class="card bg-primary shadow-sm py-2 flex-grow-1">
-                                    <div class="card-body d-flex flex-column">
-                                        <div class="row no-gutters align-items-center flex-grow-1">
-                                            <div class="col mr-2">
-                                                <div class="text-xs fw-bold text-light text-uppercase mb-1">
-                                                    nb d'abonnées ({{ annee_contrat_prec }}) :
-                                                </div>
-                                                <div class="h5 mb-0 font-weight-bold text-light">
-                                                    {{ nb_client_prec }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6 mb-3 d-flex">
-                                <div class="card bg-primary shadow-sm py-2 flex-grow-1">
-                                    <div class="card-body d-flex flex-column">
-                                        <div class="row no-gutters align-items-center flex-grow-1">
-                                            <div class="col mr-2">
-                                                <div class="text-xs fw-bold text-light text-uppercase mb-1">
-                                                    nb d'abonnées ({{ annee_contrat_actuelle }}) :
-                                                </div>
-                                                <div class="h5 mb-0 font-weight-bold text-light">
-                                                    {{ nb_client_actuelle }}
-                                                </div>
-                                            </div>
+                                        <div class="icon-shape bg-warning bg-opacity-10 rounded-circle p-3">
+                                            <i class="fas fa-chart-line text-warning fa-2x"></i>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="row justify-content-between">
-                            <div class="col-md-4 col-sm-12 mt-5">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <div class="text-center">
-                                            <h5 class="text-dark">Consommation par Réseaux</h5>
+
+                        <!-- Nombre d'abonnés (année précédente) -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="text-uppercase text-muted mb-2">Abonnés ({{ annee_contrat_prec }})</h6>
+                                            <h3 class="mb-0">
+                                                <span class="counter">{{ nb_client_prec|default:0 }}</span>
+                                            </h3>
+                                        </div>
+                                        <div class="icon-shape bg-primary bg-opacity-10 rounded-circle p-3">
+                                            <i class="fas fa-users text-primary fa-2x"></i>
                                         </div>
                                     </div>
-                                    <div class="card-body">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nombre d'abonnés (année actuelle) -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="text-uppercase text-muted mb-2">Abonnés ({{ annee_contrat_actuelle }})</h6>
+                                            <h3 class="mb-0">
+                                                <span class="counter">{{ nb_client_actuelle|default:0 }}</span>
+                                                <small class="text-{{ nb_client_actuelle >= nb_client_prec|default:0 ? 'success' : 'danger' }}">
+                                                    {% if nb_client_actuelle > nb_client_prec|default:0 %}
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    {% elseif nb_client_actuelle < nb_client_prec|default:0 %}
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-equals"></i>
+                                                    {% endif %}
+                                                    {% if nb_client_prec %}
+                                                        {{ ((nb_client_actuelle - nb_client_prec) / nb_client_prec * 100)|floatformat:1 }}%
+                                                    {% endif %}
+                                                </small>
+                                            </h3>
+                                        </div>
+                                        <div class="icon-shape bg-success bg-opacity-10 rounded-circle p-3">
+                                            <i class="fas fa-user-plus text-success fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Graphiques -->
+                    <div class="row g-4 mb-4">
+                        <!-- Consommation par réseau -->
+                        <div class="col-xl-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-transparent border-0">
+                                    <h5 class="mb-0">Consommation par Réseaux</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="position: relative; height: 300px;">
                                         <canvas id="RecapConso"></canvas>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-4 col-sm-12 mt-5">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <div class="text-center">
-                                            <h5 class="text-dark">Evolution de la Consommation</h5>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
+                        </div>
+
+                        <!-- Évolution de la consommation -->
+                        <div class="col-xl-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-transparent border-0">
+                                    <h5 class="mb-0">Évolution de la Consommation</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="position: relative; height: 300px;">
                                         <canvas id="EvoConso"></canvas>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-4 col-sm-12 mt-5">
-                                <div class="card mb-3">
-                                    <div class="card-header">
-                                        <div class="text-center">
-                                            <h5 class="text-dark">Paiements</h5>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Paiements -->
+                        <div class="col-xl-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-transparent border-0">
+                                    <h5 class="mb-0">Paiements</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="position: relative; height: 300px;">
                                         <canvas id="paiement"></canvas>
                                     </div>
                                 </div>
-                                <div class="card">
-                                    <div class="card-header">
-                                        <div class="text-center">
-                                            <h5 class="text-dark">Mains Courantes</h5>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
+                            </div>
+                        </div>
+
+                        <!-- Mains courantes -->
+                        <div class="col-xl-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-transparent border-0">
+                                    <h5 class="mb-0">Mains Courantes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="position: relative; height: 300px;">
                                         <canvas id="main"></canvas>
                                     </div>
                                 </div>
@@ -158,206 +274,60 @@
             </div>
         </div>
     </div>
+
+    <!-- JavaScript -->
     <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'fontawesome/js/all.min.js' %}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/2.0.0-alpha0/date_fns.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.min.js"></script>
+    
+    <!-- Chart.js avec lazy loading -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js" 
+            integrity="sha256-+8R+kwpD50XaHZQ8NtJ0qR7vXkCv3v5z3Yv3p5lVfY=" 
+            crossorigin="anonymous" 
+            defer></script>
+    
+    <!-- Script personnalisé pour le tableau de bord -->
+    <script src="{% static 'js/app/dashboard.js' %}" defer></script>
+    
+    <!-- Animation des compteurs -->
     <script>
-        let color = [
-            '#2c3e50',
-            '#c0392b',
-            '#27ae60',
-            '#666666',
-            '#dc3545',
-            '#007bff',
-            '#2ecc71',
-            '#343a40',
-            '#8e44ad',
-            '#3498db',
-            '#28a745',
-            '#f39c12',
-            '#6c757d',
-            '#ffc107',
-            '#17a2b8',
-            '#e74c3c',
-            '#9b59b6'
-        ]
-        
-        function formatNumberWithSpaces(number) {
-            const parts = number.toString().split('.');
-            const integerPart = parts[0];
-            const decimalPart = parts[1] || "";
-
-            // Ajoute un espace tous les trois chiffres à partir de la virgule
-            let formattedIntegerPart = integerPart.replace(/\B(?=(\d{3})+(?=,))/g, " ");
-
-            return formattedIntegerPart + (decimalPart.length > 0 ? ',' + decimalPart : "");
-        }
-
-        let chifres = $('#chiffres .chiffre')
-        const valeur_original = chifres.text();
-        const formattedValue = formatNumberWithSpaces(valeur_original);
-
-        // Mettre à jour la div avec la valeur formatée
-        chifres.text(formattedValue);
-
-        const dataValues = [
-            {% for commune in communes %}
-                {{ commune.total_conso }},
-            {% endfor %}
-        ];
-
-        let Recap = document.getElementById('RecapConso').getContext('2d');
-
-        // Calcul du total
-        const total = dataValues.reduce(function (a, b) {
-            return a + b;
-        }, 0);
-
-        // Calcul des pourcentages
-        const percentageValues = dataValues.map(function (value) {
-            return ((value / total) * 100).toFixed(2); // Arrondi à deux décimales
-        });
-
-        new Chart(Recap, {
-            type: 'doughnut',
-            data: {
-                labels: [
-                    {% for commune in communes %}
-                        '{{ commune.region.region }} {{ commune.commune }}',
-                    {% endfor %}
-                ],
-                datasets: [{
-                    label: 'Consommation par Réseaux en %',
-                    data: percentageValues,
-                    backgroundColor: color,
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
+        // Fonction pour animer les compteurs
+        function animateCounters() {
+            const counters = document.querySelectorAll('.counter');
+            const speed = 200; // Vitesse de l'animation
+            
+            counters.forEach(counter => {
+                const target = parseInt(counter.textContent.replace(/\s/g, ''));
+                const count = 0;
+                const increment = target / speed;
+                
+                const updateCount = () => {
+                    count += increment;
+                    if (count < target) {
+                        counter.textContent = Math.ceil(count).toLocaleString('fr-FR');
+                        setTimeout(updateCount, 1);
+                    } else {
+                        counter.textContent = target.toLocaleString('fr-FR');
                     }
-                },
-                plugins: {
-                    datalabels: {
-                        display: 'auto',
-                        formatter: (value) => {
-                            if (value !== 0) {
-                                return value + '%';
-                            } // Ajoutez le signe de pourcentage
-                        },
-                        color: '#f8f9fa',
-                        align: 'center',
-                        textAlign: 'center',
-                        font: {
-                            size: 14
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.label + ': ' + context.parsed + '%';
-                            }
-                        }
-                    }
-                }
-            },
-            plugins: [ChartDataLabels]
-        });
-        // Courbe de l'evolution de la consommation
-        let EvoConso = document.getElementById('EvoConso').getContext('2d');
-
-        new Chart(EvoConso, {
-            type: 'line',
-            data: {
-                datasets: [
-                    {% for row in evo_conso %}
-                    {
-                        label: '{{ row.commune }}',
-                        data: [
-                            {% for list in row.data %}
-                            {
-                                x: '{% if list.mois_releve < 10 %}0{% endif %}{{ list.mois_releve }}/{{ list.annee_releve }}',
-                                y: {{ list.total_conso }}
-                            },
-                            {% endfor %}
-                        ],
-                        backgroundColor: color,
-                        borderColor: color,
-                    },
-                    {% endfor %}
-                ],
-            },
-            options: {
-                 scales: {
-                     y: {
-                         beginAtZero: true
-                     },
-                 },
-            }
-        });
-        
-        // Graphique de paiement
-        let paiement = document.getElementById('paiement').getContext('2d');
-        let data = {
-            labels: [],
-            datasets: [
-                {
-                    label: 'Factures payées',
-                    backgroundColor: '#28a745', // Couleur pour les factures payées
-                    data: [], // Les données seront insérées ici
-                },
-                {
-                    label: 'Factures impayées',
-                    backgroundColor: '#e74c3c', // Couleur pour les factures impayées
-                    data: [], // Les données seront insérées ici
-                }
-            ]
-        };
-        {% for facture in factures %}
-            data.labels.push('{% if facture.mois < 10 %}0{% endif %}{{ facture.mois }}/{{ facture.annee }}');
-            data.datasets[0].data.push('{{ facture.nombre_factures_payees }}');
-            data.datasets[1].data.push('{{ facture.nombre_factures_impayees }}');
-        {% endfor %}
-        new  Chart(paiement, {
-            type: 'bar',
-            data: data
-        });
-
-        //Graphics bar pour le Main Courante
-        let main = document.getElementById('main').getContext('2d');
-        let main_data = {
-            labels: [],
-            datasets: [
-                {
-                    label: 'Non traitée',
-                    backgroundColor: '#f39c12',
-                    data: [], // Les données pour Non traité seront insérées ici
-                },
-                {
-                    label: 'Realisées',
-                    backgroundColor: '#28a745',
-                    data: [], // Les données pour Relise seront insérées ici
-                },
-                {
-                    label: 'En cours',
-                    backgroundColor: '#007bff',
-                    data: [], // Les données pour En cours seront insérées ici
-                }
-            ]
+                };
+                
+                updateCount();
+            });
         }
-        {% for item in main_courantes %}
-            main_data.labels.push('{% if item.mois < 10 %}0{% endif %}{{ item.mois }}/{{ item.annee }}');
-            main_data.datasets[0].data.push('{{ item.nb_non_traite }}');
-            main_data.datasets[1].data.push('{{ item.nb_realise }}');
-            main_data.datasets[2].data.push('{{ item.nb_en_cours }}');
-        {% endfor %}
-        new  Chart(main, {
-            type: 'bar',
-            data: main_data
+        
+        // Démarrer l'animation lorsque la page est chargée
+        document.addEventListener('DOMContentLoaded', () => {
+            // Démarrer l'animation des compteurs
+            animateCounters();
+            
+            // Rafraîchir les graphiques lors du redimensionnement de la fenêtre
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    // Les graphiques se mettent à jour automatiquement grâce à responsive: true
+                }, 250);
+            });
         });
     </script>
 </body>

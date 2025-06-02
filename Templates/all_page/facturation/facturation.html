@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="{% static 'logo/img.png' %}" type="image/x-icon">
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'datatable/datatables.min.css' %}">
     <title>{{ title_etat }}{{ title_facture }}{{ title_retard }}{{ title_avoir }}{{ title_detail }}{{ title_etat_detail }}{{ title_facture_paye }}{{ title_facture_impaye }}</title>
@@ -39,12 +39,7 @@
                                     Impayé
                                 </a>
                             </div>
-{#                            <div class="col-md-2 mt-4">#}
-{#                                <a href="{% url 'facture_retard' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_retard }}">#}
-{#                                    Retard#}
-{#                                </a>#}
-{#                            </div>#}
-                             <div class="col-md-2 mt-4">
+                            <div class="col-md-2 mt-4">
                                 <a href="{% url 'facture_restant' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_facture }}">
                                     Restant
                                 </a>
@@ -84,9 +79,9 @@
     <script src="{% static 'datatable/datatables.min.js' %}"></script>
     <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'fontawesome/js/all.min.js' %}"></script>
-    <script src="{% static 'paiement.js' %}"></script>
-    <script src="{% static 'modal.js' %}"></script>
-    <script src="{% static 'client/modal.js' %}"></script>
+    <script src="{% static 'js/utils/utils.js' %}"></script>
+    <script src="{% static 'js/app/paiement.js' %}"></script>
+    <script src="{% static 'js/app/modal.js' %}"></script>
     <script>
         function openUrlInNewTab(url) {
             window.open(url, '_blank');
@@ -98,17 +93,17 @@
                 const commune = $('#commune').val();
 
                 // Construire l'URL avec les paramètres GET
-                let url = '/facture/pdf';
-                url += `?date_deb=${dateDeb}&date_fin=${dateFin}&commune=${commune}`;
-                {% if impayer_exist %}
-                    // Ouvrir une nouvelle onglet avec l'URL générée
-                    window.open(url, '_blank');
-                    $('#export-pdf').modal('hide');
-                {% else %}
-                    $('#alert').fadeIn().delay(3000).fadeOut();
-                {% endif %}
+                let url = '{% url "export_factures" %}';
+                url += '?date_deb=' + encodeURIComponent(dateDeb);
+                url += '&date_fin=' + encodeURIComponent(dateFin);
+                if (commune) {
+                    url += '&commune=' + encodeURIComponent(commune);
+                }
+
+                // Ouvrir l'URL dans un nouvel onglet
+                window.open(url, '_blank');
             });
-        })
+        });
     </script>
 </body>
 </html>
