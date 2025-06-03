@@ -63,6 +63,7 @@ MIDDLEWARE = [
 ALLOWED_HOSTS = [
     'app.eatc.me',
     'www.app.eatc.me',
+    '89.116.38.149',
     'localhost'
 ]
 
