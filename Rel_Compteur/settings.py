@@ -56,7 +56,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'django_browser_reload.middleware.BrowserReloadMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    # 'django_tenants.middleware.main.TenantMainMiddleware',
+    'django_tenants.middleware.main.TenantMainMiddleware',
 ]
 
 
