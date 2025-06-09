@@ -39,7 +39,7 @@ def schema_use(view_func):
 def schema_use_api(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        entreprise_id = getattr(request.user, 'entreprise_id', None)
+        entreprise_id = 10
         if not entreprise_id:
             return Response(
                 {"detail": "Aucune entreprise n'est associée à votre compte."},
