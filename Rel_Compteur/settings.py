@@ -211,15 +211,15 @@ APPEND_SLASH = True
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ]
+        'rest_framework.authentication.TokenAuthentication',
+    ],
 }
 
 # Configuration JWT
@@ -232,8 +232,10 @@ SIMPLE_JWT = {
     'VERIFYING_KEY': None,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id_utilisateur',
+    'USER_ID_CLAIM': 'user_id',
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
 # Configurations de Celery

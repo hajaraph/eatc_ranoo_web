@@ -8,7 +8,7 @@ from django.db.models import Count
 from django.db.models import Q
 from django.http import JsonResponse
 from rest_framework import permissions, status
-from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -28,6 +28,8 @@ from Main_Courante.models import MainCourante
 from pandas.tseries.offsets import MonthEnd
 
 from ..views import relever, ReleveMod
+from rest_framework.authentication import TokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 async def calculer_nombre_relever_effectuer(cp_commune_id):
@@ -90,9 +92,13 @@ async def calculer_nombre_relever_effectuer(cp_commune_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([JWTAuthentication])
 @schema_use_api
-@async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
+@async_to_sync
 async def accueil(request):
+    # Vérification de l'authentification
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Non authentifié'}, status=401)
 
     cp_commune_id = request.user.cp_commune_id
 
@@ -146,7 +152,11 @@ async def relever_client(request):
 
 
 class Missions(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [
+        JWTAuthentication,
+        TokenAuthentication
+    ]
     parser_classes = (MultiPartParser, FormParser)
 
     @staticmethod
