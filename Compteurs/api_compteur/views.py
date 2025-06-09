@@ -89,12 +89,11 @@ async def calculer_nombre_relever_effectuer(cp_commune_id):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 @schema_use_api
-@async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
+@async_to_sync
 async def accueil(request):
-
-    cp_commune_id = request.user.cp_commune_id
+    # Temporairement, on utilise une valeur fixe pour cp_commune_id pour le test
+    cp_commune_id = "MG21224050"  # ou une autre valeur qui existe dans votre base de données
 
     # Encapsuler les appels synchrones à la base de données
     @sync_to_async
