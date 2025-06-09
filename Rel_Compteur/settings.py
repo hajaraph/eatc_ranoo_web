@@ -66,37 +66,15 @@ ALLOWED_HOSTS = [
     'localhost'
 ]
 
-# Configuration CORS pour permettre les requêtes de l'application Flutter
-CORS_ALLOW_ALL_ORIGINS = True  # Pour le développement
+CORS_ALLOW_ALL_ORIGINS = True
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
 
 CORS_ALLOWED_ORIGINS = [
     'https://app.eatc.me',
     'https://www.app.eatc.me',
     'http://127.0.0.1:8000',
-    'http://localhost:8000',
-    'http://localhost',  # Pour le développement Flutter
-    'capacitor://localhost',  # Pour les applications mobiles
-    'ionic://localhost',  # Pour Ionic si utilisé
+    'http://localhost:8000'
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -211,15 +189,15 @@ APPEND_SLASH = True
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
-    ],
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ]
 }
 
 # Configuration JWT
@@ -232,10 +210,8 @@ SIMPLE_JWT = {
     'VERIFYING_KEY': None,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id_utilisateur',
-    'USER_ID_CLAIM': 'user_id',
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
 # Configurations de Celery
