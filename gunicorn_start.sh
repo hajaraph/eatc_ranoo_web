@@ -3,9 +3,9 @@
 NAME="eatc_ranoo"
 DJANGODIR=/home/eatc/eatc_ranoo
 USER=eatc
-GROUP=eatc
+GROUP=www-data
 WORKERS=3
-BIND=unix:/home/eatc/eatc_ranoo/run/gunicorn.sock
+BIND="0.0.0.0:8000"  # Pour écouter sur toutes les interfaces
 DJANGO_SETTINGS_MODULE=Rel_Compteur.settings
 DJANGO_WSGI_MODULE=Rel_Compteur.wsgi
 LOG_LEVEL=debug
@@ -16,8 +16,8 @@ source /home/eatc/myenv/bin/activate
 export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 export PYTHONPATH=$DJANGODIR:$PYTHONPATH
 
-# Création du répertoire run si n'existe pas
-mkdir -p /home/eatc/eatc_ranoo/run/
+# Création du répertoire logs si n'existe pas
+mkdir -p ${DJANGODIR}/logs
 
 # Démarrage de Gunicorn
 exec /home/eatc/myenv/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
@@ -27,5 +27,9 @@ exec /home/eatc/myenv/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
   --group=$GROUP \
   --bind=$BIND \
   --log-level=$LOG_LEVEL \
-  --log-file=/home/eatc/eatc_ranoo/logs/gunicorn.log \
-  --access-logfile=/home/eatc/eatc_ranoo/logs/access.log
+  --log-file=${DJANGODIR}/logs/gunicorn.log \
+  --access-logfile=${DJANGODIR}/logs/access.log \
+  --error-logfile=${DJANGODIR}/logs/error.log \
+  --capture-output \
+  --enable-stdio-inheritance \
+  --reload
