@@ -10,15 +10,29 @@ DJANGO_SETTINGS_MODULE=Rel_Compteur.settings
 DJANGO_WSGI_MODULE=Rel_Compteur.wsgi
 LOG_LEVEL=debug
 
+# shellcheck disable=SC2006
+echo "Starting $NAME as `whoami`"
+
+# Activation de l'environnement virtuel
+echo "Activating virtual environment..."
+# shellcheck disable=SC2164
 cd $DJANGODIR
 source /home/eatc/myenv/bin/activate
 
+# Configuration de l'environnement
+echo "Setting environment variables..."
 export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 export PYTHONPATH=$DJANGODIR:$PYTHONPATH
 
-# Création du répertoire logs si n'existe pas
+# Création du répertoire logs
+echo "Creating log directory..."
 mkdir -p ${DJANGODIR}/logs
 
+# Vérification de Gunicorn
+echo "Checking Gunicorn installation..."
+which gunicorn || { echo "Gunicorn not found. Please install it with pip install gunicorn"; exit 1; }
+
+echo "Starting Gunicorn..."
 # Démarrage de Gunicorn
 exec /home/eatc/myenv/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
   --name $NAME \
