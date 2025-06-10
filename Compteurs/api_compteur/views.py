@@ -128,6 +128,7 @@ async def accueil(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 @schema_use_api
 @async_to_sync()
 async def relever_client(request):
