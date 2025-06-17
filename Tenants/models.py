@@ -11,6 +11,8 @@ from Acommune.models import Commune
 class Entreprise(TenantMixin):
     nom_entreprise = models.CharField(max_length=100)
     schema_name = models.CharField(max_length=100, verbose_name="Base de donnée")
+    logo_entreprise = models.ImageField(upload_to='logo/entreprise', blank=True, verbose_name='Logo')
+    signature_entreprise = models.ImageField(upload_to='signature/entreprise', blank=True, verbose_name='Signature')
     created_on = models.DateTimeField(auto_now_add=True, verbose_name='Date de creation')
     
     def __str__(self):

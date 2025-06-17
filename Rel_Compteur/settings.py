@@ -11,59 +11,78 @@ SECRET_KEY = 'django-insecure-iy)pk3bxm664w4$_vxm)$0$9&!grq0h%f*8!^sshd(f53uo25b
 
 DEBUG = True
 
-# Applications partagées entre tous les tenants
-SHARED_APPS = [
-    'django_tenants',
-    'Tenants',
+# Applications partagées entre tous les tenants (public schema)
+SHARED_APPS = (
+    'django_tenants',  # Doit être en premier
+    'Tenants',  # Votre application tenant
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'django.contrib.sessions',
-    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'django_extensions',
-    # 'django_browser_reload',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    # 'django_celery_results',
     'Acommune',
-    'Login'
-]
+    'Login',
+)
 
 # Applications spécifiques aux tenants
-TENANT_APPS = [
+TENANT_APPS = (
+    'django.contrib.contenttypes',
+    'django.contrib.auth',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'django.contrib.admin',
+    'django_extensions',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'corsheaders',
+    'Acommune',
+    'Login',
     'Clients',
     'Compteurs',
     'Facturation',
     'Main_Courante',
     'Parametre',
     'Ranoo_Config',
-    'Tableau_Bord'
-]
+    'Tableau_Bord',
+)
 
-INSTALLED_APPS = SHARED_APPS + TENANT_APPS
+# Combinaison des applications
+INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
 
+# Configuration pour django-tenants
+TENANT_MODEL = "Tenants.Entreprise"
+TENANT_DOMAIN_MODEL = "Tenants.Domain"
+DATABASE_ENGINE = 'django_tenants.postgresql_backend'
+PUBLIC_SCHEMA_NAME = 'public'
+PUBLIC_SCHEMA_URLCONF = 'Rel_Compteur.urls'
+ROOT_URLCONF = 'Rel_Compteur.urls'
 
+# Configuration des middlewares (TenantMainMiddleware doit être en premier)
 MIDDLEWARE = [
+    'django_tenants.middleware.main.TenantMainMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'django_browser_reload.middleware.BrowserReloadMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    # 'django_tenants.middleware.main.TenantMainMiddleware',
 ]
 
 
 ALLOWED_HOSTS = [
     'app.eatc.me',
     'www.app.eatc.me',
-    'localhost'
+    'localhost',
+    '127.0.0.1',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -94,7 +113,7 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 
-ROOT_URLCONF = 'Rel_Compteur.urls'
+
 
 TEMPLATES = [
     {
@@ -122,10 +141,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django_tenants.postgresql_backend',
         'NAME': 'rel_compteur',
-        # 'USER': 'postgres',
-        # 'PASSWORD': '12121212',
-        'USER': 'eatcrano',
-        'PASSWORD': 'eatc301',
+        'USER': 'postgres',
+        'PASSWORD': '12121212',
+        # 'USER': 'eatcrano',
+        # 'PASSWORD': 'eatc301',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -230,9 +249,6 @@ SIMPLE_JWT = {
 # CELERY_TASK_SERIALIZER = 'json'
 # CELERY_RESULT_SERIALIZER = 'json'
 # CELERY_TIMEZONE = 'UTC'
-
-TENANT_MODEL = "Tenants.Entreprise"
-TENANT_DOMAIN_MODEL = "Tenants.Domain"
 AUTH_USER_MODEL = "Tenants.Utilisateur"
 
 LOGGING = {
