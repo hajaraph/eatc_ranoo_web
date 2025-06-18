@@ -37,7 +37,7 @@ def compteur_liste(request):
 
         compteurs = Compteur.objects.annotate(
             dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
-        ).filter(contrats__cp_commune_id=cp_commune).order_by('pk')
+        ).filter(contrats__cp_commune_id=cp_commune).order_by('num_compteur')
 
     context = {
         'title_liste': title,
