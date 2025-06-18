@@ -31,14 +31,26 @@
                     <td>
                         <a href="{% url 'compteur_detail' list.pk %}" class="text-decoration-none">{{ list.pk }}</a>
                     </td>
-                    <td>{{ list.contrats.client.nom_client }}</td>
-                    <td>{{ list.contrats.client.prenom_client }}</td>
                     <td>
-                        {% if list.contrats.last %}
-                        	{{ list.contrats.last.num_contrat }}
+                        {% if list.contrats.first %}
+                            {{ list.contrats.first.client.nom_client }}
+                        {% else %}
+                            <span class="bg-secondary-subtle rounded px-1 small">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if list.contrats.first %}
+                            {{ list.contrats.first.client.prenom_client|default:"-" }}
+                        {% else %}
+                            <span class="bg-secondary-subtle rounded px-1 small">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if list.contrats.first %}
+                            {{ list.contrats.first.num_contrat }}
                         {% else %}
                             <span class="bg-secondary-subtle rounded px-1 small">Pas de contrat</span>
-                        {% endif %} 
+                        {% endif %}
                     </td>
                     <td>
                         {% if list.dernier_releve %}

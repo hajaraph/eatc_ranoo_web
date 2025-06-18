@@ -24,7 +24,7 @@ def compteur_liste(request):
         derniers_releves = ReleveCompteur.objects.filter(
             num_compteur_id=OuterRef('pk')
         ).order_by('-date_releve')
-        compteurs = Compteur.objects.annotate(
+        compteurs = Compteur.objects.select_related('contrats__client').annotate(
             dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
         ).order_by('pk')
 
