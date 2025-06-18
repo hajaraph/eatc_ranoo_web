@@ -32,8 +32,9 @@ def compteur_liste(request):
         compteurs = Compteur.objects.prefetch_related(
             models.Prefetch('contrats', queryset=Contrat.objects.select_related('client'))
         ).annotate(
-            dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
-        ).order_by('pk')
+            dernier_releve=Subquery(derniers_releves.values('date_releve')[:1]),
+            num_compteur_int=models.Cast(models.F('num_compteur'), models.IntegerField())
+        ).order_by('num_compteur_int')
 
     else:
         cp_commune = request.session.get('cp_commune')
@@ -43,8 +44,9 @@ def compteur_liste(request):
         ).order_by('-date_releve')
 
         compteurs = Compteur.objects.annotate(
-            dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
-        ).filter(contrats__cp_commune_id=cp_commune).order_by('num_compteur')
+            dernier_releve=Subquery(derniers_releves.values('date_releve')[:1]),
+            num_compteur_int=models.Cast(models.F('num_compteur'), models.IntegerField())
+        ).filter(contrats__cp_commune_id=cp_commune).order_by('num_compteur_int')
 
     context = {
         'title_liste': title,
