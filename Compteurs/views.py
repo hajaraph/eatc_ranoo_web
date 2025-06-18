@@ -1,10 +1,12 @@
 from datetime import datetime
 from django.contrib import messages
+from django.db import models
 from django.db.models import OuterRef, Subquery
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 
 from Compteurs.models import Compteur, ReleveCompteur
+from Clients.models import Contrat
 from Facturation.models import Facture
 from Facturation.views import facture_creation
 from Login.views import authentification_requis, role_requis
@@ -21,10 +23,15 @@ def compteur_liste(request):
     font = 'custom-font'
     # Pour recuperer tout les compteur et affciher leur dernier relever
     if request.session.get('role_utilisateur') != 'Releveur':
+        # Récupération des derniers relevés
         derniers_releves = ReleveCompteur.objects.filter(
             num_compteur_id=OuterRef('pk')
         ).order_by('-date_releve')
-        compteurs = Compteur.objects.select_related('contrats__client').annotate(
+        
+        # Récupération des compteurs avec leurs contrats et clients associés
+        compteurs = Compteur.objects.prefetch_related(
+            models.Prefetch('contrats', queryset=Contrat.objects.select_related('client'))
+        ).annotate(
             dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
         ).order_by('pk')
 
