@@ -1,4 +1,6 @@
 import base64
+import logging
+import os
 from datetime import timedelta, datetime
 from io import BytesIO
 
@@ -23,6 +25,8 @@ from Acommune.models import Region
 from Ranoo_Config.models import ConfigBranchement
 from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
+
+logger = logging.getLogger(__name__)
 
 
 def date_range(request, model, datedeb, datefin, date_field, statut=None):
@@ -408,6 +412,31 @@ def facture_context_pdf(request, factures):
         return HttpResponse(f"An error occurred: {e}", content_type='text/plain')
 
 
+def is_eatc_schema(request):
+    id_entreprise = request.session.get('entreprise')
+    entreprise = Entreprise.objects.get(pk=id_entreprise)
+    return entreprise.schema_name == "eatc"
+
+
+def encode_entreprise_images(entreprise, context):
+    """Encode le logo et la signature de l'entreprise en base64 et les ajoute au contexte"""
+    if entreprise.logo_entreprise:
+        buffer = BytesIO()
+        with open(entreprise.logo_entreprise.path, 'rb') as img_file:
+            buffer.write(img_file.read())
+        buffer.seek(0)
+        context['logo_entreprise'] = base64.b64encode(buffer.getvalue()).decode()
+
+    if entreprise.signature_entreprise:
+        buffer = BytesIO()
+        with open(entreprise.signature_entreprise.path, 'rb') as img_file:
+            buffer.write(img_file.read())
+        buffer.seek(0)
+        context['signature_entreprise'] = base64.b64encode(buffer.getvalue()).decode()
+
+    return context
+
+
 @authentification_requis
 @schema_use
 def facture_genere_pdf(request, num_facture):
@@ -417,16 +446,15 @@ def facture_genere_pdf(request, num_facture):
     if isinstance(context, HttpResponse):
         return context
 
-    id_entreprise = request.session.get('entreprise')
-    entreprise = Entreprise.objects.get(pk=id_entreprise)
-
-    if entreprise.schema_name == "eatc":
+    if is_eatc_schema(request):
         template_path = 'all_page/facturation/facture/templatepdf.html'
     else:
+        id_entreprise = request.session.get('entreprise')
+        entreprise = Entreprise.objects.get(pk=id_entreprise)
+        context = encode_entreprise_images(entreprise, context)
         template_path = 'all_page/facturation/facture/templatenoeatc.html'
 
     filename_prefix = f"{factures.num_facture}-({datetime.now().strftime('%d/%m/%Y')})"
-
     return generate_pdf(request, context, template_path, filename_prefix)
 
 
@@ -448,17 +476,21 @@ def generate_multiple_pages_pdf(request):
 
     if factures:
         factures = date_range_fact_pdf(date_deb, date_fin, commune, factures)
-        id_entreprise = request.session.get('entreprise')
-        entreprise = Entreprise.objects.get(pk=id_entreprise)
-        is_eatc = entreprise.schema_name == "eatc"
+        eatc = is_eatc_schema(request)
 
         # Grouper les factures par 5 si ce n'est pas eatc
-        if not is_eatc:
+        if not eatc:
             temp_group = []
+
             for idx, fact in enumerate(factures, 1):
                 context = facture_context_pdf(request, fact)
                 if isinstance(context, HttpResponse):
                     return context
+
+                # Ajout du logo et de la signature de l'entreprise au contexte
+                id_entreprise = request.session.get('entreprise')
+                entreprise = Entreprise.objects.get(pk=id_entreprise)
+                context = encode_entreprise_images(entreprise, context)
 
                 html = render_html_to_pdf('all_page/facturation/facture/templatenoeatc.html', context)
                 if html:

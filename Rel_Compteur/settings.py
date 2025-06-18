@@ -41,8 +41,6 @@ TENANT_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'Acommune',
-    'Login',
     'Clients',
     'Compteurs',
     'Facturation',
@@ -141,10 +139,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django_tenants.postgresql_backend',
         'NAME': 'rel_compteur',
-        # 'USER': 'postgres',
-        # 'PASSWORD': '12121212',
-        'USER': 'eatcrano',
-        'PASSWORD': 'eatc301',
+        'USER': 'postgres',
+        'PASSWORD': '12121212',
+        # 'USER': 'eatcrano',
+        # 'PASSWORD': 'eatc301',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -255,12 +253,8 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
         'simple': {
-            'format': '{levelname} {message}',
+            'format': '[{levelname}] {message}',
             'style': '{',
         },
     },
@@ -272,35 +266,15 @@ LOGGING = {
         'file': {
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs', 'debug.log'),
-            'formatter': 'verbose',
-            'level': 'DEBUG',
+            'formatter': 'simple',
         },
     },
     'loggers': {
-        '': {  # Root logger
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-        },
         'django': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': False,
-        },
-        'django.request': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'Tenants': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'Compteurs': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
+        }
     },
 }
 

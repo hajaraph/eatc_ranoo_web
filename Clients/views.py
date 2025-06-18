@@ -40,7 +40,7 @@ def client_liste(request):
 
 def extract_client_data(request):
     return {
-        'id_client': request.POST['id_client'],
+        'id_client': request.POST['id_client'] or None,
         'nom_client': request.POST['nom_client'],
         'prenom_client': request.POST['prenom_client'] or None,
         'profession_client': request.POST['profession_client'],
@@ -93,18 +93,25 @@ class ClientNew(View):
         client_data = extract_client_data(request)
 
         # Vérification d'unicité uniquement si tel1_client est non vide
+        num_client = client_data['id_client']
+        if num_client:
+            client = Client.objects.filter(pk=num_client)
+            if client.exists():
+                messages.warning(request, f'Le numéro Client {num_client} est déjà utilisé !')
+                return redirect('client_new')
+
         tel1_value = client_data['tel1_client']
         if tel1_value:  # Ne vérifie que si tel1_client n'est pas None ou ''
             tel = Client.objects.filter(tel1_client=tel1_value)
             if tel.exists():
-                messages.error(request, f'Téléphone 1 déjà utilisé par un client !')
+                messages.warning(request, f'Téléphone 1 déjà utilisé par un client !')
                 return redirect('client_new')
 
         tel2_value = client_data['tel2_client']
         if tel2_value:  # Ne vérifie que si tel2_client n'est pas None ou ''
             tel = Client.objects.filter(tel2_client=tel2_value)
             if tel.exists():
-                messages.error(request, f'Téléphone 2 déjà utilisé par un client !')
+                messages.warning(request, f'Téléphone 2 déjà utilisé par un client !')
                 return redirect('client_new')
 
         # Création du client

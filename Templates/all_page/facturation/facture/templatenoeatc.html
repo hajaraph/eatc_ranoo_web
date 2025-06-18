@@ -10,7 +10,7 @@
             <tr>
                 <td style="border: 1px solid black; margin-left: 5px">
                     <div>
-                        Facture n° : {{ instance.num_facture}}
+                        Facture n° : {{ instance.num_facture }}
                     </div>
                     <div>
                         Mois de : {{ relever_actuel.date_releve|date:"d/m/Y" }}
@@ -19,7 +19,9 @@
                 <td colspan="2">
                     <table>
                         <tr>
-                            <td style="width: 25%"></td>
+                            <td style="width: 25%">
+                                <img src="data:image/png;base64,{{ logo_entreprise }}" alt="Logo">
+                            </td>
                             <td>
                                 <div>
                                     <div style="text-align: center; font-size: 12px; font-weight: bold; text-decoration: underline">
@@ -42,7 +44,8 @@
                                     </div>
                                 </div>
                             </td>
-                            <td style="width: 25%"></td>
+                            <td style="width: 25%">
+                            </td>
                         </tr>
                     </table>
                 </td>
@@ -140,15 +143,7 @@
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.date_releve|date:"d/m/Y" }}</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.conso }}</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">
-                        {% if typeclient == 1 %}
-                                {{ montant.tarif.prix_m3_bs }}
-                            {% elif typeclient == 2 %}
-                                {{ montant.tarif.prix_m3_bp }}
-                            {% elif typeclient == 3 %}
-                                {{ montant.tarif.prix_m3_k }}
-                            {% else %}
-                                Prix inconnu
-                            {% endif %}
+
                     </td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">
                         {{ instance.montant_total_ttc }}
@@ -173,11 +168,16 @@
                     <td></td>
                     <td></td>
                     <td></td>
-                    <td colspan="2" style="background-color: #e1e1e1"></td>
+                    <td colspan="2" style="width: 60px; height: 20px; text-align: center">
+                        <img src="data:image/png;base64,{{ signature_entreprise }}" alt="Signature">
+                    </td>
                     <td></td>
                 </tr>
             </table>
         </div>
+    </div>
+    <div>
+        =========================================================================================================================================================
     </div>
 </body>
 </html>
