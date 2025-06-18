@@ -35,11 +35,6 @@ echo "💾 Exécution des migrations de base de données..."
 python manage.py makemigrations
 python manage.py migrate_schemas
 
-# Redémarrage de Gunicorn
-echo "🔄 Redémarrage du service Gunicorn..."
-sudo systemctl daemon-reload
-sudo systemctl restart gunicorn
-
 # Vérification du statut de Gunicorn
 echo "🔍 Vérification du statut de Gunicorn..."
 systemctl status gunicorn --no-pager
