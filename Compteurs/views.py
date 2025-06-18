@@ -29,12 +29,15 @@ def compteur_liste(request):
         ).order_by('-date_releve')
         
         # Récupération des compteurs avec leurs contrats et clients associés
-        compteurs = Compteur.objects.prefetch_related(
-            models.Prefetch('contrats', queryset=Contrat.objects.select_related('client'))
-        ).annotate(
-            dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
-        ).order_by('num_compteur_int')
+        compteurs = list(
+            Compteur.objects.prefetch_related(
+                models.Prefetch('contrats', queryset=Contrat.objects.select_related('client'))
+            ).annotate(
+                dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
+            ).order_by('pk')
+        )
 
+        compteurs.sort(key=lambda x: int(x.num_compteur))
     else:
         cp_commune = request.session.get('cp_commune')
 
@@ -42,10 +45,13 @@ def compteur_liste(request):
             num_compteur_id=OuterRef('pk')
         ).order_by('-date_releve')
 
-        compteurs = Compteur.objects.annotate(
-            dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
-        ).filter(contrats__cp_commune_id=cp_commune).order_by('num_compteur_int')
+        compteurs = list(
+            Compteur.objects.annotate(
+                dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
+            ).filter(contrats__cp_commune_id=cp_commune).order_by('num_compteur')
+        )
 
+        compteurs.sort(key=lambda x: int(x.num_compteur))
     context = {
         'title_liste': title,
         'header_text': header,
