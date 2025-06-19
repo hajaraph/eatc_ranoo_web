@@ -24,22 +24,22 @@
                             </td>
                             <td style="width: 100%">
                                 <div>
-                                    <div style="text-align: center; font-size: 12px; font-weight: bold; text-decoration: underline">
+                                    <div style="text-align: center; font-size: 10px; font-weight: bold; text-decoration: underline">
                                         Facture d'eau
                                     </div>
-                                    <div>
+                                    <div style="font-size: 8px">
                                         Type client : {{ instance.num_contrat.client.type_client.designation_client }}
                                     </div>
-                                    <div>
+                                    <div style="font-size: 8px">
                                         Nom client : {{ instance.num_contrat.client.nom_client }}
                                                 {% if instance.num_contrat.client.prenom_client %}
                                                     {{ instance.num_contrat.client.prenom_client }}
                                                 {% endif %}
                                     </div>
-                                    <div>
-                                        Adresse : {{ instance.num_contrat.adresse_contrat }} ({{ instance.num_contrat.client.cp_commune.commune }})
+                                    <div style="font-size: 8px">
+                                        Adresse : {{ instance.num_contrat.adresse_contrat }} ({{ instance.num_contrat.cp_commune.commune }})
                                     </div>
-                                    <div>
+                                    <div style="font-size: 8px">
                                         Code client : {{ instance.num_contrat.client.id_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
                                     </div>
                                 </div>
@@ -49,7 +49,7 @@
                         </tr>
                     </table>
                 </td>
-                <td style="font-size: 12px; font-weight: bold; text-align: center">
+                <td style="font-size: 10px; font-weight: bold; text-align: center">
                     REÇU
                 </td>
             </tr>
