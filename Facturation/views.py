@@ -2,10 +2,6 @@ import base64
 import logging
 from datetime import timedelta, datetime
 from io import BytesIO
-
-# Configuration du logger
-logger = logging.getLogger(__name__)
-
 import qrcode
 from django.db.models import Q
 from django.template.loader import get_template
@@ -29,7 +25,6 @@ from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
 
 logger = logging.getLogger(__name__)
-
 
 def date_range(request, model, datedeb, datefin, date_field, statut=None):
     if datedeb and datefin and datedeb > datefin:
@@ -439,43 +434,53 @@ def encode_entreprise_images(entreprise, context):
     return context
 
 
-@authentification_requis
-@schema_use
-def facture_genere_pdf(request, num_facture):
-    factures = Facture.objects.get(num_facture=num_facture)
-    context = facture_context_pdf(request, factures)
-
-    if isinstance(context, HttpResponse):
-        return context
-        
-    # Récupération du prix selon le type de client de manière optimisée
+def get_prix_m3_client(fact):
+    """Récupère le prix selon le type de client de manière optimisée"""
     try:
-        type_client_id = factures.num_contrat.client.type_client_id
-        tarif = Tarif.objects.get(cp_commune=factures.num_contrat.cp_commune)
-        
+        type_client_id = fact.num_contrat.client.type_client_id
+        tarif = Tarif.objects.get(cp_commune=fact.num_contrat.cp_commune)
+
         # Utilisation de next() pour une recherche plus efficace
         prix_trouve = next(
             (item['prix'] for item in (tarif.prix_m3 or [])
              if item.get('id') == type_client_id),
             None
         )
+        return prix_trouve
 
-        context['prix_3'] = prix_trouve
-        
     except (Tarif.DoesNotExist, AttributeError) as e:
         logger.error(f"Erreur récupération prix: {e}")
-        context['prix_3'] = None
+        return None
 
-    if is_eatc_schema(request):
-        template_path = 'all_page/facturation/facture/templatepdf.html'
-    else:
-        id_entreprise = request.session.get('entreprise')
-        entreprise = Entreprise.objects.get(pk=id_entreprise)
-        context = encode_entreprise_images(entreprise, context)
-        template_path = 'all_page/facturation/facture/templatenoeatc.html'
 
-    filename_prefix = f"{factures.num_facture}-({datetime.now().strftime('%d/%m/%Y')})"
-    return generate_pdf(request, context, template_path, filename_prefix)
+@authentification_requis
+@schema_use
+def facture_genere_pdf(request, num_facture):
+    try:
+        factures = Facture.objects.get(num_facture=num_facture)
+        context = facture_context_pdf(request, factures)
+
+        if isinstance(context, HttpResponse):
+            return context
+
+        context['prix_m3'] = get_prix_m3_client(factures)
+
+        if is_eatc_schema(request):
+            template_path = 'all_page/facturation/facture/templatepdf.html'
+        else:
+            id_entreprise = request.session.get('entreprise')
+            entreprise = Entreprise.objects.get(pk=id_entreprise)
+            context = encode_entreprise_images(entreprise, context)
+            template_path = 'all_page/facturation/facture/templatenoeatc.html'
+
+        filename_prefix = f"{factures.num_facture}-({datetime.now().strftime('%d/%m/%Y')})"
+        return generate_pdf(request, context, template_path, filename_prefix)
+    except Facture.DoesNotExist:
+        messages.error(request, f"La facture {num_facture} n'existe pas")
+        return redirect('facture')
+    except Exception as e:
+        messages.error(request, F"Erreur lors de la génération du PDF {e}")
+        return redirect('facture')
 
 
 def render_html_to_pdf(template_src, context_dict):
@@ -487,72 +492,77 @@ def render_html_to_pdf(template_src, context_dict):
 @authentification_requis
 @schema_use
 def generate_multiple_pages_pdf(request):
-    date_deb = request.GET.get('date_deb')
-    date_fin = request.GET.get('date_fin')
-    commune = request.GET.get('commune')
+    try:
+        date_deb = request.GET.get('date_deb')
+        date_fin = request.GET.get('date_fin')
+        commune = request.GET.get('commune')
 
-    factures = Facture.objects.filter(statut=False)
-    html_sections = []
+        factures = Facture.objects.filter(statut=False)
 
-    if factures:
+        if not factures.exists():
+            messages.warning(request, "Pas de facture impayée !")
+            return redirect('facture')
+
         factures = date_range_fact_pdf(date_deb, date_fin, commune, factures)
+        if not factures.exists():
+            messages.warning(request, "Aucune facture trouvée pour la période sélectionnée")
+            return redirect('facture')
+
+        html_sections = []
         eatc = is_eatc_schema(request)
 
         # Grouper les factures par 5 si ce n'est pas eatc
         if not eatc:
             temp_group = []
+            id_entreprise = request.session.get('entreprise')
+            entreprise = Entreprise.objects.get(pk=id_entreprise)
 
             for idx, fact in enumerate(factures, 1):
                 context = facture_context_pdf(request, fact)
                 if isinstance(context, HttpResponse):
                     return context
 
-                # Ajout du logo et de la signature de l'entreprise au contexte
-                id_entreprise = request.session.get('entreprise')
-                entreprise = Entreprise.objects.get(pk=id_entreprise)
+                context['prix_m3'] = get_prix_m3_client(fact)
                 context = encode_entreprise_images(entreprise, context)
 
                 html = render_html_to_pdf('all_page/facturation/facture/templatenoeatc.html', context)
                 if html:
                     temp_group.append(html)
-                    # Si nous avons 5 factures ou c'est la dernière facture
                     if len(temp_group) == 5 or idx == len(factures):
-                        combined_group = ''.join(temp_group)
-                        html_sections.append(combined_group)
+                        html_sections.append(''.join(temp_group))
                         temp_group = []
-                else:
-                    return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}")
         else:
-            # Comportement original pour eatc
             for fact in factures:
                 context = facture_context_pdf(request, fact)
                 if isinstance(context, HttpResponse):
                     return context
 
+                context['prix_m3'] = get_prix_m3_client(fact)
+
                 html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
                 if html:
                     html_sections.append(html)
-                else:
-                    return HttpResponse(f"Erreur lors de la génération du HTML pour la facture {fact.num_facture}")
 
         if not html_sections:
-            return HttpResponse("Aucune facture valide pour générer un PDF")
+            messages.error(request, "Erreur lors de la génération des PDFs")
+            return redirect('facture')
 
-        # Pour eatc, on garde le saut de page après chaque facture
-        # Pour non-eatc, on met le saut de page après chaque groupe de 5
         combined_html = '<div style="page-break-after: always;"></div>'.join(html_sections)
         result = BytesIO()
         pdf = pisa.pisaDocument(BytesIO(combined_html.encode("UTF-8")), result)
 
-        if not pdf.err:
-            filename = f"Factures({datetime.now().strftime('%d/%m/%Y')}).pdf"
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
-            return response
-        else:
-            return HttpResponse("Erreur lors de la génération du PDF.")
-    else:
-        messages.warning(request, f"Pas de facture impayé !")
+        if pdf.err:
+            messages.error(request, "Erreur lors de la génération du PDF final")
+            return redirect('facture')
+
+        filename = f"Factures({datetime.now().strftime('%d/%m/%Y')}).pdf"
+        response = HttpResponse(result.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la génération des PDFs: {e}")
+        messages.error(request, "Une erreur est survenue lors de la génération des PDFs")
         return redirect('facture')
 
 
