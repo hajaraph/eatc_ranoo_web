@@ -1,8 +1,10 @@
 import base64
 import logging
-import os
 from datetime import timedelta, datetime
 from io import BytesIO
+
+# Configuration du logger
+logger = logging.getLogger(__name__)
 
 import qrcode
 from django.db.models import Q
@@ -445,6 +447,24 @@ def facture_genere_pdf(request, num_facture):
 
     if isinstance(context, HttpResponse):
         return context
+        
+    # Récupération du prix selon le type de client de manière optimisée
+    try:
+        type_client_id = factures.num_contrat.client.type_client_id
+        tarif = Tarif.objects.get(cp_commune=factures.num_contrat.cp_commune)
+        
+        # Utilisation de next() pour une recherche plus efficace
+        prix_trouve = next(
+            (item['prix'] for item in (tarif.prix_m3 or [])
+             if item.get('id') == type_client_id),
+            None
+        )
+
+        context['prix_3'] = prix_trouve
+        
+    except (Tarif.DoesNotExist, AttributeError) as e:
+        logger.error(f"Erreur récupération prix: {e}")
+        context['prix_3'] = None
 
     if is_eatc_schema(request):
         template_path = 'all_page/facturation/facture/templatepdf.html'
