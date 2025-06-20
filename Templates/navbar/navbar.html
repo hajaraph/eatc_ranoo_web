@@ -21,7 +21,7 @@
             <li title="Clients" class="nav-item custom-nav {{ font_contrat }}">
                 <a href="{% url 'client_contrat' %}" class="nav-link align-middle text-dark">
                     <i class="fas fa-file-contract"></i>
-                    <span class="d-none d-sm-inline">Contrat</span>
+                    <span class="d-none d-sm-inline">Contrats</span>
                 </a>
             </li>
             {% endif %}
@@ -53,15 +53,9 @@
             <li title="Ranoo Config" class="nav-item custom-nav {{ font_rano  }}">
                 <a href="{% url 'config_utilisateur' %}" class="nav-link align-middle text-dark">
                     <i class="fas fa-tools"></i>
-                    <span class="d-none d-sm-inline">Ranoo Config</span>
+                    <span class="d-none d-sm-inline">Ranoo Configs</span>
                 </a>
             </li>
-{#            <li title="Ranoo Config" class="nav-item custom-nav {{ font_export  }}">#}
-{#                <a href="{% url 'export' %}" class="nav-link align-middle text-dark">#}
-{#                    <i class="fas fa-file-excel"></i>#}
-{#                    <span class="d-none d-sm-inline">Export</span>#}
-{#                </a>#}
-{#            </li>#}
             {% endif %}
             <li title="Deconnexion" class="nav-item custom-nav">
                 <a href="{% url 'deconnexion' %}" class="nav-link align-middle text-dark" onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')">

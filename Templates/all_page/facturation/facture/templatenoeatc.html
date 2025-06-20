@@ -22,29 +22,25 @@
                             <td style="width: 25%">
                                 <img src="data:image/png;base64,{{ logo_entreprise }}" alt="Logo">
                             </td>
-                            <td>
+                            <td colspan="3">
                                 <div>
                                     <div style="text-align: center; font-size: 10px; font-weight: bold; text-decoration: underline">
                                         Facture d'eau
                                     </div>
                                     <div style="font-size: 8px">
-                                        <table class="client-info" style="width: 160px; table-layout: fixed;">
-                                            <tr>
-                                                <td style="width: 45px">Type :</td>
-                                                <td style="width: 115px; overflow: hidden;">{{ instance.num_contrat.client.type_client.designation_client }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="width: 45px">Nom :</td>
-                                                <td style="width: 115px; overflow: hidden;">{{ instance.num_contrat.client.nom_client }}{% if instance.num_contrat.client.prenom_client %} {{ instance.num_contrat.client.prenom_client }}{% endif %}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="width: 45px">Adr :</td>
-                                                <td style="width: 115px; overflow: hidden;">{{ instance.num_contrat.adresse_contrat }}</td>
-                                            </tr>
-                                        </table>
+                                        Type client : {{ instance.num_contrat.client.type_client.designation_client }}
                                     </div>
                                     <div style="font-size: 8px">
-                                        Code : {{ instance.num_contrat.client.id_client }}; Cpt : {{ instance.num_contrat.num_compteur_id }}
+                                        Nom client : {{ instance.num_contrat.client.nom_client }}
+                                                {% if instance.num_contrat.client.prenom_client %}
+                                                    {{ instance.num_contrat.client.prenom_client }}
+                                                {% endif %}
+                                    </div>
+                                    <div style="font-size: 8px">
+                                        Adresse : {{ instance.num_contrat.adresse_contrat }} ({{ instance.num_contrat.cp_commune.commune }})
+                                    </div>
+                                    <div style="font-size: 8px">
+                                        Code client : {{ instance.num_contrat.client.id_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
                                     </div>
                                 </div>
                             </td>
