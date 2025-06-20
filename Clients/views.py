@@ -40,18 +40,18 @@ def client_liste(request):
 
 def extract_client_data(request):
     return {
-        'id_client': request.POST['id_client'] or None,
+        'id_client': request.POST.get('id_client'),  # Utilisation de .get() au lieu de []
         'nom_client': request.POST['nom_client'],
-        'prenom_client': request.POST['prenom_client'] or None,
-        'profession_client': request.POST['profession_client'],
-        'nb_personne_menage': request.POST['nb_personne_menage'] or None,
+        'prenom_client': request.POST.get('prenom_client'),
+        'profession_client': request.POST.get('profession_client'),
+        'nb_personne_menage': request.POST.get('nb_personne_menage'),
         'compte_actif': request.POST.get('compte_actif', False),
         'adresse_client': request.POST['adresse_client'],
         'cp_commune': request.POST['commune'],
         'pays_client': request.POST['pays_client'],
-        'tel1_client': request.POST['tel1_client'] or None,
-        'tel2_client': request.POST['tel2_client'] or None,
-        'email_client': request.POST['email_client'] or None,
+        'tel1_client': request.POST.get('tel1_client'),
+        'tel2_client': request.POST.get('tel2_client'),
+        'email_client': request.POST.get('email_client'),
         'piece_client': request.FILES.getlist('piece_client'),
         'designation': request.POST.getlist('designation'),
     }
