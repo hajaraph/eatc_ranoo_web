@@ -22,7 +22,7 @@
                             <td style="width: 25%">
                                 <img src="data:image/png;base64,{{ logo_entreprise }}" alt="Logo">
                             </td>
-                            <td style="width: 100%">
+                            <td>
                                 <div>
                                     <div style="text-align: center; font-size: 10px; font-weight: bold; text-decoration: underline">
                                         Facture d'eau
@@ -37,7 +37,7 @@
                                                 {% endif %}
                                     </div>
                                     <div style="font-size: 8px">
-                                        Adresse : {{ instance.num_contrat.adresse_contrat }} ({{ instance.num_contrat.cp_commune.commune }})
+                                        Adresse : {{ instance.num_contrat.adresse_contrat }}
                                     </div>
                                     <div style="font-size: 8px">
                                         Code client : {{ instance.num_contrat.client.id_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
