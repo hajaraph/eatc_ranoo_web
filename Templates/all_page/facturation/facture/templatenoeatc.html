@@ -28,26 +28,23 @@
                                         Facture d'eau
                                     </div>
                                     <div style="font-size: 8px">
-                                        <table class="client-info" style="width: 200px;">
+                                        <table class="client-info" style="width: 160px; table-layout: fixed;">
                                             <tr>
-                                                <td style="width: 60px">Type client :</td>
-                                                <td style="max-width: 140px; white-space: nowrap;">{{ instance.num_contrat.client.type_client.designation_client }}</td>
+                                                <td style="width: 45px">Type :</td>
+                                                <td style="width: 115px; overflow: hidden;">{{ instance.num_contrat.client.type_client.designation_client }}</td>
                                             </tr>
                                             <tr>
-                                                <td style="width: 60px">Nom client :</td>
-                                                <td style="max-width: 140px; white-space: nowrap;">{{ instance.num_contrat.client.nom_client }}
-                                                {% if instance.num_contrat.client.prenom_client %}
-                                                    {{ instance.num_contrat.client.prenom_client }}
-                                                {% endif %}</td>
+                                                <td style="width: 45px">Nom :</td>
+                                                <td style="width: 115px; overflow: hidden;">{{ instance.num_contrat.client.nom_client }}{% if instance.num_contrat.client.prenom_client %} {{ instance.num_contrat.client.prenom_client }}{% endif %}</td>
                                             </tr>
                                             <tr>
-                                                <td style="width: 60px">Adresse :</td>
-                                                <td style="max-width: 140px; white-space: nowrap;">{{ instance.num_contrat.adresse_contrat }}</td>
+                                                <td style="width: 45px">Adr :</td>
+                                                <td style="width: 115px; overflow: hidden;">{{ instance.num_contrat.adresse_contrat }}</td>
                                             </tr>
                                         </table>
                                     </div>
                                     <div style="font-size: 8px">
-                                        Code client : {{ instance.num_contrat.client.id_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
+                                        Code : {{ instance.num_contrat.client.id_client }}; Cpt : {{ instance.num_contrat.num_compteur_id }}
                                     </div>
                                 </div>
                             </td>
