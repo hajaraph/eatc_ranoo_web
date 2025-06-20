@@ -3,15 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Facture numéro {{ instance.num_facture }}</title>
-    <style>
-        .single-line {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px; /* Ajustez cette valeur selon vos besoins */
-            display: inline-block;
-        }
-    </style>
 </head>
 <body style="font-size: 8px">
     <div>
@@ -37,16 +28,23 @@
                                         Facture d'eau
                                     </div>
                                     <div style="font-size: 8px">
-                                        Type client : <span class="single-line">{{ instance.num_contrat.client.type_client.designation_client }}</span>
-                                    </div>
-                                    <div style="font-size: 8px">
-                                        Nom client : <span class="single-line">{{ instance.num_contrat.client.nom_client }}
+                                        <table class="client-info" style="width: 200px;">
+                                            <tr>
+                                                <td style="width: 60px">Type client :</td>
+                                                <td style="max-width: 140px; white-space: nowrap;">{{ instance.num_contrat.client.type_client.designation_client }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="width: 60px">Nom client :</td>
+                                                <td style="max-width: 140px; white-space: nowrap;">{{ instance.num_contrat.client.nom_client }}
                                                 {% if instance.num_contrat.client.prenom_client %}
                                                     {{ instance.num_contrat.client.prenom_client }}
-                                                {% endif %}</span>
-                                    </div>
-                                    <div style="font-size: 8px">
-                                        Adresse : <span class="single-line">{{ instance.num_contrat.adresse_contrat }} ({{ instance.num_contrat.cp_commune.commune }})</span>
+                                                {% endif %}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="width: 60px">Adresse :</td>
+                                                <td style="max-width: 140px; white-space: nowrap;">{{ instance.num_contrat.adresse_contrat }}</td>
+                                            </tr>
+                                        </table>
                                     </div>
                                     <div style="font-size: 8px">
                                         Code client : {{ instance.num_contrat.client.id_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
