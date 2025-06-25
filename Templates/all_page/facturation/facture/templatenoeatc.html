@@ -6,9 +6,9 @@
 </head>
 <body style="font-size: 8px">
     <div>
-        <table>
+        <table style="width: 100%">
             <tr>
-                <td style="border: 1px solid black; margin-left: 5px">
+                <td style="border: 1px solid black; margin-left: 5px; width: 150px">
                     <div>
                         Facture n° : {{ instance.num_facture }}
                     </div>
@@ -17,10 +17,10 @@
                     </div>
                 </td>
                 <td colspan="2">
-                    <table>
+                    <table style="width: 100%">
                         <tr>
-                            <td style="width: 25%">
-                                <img src="data:image/png;base64,{{ logo_entreprise }}" alt="Logo">
+                            <td style="width: 100px">
+                                <img src="data:image/png;base64,{{ logo_entreprise }}" alt="Logo" style="max-width: 100px; height: auto;">
                             </td>
                             <td colspan="4">
                                 <div>
