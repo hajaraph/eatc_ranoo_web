@@ -7,6 +7,7 @@ GROUP=eatc
 NUM_WORKERS=3
 TIMEOUT=300
 DJANGO_WSGI_MODULE=Rel_Compteur.wsgi
+# shellcheck disable=SC2034
 LOG_LEVEL=debug
 
 # shellcheck disable=SC2006
