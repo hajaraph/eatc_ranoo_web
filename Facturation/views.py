@@ -509,7 +509,7 @@ def generate_multiple_pages_pdf(request):
             'relevecompteur'
         ).prefetch_related(
             'montantht_set',
-            'montantht_set__montantttc_set'
+            'montantht_set__montantttc'  # Relation OneToOneField vers MontantTTC
         )
 
         # Filtrage initial
