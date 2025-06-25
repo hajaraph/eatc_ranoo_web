@@ -499,7 +499,7 @@ def generate_multiple_pages_pdf(request):
         commune = request.GET.get('commune')
 
         # Configuration des paramètres de performance
-        BATCH_SIZE = 20
+        BATCH_SIZE = 10  # Réduit pour éviter les problèmes de mémoire
         MAX_RETRIES = 3
 
         factures = Facture.objects.filter(statut=False)
@@ -584,12 +584,14 @@ def generate_multiple_pages_pdf(request):
         # Configuration optimisée pour pisa
         pdf_options = {
             'quiet': True,
-            'encoding': 'UTF-8',
             'page-size': 'A4',
             'margin-top': '0.75in',
             'margin-right': '0.75in',
             'margin-bottom': '0.75in',
             'margin-left': '0.75in',
+            'encoding': 'UTF-8',
+            'load_file': False,
+            'raise_exception': True
         }
 
         # Génération du PDF avec gestion des erreurs
@@ -597,12 +599,19 @@ def generate_multiple_pages_pdf(request):
         while retry_count < MAX_RETRIES:
             try:
                 result = BytesIO()
-                pisa.pisaDocument(
-                    BytesIO(''.join(html_sections).encode("UTF-8")),
+
+                # Encoder le HTML une seule fois
+                html_content = ''.join(html_sections)
+                src = BytesIO(html_content.encode("UTF-8"))
+
+                pdf = pisa.pisaDocument(
+                    src,
                     result,
-                    encoding='utf-8',
                     **pdf_options
                 )
+
+                if pdf.err:
+                    raise ValueError(f"Erreur Pisa: {pdf.err}")
 
                 if not result.getvalue():
                     raise ValueError("PDF généré est vide")
@@ -611,15 +620,18 @@ def generate_multiple_pages_pdf(request):
                 response = HttpResponse(result.getvalue(), content_type='application/pdf')
                 response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
-                # Nettoyage
+                # Nettoyage explicite de la mémoire
                 del html_sections
+                del html_content
+                del src
+                result.close()
                 gc.collect()
 
                 return response
 
             except Exception as e:
                 retry_count += 1
-                logger.error(f"Tentative {retry_count} échouée: {str(e)}")
+                logger.error(f"Tentative {retry_count} échouée: {str(e)}", exc_info=True)
                 if retry_count >= MAX_RETRIES:
                     messages.error(request, "Erreur lors de la génération du PDF final")
                     return redirect('facture')
