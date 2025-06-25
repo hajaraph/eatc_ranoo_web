@@ -602,15 +602,16 @@ def generate_multiple_pages_pdf(request):
             }
 
             # Préparation du contenu HTML
+            # Échapper les accolades dans le CSS en les doublant
             html_content = """
             <!DOCTYPE html>
             <html>
             <head>
                 <meta charset="UTF-8">
-                <style>@page { size: A4; margin: 1cm; }</style>
+                <style>@page {{ size: A4; margin: 1cm; }}</style>
             </head>
             <body>
-                {}
+                {0}
             </body>
             </html>
             """.format('<div style="page-break-after: always;"></div>'.join(html_sections))
