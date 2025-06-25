@@ -4,7 +4,7 @@ logs
 
 .scripts
 
-static/media/
+static
 
 
 *.log

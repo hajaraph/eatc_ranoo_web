@@ -494,76 +494,166 @@ def render_html_to_pdf(template_src, context_dict):
 @schema_use
 def generate_multiple_pages_pdf(request):
     try:
+        # Récupération des paramètres de requête
         date_deb = request.GET.get('date_deb')
         date_fin = request.GET.get('date_fin')
         commune = request.GET.get('commune')
 
-        factures = Facture.objects.filter(statut=False)
+        # Configuration des paramètres de performance
+        batch_size = 10  # Taille des lots pour le traitement
 
-        if not factures.exists():
-            messages.warning(request, "Pas de facture impayée !")
+        # Préparation de la requête de base avec select_related et prefetch_related
+        factures = Facture.objects.filter(statut=False).select_related(
+            'num_contrat',
+            'num_contrat__client',
+            'relevecompteur'
+        ).prefetch_related(
+            'montantht_set',
+            'montantht_set__montantttc_set'
+        )
+
+        # Filtrage initial
+        if date_deb and date_fin:
+            factures = factures.filter(date_facture__range=[date_deb, date_fin])
+        if commune:
+            factures = factures.filter(num_contrat__code_commune=commune)
+
+        # Vérification des résultats
+        factures = list(factures)  # Force l'évaluation de la requête
+        if not factures:
+            messages.warning(request, "Aucune facture trouvée pour les critères sélectionnés")
             return redirect('facture')
 
-        factures = date_range_fact_pdf(date_deb, date_fin, commune, factures)
-        if not factures.exists():
-            messages.warning(request, "Aucune facture trouvée pour la période sélectionnée")
-            return redirect('facture')
-
+        # Initialisation des variables
         html_sections = []
         eatc = is_eatc_schema(request)
+        template_name = 'all_page/facturation/facture/{}'.format(
+            'templatepdf.html' if eatc else 'templatenoeatc.html'
+        )
+        template = get_template(template_name)
 
-        # Grouper les factures par 5 si ce n'est pas eatc
+        # Chargement des données de l'entreprise si nécessaire
         if not eatc:
-            temp_group = []
             id_entreprise = request.session.get('entreprise')
             entreprise = Entreprise.objects.get(pk=id_entreprise)
-
-            for idx, fact in enumerate(factures, 1):
-                context = facture_context_pdf(request, fact)
-                if isinstance(context, HttpResponse):
-                    return context
-
-                context['prix_m3'] = get_prix_m3_client(fact)
-                context = encode_entreprise_images(entreprise, context)
-
-                html = render_html_to_pdf('all_page/facturation/facture/templatenoeatc.html', context)
-                if html:
-                    temp_group.append(html)
-                    if len(temp_group) == 5 or idx == len(factures):
-                        html_sections.append(''.join(temp_group))
-                        temp_group = []
         else:
-            for fact in factures:
-                context = facture_context_pdf(request, fact)
-                if isinstance(context, HttpResponse):
-                    return context
+            entreprise = None
 
-                context['prix_m3'] = get_prix_m3_client(fact)
+        # Traitement par lots
+        for i in range(0, len(factures), batch_size):
+            batch = factures[i:i + batch_size]
+            temp_group = []
 
-                html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
-                if html:
-                    html_sections.append(html)
+            for fact in batch:
+                try:
+                    # Préparation du contexte
+                    context = facture_context_pdf(request, fact)
+                    if isinstance(context, HttpResponse):
+                        return context
 
+                    # Ajout des données supplémentaires
+                    context['prix_m3'] = get_prix_m3_client(fact)
+                    if entreprise:
+                        context = encode_entreprise_images(entreprise, context)
+
+                    # Rendu du template
+                    html = template.render(context)
+                    temp_group.append(html)
+
+                    # Nettoyage de la mémoire
+                    del context
+
+                except Exception as e:
+                    logger.error(
+                        f"Erreur lors du traitement de la facture {getattr(fact, 'num_facture', 'inconnu')}: {str(e)}")
+                    continue
+
+            # Gestion des groupes de 5 pour les non-EATC
+            if not eatc and temp_group:
+                for j in range(0, len(temp_group), 5):
+                    group = temp_group[j:j + 5]
+                    html_sections.append(''.join(group))
+            elif temp_group:
+                html_sections.extend(temp_group)
+
+            # Nettoyage de la mémoire après chaque lot
+            del temp_group
+            gc.collect()
+
+        # Vérification des sections générées
         if not html_sections:
-            messages.error(request, "Erreur lors de la génération des PDFs")
+            messages.error(request, "Aucun contenu généré pour les factures sélectionnées")
             return redirect('facture')
 
-        combined_html = '<div style="page-break-after: always;"></div>'.join(html_sections)
-        result = BytesIO()
-        pdf = pisa.pisaDocument(BytesIO(combined_html.encode("UTF-8")), result)
+        # Génération du PDF final avec gestion de la mémoire
+        try:
+            # Configuration de pisa
+            pdf_options = {
+                'quiet': True,
+                'encoding': 'UTF-8',
+                'page-size': 'A4',
+                'margin-top': '0.75in',
+                'margin-right': '0.75in',
+                'margin-bottom': '0.75in',
+                'margin-left': '0.75in',
+                'load_file': False,
+                'raise_exception': True,
+                'default_font': 'Helvetica'
+            }
 
-        if pdf.err:
-            messages.error(request, "Erreur lors de la génération du PDF final")
+            # Préparation du contenu HTML
+            html_content = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>@page { size: A4; margin: 1cm; }</style>
+            </head>
+            <body>
+                {}
+            </body>
+            </html>
+            """.format('<div style="page-break-after: always;"></div>'.join(html_sections))
+
+            # Génération du PDF
+            result = BytesIO()
+            pdf = pisa.pisaDocument(
+                BytesIO(html_content.encode('utf-8')),
+                result,
+                **pdf_options
+            )
+
+            if pdf.err:
+                error_msg = ', '.join(str(err) for err in pdf.log if err.severity > 40)
+                raise ValueError(f"Erreur Pisa: {error_msg}")
+
+            if not result.getvalue():
+                raise ValueError("Le PDF généré est vide")
+
+            # Préparation de la réponse
+            filename = f"Factures_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            response = HttpResponse(
+                result.getvalue(),
+                content_type='application/pdf'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+            # Nettoyage final
+            del html_sections
+            del html_content
+            result.close()
+            gc.collect()
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Erreur lors de la génération du PDF: {str(e)}", exc_info=True)
+            messages.error(request, "Une erreur est survenue lors de la génération du PDF final")
             return redirect('facture')
-
-        filename = f"Factures({datetime.now().strftime('%d/%m/%Y')}).pdf"
-        response = HttpResponse(result.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
 
     except Exception as e:
-        logger.error(f"Erreur lors de la génération des PDFs: {e}")
-        messages.error(request, "Une erreur est survenue lors de la génération des PDFs")
+        logger.error(f"Erreur critique dans generate_multiple_pages_pdf: {str(e)}", exc_info=True)
+        messages.error(request, "Une erreur est survenue lors du traitement de votre demande")
         return redirect('facture')
 
 
