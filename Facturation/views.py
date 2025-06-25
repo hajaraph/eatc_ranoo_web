@@ -499,7 +499,7 @@ def generate_multiple_pages_pdf(request):
         commune = request.GET.get('commune')
 
         # Configuration des paramètres de performance
-        BATCH_SIZE = 10  # Réduit pour éviter les problèmes de mémoire
+        BATCH_SIZE = 5  # Réduit encore plus pour éviter les timeouts
         MAX_RETRIES = 3
 
         factures = Facture.objects.filter(statut=False)
@@ -581,7 +581,7 @@ def generate_multiple_pages_pdf(request):
             messages.error(request, "Erreur lors de la génération des PDFs")
             return redirect('facture')
 
-        # Configuration optimisée pour pisa
+        # Configuration pour pisa avec gestion correcte de l'encodage
         pdf_options = {
             'quiet': True,
             'page-size': 'A4',
@@ -589,9 +589,9 @@ def generate_multiple_pages_pdf(request):
             'margin-right': '0.75in',
             'margin-bottom': '0.75in',
             'margin-left': '0.75in',
-            'encoding': 'UTF-8',
             'load_file': False,
-            'raise_exception': True
+            'raise_exception': True,
+            'default_font': 'Helvetica'
         }
 
         # Génération du PDF avec gestion des erreurs
@@ -600,18 +600,33 @@ def generate_multiple_pages_pdf(request):
             try:
                 result = BytesIO()
 
-                # Encoder le HTML une seule fois
-                html_content = ''.join(html_sections)
-                src = BytesIO(html_content.encode("UTF-8"))
+                # Préparation du HTML avec encodage UTF-8 explicite
+                html_content = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    %s
+                </body>
+                </html>
+                """ % ''.join(html_sections)
 
+                # Conversion en bytes avec encodage UTF-8
+                html_bytes = html_content.encode('utf-8')
+
+                # Création du PDF
                 pdf = pisa.pisaDocument(
-                    src,
+                    BytesIO(html_bytes),
                     result,
+                    encoding='utf-8',
                     **pdf_options
                 )
 
                 if pdf.err:
-                    raise ValueError(f"Erreur Pisa: {pdf.err}")
+                    error_msg = ', '.join(str(err) for err in pdf.log if err.severity > 40)
+                    raise ValueError(f"Erreur Pisa: {error_msg}")
 
                 if not result.getvalue():
                     raise ValueError("PDF généré est vide")
@@ -623,7 +638,7 @@ def generate_multiple_pages_pdf(request):
                 # Nettoyage explicite de la mémoire
                 del html_sections
                 del html_content
-                del src
+                del html_bytes
                 result.close()
                 gc.collect()
 
