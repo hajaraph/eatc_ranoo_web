@@ -1,4 +1,5 @@
 import base64
+import gc
 import logging
 from datetime import timedelta, datetime
 from io import BytesIO
@@ -497,8 +498,10 @@ def generate_multiple_pages_pdf(request):
         date_fin = request.GET.get('date_fin')
         commune = request.GET.get('commune')
 
-        factures = Facture.objects.filter(statut=False)
+        # Taille du lot pour le traitement des factures
+        BATCH_SIZE = 50
 
+        factures = Facture.objects.filter(statut=False)
         if not factures.exists():
             messages.warning(request, "Pas de facture impayée !")
             return redirect('facture')
@@ -511,57 +514,94 @@ def generate_multiple_pages_pdf(request):
         html_sections = []
         eatc = is_eatc_schema(request)
 
-        # Grouper les factures par 5 si ce n'est pas eatc
+        # Préchargement des données liées pour éviter les requêtes N+1
+        factures = factures.select_related('num_contrat', 'relevecompteur').all()
+
         if not eatc:
-            temp_group = []
             id_entreprise = request.session.get('entreprise')
             entreprise = Entreprise.objects.get(pk=id_entreprise)
+            template = get_template('all_page/facturation/facture/templatenoeatc.html')
 
-            for idx, fact in enumerate(factures, 1):
-                context = facture_context_pdf(request, fact)
-                if isinstance(context, HttpResponse):
-                    return context
+            # Traitement par lots
+            temp_group = []
+            for i in range(0, len(factures), BATCH_SIZE):
+                batch = factures[i:i + BATCH_SIZE]
+                for fact in batch:
+                    context = facture_context_pdf(request, fact)
+                    if isinstance(context, HttpResponse):
+                        return context
 
-                context['prix_m3'] = get_prix_m3_client(fact)
-                context = encode_entreprise_images(entreprise, context)
+                    context['prix_m3'] = get_prix_m3_client(fact)
+                    context = encode_entreprise_images(entreprise, context)
 
-                html = render_html_to_pdf('all_page/facturation/facture/templatenoeatc.html', context)
-                if html:
-                    temp_group.append(html)
-                    if len(temp_group) == 5 or idx == len(factures):
-                        html_sections.append(''.join(temp_group))
-                        temp_group = []
+                    html = template.render(context)
+                    if html:
+                        temp_group.append(html)
+                        if len(temp_group) == 5:
+                            html_sections.append(''.join(temp_group))
+                            temp_group = []
+
+                # Libération explicite de la mémoire
+                gc.collect()
+
+            # Traiter le dernier groupe s'il en reste
+            if temp_group:
+                html_sections.append(''.join(temp_group))
         else:
-            for fact in factures:
-                context = facture_context_pdf(request, fact)
-                if isinstance(context, HttpResponse):
-                    return context
+            template = get_template('all_page/facturation/facture/templatepdf.html')
+            for i in range(0, len(factures), BATCH_SIZE):
+                batch = factures[i:i + BATCH_SIZE]
+                for fact in batch:
+                    context = facture_context_pdf(request, fact)
+                    if isinstance(context, HttpResponse):
+                        return context
 
-                context['prix_m3'] = get_prix_m3_client(fact)
+                    context['prix_m3'] = get_prix_m3_client(fact)
+                    html = template.render(context)
+                    if html:
+                        html_sections.append(html)
 
-                html = render_html_to_pdf('all_page/facturation/facture/templatepdf.html', context)
-                if html:
-                    html_sections.append(html)
+                # Libération explicite de la mémoire
+                gc.collect()
 
         if not html_sections:
             messages.error(request, "Erreur lors de la génération des PDFs")
             return redirect('facture')
 
+        # Utilisation d'un séparateur de page plus léger
         combined_html = '<div style="page-break-after: always;"></div>'.join(html_sections)
+
+        # Configuration de pisa pour optimiser l'utilisation de la mémoire
+        pdf_options = {
+            'quiet': True,
+            'encoding': 'UTF-8',
+        }
+
         result = BytesIO()
-        pdf = pisa.pisaDocument(BytesIO(combined_html.encode("UTF-8")), result)
+        pdf = pisa.pisaDocument(
+            BytesIO(combined_html.encode("UTF-8")),
+            result,
+            **pdf_options
+        )
 
         if pdf.err:
+            logger.error(f"Erreur PDF: {pdf.err}")
             messages.error(request, "Erreur lors de la génération du PDF final")
             return redirect('facture')
 
-        filename = f"Factures({datetime.now().strftime('%d/%m/%Y')}).pdf"
+        filename = f"Factures({datetime.now().strftime('%d-%m-%Y')}).pdf"
         response = HttpResponse(result.getvalue(), content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        # Nettoyage final de la mémoire
+        del html_sections
+        del combined_html
+        gc.collect()
+
         return response
 
     except Exception as e:
-        logger.error(f"Erreur lors de la génération des PDFs: {e}")
+        logger.error(f"Erreur lors de la génération des PDFs: {str(e)}", exc_info=True)
         messages.error(request, "Une erreur est survenue lors de la génération des PDFs")
         return redirect('facture')
 
