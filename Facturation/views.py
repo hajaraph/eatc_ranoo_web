@@ -499,7 +499,7 @@ def generate_multiple_pages_pdf(request):
         commune = request.GET.get('commune')
 
         # Configuration des paramètres de performance
-        BATCH_SIZE = 20  # Réduit pour éviter les timeouts
+        BATCH_SIZE = 20
         MAX_RETRIES = 3
 
         factures = Facture.objects.filter(statut=False)
@@ -512,14 +512,15 @@ def generate_multiple_pages_pdf(request):
             messages.warning(request, "Aucune facture trouvée pour la période sélectionnée")
             return redirect('facture')
 
-        # Préchargement optimisé des données
+        # Préchargement optimisé des données avec les bonnes relations
         factures = factures.select_related(
             'num_contrat',
             'num_contrat__client',
+            'num_contrat__client__type_client',
             'relevecompteur'
         ).prefetch_related(
             'montantht_set',
-            'montantht_set__montantttc_set'
+            'montantht_set__montantttc'
         ).all()
 
         html_sections = []
