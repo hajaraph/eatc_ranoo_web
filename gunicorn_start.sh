@@ -1,13 +1,13 @@
 #!/bin/bash
 
-NAME="ranoo_web"
+NAME="eatc_ranoo"
 DJANGODIR=/home/eatc/eatc_ranoo
 USER=eatc
-GROUP=eatc
-NUM_WORKERS=3
-TIMEOUT=300
+GROUP=www-data
+WORKERS=4
+BIND="0.0.0.0:8000"  # Pour écouter sur toutes les interfaces
+DJANGO_SETTINGS_MODULE=Rel_Compteur.settings
 DJANGO_WSGI_MODULE=Rel_Compteur.wsgi
-# shellcheck disable=SC2034
 LOG_LEVEL=debug
 
 # shellcheck disable=SC2006
@@ -21,7 +21,7 @@ source /home/eatc/myenv/bin/activate
 
 # Configuration de l'environnement
 echo "Setting environment variables..."
-export DJANGO_SETTINGS_MODULE=Rel_Compteur.settings
+export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 export PYTHONPATH=$DJANGODIR:$PYTHONPATH
 
 # Création du répertoire logs
@@ -36,14 +36,14 @@ echo "Starting Gunicorn..."
 # Démarrage de Gunicorn
 exec /home/eatc/myenv/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
   --name $NAME \
-  --workers $NUM_WORKERS \
-  --timeout $TIMEOUT \
+  --workers $WORKERS \
   --user=$USER \
   --group=$GROUP \
-  --bind=0.0.0.0:8000 \
-  --log-level=debug \
+  --bind=$BIND \
+  --log-level=$LOG_LEVEL \
   --log-file=${DJANGODIR}/logs/gunicorn.log \
-  --worker-class=sync \
-  --max-requests=1000 \
-  --max-requests-jitter=50 \
-  --graceful-timeout=180
+  --access-logfile=${DJANGODIR}/logs/access.log \
+  --error-logfile=${DJANGODIR}/logs/error.log \
+  --capture-output \
+  --enable-stdio-inheritance \
+  --reload
