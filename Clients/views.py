@@ -397,66 +397,71 @@ class ContratNew(View):
     @role_requis('Administrateur', 'Gestionnaire')
     @schema_use
     def post(request):
-        contrat = extract_contrat_data(request)
-        client_id = request.POST['client_id']
-        num_contrat = request.POST['num_contrat']
-        date_debut = request.POST['date_debut']
-        date_fin = request.POST['date_fin']
-        num_compteur = request.POST['num_compteur']
+        try:
+            contrat = extract_contrat_data(request)
+            client_id = request.POST['client_id']
+            num_contrat = request.POST['num_contrat']
+            date_debut = request.POST['date_debut']
+            date_fin = request.POST['date_fin']
+            num_compteur = request.POST['num_compteur']
 
-        date_debut = datetime.strptime(date_debut, '%Y-%m-%d').date()
-        num_contrat_exist = Contrat.objects.filter(num_contrat=num_contrat).exists()
+            date_debut = datetime.strptime(date_debut, '%Y-%m-%d').date()
+            num_contrat_exist = Contrat.objects.filter(num_contrat=num_contrat).exists()
 
-        client = Client.objects.get(pk=client_id)
-        historique = f'Creation de contrat pour le client ID {client.pk} {client.nom_client} {client.prenom_client}'
+            client = Client.objects.get(pk=client_id)
+            historique = f'Creation de contrat pour le client ID {client.pk} {client.nom_client} {client.prenom_client}'
 
-        cp_commune_tarif = Tarif.objects.filter(cp_commune_id=contrat['cp_commune'])
+            cp_commune_tarif = Tarif.objects.filter(cp_commune_id=contrat['cp_commune'])
 
-        # Pour verifier si le tarif pour ce commune qu'on a seleectionné est déjà definie
-        if cp_commune_tarif.exists():
-            # Pour verifier si le numéro de contrat si elle est déjà été utilisé
-            if not num_contrat_exist:
-                # Pour verifier si la date fin a un valeur
-                if date_fin:
-                    # Conversion de la date
-                    date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date()
-                    if date_debut > date_fin:
-                        messages.error(request, f"Veuillez entré des dates correctes s'il vous plait !")
-                        return redirect('client_new_contrat')
+            # Pour verifier si le tarif pour ce commune qu'on a seleectionné est déjà definie
+            if cp_commune_tarif.exists():
+                # Pour verifier si le numéro de contrat est déjà été utilisé
+                if not num_contrat_exist:
+                    # Pour verifier si la date fin a un valeur
+                    if date_fin:
+                        # Conversion de la date
+                        date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date()
+                        if date_debut > date_fin:
+                            messages.warning(request, f"Veuillez entré des dates correctes s'il vous plait !")
+                            return redirect('client_new_contrat')
+                        else:
+                            Contrat.objects.create(
+                                client_id=client_id,
+                                adresse_contrat=contrat['adresse_contrat'],
+                                cp_commune_id=contrat['cp_commune'],
+                                compteur_id=contrat['compteur_id'],
+                                pays_contrat=contrat['pays_contrat'],
+                                num_contrat=num_contrat,
+                                date_debut=date_debut,
+                                date_fin=date_fin,
+                                utilisateur_id=request.session.get('id_utilisateur')
+                            )
+                            messages.success(request, f'Contrat crée avec succès !')
+                            return redirect('client_contrat')
                     else:
                         Contrat.objects.create(
                             client_id=client_id,
                             adresse_contrat=contrat['adresse_contrat'],
                             cp_commune_id=contrat['cp_commune'],
-                            compteur_id=contrat['compteur_id'],
+                            num_compteur_id=num_compteur,
                             pays_contrat=contrat['pays_contrat'],
                             num_contrat=num_contrat,
                             date_debut=date_debut,
-                            date_fin=date_fin,
                             utilisateur_id=request.session.get('id_utilisateur')
                         )
-                        messages.success(request, f'Contrat crée avec succès !')
-                        return redirect('client_contrat')
+                        messages.success(request, f"Contrat crée avec succès !")
+                    # Historique
+                    enregistre_historique(historique, request.session.get('id_utilisateur'))
+                    return redirect('client_contrat')
                 else:
-                    Contrat.objects.create(
-                        client_id=client_id,
-                        adresse_contrat=contrat['adresse_contrat'],
-                        cp_commune_id=contrat['cp_commune'],
-                        num_compteur_id=num_compteur,
-                        pays_contrat=contrat['pays_contrat'],
-                        num_contrat=num_contrat,
-                        date_debut=date_debut,
-                        utilisateur_id=request.session.get('id_utilisateur')
-                    )
-                    messages.success(request, f"Contrat crée avec succès !")
-                # Historique
-                enregistre_historique(historique, request.session.get('id_utilisateur'))
-                return redirect('client_contrat')
+                    messages.warning(request, f"Le numéro de contrat est déjà utilisé dans un autre !")
+                    return redirect('client_new_contrat')
             else:
-                messages.warning(request, f"Le numéro de contrat est déjà utilisé dans un autre !")
+                messages.warning(request, f"Veuillez ajouter de Tarif pour ce Commune s'il vous plait !")
                 return redirect('client_new_contrat')
-        else:
-            messages.warning(request, f"Veuillez ajouter de Tarif pour ce Commune s'il vous plait !")
+
+        except Exception as e:
+            messages.error(request, f"Erreur lors de l'enregistrement d'un contrat ({e}) !")
             return redirect('client_new_contrat')
 
 
