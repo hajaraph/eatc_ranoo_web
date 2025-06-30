@@ -27,13 +27,7 @@
                         </a>
                     </td>
                     <td>{{ contrats.client.nom_client }}</td>
-                    <td>
-                        {% if contrats.client.prenom_client %}
-                            {{ contrats.client.prenom_client }}
-                        {% else %}
-                            <span class="bg-secondary-subtle rounded px-1 small">aucun prénom</span>
-                        {% endif %}
-                    </td>
+                    <td>{{ contrats.client.prenom_client|default:"-" }}</td>
                     <td>{{ contrats.num_compteur_id }}</td>
                     <td>
                         {{ contrats.utilisateur.prenom_utilisateur }}

@@ -37,27 +37,9 @@
                     </td>
                     <td>{{ clients.num_client }}</td>
                     <td>{{ clients.nom_client }}</td>
-                    <td>
-                        {% if clients.prenom_client %}
-                            {{ clients.prenom_client }}
-                        {% else %}
-                            <span class="bg-secondary-subtle rounded px-1 small">-</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if clients.tel1_client %}
-                            {{ clients.tel1_client }}
-                        {% else %}
-                            <span class="bg-secondary-subtle rounded px-1 small">-</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if clients.contrats.last %}
-                            {{ clients.contrats.last.num_contrat }}
-                        {% else %}
-                            <span class="bg-secondary-subtle rounded px-1 small">-</span>
-                        {% endif %}
-                    </td>
+                    <td>{{ clients.prenom_client|default:"-" }}</td>
+                    <td>{{ clients.tel1_client|default:"-" }}</td>
+                    <td>{{ clients.contrats.last.num_contrat|default:"-" }}</td>
                     <td>
                         {% if clients.compte_actif %}
                             <i class="fas fa-check-circle text-success"></i>
