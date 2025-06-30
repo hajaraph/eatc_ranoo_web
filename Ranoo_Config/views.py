@@ -140,11 +140,7 @@ class UtilisateurMod(View):
         role_id = request.POST.get('role_id')
 
         # Gestion du mot de passe
-        if motpasse_utilisateur or confirm_motpasse_utilisateur:
-            if not motpasse_utilisateur or not confirm_motpasse_utilisateur:
-                messages.error(request, 'Les deux champs de mot de passe doivent être remplis.')
-                return redirect('utilisateur_modifier', pk)
-                
+        if motpasse_utilisateur and confirm_motpasse_utilisateur:
             if motpasse_utilisateur != confirm_motpasse_utilisateur:
                 messages.error(request, 'Les mots de passe ne correspondent pas.')
                 return redirect('utilisateur_modifier', pk)
@@ -152,8 +148,8 @@ class UtilisateurMod(View):
             if len(motpasse_utilisateur) < 8:
                 messages.error(request, 'Le mot de passe doit contenir au moins 8 caractères.')
                 return redirect('utilisateur_modifier', pk)
-                
-            utilisateur.set_password(motpasse_utilisateur)
+
+            utilisateur.password = motpasse_utilisateur
 
         # Mise à jour des informations de l'utilisateur
         utilisateur.nom_utilisateur = nom_utilisateur
