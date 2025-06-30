@@ -91,12 +91,13 @@
                         <th>Conso</th>
                         <th>Relevé le</th>
                         <th>Utilisateur</th>
+                        {% if client_active %}
                         <th>Action</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                 {% for relever in releve %}
-                    {% if forloop.first %}
                     <tr>
                         <td>{{ relever.pk }}</td>
                         <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
@@ -105,28 +106,20 @@
                         <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
                         <td>
                             {{ relever.utilisateur.nom_utilisateur }}
-                            <label class="badge bg-primary ">{{ relever.utilisateur.role.role }}</label>
+                            <span class="badge bg-primary">{{ relever.utilisateur.role.role }}</span>
                         </td>
-                        <td></td>
-                    {% else %}
-                        <td>{{ relever.pk }}</td>
-                        <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
-                        <td>{{ relever.volume }} m&#179;</td>
-                        <td>{{ relever.conso }} m&#179;</td>
-                        <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
+                        {% if client_active and forloop.last %}
                         <td>
-                            {{ relever.utilisateur.nom_utilisateur }}
-                            <span class="badge bg-primary ">{{ relever.utilisateur.role.role }}</span>
-                        </td>
-                        <td>
-                            <a href="{% url 'releve_mod' relever.pk %}" class="btn btn-sm btn-warning" title="Détail">
+                            <a href="{% url 'releve_mod' relever.pk %}" class="btn btn-sm btn-warning" title="Modifier">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="{% url 'del_releve' relever.pk %}" class="btn btn-sm btn-danger" title="Suppression" onclick="return confirm('Êtes-vous sûr de vouloir supprimer le Relevé du {{ relever.date_releve|date:"d/m/Y" }} ?')">
+                            <a href="{% url 'del_releve' relever.pk %}" class="btn btn-sm btn-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer le Relevé du {{ relever.date_releve|date:'d/m/Y' }} ?')">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                         </td>
-                    {% endif %}
+                        {% else %}
+                        <td></td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
                 </tbody>
