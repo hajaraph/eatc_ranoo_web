@@ -94,7 +94,7 @@ class ClientNew(View):
             client_data = extract_client_data(request)
 
             # Vérification d'unicité du numéro de client par commune
-            num_client = client_data['id_client']
+            num_client = client_data['num_client']
             if num_client:
                 # Vérifier si le numéro existe déjà dans la même commune
                 client_existant = Client.objects.filter(
@@ -122,8 +122,7 @@ class ClientNew(View):
 
             # Création du client
             client = Client.objects.create(
-                id_client=client_data['id_client'],
-                num_client=client_data['id_client'],  # Sauvegarde du numéro de client
+                num_client=client_data['num_client'],  # Sauvegarde du numéro de client
                 nom_client=client_data['nom_client'],
                 prenom_client=client_data['prenom_client'],
                 profession_client=client_data['profession_client'],
