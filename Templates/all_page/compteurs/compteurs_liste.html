@@ -18,6 +18,7 @@
             <thead>
                 <tr>
                     <th>N° Compteur</th>
+                    <th>N° Client</th>
                     <th>Nom</th>
                     <th>Prénom</th>
                     <th>N° Contrat</th>
@@ -31,6 +32,7 @@
                     <td>
                         <a href="{% url 'compteur_detail' list.pk %}" class="text-decoration-none">{{ list.pk }}</a>
                     </td>
+                    <td>{{ list.contrats.first.client.num_client|default:"-" }}</td>
                     <td>
                         {% if list.contrats.first %}
                             {{ list.contrats.first.client.nom_client }}

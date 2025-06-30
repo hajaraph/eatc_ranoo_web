@@ -11,7 +11,7 @@
             </div>
             <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <input type="text" name="marque_compteur" id="marque_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.marque_compteur }}" placeholder="">
+                    <input type="text" name="marque_compteur" id="marque_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.marque_compteur|default:"" }}" placeholder="">
                     <label for="marque_compteur">Marque</label>
                 </div>
             </div>
@@ -19,19 +19,19 @@
         <div class="row">
             <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <input type="text" name="modele_compteur" id="modele_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.modele_compteur }}" placeholder="">
+                    <input type="text" name="modele_compteur" id="modele_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.modele_compteur|default:"" }}" placeholder="">
                     <label for="modele_compteur">Modèle</label>
                 </div>
             </div>
              <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <input type="text" name="DN_compteur" id="DN_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.DN_compteur }}" placeholder="">
+                    <input type="text" name="DN_compteur" id="DN_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.DN_compteur|default:"" }}" placeholder="">
                     <label for="DN_compteur">DN</label>
                 </div>
             </div>
             <div class="col-md-4 mt-4">
                 <div class="form-floating">
-                    <input type="text" name="origin_compteur" id="origin_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.origin_compteur }}" placeholder="">
+                    <input type="text" name="origin_compteur" id="origin_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ detail.origin_compteur|default:"" }}" placeholder="">
                     <label for="origin_compteur">Origine</label>
                 </div>
             </div>
