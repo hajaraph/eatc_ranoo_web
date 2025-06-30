@@ -40,7 +40,7 @@ def client_liste(request):
 
 def extract_client_data(request):
     return {
-        'id_client': request.POST.get('id_client'),  # Utilisation de .get() au lieu de []
+        'num_client': request.POST.get('id_client'),  # Utilisation de .get() au lieu de []
         'nom_client': request.POST['nom_client'],
         'prenom_client': request.POST.get('prenom_client'),
         'profession_client': request.POST.get('profession_client'),
@@ -90,59 +90,70 @@ class ClientNew(View):
     @role_requis('Administrateur', 'Gestionnaire')
     @schema_use
     def post(request):
-        client_data = extract_client_data(request)
+        try:
+            client_data = extract_client_data(request)
 
-        # Vérification d'unicité uniquement si tel1_client est non vide
-        num_client = client_data['id_client']
-        if num_client:
-            client = Client.objects.filter(pk=num_client)
-            if client.exists():
-                messages.warning(request, f'Le numéro Client {num_client} est déjà utilisé !')
-                return redirect('client_new')
+            # Vérification d'unicité du numéro de client par commune
+            num_client = client_data['id_client']
+            if num_client:
+                # Vérifier si le numéro existe déjà dans la même commune
+                client_existant = Client.objects.filter(
+                    id_client=num_client,
+                    cp_commune_id=client_data['cp_commune']
+                ).exists()
 
-        tel1_value = client_data['tel1_client']
-        if tel1_value:  # Ne vérifie que si tel1_client n'est pas None ou ''
-            tel = Client.objects.filter(tel1_client=tel1_value)
-            if tel.exists():
-                messages.warning(request, f'Téléphone 1 déjà utilisé par un client !')
-                return redirect('client_new')
+                if client_existant:
+                    messages.warning(request, f'Le numéro Client {num_client} existe déjà dans cette commune !')
+                    return redirect('client_new')
 
-        tel2_value = client_data['tel2_client']
-        if tel2_value:  # Ne vérifie que si tel2_client n'est pas None ou ''
-            tel = Client.objects.filter(tel2_client=tel2_value)
-            if tel.exists():
-                messages.warning(request, f'Téléphone 2 déjà utilisé par un client !')
-                return redirect('client_new')
+            tel1_value = client_data['tel1_client']
+            if tel1_value:  # Ne vérifie que si tel1_client n'est pas None ou ''
+                tel = Client.objects.filter(tel1_client=tel1_value)
+                if tel.exists():
+                    messages.warning(request, f'Téléphone 1 déjà utilisé par un client !')
+                    return redirect('client_new')
 
-        # Création du client
-        client = Client.objects.create(
-            id_client=client_data['id_client'],
-            nom_client=client_data['nom_client'],
-            prenom_client=client_data['prenom_client'],
-            profession_client=client_data['profession_client'],
-            nb_personne_menage=client_data['nb_personne_menage'],
-            compte_actif=client_data['compte_actif'],
-            adresse_client=client_data['adresse_client'],
-            cp_commune_id=client_data['cp_commune'],
-            pays_client=client_data['pays_client'],
-            tel1_client=client_data['tel1_client'],
-            tel2_client=client_data['tel2_client'],
-            email_client=client_data['email_client'],
-            type_client_id=request.POST['type_client_id']
-        )
+            tel2_value = client_data['tel2_client']
+            if tel2_value:  # Ne vérifie que si tel2_client n'est pas None ou ''
+                tel = Client.objects.filter(tel2_client=tel2_value)
+                if tel.exists():
+                    messages.warning(request, f'Téléphone 2 déjà utilisé par un client !')
+                    return redirect('client_new')
 
-        # Ajout des pièces jointes
-        for file, design in zip(client_data['piece_client'], client_data['designation']):
-            PieceClient.objects.create(
-                client_id=client.id_client,
-                pieces_client=file,
-                designation=design
+            # Création du client
+            client = Client.objects.create(
+                id_client=client_data['id_client'],
+                num_client=client_data['id_client'],  # Sauvegarde du numéro de client
+                nom_client=client_data['nom_client'],
+                prenom_client=client_data['prenom_client'],
+                profession_client=client_data['profession_client'],
+                nb_personne_menage=client_data['nb_personne_menage'],
+                compte_actif=client_data['compte_actif'],
+                adresse_client=client_data['adresse_client'],
+                cp_commune_id=client_data['cp_commune'],
+                pays_client=client_data['pays_client'],
+                tel1_client=client_data['tel1_client'],
+                tel2_client=client_data['tel2_client'],
+                email_client=client_data['email_client'],
+                type_client_id=request.POST['type_client_id']
             )
 
-        messages.success(request, f'Client enregistré avec succès !')
-        historique = f'Création du Client {client.nom_client} {client.prenom_client}'
-        enregistre_historique(historique, request.session.get('id_utilisateur'))
-        return redirect('client_liste')
+            # Ajout des pièces jointes
+            for file, design in zip(client_data['piece_client'], client_data['designation']):
+                PieceClient.objects.create(
+                    client_id=client.id_client,
+                    pieces_client=file,
+                    designation=design
+                )
+
+            messages.success(request, f'Client enregistré avec succès !')
+            historique = f'Création du Client {client.nom_client} {client.prenom_client}'
+            enregistre_historique(historique, request.session.get('id_utilisateur'))
+            return redirect('client_liste')
+
+        except Exception as e:
+            messages.error(request, f'Erreur {e} lors de l\'enregistrer du client !')
+            return redirect('client_new')
 
 
 class ClientDetail(View):

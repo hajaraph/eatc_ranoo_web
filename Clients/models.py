@@ -15,6 +15,7 @@ class TypeClient(models.Model):
 
 class Client(models.Model):
     id_client = models.BigAutoField(primary_key=True)
+    num_client = models.BigIntegerField(blank=True, null=True)
     nom_client = models.CharField(max_length=50, blank=False)
     prenom_client = models.CharField(max_length=256, blank=True, null=True, default=None)
     tel1_client = models.CharField(max_length=10, blank=True, null=True, default=None)
