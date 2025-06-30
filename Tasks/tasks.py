@@ -169,7 +169,7 @@ async def process_compteur_details(compteur_id):
                 # Récupérer le client
                 client = contrat.client
                 client_info = {
-                    'id': client.id_client,
+                    'id': client.num_client,
                     'nom': client.nom_client,
                     'prenom': client.prenom_client or '',
                     'adresse': client.adresse_client,
@@ -188,7 +188,7 @@ async def process_compteur_details(compteur_id):
                         'id_releve': int(releve.id_releve),
                         'compteur_id': int(compteur.num_compteur),
                         'contrat_id': int(num_contrat),
-                        'client_id': int(client.id_client),
+                        'client_id': int(client.num_client),
                         'date_releve': releve.date_releve,
                         'volume': releve.volume,
                         'conso': releve.conso,
