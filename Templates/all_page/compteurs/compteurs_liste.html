@@ -32,15 +32,15 @@
                     <td>
                         <a href="{% url 'compteur_detail' list.pk %}" class="text-decoration-none">{{ list.pk }}</a>
                     </td>
-                    <td>{{ list.contrats.client.num_client|default:"-" }}</td>
+                    <td>{{ list.contrats.first.client.num_client|default:"-" }}</td>
                     <td>
-                        {{ list.contrats.client.nom_client|default:"-" }}
+                        {{ list.contrats.first.client.nom_client|default:"-" }}
                     </td>
                     <td>
-                        {{ list.contrats.client.prenom_client|default:"-" }}
+                        {{ list.contrats.first.client.prenom_client|default:"-" }}
                     </td>
                     <td>
-                        {{ list.contrats.num_contrat|default:"-" }}
+                        {{ list.contrats.first.num_contrat|default:"-" }}
                     </td>
                     <td>
                         {{ list.dernier_releve|default_if_none:"-"|date:"d/m/Y" }}
