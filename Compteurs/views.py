@@ -124,23 +124,27 @@ class CompteurDetail(View):
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     @schema_use
     def get(request, pk):
-        active = 'active'
-        font = 'custom-font'
-        compteur = Compteur.objects.get(pk=pk)
-        releve = compteur.relevecompteurs.order_by('id_releve').all()
-        contrat = compteur.contrats
+        try:
+            active = 'active'
+            font = 'custom-font'
+            compteur = Compteur.objects.get(pk=pk)
+            releve = compteur.relevecompteurs.order_by('id_releve').all()
+            contrat = compteur.contrats
 
-        title = f'Compteurs | Detail de {compteur.num_compteur}'
-        context = {
-            'title_detail': title,
-            'active_li_co': active,
-            'font_compteur': font,
-            'detail': compteur,
-            'releve': releve,
-            'contrat': contrat.get().num_contrat if contrat.exists() else None,
-            'client': contrat.get().client if contrat.exists() else None
-        }
-        return render(request, 'all_page/compteurs/compteurs.html', context)
+            title = f'Compteurs | Detail de {compteur.num_compteur}'
+            context = {
+                'title_detail': title,
+                'active_li_co': active,
+                'font_compteur': font,
+                'detail': compteur,
+                'releve': releve,
+                'contrat': contrat.get().num_contrat if contrat.exists() else None,
+                'client_actif': contrat.get().client.compte_actif,
+            }
+            return render(request, 'all_page/compteurs/compteurs.html', context)
+        except Exception as e:
+            messages.error(request, f"Une erreur est survenue sur le compteur : {e}")
+            return redirect('compteur_new')
 
     @staticmethod
     @authentification_requis
@@ -219,12 +223,6 @@ class ReleveNew(View):
     def get(request, num_compteur):
         try:
             compteur = Compteur.objects.get(pk=num_compteur)
-                
-            client_active = compteur.contrats.client.compte_actif
-
-            if not client_active:
-                messages.warning(request, "Le client associé à ce compteur est désactivé.")
-                return redirect('compteur_list')
 
             title = f'Compteur Numéro : {compteur.num_compteur} | Relevé | Nouveau'
             active = 'active'
@@ -234,7 +232,6 @@ class ReleveNew(View):
                 'active_releve_new': active,
                 'font_compteur': font,
                 'compteur': compteur,
-                'client_active': client_active
             }
             return render(request, 'all_page/compteurs/compteurs.html', context)
             

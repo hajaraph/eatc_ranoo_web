@@ -37,7 +37,6 @@ python manage.py migrate_schemas
 
 # Vérification du statut de Gunicorn
 echo "🔍 Vérification du statut de Gunicorn..."
-systemctl restart gunicorn.service
 systemctl status gunicorn --no-pager
 
 # Désactivation de l'environnement virtuel
