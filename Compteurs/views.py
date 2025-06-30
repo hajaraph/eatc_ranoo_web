@@ -140,12 +140,12 @@ class CompteurDetail(View):
                 'releve': releve,
                 'contrat': contrat.get().num_contrat if contrat.exists() else None,
                 'client': contrat.get().client if contrat.exists() else None,
-                'client_active': contrat.get().client.compte_actif,
+                'client_active': contrat.get().client.compte_actif if contrat.exists() else None
             }
             return render(request, 'all_page/compteurs/compteurs.html', context)
         except Exception as e:
             messages.error(request, f"Une erreur est survenue sur le compteur : {e}")
-            return redirect('compteur_new')
+            return redirect('compteur_list')
 
     @staticmethod
     @authentification_requis

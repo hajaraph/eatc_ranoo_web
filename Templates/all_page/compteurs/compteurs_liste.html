@@ -32,34 +32,18 @@
                     <td>
                         <a href="{% url 'compteur_detail' list.pk %}" class="text-decoration-none">{{ list.pk }}</a>
                     </td>
-                    <td>{{ list.contrats.first.client.num_client|default:"-" }}</td>
+                    <td>{{ list.contrats.client.num_client|default:"-" }}</td>
                     <td>
-                        {% if list.contrats.first %}
-                            {{ list.contrats.first.client.nom_client }}
-                        {% else %}
-                            <span class="bg-secondary-subtle rounded px-1 small">-</span>
-                        {% endif %}
+                        {{ list.contrats.client.nom_client|default:"-" }}
                     </td>
                     <td>
-                        {% if list.contrats.first %}
-                            {{ list.contrats.first.client.prenom_client|default:"-" }}
-                        {% else %}
-                            <span class="bg-secondary-subtle rounded px-1 small">-</span>
-                        {% endif %}
+                        {{ list.contrats.client.prenom_client|default:"-" }}
                     </td>
                     <td>
-                        {% if list.contrats.first %}
-                            {{ list.contrats.first.num_contrat }}
-                        {% else %}
-                            <span class="bg-secondary-subtle rounded px-1 small">Pas de contrat</span>
-                        {% endif %}
+                        {{ list.contrats.num_contrat|default:"-" }}
                     </td>
                     <td>
-                        {% if list.dernier_releve %}
-                            {{ list.dernier_releve|date:"d/m/Y" }}
-                        {% else %}
-                            <span class="bg-secondary-subtle rounded px-1 small">Pas de relevé</span>
-                        {% endif %}
+                        {{ list.dernier_releve|default_if_none:"-"|date:"d/m/Y" }}
                     </td>
                     <td>
                         <a href="{% url 'compteur_detail' list.pk %}" class="btn btn-primary btn-sm " title="Détail">
