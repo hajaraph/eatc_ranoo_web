@@ -98,7 +98,7 @@ class ClientNew(View):
             if num_client:
                 # Vérifier si le numéro existe déjà dans la même commune
                 client_existant = Client.objects.filter(
-                    id_client=num_client,
+                    num_client=num_client,
                     cp_commune_id=client_data['cp_commune']
                 ).exists()
 
