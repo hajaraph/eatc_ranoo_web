@@ -139,6 +139,7 @@ class CompteurDetail(View):
                 'detail': compteur,
                 'releve': releve,
                 'contrat': contrat.get().num_contrat if contrat.exists() else None,
+                'client': contrat.get().client if contrat.exists() else None,
                 'client_active': contrat.get().client.compte_actif,
             }
             return render(request, 'all_page/compteurs/compteurs.html', context)
