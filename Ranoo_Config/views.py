@@ -125,35 +125,51 @@ class UtilisateurMod(View):
 
     @staticmethod
     @authentification_requis
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     @schema_use
     def post(request, pk):
-        nom_utilisateur = request.POST['nom_utilisateur']
-        prenom_utilisateur = request.POST['prenom_utilisateur']
-        num_utilisateur = request.POST['num_utilisateur']
-        motpasse_utilisateur = request.POST['motpasse_utilisateur']
-        confirm_motpasse_utilisateur = request.POST['confirm_motpasse_utilisateur']
-        statut = True if request.POST.getlist('status_utilisateur') else False
-        role_id = request.POST['role_id']
         utilisateur = get_object_or_404(Utilisateur, pk=pk)
+        
+        # Récupération des données du formulaire
+        nom_utilisateur = request.POST.get('nom_utilisateur')
+        prenom_utilisateur = request.POST.get('prenom_utilisateur')
+        num_utilisateur = request.POST.get('num_utilisateur')
+        motpasse_utilisateur = request.POST.get('motpasse_utilisateur')
+        confirm_motpasse_utilisateur = request.POST.get('confirm_motpasse_utilisateur')
+        statut = bool(request.POST.get('status_utilisateur', False))
+        role_id = request.POST.get('role_id')
 
-        if request.session.get('role_utilisateur') == 'Administrateur':
-            if motpasse_utilisateur and confirm_motpasse_utilisateur:
-                if motpasse_utilisateur == confirm_motpasse_utilisateur:
-                    utilisateur.password = make_password(motpasse_utilisateur)
-                else:
-                    messages.error(request, f'Votre mot de passe ne se correspond pas à la confirmation !')
-                    return redirect('utilisateur_modifier', pk)
+        # Gestion du mot de passe
+        if motpasse_utilisateur or confirm_motpasse_utilisateur:
+            if not motpasse_utilisateur or not confirm_motpasse_utilisateur:
+                messages.error(request, 'Les deux champs de mot de passe doivent être remplis.')
+                return redirect('utilisateur_modifier', pk)
+                
+            if motpasse_utilisateur != confirm_motpasse_utilisateur:
+                messages.error(request, 'Les mots de passe ne correspondent pas.')
+                return redirect('utilisateur_modifier', pk)
+                
+            if len(motpasse_utilisateur) < 8:
+                messages.error(request, 'Le mot de passe doit contenir au moins 8 caractères.')
+                return redirect('utilisateur_modifier', pk)
+                
+            utilisateur.set_password(motpasse_utilisateur)
 
+        # Mise à jour des informations de l'utilisateur
         utilisateur.nom_utilisateur = nom_utilisateur
         utilisateur.prenom_utilisateur = prenom_utilisateur
         utilisateur.num_utilisateur = num_utilisateur
         utilisateur.statut = statut
         utilisateur.role_id = role_id
-        utilisateur.save()
-
-        messages.success(request, f"L'utilisateur {nom_utilisateur} {prenom_utilisateur} a été modifier avec succès !")
-        return redirect('config_utilisateur')
+        
+        try:
+            utilisateur.save()
+            messages.success(request, f"L'utilisateur {nom_utilisateur} {prenom_utilisateur} a été modifié avec succès !")
+            return redirect('config_utilisateur')
+            
+        except Exception as e:
+            messages.error(request, f"Une erreur est survenue lors de la modification : {str(e)}")
+            return redirect('utilisateur_modifier', pk)
 
 
 @authentification_requis
