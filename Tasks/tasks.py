@@ -45,7 +45,8 @@ class TaskMission:
                         )
                         date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
 
-                        statut = 0 if date_releve and date_releve.month != end_of_month.month else 2
+                        # Vérifier si date_releve est un objet date avant de comparer
+                        statut = 0 if (date_releve and hasattr(date_releve, 'month') and date_releve.month != end_of_month.month) else 2
 
                         dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
                         contrat_info = {
