@@ -149,18 +149,12 @@ DATABASES = {
 }
 
 
+# Cache configuration
 CACHES = {
     'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'SOCKET_CONNECT_TIMEOUT': 5,  # secondes
-            'SOCKET_TIMEOUT': 5,  # secondes
-            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
-        },
-        'KEY_PREFIX': 'ranoo',
-        'TIMEOUT': 60 * 15,  # 15 minutes par défaut
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes en secondes
     }
 }
 

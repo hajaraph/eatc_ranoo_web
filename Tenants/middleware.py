@@ -39,29 +39,36 @@ def schema_use(view_func):
 def schema_use_api(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        entreprise_id = 10
-        if not entreprise_id:
-            return Response(
-                {"detail": "Aucune entreprise n'est associée à votre compte."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # Si l'utilisateur est authentifié via le token JWT
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            entreprise_id = request.user.entreprise_id
+            if not entreprise_id:
+                return Response(
+                    {"detail": "Aucune entreprise n'est associée à votre compte."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
-        try:
-            entreprise = Entreprise.objects.get(pk=entreprise_id)
-        except Entreprise.DoesNotExist:
-            return Response(
-                {"detail": "Entreprise introuvable."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            try:
+                entreprise = Entreprise.objects.get(pk=entreprise_id)
+            except Entreprise.DoesNotExist:
+                return Response(
+                    {"detail": "Entreprise introuvable."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-        schema_name = entreprise.schema_name
-        if not schema_exists(schema_name):
-            return Response(
-                {"detail": "Le schéma associé à cette entreprise est inexistant."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            schema_name = entreprise.schema_name
+            if not schema_exists(schema_name):
+                return Response(
+                    {"detail": "Le schéma associé à cette entreprise est inexistant."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-        with schema_context(schema_name):
-            return view_func(request, *args, **kwargs)
+            with schema_context(schema_name):
+                return view_func(request, *args, **kwargs)
+        else:
+            return Response(
+                {"detail": "Authentification requise."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
     return _wrapped_view

@@ -20,13 +20,18 @@ class TaskMission:
     @staticmethod
     async def process_liste_mission(cp_commune, end_of_month, offset=0, limit=50):
         logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}, offset={offset}, limit={limit}")
-        cache_key = f"process_liste_mission_{cp_commune}_{end_of_month.strftime('%Y%m%d')}_{offset}_{limit}"
+        cache_key = f"missions_liste_{cp_commune}_{end_of_month.strftime('%Y%m%d')}_{offset}_{limit}"
 
         try:
-            # Toujours recalculer les données, sans vérifier le cache
+            # Essayer de récupérer depuis le cache
+            cached_result = cache.get(cache_key)
+            if cached_result:
+                logger.info("Données récupérées depuis le cache")
+                return cached_result
+
+            # Si pas dans le cache, calculer les données
             @sync_to_async
             def get_contrats():
-                nonlocal offset, limit
                 with transaction.atomic():
                     total_contrats = Contrat.objects.filter(cp_commune_id=cp_commune).count()
                     contrats_commune = (
@@ -39,15 +44,15 @@ class TaskMission:
                         )
                     )
 
-                    # Convertir offset et limit en entiers pour éviter les erreurs de type
+                    # S'assurer que offset et limit sont des entiers
                     try:
-                        offset = int(offset)
-                        limit = int(limit)
+                        offset_int = int(offset)
+                        limit_int = int(limit)
                     except (TypeError, ValueError):
                         return {'status': 'error', 'message': 'Les paramètres offset et limit doivent être des nombres valides'}
 
-                    # Appliquer la pagination après la conversion
-                    contrats_commune = contrats_commune[offset:offset + limit]
+                    # Appliquer la pagination
+                    contrats_commune = contrats_commune[offset_int:offset_int + limit_int]
 
                     liste_contrats_info = []
                     for contrat in contrats_commune:
@@ -74,25 +79,28 @@ class TaskMission:
                         liste_contrats_info.append(contrat_info)
 
                     liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
-                    has_more = offset + limit < total_contrats
-                    return {
+                    query_result = {
                         'liste': liste_contrats_info,
-                        'has_more': has_more,
-                        'next_offset': offset + limit if has_more else None
+                        'has_more': offset_int + limit_int < total_contrats,
+                        'next_offset': offset_int + limit_int if offset_int + limit_int < total_contrats else None
                     }
+                    return query_result
 
             result = await get_contrats()
 
-            # Mettre à jour le cache avec les nouvelles données à chaque fois
-            cache.set(cache_key, result, timeout=3600)
-            logger.info(f"{len(result['liste'])} éléments mis à jour dans le cache, has_more={result['has_more']}")
+            # Mettre en cache avec un timeout de 5 minutes
+            try:
+                cache.set(cache_key, result, timeout=300)  # 5 minutes
+                logger.info(f"Données mises en cache avec la clé: {cache_key}")
+            except Exception as cache_error:
+                logger.warning(f"Impossible de mettre en cache les résultats: {str(cache_error)}")
+
+            return result
 
         except Exception as e:
             logger.error(f"Erreur inattendue dans process_liste_mission: {str(e)}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
 
-        logger.info(f"Tâche terminée avec {len(result['liste'])} éléments")
-        return result
 
     @staticmethod
     async def process_releve(data, utilisateur):
