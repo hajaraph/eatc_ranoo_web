@@ -65,29 +65,20 @@ class TaskMission:
                         statut = 0 if (date_releve and hasattr(date_releve, 'month') and date_releve.month != end_of_month.month) else 2
 
                         dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
-
-                        # S'assurer que l'ID est toujours un entier, même si dernier_releve_obj est None
-                        releve_id = 0
-                        if dernier_releve_obj and dernier_releve_obj.pk:
-                            try:
-                                releve_id = int(dernier_releve_obj.pk)
-                            except (ValueError, TypeError):
-                                releve_id = 0
-
                         contrat_info = {
-                            'id': releve_id,  # Utiliser l'ID converti
+                            'id': int(dernier_releve_obj.pk) if dernier_releve_obj else 0,  # Utiliser 0 au lieu de chaîne vide
                             'nom_client': contrat.client.nom_client,
                             'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
                             'adresse_client': contrat.client.adresse_client,
                             'num_compteur': contrat.num_compteur_id,
-                            'conso_dernier_releve': contrat.conso_dernier_releve or 0,  # Gérer None
+                            'conso_dernier_releve': contrat.conso_dernier_releve,
                             'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
                             'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
                             'statut': statut
                         }
                         liste_contrats_info.append(contrat_info)
 
-                    # Trier la liste après avoir garanti que tous les IDs sont des entiers
+                    # Trier la liste en s'assurant que tous les IDs sont des entiers
                     liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
                     query_result = {
                         'liste': liste_contrats_info,
