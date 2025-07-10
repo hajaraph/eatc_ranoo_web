@@ -26,6 +26,7 @@ class TaskMission:
             # Toujours recalculer les données, sans vérifier le cache
             @sync_to_async
             def get_contrats():
+                nonlocal offset, limit
                 with transaction.atomic():
                     total_contrats = Contrat.objects.filter(cp_commune_id=cp_commune).count()
                     contrats_commune = (
@@ -35,8 +36,18 @@ class TaskMission:
                         .prefetch_related('num_compteur__relevecompteurs')
                         .annotate(
                             conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
-                        )[offset:offset + limit]
+                        )
                     )
+
+                    # Convertir offset et limit en entiers pour éviter les erreurs de type
+                    try:
+                        offset = int(offset)
+                        limit = int(limit)
+                    except (TypeError, ValueError):
+                        return {'status': 'error', 'message': 'Les paramètres offset et limit doivent être des nombres valides'}
+
+                    # Appliquer la pagination après la conversion
+                    contrats_commune = contrats_commune[offset:offset + limit]
 
                     liste_contrats_info = []
                     for contrat in contrats_commune:
