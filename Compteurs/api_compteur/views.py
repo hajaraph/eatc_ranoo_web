@@ -158,19 +158,14 @@ class Missions(APIView):
         start_time = time.time()
         cp_commune = request.user.cp_commune_id
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
-        offset = int(request.query_params.get('offset', 0))
         logger.info(f"Fin get: {time.time() - start_time:.2f}s")
 
         try:
-            result = await TaskMission.process_liste_mission(cp_commune, end_of_month, offset=offset, limit=50)
+            result = await TaskMission.process_liste_mission(cp_commune, end_of_month)
             if 'status' in result and result['status'] == 'error':
                 return Response({'erreur': result['message']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            response_data = {'compteurs_liste': result['liste']}
-            if result['has_more']:
-                response_data['has_more'] = True
-                response_data['next_offset'] = result['next_offset']
-            return Response(response_data, status=status.HTTP_200_OK)
+            return Response({'compteurs_liste': result['liste']}, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Erreur inattendue: {str(e)}", exc_info=True)
             return Response({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

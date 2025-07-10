@@ -18,9 +18,9 @@ from django.shortcuts import get_object_or_404
 
 class TaskMission:
     @staticmethod
-    async def process_liste_mission(cp_commune, end_of_month, offset=0, limit=50):
-        logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}, offset={offset}, limit={limit}")
-        cache_key = f"missions_liste_{cp_commune}_{end_of_month.strftime('%Y%m%d')}_{offset}_{limit}"
+    async def process_liste_mission(cp_commune, end_of_month):
+        logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}")
+        cache_key = f"missions_liste_{cp_commune}_{end_of_month.strftime('%Y%m%d')}"
 
         try:
             # Essayer de récupérer depuis le cache
@@ -33,7 +33,6 @@ class TaskMission:
             @sync_to_async
             def get_contrats():
                 with transaction.atomic():
-                    total_contrats = Contrat.objects.filter(cp_commune_id=cp_commune).count()
                     contrats_commune = (
                         Contrat.objects
                         .filter(cp_commune_id=cp_commune)
@@ -43,16 +42,6 @@ class TaskMission:
                             conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
                         )
                     )
-
-                    # S'assurer que offset et limit sont des entiers
-                    try:
-                        offset_int = int(offset)
-                        limit_int = int(limit)
-                    except (TypeError, ValueError):
-                        return {'status': 'error', 'message': 'Les paramètres offset et limit doivent être des nombres valides'}
-
-                    # Appliquer la pagination
-                    contrats_commune = contrats_commune[offset_int:offset_int + limit_int]
 
                     liste_contrats_info = []
                     for contrat in contrats_commune:
@@ -65,27 +54,34 @@ class TaskMission:
                         statut = 0 if (date_releve and hasattr(date_releve, 'month') and date_releve.month != end_of_month.month) else 2
 
                         dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
+
+                        # S'assurer que l'ID est toujours un entier
+                        releve_id = 0
+                        if dernier_releve_obj and dernier_releve_obj.pk:
+                            try:
+                                releve_id = int(dernier_releve_obj.pk)
+                            except (ValueError, TypeError):
+                                releve_id = 0
+
                         contrat_info = {
-                            'id': int(dernier_releve_obj.pk) if dernier_releve_obj else 0,  # Utiliser 0 au lieu de chaîne vide
+                            'id': releve_id,
                             'nom_client': contrat.client.nom_client,
                             'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
                             'adresse_client': contrat.client.adresse_client,
                             'num_compteur': contrat.num_compteur_id,
-                            'conso_dernier_releve': contrat.conso_dernier_releve,
+                            'conso_dernier_releve': contrat.conso_dernier_releve or 0,
                             'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
                             'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
                             'statut': statut
                         }
                         liste_contrats_info.append(contrat_info)
 
-                    # Trier la liste en s'assurant que tous les IDs sont des entiers
+                    # Trier la liste
                     liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
-                    query_result = {
+
+                    return {
                         'liste': liste_contrats_info,
-                        'has_more': offset_int + limit_int < total_contrats,
-                        'next_offset': offset_int + limit_int if offset_int + limit_int < total_contrats else None
                     }
-                    return query_result
 
             result = await get_contrats()
 
