@@ -66,7 +66,7 @@ class TaskMission:
 
                         dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
                         contrat_info = {
-                            'id': dernier_releve_obj.pk if dernier_releve_obj else '',
+                            'id': int(dernier_releve_obj.pk) if dernier_releve_obj else 0,  # Utiliser 0 au lieu de chaîne vide
                             'nom_client': contrat.client.nom_client,
                             'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
                             'adresse_client': contrat.client.adresse_client,
@@ -78,6 +78,7 @@ class TaskMission:
                         }
                         liste_contrats_info.append(contrat_info)
 
+                    # Trier la liste en s'assurant que tous les IDs sont des entiers
                     liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
                     query_result = {
                         'liste': liste_contrats_info,
