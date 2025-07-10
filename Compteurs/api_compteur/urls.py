@@ -1,7 +1,6 @@
 from django.urls import path
 
 from Login.api_auth.views import donne_tout
-from . import views, cache_views
 from .views import Missions, accueil, FactureDetail, relever_client
 
 urlpatterns = [
