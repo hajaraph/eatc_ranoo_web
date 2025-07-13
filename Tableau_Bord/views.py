@@ -7,7 +7,7 @@ from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 
-from Clients.models import Contrat
+from Clients.models import Contrat, TypeClient
 from Facturation.models import Paiement, Facture
 from Login.views import authentification_requis, role_requis
 from Main_Courante.models import StatutMC
@@ -130,6 +130,31 @@ def tableau_bord(request, *args, **kwargs):
         nb_en_cours=Count('main_courante_id', filter=Q(en_cours=True))
     ).order_by('annee', 'mois')
 
+    # Nouveau graphique : Consommation par type de client par mois
+    types_client_conso = TypeClient.objects.annotate(
+        mois=ExtractMonth('clients__contrats__num_compteur__relevecompteurs__date_releve'),
+        annee=ExtractYear('clients__contrats__num_compteur__relevecompteurs__date_releve')
+    ).filter(
+        clients__contrats__num_compteur__relevecompteurs__date_releve__year=annee_actuelle
+    ).values('designation_client', 'mois', 'annee').annotate(
+        conso_mensuelle=Coalesce(Sum('clients__contrats__num_compteur__relevecompteurs__conso'), Value(0))
+    ).exclude(conso_mensuelle=0).order_by('annee', 'mois', 'designation_client')
+
+    # Appliquer les mêmes filtres que pour les autres données
+    if region:
+        types_client_conso = types_client_conso.filter(
+            clients__contrats__cp_commune__region=region
+        )
+    elif date_deb and date_fin:
+        types_client_conso = types_client_conso.filter(
+            clients__contrats__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]
+        )
+    elif region and date_deb and date_fin:
+        types_client_conso = types_client_conso.filter(
+            clients__contrats__cp_commune__region=region,
+            clients__contrats__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]
+        )
+
     # Filtrage de main courante non traité
     date_precedant = date_actuelle - timedelta(days=365)
 
@@ -176,6 +201,7 @@ def tableau_bord(request, *args, **kwargs):
         'evo_conso': resultats,
         'factures': factures,
         'main_courantes': main_courante,
+        'types_client_conso': types_client_conso,
         'datedeb': date_deb if date_deb else '',
         'datefin': date_fin if date_fin else ''
     }

@@ -1,68 +1,98 @@
-<div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-light shadow">
-    <div class="d-flex flex-column align-items-center align-items-sm-start pt-2 min-vh-100">
-        <a href="#" class="d-flex align-items-center p-3 text-decoration-none text-dark">
-            <i class="fas fa-user-circle mx-2" style="font-size: 22px;"></i>
-            <span class="d-none d-sm-inline">{{ request.session.nom_utilisateur }} {{ request.session.prenom_utilisateur }}</span>
-        </a>
-        <ul class="nav nav-pills flex-column mb-sm-auto align-items-center align-items-sm-start" id="menu">
-            {% if request.session.role_utilisateur != 'Releveur' %}
-            <li class="nav-item custom-nav {{ font_tableau }}" title="Tableau de bord">
-                <a href="{% url 'tableau_bord' %}" class="nav-link align-middle text-dark">
-                    <i class="fas fa-dashboard"></i>
-                    <span class="d-none d-sm-inline">Tableau de bord</span>
-                </a>
-            </li>
-            <li title="Clients" class="nav-item custom-nav {{ font_client }}">
-                <a href="{% url 'client_liste' %}" class="nav-link align-middle text-dark">
-                    <i class="fas fa-user"></i>
-                    <span class="d-none d-sm-inline">Clients</span>
-                </a>
-            </li>
-            <li title="Clients" class="nav-item custom-nav {{ font_contrat }}">
-                <a href="{% url 'client_contrat' %}" class="nav-link align-middle text-dark">
-                    <i class="fas fa-file-contract"></i>
-                    <span class="d-none d-sm-inline">Contrats</span>
-                </a>
-            </li>
-            {% endif %}
-            <li title="Compteurs" class="nav-item custom-nav {{ font_compteur }}">
-                <a href="{% url 'compteur_list' %}" class="nav-link align-middle text-dark">
-                    <i class="fas fa-sort-numeric-up-alt"></i>
-                    <span class="d-none d-sm-inline">Compteurs</span>
-                </a>
-            </li>
-            <li title="Facturation" class="nav-item custom-nav {{ font_facture }}">
-                <a href="{% url 'facture' %}" class="nav-link align-middle text-dark">
-                    <i class="fas fa-file-invoice"></i>
-                    <span class="d-none d-sm-inline">Facturation</span>
-                </a>
-            </li>
-            <li title="Main Courante" class="nav-item custom-nav {{ font_main }}">
-                <a href="{% url 'main_liste_mc' %}" class="nav-link align-middle text-dark">
-                    <i class="fas fa-list-1-2"></i>
-                    <span class="d-none d-sm-inline">Mains Courantes</span>
-                </a>
-            </li>
-            <li title="Paramètre" class="nav-item custom-nav {{ font_parametre }}">
-                <a href="{% url 'para_utilisateur' %}" class="nav-link align-middle text-dark">
-                    <i class="fas fa-cog"></i>
-                    <span class="d-none d-sm-inline">Paramètres</span>
-                </a>
-            </li>
-            {% if request.session.role_utilisateur != 'Releveur' %}
-            <li title="Ranoo Config" class="nav-item custom-nav {{ font_rano  }}">
-                <a href="{% url 'config_utilisateur' %}" class="nav-link align-middle text-dark">
-                    <i class="fas fa-tools"></i>
-                    <span class="d-none d-sm-inline">Ranoo Configs</span>
-                </a>
-            </li>
-            {% endif %}
-            <li title="Deconnexion" class="nav-item custom-nav">
-                <a href="{% url 'deconnexion' %}" class="nav-link align-middle text-dark" onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')">
+<div class="sidebar-modern">
+    <div class="sidebar-content">
+        <!-- User Profile Section -->
+        <div class="user-profile">
+            <div class="user-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="user-info">
+                <div class="user-name">{{ request.session.nom_utilisateur }} {{ request.session.prenom_utilisateur }}</div>
+                <div class="user-role">{{ request.session.role_utilisateur }}</div>
+            </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="sidebar-nav">
+            <ul class="nav-list">
+                {% if request.session.role_utilisateur != 'Releveur' %}
+                <li class="nav-item {{ font_tableau }}">
+                    <a href="{% url 'tableau_bord' %}" class="nav-link" title="Tableau de bord">
+                        <div class="nav-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span class="nav-text">Tableau de bord</span>
+                    </a>
+                </li>
+                <li class="nav-item {{ font_client }}">
+                    <a href="{% url 'client_liste' %}" class="nav-link" title="Clients">
+                        <div class="nav-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="nav-text">Clients</span>
+                    </a>
+                </li>
+                <li class="nav-item {{ font_contrat }}">
+                    <a href="{% url 'client_contrat' %}" class="nav-link" title="Contrats">
+                        <div class="nav-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <span class="nav-text">Contrats</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item {{ font_compteur }}">
+                    <a href="{% url 'compteur_list' %}" class="nav-link" title="Compteurs">
+                        <div class="nav-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <span class="nav-text">Compteurs</span>
+                    </a>
+                </li>
+                <li class="nav-item {{ font_facture }}">
+                    <a href="{% url 'facture' %}" class="nav-link" title="Facturation">
+                        <div class="nav-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <span class="nav-text">Facturation</span>
+                    </a>
+                </li>
+                <li class="nav-item {{ font_main }}">
+                    <a href="{% url 'main_liste_mc' %}" class="nav-link" title="Main Courante">
+                        <div class="nav-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <span class="nav-text">Mains Courantes</span>
+                    </a>
+                </li>
+                <li class="nav-item {{ font_parametre }}">
+                    <a href="{% url 'para_utilisateur' %}" class="nav-link" title="Paramètres">
+                        <div class="nav-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <span class="nav-text">Paramètres</span>
+                    </a>
+                </li>
+                {% if request.session.role_utilisateur != 'Releveur' %}
+                <li class="nav-item {{ font_rano }}">
+                    <a href="{% url 'config_utilisateur' %}" class="nav-link" title="Ranoo Config">
+                        <div class="nav-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <span class="nav-text">Ranoo Configs</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <!-- Logout Section -->
+        <div class="sidebar-footer">
+            <a href="{% url 'deconnexion' %}" class="logout-btn" onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')" title="Déconnexion">
+                <div class="nav-icon">
                     <i class="fas fa-sign-out-alt"></i>
-                    <span class="d-none d-sm-inline">Deconnexion</span>
-                </a>
-            </li>
-        </ul>
+                </div>
+                <span class="nav-text">Déconnexion</span>
+            </a>
+        </div>
     </div>
 </div>
