@@ -4,8 +4,10 @@ logs
 
 .scripts
 
-static
-
+# Ignorer le dossier static global généré par collectstatic
+/static/
+# Mais suivre spécifiquement les fichiers CSS dans Login/static/css
+!Login/static/css/
 
 *.log
 *.pyc
