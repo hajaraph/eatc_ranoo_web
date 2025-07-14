@@ -156,7 +156,7 @@ html, body {
 }
 
 .btn-filter {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--info-color) 100%);
+    background: linear-gradient(135deg, #87CEEB 0%, #4A90E2 100%);
     border: none;
     border-radius: 8px;
     width: 50px;
@@ -167,6 +167,7 @@ html, body {
     transition: all 0.3s ease;
     box-shadow: var(--shadow-md);
     color: white;
+    margin-bottom: 4px;
 }
 
 .btn-filter:hover {

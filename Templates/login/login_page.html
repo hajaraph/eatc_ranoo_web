@@ -1,55 +1,97 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="{% static 'logo/img.png' %}" type="image/x-icon">
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
-    <title>Authentification</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>RANOO - Authentification</title>
 </head>
-<body class="d-flex flex-row justify-content-center align-content-center bg-light">
-    <section class="card w-50 my-5 shadow-lg border-0">
-        <div class="card-body d-flex flex-row justify-content-center align-content-center">
-            <div class="content w-50 bottom-distance">
-                <div class="d-flex justify-content-center mt-5">
-                    <img class="img-fluid h-25 w-25" src="{% static 'logo/img.png' %}" alt="EATC">
-                </div>
-                <h2 class="text-center mt-2">RANOO</h2>
-                <div class="d-flex justify-content-center align-content-center p-5">
-                    {% include 'message.html' %}
-                </div>
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="custom-input-group">
-                        <span class="input-icon">
-                            <i class="fas fa-user-alt"></i>
-                        </span>
-                        <input type="tel" class="form-control" name="num_utilisateur" id="num_utilisateur" placeholder="Téléphone" minlength="10" maxlength="10" required>
-                    </div>
-                    <div class="mt-4 custom-input-group">
-                        <span class="input-icon">
-                            <i class="fas fa-key"></i>
-                        </span>
-                        <input type="password" class="form-control" name="motpasse_utilisateur" id="motpasse_utilisateur" placeholder="Mot de Passe" minlength="8" required>
-                    </div>
-                    <div class="mt-2 text-start">
-                        <input type="checkbox" name="sauvegarder" id="sauvegarder" class="form-check-label">
-                        <label for="sauvegarder">Sauvegarder</label>
-                    </div>
-                    <button class="btn btn-success w-100 mt-3" type="submit">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Connexion
-                    </button>
-                </form>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo-container">
+                <img src="{% static 'logo/img.png' %}" alt="RANOO Logo">
             </div>
+            <h1 class="app-title">RANOO</h1>
+            <p class="app-subtitle">Système de Gestion des Compteurs</p>
         </div>
-    </section>
+
+        <div class="login-body">
+            <div class="message-container">
+                {% include 'message.html' %}
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <div class="input-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <input type="tel"
+                           class="form-control"
+                           name="num_utilisateur"
+                           id="num_utilisateur"
+                           placeholder="Numéro de téléphone"
+                           minlength="10"
+                           maxlength="10"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <input type="password"
+                           class="form-control"
+                           name="motpasse_utilisateur"
+                           id="motpasse_utilisateur"
+                           placeholder="Mot de passe"
+                           minlength="8"
+                           required>
+                </div>
+
+                <div class="remember-me">
+                    <input type="checkbox"
+                           name="sauvegarder"
+                           id="sauvegarder">
+                    <label for="sauvegarder">Se souvenir de moi</label>
+                </div>
+
+                <button class="login-btn" type="submit">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Se connecter
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
     <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'modal.js' %}"></script>
     <script src="{% static 'fontawesome/js/all.js' %}"></script>
+
+    <script>
+        // Animation pour les inputs au focus
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+            });
+
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+
+        // Validation en temps réel
+        document.getElementById('num_utilisateur').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
 </body>
 </html>

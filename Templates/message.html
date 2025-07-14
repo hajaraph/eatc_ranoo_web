@@ -1,16 +1,186 @@
 {% if messages %}
     {% for message in messages %}
         {% if message.tags %}
-        <div id="alert" class="position-absolute alert alert-{{ message.tags }} text-center p-1" role="alert">
-        {% endif %}
-            <strong>
-            {% if message.tags == 'success' %}
-            	<i class="fa fa-check-circle"></i>
-            {% else %}
-                <i class="fas fa-triangle-exclamation"></i>
-            {% endif %}
-                {{ message }}
-            </strong>
+        <div id="alert-{{ forloop.counter }}" class="modern-alert alert-{{ message.tags }}" role="alert">
+            <div class="alert-content">
+                <div class="alert-icon">
+                    {% if message.tags == 'success' %}
+                        <i class="fas fa-check-circle"></i>
+                    {% elif message.tags == 'error' or message.tags == 'danger' %}
+                        <i class="fas fa-exclamation-triangle"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-exclamation-circle"></i>
+                    {% elif message.tags == 'info' %}
+                        <i class="fas fa-info-circle"></i>
+                    {% else %}
+                        <i class="fas fa-bell"></i>
+                    {% endif %}
+                </div>
+                <div class="alert-message">
+                    {{ message }}
+                </div>
+                <button type="button" class="alert-close" onclick="closeAlert('alert-{{ forloop.counter }}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
+        {% endif %}
     {% endfor %}
+
+    <style>
+        .modern-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            max-width: 400px;
+            min-width: 300px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border: none;
+            z-index: 9999;
+            animation: slideInRight 0.4s ease-out;
+            backdrop-filter: blur(10px);
+            margin-bottom: 10px;
+        }
+
+        .modern-alert.alert-success {
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.95), rgba(34, 139, 58, 0.95));
+            color: white;
+        }
+
+        .modern-alert.alert-error,
+        .modern-alert.alert-danger {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.95), rgba(200, 35, 51, 0.95));
+            color: white;
+        }
+
+        .modern-alert.alert-warning {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.95), rgba(255, 176, 0, 0.95));
+            color: #212529;
+        }
+
+        .modern-alert.alert-info {
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.95), rgba(135, 206, 235, 0.95));
+            color: white;
+        }
+
+        .alert-content {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            gap: 12px;
+        }
+
+        .alert-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .alert-message {
+            flex: 1;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .alert-close {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .alert-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .alert-close i {
+            font-size: 12px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        .alert-closing {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .modern-alert {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                min-width: auto;
+            }
+        }
+
+        /* Auto-hide animation */
+        .modern-alert.auto-hide {
+            animation: slideInRight 0.4s ease-out, slideOutRight 0.3s ease-in 4.7s forwards;
+        }
+    </style>
+
+    <script>
+        function closeAlert(alertId) {
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                alert.classList.add('alert-closing');
+                setTimeout(() => {
+                    alert.remove();
+                }, 300);
+            }
+        }
+
+        // Auto-hide alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.modern-alert');
+            alerts.forEach((alert, index) => {
+                // Add auto-hide class
+                alert.classList.add('auto-hide');
+
+                // Stagger multiple alerts
+                if (index > 0) {
+                    alert.style.top = (20 + (index * 70)) + 'px';
+                }
+
+                // Auto-remove after animation
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 5000);
+            });
+        });
+    </script>
 {% endif %}
