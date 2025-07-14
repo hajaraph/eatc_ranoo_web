@@ -1,0 +1,244 @@
+/* Navbar Styles */
+.sidebar-modern {
+    width: 260px;
+    min-height: 100vh;
+    background: #f8f9fa;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+    transition: all 0.3s ease;
+    border-right: 1px solid #dee2e6;
+}
+
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 1.5rem 0 0 0;
+}
+
+/* User Profile Section */
+.user-profile {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem 2rem;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #007bff 0%, #17a2b8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.user-avatar i {
+    font-size: 24px;
+    color: white;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #343a40;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* Navigation */
+.sidebar-nav {
+    flex: 1;
+    padding: 0 1rem;
+}
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    margin-bottom: 0.5rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: #6c757d;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(0, 123, 255, 0.1) 0%, rgba(23, 162, 184, 0.1) 100%);
+    transition: width 0.3s ease;
+    z-index: 0;
+}
+
+.nav-link:hover::before,
+.nav-item.custom-font .nav-link::before {
+    width: 100%;
+}
+
+.nav-link:hover {
+    color: #007bff;
+    background: rgba(0, 123, 255, 0.05);
+    transform: translateX(4px);
+}
+
+.nav-item.custom-font .nav-link {
+    color: #007bff;
+    background: rgba(0, 123, 255, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.nav-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.nav-icon i {
+    font-size: 16px;
+}
+
+.nav-text {
+    font-weight: 500;
+    font-size: 0.875rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* Footer/Logout */
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid #dee2e6;
+    margin-top: auto;
+    margin-bottom: 0;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: #dc3545;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.logout-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    transform: translateX(4px);
+}
+
+.logout-btn .nav-icon {
+    margin-right: 0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar-modern {
+        width: 80px;
+    }
+
+    .user-info,
+    .nav-text {
+        display: none;
+    }
+
+    .user-profile {
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .nav-link {
+        justify-content: center;
+        padding: 0.75rem;
+    }
+
+    .nav-icon {
+        margin-right: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem 0.5rem;
+    }
+
+    .logout-btn {
+        justify-content: center;
+        padding: 0.75rem;
+    }
+
+    .logout-btn .nav-icon {
+        margin-right: 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar-modern {
+        width: 60px;
+    }
+}
+
+/* Animation d'entrée */
+.sidebar-modern {
+    animation: slideInFromLeft 0.6s ease-out;
+}
+
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Hover effects pour les icônes */
+.nav-link:hover .nav-icon i {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+.logout-btn:hover .nav-icon i {
+    transform: scale(1.1) rotate(5deg);
+    transition: transform 0.2s ease;
+}
