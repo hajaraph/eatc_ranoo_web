@@ -97,12 +97,12 @@
 
 /* Style amélioré des badges */
 .badge {
-    padding: 0.3em 0.6em;
+    padding: 0.35em 0.6em;
     font-weight: 500;
     font-size: 0.75rem;
     border-radius: 0.35rem;
-    text-transform: uppercase;
     letter-spacing: 1px;
+    line-height: 1.2;
     transition: all 0.2s ease;
 }
 
