@@ -35,7 +35,7 @@
                             {{ clients.pk }}
                         </a>
                     </td>
-                    <td>{{ clients.num_client }}</td>
+                    <td>{{ clients.num_client|default:"-" }}</td>
                     <td>{{ clients.nom_client }}</td>
                     <td>{{ clients.prenom_client|default:"-" }}</td>
                     <td>{{ clients.tel1_client|default:"-" }}</td>

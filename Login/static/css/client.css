@@ -1,26 +1,7 @@
 /* Modern Client Interface Styles - Style Tableau de Bord */
-:root {
-    --primary-color: #4A90E2;
-    --secondary-color: #6c757d;
-    --success-color: #28a745;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --info-color: #17a2b8;
-    --dark-color: #343a40;
-    --light-color: #f8f9fa;
-    --border-radius: 12px;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-}
-
-* {
-    font-family: 'Inter', sans-serif;
-}
 
 /* Container principal */
 .container-fluid {
-    background-color: #f8f9fa !important;
     height: 100vh !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -34,11 +15,7 @@
 
 /* Main container comme le tableau de bord */
 .main-container {
-    background: white;
-    border-radius: var(--border-radius);
     margin: 0 !important;
-    box-shadow: var(--shadow-md);
-    animation: fadeInUp 0.6s ease-out;
     min-height: 100vh;
     overflow: hidden;
 }
@@ -47,7 +24,6 @@
 .card {
     border-radius: 0 !important;
     border: none !important;
-    box-shadow: none !important;
     background: transparent;
     overflow: hidden !important;
     height: 100vh !important;
@@ -56,7 +32,6 @@
 }
 
 .card-header {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
     border-bottom: 1px solid #e2e8f0 !important;
     padding: 2rem !important;
     border-radius: 0 !important;
@@ -66,9 +41,7 @@
 
 /* Navigation tabs style tableau de bord */
 .card-header .btn {
-    background: white !important;
-    border: 2px solid #e5e7eb !important;
-    color: var(--secondary-color) !important;
+    color: #6c757d !important;
     font-weight: 600 !important;
     border-radius: 8px !important;
     transition: all 0.3s ease !important;
@@ -107,72 +80,6 @@
     align-items: center !important;
 }
 
-/* Tableau modernisé avec tailles augmentées */
-.table-responsive {
-    border-radius: 0 !important;
-    overflow: visible !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    border: none !important;
-    animation: scaleIn 0.6s ease-out;
-}
-
-.table {
-    margin-bottom: 0 !important;
-    border-collapse: separate !important;
-    border-spacing: 0 !important;
-    background: white !important;
-    border-radius: var(--border-radius) !important;
-    overflow: hidden !important;
-    box-shadow: var(--shadow-md) !important;
-}
-
-.table thead th {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
-    color: var(--dark-color) !important;
-    font-weight: 600 !important;
-    padding: 1.2rem 1rem !important;
-    border: none !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-    font-size: 0.95rem !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    position: relative !important;
-}
-
-.table thead th:first-child {
-    border-top-left-radius: var(--border-radius) !important;
-}
-
-.table thead th:last-child {
-    border-top-right-radius: var(--border-radius) !important;
-}
-
-.table tbody tr {
-    transition: all 0.3s ease !important;
-    border: none !important;
-    animation: fadeInUp 0.4s ease-out !important;
-    animation-fill-mode: both !important;
-    background: white !important;
-}
-
-.table tbody tr:hover {
-    background: #f8fafc !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-}
-
-.table tbody td {
-    padding: 1rem !important;
-    border: none !important;
-    border-bottom: 1px solid #f3f4f6 !important;
-    vertical-align: middle !important;
-    font-weight: 500 !important;
-    color: var(--dark-color) !important;
-    background: white !important;
-    font-size: 0.95rem !important;
-}
-
 .table tbody tr:last-child td:first-child {
     border-bottom-left-radius: var(--border-radius) !important;
 }
@@ -184,110 +91,6 @@
 .table tbody tr:last-child td {
     border-bottom: none !important;
 }
-
-/* Boutons d'action dans le tableau avec tailles augmentées */
-.btn-primary {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--info-color) 100%) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 12px 16px !important;
-    transition: all 0.3s ease !important;
-    margin: 2px !important;
-    box-shadow: var(--shadow-sm) !important;
-    font-size: 0.9rem !important;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-md) !important;
-}
-
-.btn-danger {
-    background: linear-gradient(135deg, var(--danger-color) 0%, #b91c1c 100%) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 12px 16px !important;
-    transition: all 0.3s ease !important;
-    margin: 2px !important;
-    box-shadow: var(--shadow-sm) !important;
-    font-size: 0.9rem !important;
-}
-
-.btn-danger:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-md) !important;
-}
-
-/* Boutons d'action avec centrage du texte */
-.btn {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
-    width: 150px; height: 40px;
-}
-
-/* Boutons d'action style tableau de bord */
-.btn-warning {
-    background: linear-gradient(135deg, var(--warning-color) 0%, #f59e0b 100%) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 12px 20px !important;
-    font-weight: 600 !important;
-    color: white !important;
-    transition: all 0.3s ease !important;
-    box-shadow: var(--shadow-md) !important;
-}
-
-.btn-warning:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-lg) !important;
-    color: white !important;
-}
-
-.btn-secondary {
-    background: linear-gradient(135deg, var(--secondary-color) 0%, #4b5563 100%) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 12px 20px !important;
-    font-weight: 600 !important;
-    color: white !important;
-    transition: all 0.3s ease !important;
-    box-shadow: var(--shadow-md) !important;
-}
-
-.btn-secondary:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-lg) !important;
-    color: white !important;
-}
-
-/* Liens stylisés */
-.table a {
-    color: var(--primary-color) !important;
-    text-decoration: none !important;
-    font-weight: 600 !important;
-    transition: all 0.3s ease !important;
-}
-
-.table a:hover {
-    color: var(--info-color) !important;
-    text-decoration: underline !important;
-}
-
-/* Icônes de statut */
-.fas.fa-check-circle {
-    color: var(--success-color) !important;
-    font-size: 18px !important;
-    filter: drop-shadow(0 2px 4px rgba(40, 167, 69, 0.3)) !important;
-}
-
-.fas.fa-xmark-circle {
-    color: var(--danger-color) !important;
-    font-size: 18px !important;
-    filter: drop-shadow(0 2px 4px rgba(220, 53, 69, 0.3)) !important;
-}
-
 /* DataTables Search avec taille augmentée */
 .dataTables_wrapper .dataTables_filter input {
     border: 2px solid #e5e7eb !important;
@@ -368,21 +171,7 @@
     font-weight: 500 !important;
 }
 
-/* Boutons modal */
-.btn-success {
-    background: linear-gradient(135deg, var(--success-color) 0%, #10b981 100%) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 12px 20px !important;
-    font-weight: 600 !important;
-    transition: all 0.3s ease !important;
-    box-shadow: var(--shadow-md) !important;
-}
 
-.btn-success:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-lg) !important;
-}
 
 /* Animations du tableau de bord */
 @keyframes fadeInUp {
