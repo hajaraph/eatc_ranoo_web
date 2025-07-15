@@ -479,6 +479,7 @@
     background: linear-gradient(135deg, #4A90E2 0%, #2a5298 100%) !important;
     border: none !important;
     color: white !important;
+    border-radius: var(--border-radius) !important;
 }
 
 .btn-primary:hover {
