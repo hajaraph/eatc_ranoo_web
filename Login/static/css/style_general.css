@@ -531,7 +531,7 @@
 .table .btn {
     padding: 0.35rem 0.65rem;
     margin: 0 0.15rem;
-    border-radius: 6px;
+    border-radius: var(--border-radius) !important;
     transition: all 0.2s ease;
     color: white !important;
     width: auto !important;
