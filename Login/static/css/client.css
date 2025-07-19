@@ -50,22 +50,6 @@
     box-shadow: var(--shadow-sm) !important;
 }
 
-.card-header .btn:hover {
-    border-color: var(--primary-color) !important;
-    color: var(--primary-color) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-md) !important;
-}
-
-.card-header .btn.active,
-.card-header .btn:focus {
-    background: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    color: white !important;
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-md) !important;
-}
-
 /* Content wrapper - Dimensions du tableau de bord */
 .card-body {
     padding: 2rem !important;
@@ -78,18 +62,6 @@
 .d-flex.justify-content-between {
     margin-bottom: 2rem !important;
     align-items: center !important;
-}
-
-.table tbody tr:last-child td:first-child {
-    border-bottom-left-radius: var(--border-radius) !important;
-}
-
-.table tbody tr:last-child td:last-child {
-    border-bottom-right-radius: var(--border-radius) !important;
-}
-
-.table tbody tr:last-child td {
-    border-bottom: none !important;
 }
 /* DataTables Search avec taille augmentée */
 .dataTables_wrapper .dataTables_filter input {
@@ -123,16 +95,6 @@
     font-size: 1.1rem !important;
 }
 
-.btn-close {
-    background: none !important;
-    border: none !important;
-    opacity: 0.5 !important;
-}
-
-.btn-close:hover {
-    opacity: 1 !important;
-}
-
 .modal-body {
     padding: 2rem !important;
 }
@@ -142,35 +104,6 @@
     border: none !important;
     background: #f8fafc !important;
 }
-
-/* Form elements style tableau de bord */
-.form-floating {
-    margin-bottom: 1.5rem !important;
-}
-
-.form-floating > .form-control,
-.form-floating > .form-select {
-    border: 2px solid #e5e7eb !important;
-    border-radius: 8px !important;
-    padding: 1rem 0.75rem !important;
-    background: #f8f9fa !important;
-    transition: all 0.3s ease !important;
-    font-weight: 500 !important;
-}
-
-.form-floating > .form-control:focus,
-.form-floating > .form-select:focus {
-    border-color: var(--primary-color) !important;
-    background: white !important;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1) !important;
-    outline: none !important;
-}
-
-.form-floating > label {
-    color: #6b7280 !important;
-    font-weight: 500 !important;
-}
-
 
 
 /* Animations du tableau de bord */
