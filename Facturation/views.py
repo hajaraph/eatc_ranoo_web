@@ -499,6 +499,17 @@ def generate_multiple_pages_pdf(request):
         date_fin = request.GET.get('date_fin')
         commune = request.GET.get('commune')
 
+        # Si aucune date n'est fournie, utiliser le mois actuel pour les factures impayées
+        if not date_deb and not date_fin:
+            now = datetime.now()
+            # Premier jour du mois actuel
+            date_deb = now.replace(day=1).date()
+            # Dernier jour du mois actuel
+            if now.month == 12:
+                date_fin = now.replace(year=now.year + 1, month=1, day=1).date() - timedelta(days=1)
+            else:
+                date_fin = now.replace(month=now.month + 1, day=1).date() - timedelta(days=1)
+
         # Configuration des paramètres de performance
         batch_size = 10  # Taille des lots pour le traitement
 
