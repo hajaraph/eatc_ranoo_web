@@ -20,7 +20,7 @@ from Compteurs.models import ReleveCompteur, Compteur
 from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
 from Login.views import authentification_requis, role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
-from Acommune.models import Region
+from Acommune.models import Region, Province
 from Ranoo_Config.models import ConfigBranchement
 from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
@@ -69,7 +69,7 @@ def facture(request):
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
     factures = date_range(request, Facture, datedeb, datefin, 'date_facture')
-    region = Region.objects.order_by('region').all()
+    pronvince = Province.objects.order_by('province').all()
     impayer_exist = Facture.objects.filter(statut=False).exists()
     context = {
         'title_etat': title,
@@ -79,7 +79,7 @@ def facture(request):
         'impayer_exist': impayer_exist,
         'avoir_count': avoir,
         'restant': restant,
-        'regions': region,
+        'provinces': pronvince,
         'datedeb': datedeb if datedeb else '',
         'datefin': datefin if datefin else '',
     }
