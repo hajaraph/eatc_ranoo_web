@@ -527,7 +527,7 @@ def generate_multiple_pages_pdf(request):
         if date_deb and date_fin:
             factures = factures.filter(date_facture__range=[date_deb, date_fin])
         if commune:
-            factures = factures.filter(num_contrat__code_commune=commune)
+            factures = factures.filter(num_contrat__cp_commune=commune)
 
         # Vérification des résultats
         factures = list(factures)  # Force l'évaluation de la requête
