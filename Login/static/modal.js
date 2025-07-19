@@ -76,4 +76,104 @@ $(document).ready(function(){
         window.open(url, '_blank');
         $('#exportmc-excel').modal('hide');
     });
+
+    // Gestion du changement de région dans le modal de facture (export PDF)
+    $('#export-pdf #region').on('change', function() {
+        const regionName = $(this).val();
+        const communeSelect = $('#export-pdf #commune');
+
+        // Vider la liste des communes
+        communeSelect.empty();
+        communeSelect.append('<option value="" selected hidden></option>');
+
+        if (regionName) {
+            // Faire une requête AJAX pour récupérer les communes de cette région
+            $.ajax({
+                url: `/commune/region/${regionName}`,
+                type: 'GET',
+                success: function(data) {
+                    if (data.communes && data.communes.length > 0) {
+                        data.communes.forEach(function(commune) {
+                            communeSelect.append(`<option value="${commune.cp_commune}">${commune.commune}</option>`);
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Erreur lors du chargement des communes:', error);
+                }
+            });
+        }
+    });
+
+    // Gestion du changement de région dans le modal de facture (export Excel)
+    $('#export-excel #region').on('change', function() {
+        const regionName = $(this).val();
+        const communeSelect = $('#export-excel #commune');
+
+        // Vider la liste des communes
+        communeSelect.empty();
+        communeSelect.append('<option value="" selected hidden></option>');
+
+        if (regionName) {
+            // Faire une requête AJAX pour récupérer les communes de cette région
+            $.ajax({
+                url: `/commune/region/${regionName}`,
+                type: 'GET',
+                success: function(data) {
+                    if (data.communes && data.communes.length > 0) {
+                        data.communes.forEach(function(commune) {
+                            communeSelect.append(`<option value="${commune.cp_commune}">${commune.commune}</option>`);
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Erreur lors du chargement des communes:', error);
+                }
+            });
+        }
+    });
+
+    // Gestion du bouton de confirmation pour l'export PDF
+    $('#confirmer-export').click(function() {
+        const date_deb = $('#export-pdf #date_deb').val();
+        const date_fin = $('#export-pdf #date_fin').val();
+        const commune = $('#export-pdf #commune').val();
+
+        // Construire l'URL avec les paramètres GET
+        let url = '/facturation/pdf';
+        const params = [];
+        if (date_deb) params.push(`date_deb=${date_deb}`);
+        if (date_fin) params.push(`date_fin=${date_fin}`);
+        if (commune) params.push(`commune=${commune}`);
+
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+
+        // Ouvrir une nouvelle onglet avec l'URL générée
+        window.open(url, '_blank');
+        $('#export-pdf').modal('hide');
+    });
+
+    // Gestion du bouton de confirmation pour l'export Excel
+    $('#confirmer-export-excel').click(function() {
+        const date_deb = $('#export-excel #date_deb').val();
+        const date_fin = $('#export-excel #date_fin').val();
+        const commune = $('#export-excel #commune').val();
+
+        // Construire l'URL avec les paramètres GET
+        let url = '/facturation/excel';
+        const params = [];
+        if (date_deb) params.push(`date_deb=${date_deb}`);
+        if (date_fin) params.push(`date_fin=${date_fin}`);
+        if (commune) params.push(`commune=${commune}`);
+
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+
+        // Ouvrir une nouvelle onglet avec l'URL générée
+        window.open(url, '_blank');
+        $('#export-excel').modal('hide');
+    });
 });

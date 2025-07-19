@@ -94,3 +94,22 @@ def commune_list(request, province, *args, **kwargs):
         'regions': list(regions),  # Liste des régions sans doublons
         'communes': list(communes)  # Liste des communes avec leur région associée
     })
+
+
+@authentification_requis
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def commune_list_by_region(request, region_name, *args, **kwargs):
+    """Récupère les communes pour une région donnée"""
+    try:
+        # Récupérer toutes les communes associées à cette région
+        communes = Commune.objects.filter(region__region=region_name).order_by('commune').values('commune', 'cp_commune')
+
+        return JsonResponse({
+            'communes': list(communes)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'communes': [],
+            'error': str(e)
+        })
