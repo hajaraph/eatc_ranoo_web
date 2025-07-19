@@ -27,16 +27,14 @@
                     <div class="card-header border-0">
                         <div class="row">
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'main_liste_mc' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active }}">
+                                <a href="{% url 'main_liste_mc' %}" class="btn btn-sm w-100 {{ active }}">
                                     Liste MC
                                 </a>
                             </div>
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-center align-content-center p-4">
-                            {% include 'message.html' %}
-                        </div>
+                        {% include 'message.html' %}
                         {% if title_main %}
                             {% include 'all_page/main_courante/main_liste_mc.html' %}
                         {% elif title_main_liste_detail %}

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/tableau_bord.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style_general.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <title>Tableau de Bord</title>
 </head>
@@ -54,7 +55,7 @@
                                         </div>
                                     </div>
                                     <div class="col-md-3 col-sm-6 mb-3">
-                                        <button class="btn btn-filter" type="submit">
+                                        <button class="btn btn-primary" type="submit">
                                             <i class="fas fa-search"></i>
                                         </button>
                                     </div>
@@ -186,17 +187,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.min.js"></script>
     <script>
-        // Variables CSS pour Chart.js
-        const primaryColor = '#007bff';
-        const successColor = '#28a745';
-        const warningColor = '#ffc107';
-        const dangerColor = '#dc3545';
-        const infoColor = '#17a2b8';
+        // Variables CSS pour Chart.js - Nouvelles couleurs Material Design
+        const primaryColor = '#1976d2';
+        const successColor = '#2e7d32';
+        const warningColor = '#ed6c02';
+        const dangerColor = '#d32f2f';
+        const infoColor = '#0288d1';
 
         let modernColors = [
-            '#007bff', '#28a745', '#17a2b8', '#ffc107', '#dc3545',
-            '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#6c757d',
-            '#343a40', '#007bff', '#28a745', '#ffc107', '#dc3545'
+            '#1976d2', '#2e7d32', '#0288d1', '#ed6c02', '#d32f2f',
+            '#9c27b0', '#ff9800', '#4caf50', '#ef5350', '#ba68c8',
+            '#343a40', '#42a5f5', '#4caf50', '#ff9800', '#ef5350'
         ];
 
         // Configuration globale pour Chart.js

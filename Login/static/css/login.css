@@ -1,3 +1,30 @@
+/* Variables CSS communes - Palette de couleurs unifiée */
+:root {
+    --primary-color: #1976d2;
+    --primary-light: #42a5f5;
+    --primary-dark: #1565c0;
+    --secondary-color: #9c27b0;
+    --secondary-light: #ba68c8;
+    --secondary-dark: #7b1fa2;
+    --success-color: #2e7d32;
+    --success-light: #4caf50;
+    --success-dark: #1b5e20;
+    --warning-color: #ed6c02;
+    --warning-light: #ff9800;
+    --warning-dark: #e65100;
+    --danger-color: #d32f2f;
+    --danger-light: #ef5350;
+    --danger-dark: #c62828;
+    --info-color: #0288d1;
+    --info-light: #03a9f4;
+    --info-dark: #01579b;
+    --dark-color: #343a40;
+    --light-color: #f8f9fa;
+    --border-radius: 12px;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
 
 * {
     margin: 0;
@@ -17,8 +44,8 @@ body {
 .login-container {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    border-radius: 20px;
-    box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
     width: 100%;
     max-width: 450px;
@@ -37,7 +64,7 @@ body {
 }
 
 .login-header {
-    background: linear-gradient(135deg, #87CEEB 0%, #4A90E2 100%);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
     padding: 40px 30px;
     text-align: center;
     color: white;
@@ -88,18 +115,18 @@ body {
     width: 100%;
     padding: 15px 20px 15px 50px;
     border: 2px solid #e1e8ed;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     font-size: 16px;
     transition: all 0.3s ease;
-    background: #f8f9fa;
+    background: var(--light-color);
     font-family: 'Poppins', sans-serif;
 }
 
 .form-control:focus {
     outline: none;
-    border-color: #4A90E2;
+    border-color: var(--primary-color);
     background: white;
-    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
     transform: translateY(-2px);
 }
 
@@ -108,7 +135,7 @@ body {
     left: 18px;
     top: 50%;
     transform: translateY(-50%);
-    color: #4A90E2;
+    color: var(--primary-color);
     font-size: 18px;
     z-index: 2;
 }
@@ -128,7 +155,7 @@ body {
     width: 18px;
     height: 18px;
     margin-right: 10px;
-    accent-color: #4A90E2;
+    accent-color: var(--primary-color);
 }
 
 .remember-me label {
@@ -140,10 +167,10 @@ body {
 .login-btn {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, #87CEEB 0%, #4A90E2 100%);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
@@ -155,7 +182,7 @@ body {
 
 .login-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(42, 82, 152, 0.3);
+    box-shadow: 0 10px 25px rgba(25, 118, 210, 0.3);
 }
 
 .login-btn:active {

@@ -28,21 +28,19 @@
                     <div class="card-header border-0">
                         <div class="row">
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'client_liste' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_liste }}">
+                                <a href="{% url 'client_liste' %}" class="btn btn-sm w-100 {{ active_liste }}">
                                     Client
                                 </a>
                             </div>
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'client_contrat' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_contrat }}">
+                                <a href="{% url 'client_contrat' %}" class="btn btn-sm w-100 {{ active_contrat }}">
                                     Contrat
                                 </a>
                             </div>
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-center align-content-center p-4">
-                            {% include 'message.html' %}
-                        </div>
+                        {% include 'message.html' %}
                         {% block content_client %}
 
                         {% endblock %}

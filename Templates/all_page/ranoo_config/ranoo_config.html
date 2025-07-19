@@ -27,31 +27,29 @@
                     <div class="card-header border-0">
                         <div class="row">
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'config_utilisateur' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_utilisateur }}{{ active_droit }}">
-                                    Utilisateur
-                                </a>
-                            </div>
-                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'region' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_region }}">
-                                    Région
+                                <a href="{% url 'config_utilisateur' %}" class="btn btn-sm w-100 {{ active_utilisateur }}{{ active_droit }}">
+                                    <i class="fas fa-users me-2"></i>Gestion des utilisateurs
                                 </a>
                             </div>
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'branchement' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_branchement }}">
-                                    Branchement
+                                <a href="{% url 'region' %}" class="btn btn-sm w-100 {{ active_region }}">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Gestion des régions
                                 </a>
                             </div>
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'config_tarif' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_config_constates }}">
-                                    Tarif
+                                <a href="{% url 'branchement' %}" class="btn btn-sm w-100 {{ active_branchement }}">
+                                    <i class="fas fa-sitemap me-2"></i>Gestion des branchements
+                                </a>
+                            </div>
+                            <div class="col-md-2 mt-4">
+                                <a href="{% url 'config_tarif' %}" class="btn btn-sm w-100 {{ active_config_constates }}">
+                                    <i class="fas fa-tags me-2"></i>Gestion des tarifs
                                 </a>
                             </div>
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-center align-content-center p-4">
-                            {% include 'message.html' %}
-                        </div>
+                        {% include 'message.html' %}
                         {% block content %}
 
                         {% endblock %}

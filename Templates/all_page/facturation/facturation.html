@@ -27,41 +27,34 @@
                     <div class="card-header border-0">
                         <div class="row">
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_etat }}">
+                                <a href="{% url 'facture' %}" class="btn btn-sm w-100 {{ active_etat }}">
                                     Facturation
                                 </a>
                             </div>
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture_paye' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_facture_paye }}">
+                                <a href="{% url 'facture_paye' %}" class="btn btn-sm w-100 {{ active_facture_paye }}">
                                     Payé
                                 </a>
                             </div>
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture_impaye' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_facture_impaye }}">
+                                <a href="{% url 'facture_impaye' %}" class="btn btn-sm w-100 {{ active_facture_impaye }}">
                                     Impayé
                                 </a>
                             </div>
-{#                            <div class="col-md-2 mt-4">#}
-{#                                <a href="{% url 'facture_retard' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning text-dark border-top-0 border-start-0 border-end-0 w-100 {{ active_retard }}">#}
-{#                                    Retard#}
-{#                                </a>#}
-{#                            </div>#}
                              <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture_restant' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_facture }}">
+                                <a href="{% url 'facture_restant' %}" class="btn btn-sm w-100 {{ active_facture }}">
                                     Restant
                                 </a>
                             </div>
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture_avoir' %}" class="fw-bolder shadow-none rounded-0 btn btn-outline-warning btn-sm w-100 text-dark border-start-0 border-top-0 border-end-0 {{ active_avoir }}">
+                                <a href="{% url 'facture_avoir' %}" class="btn btn-sm w-100 {{ active_avoir }}">
                                     Avoir
                                 </a>
                             </div>
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-center align-content-center p-4">
-                            {% include 'message.html' %}
-                        </div>
+                        {% include 'message.html' %}
                         {% if title_etat %}
                             {% include 'all_page/facturation/facture.html' %}
                         {% elif title_facture %}
