@@ -521,7 +521,7 @@ def generate_multiple_pages_pdf(request):
         ).prefetch_related(
             'montantht_set',
             'montantht_set__montantttc'  # Relation OneToOneField vers MontantTTC
-        )
+        ).order_by("num_contrat_id__adresse_contrat")
 
         # Filtrage initial
         if date_deb and date_fin:
