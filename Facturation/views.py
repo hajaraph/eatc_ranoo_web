@@ -567,6 +567,8 @@ def generate_multiple_pages_pdf(request):
                     # Ajout des données supplémentaires
                     context['prix_m3'] = get_prix_m3_client(fact)
                     if entreprise:
+                        context['nif'] = f"{entreprise.nif}" if entreprise.nif else '-'
+                        context['stat'] = f"{entreprise.stat}" if entreprise.stat else '-'
                         context = encode_entreprise_images(entreprise, context)
 
                     # Rendu du template
