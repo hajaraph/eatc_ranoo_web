@@ -454,6 +454,62 @@ def get_prix_m3_client(fact):
         return None
 
 
+def get_derniers_montants_impayees(num_contrat, date_facture_actuelle):
+    """Récupère les 3 derniers mois de factures impayées - seulement le montant_total_ttc"""
+    try:
+        montants = []
+
+        # Boucle pour les 3 derniers mois
+        for i in range(1, 4):  # 1, 2, 3 mois précédents
+            # Calculer le mois précédent (i mois en arrière)
+            mois_precedent = date_facture_actuelle.replace(day=1)
+            for _ in range(i):
+                if mois_precedent.month == 1:
+                    mois_precedent = mois_precedent.replace(year=mois_precedent.year - 1, month=12)
+                else:
+                    mois_precedent = mois_precedent.replace(month=mois_precedent.month - 1)
+
+            # Définir la plage du mois
+            debut_mois = mois_precedent.replace(day=1)
+            if mois_precedent.month == 12:
+                fin_mois = mois_precedent.replace(year=mois_precedent.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                fin_mois = mois_precedent.replace(month=mois_precedent.month + 1, day=1) - timedelta(days=1)
+
+            # Récupérer seulement le montant_total_ttc des factures impayées (statut=False)
+            facture_impayee = Facture.objects.filter(
+                num_contrat_id=num_contrat,
+                statut=False,  # Factures impayées
+                date_facture__range=[debut_mois, fin_mois],
+                montant_total_ttc__isnull=False  # S'assurer que le montant existe
+            ).values('num_facture', 'date_facture', 'montant_total_ttc').order_by('date_facture').first()
+
+            # MODIFICATION: Toujours ajouter un élément, même si pas de facture impayée
+            if facture_impayee:
+                montants.append({
+                    'num_facture': facture_impayee['num_facture'],
+                    'date_facture': facture_impayee['date_facture'],
+                    'montant_total_ttc': facture_impayee['montant_total_ttc']
+                })
+
+        return montants
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des montants impayés: {e}")
+        return []
+
+
+def calculer_total_net_a_payer(montant_actuel, montants_impayees):
+    """Calcule le total net à payer (montant actuel + impayés précédents)"""
+    try:
+        total_impayees = sum(factures['montant_total_ttc'] for factures in montants_impayees)
+        total_net_a_payer = montant_actuel + total_impayees
+        return total_net_a_payer
+    except Exception as e:
+        messages.error(f"Erreur lors du calcul du total net à payer: {e}")
+
+
+
 @authentification_requis
 @schema_use
 def facture_genere_pdf(request, num_facture):
@@ -465,6 +521,20 @@ def facture_genere_pdf(request, num_facture):
             return context
 
         context['prix_m3'] = get_prix_m3_client(factures)
+
+        # Récupérer les 3 derniers mois de factures impayées (statut=False)
+        montants_impayees = get_derniers_montants_impayees(
+            factures.num_contrat_id,
+            factures.date_facture
+        )
+        context['montants_impayees_precedents'] = montants_impayees
+
+        # Calculer le total net à payer incluant les impayés précédents
+        total_net_a_payer = calculer_total_net_a_payer(
+            factures.montant_total_ttc,
+            montants_impayees
+        )
+        context['total_net_a_payer'] = total_net_a_payer
 
         if is_eatc_schema(request):
             template_path = 'all_page/facturation/facture/templatepdf.html'
@@ -566,6 +636,20 @@ def generate_multiple_pages_pdf(request):
 
                     # Ajout des données supplémentaires
                     context['prix_m3'] = get_prix_m3_client(fact)
+
+                    # Récupérer les 3 derniers mois de factures impayées pour chaque facture
+                    montants_impayees = get_derniers_montants_impayees(
+                        fact.num_contrat_id,
+                        fact.date_facture
+                    )
+                    context['montants_impayees_precedents'] = montants_impayees
+
+                    total_net_a_payer = calculer_total_net_a_payer(
+                        fact.montant_total_ttc,
+                        montants_impayees
+                    )
+                    context['total_net_a_payer'] = total_net_a_payer
+
                     if entreprise:
                         context['nif'] = f"{entreprise.nif}" if entreprise.nif else '-'
                         context['stat'] = f"{entreprise.stat}" if entreprise.stat else '-'

@@ -13,7 +13,7 @@
                         Facture n° : {{ instance.num_facture }}
                     </div>
                     <div>
-                        Mois de : {{ relever_actuel.date_releve|date:"d/m/Y" }}
+                        Mois de : {{ relever_actuel.date_releve|date:"j M Y" }}
                     </div>
                 </td>
                 <td colspan="2">
@@ -25,7 +25,7 @@
                             <td colspan="4">
                                 <div>
                                     <div style="text-align: center; font-weight: bold; text-decoration: underline">
-                                        Facture d'eau
+                                        FACTURE D'EAU
                                     </div>
                                     <div>
                                         Type client : {{ instance.num_contrat.client.type_client.designation_client }}
@@ -56,8 +56,8 @@
             <table>
                 <tr style="padding-top: 2px">
                     <td style="width: 25%">
-                        <div style="font-weight: bold">NIF : </div>{{ nif }}
-                        <div style="font-weight: bold">STAT : </div>{{ stat }}
+                        <div>NIF : {{ nif }}</div>
+                        <div>STAT : {{ stat }}</div>
                     </td>
                     <td style="width: 4px;"></td>
                     <td style="text-align: center; border: 1px solid black; " colspan="3">Index (m&#179)</td>
@@ -68,7 +68,7 @@
                             <tr>
                                 <td style="width: 40%">
                                     <div>
-                                        Facture n :
+                                        Facture n° :
                                     </div>
                                     <div>
                                         Mois de :
@@ -94,7 +94,7 @@
                                         {{ instance.num_facture}}
                                     </div>
                                     <div>
-                                        {{ relever_actuel.date_releve|date:"d/m/Y" }}
+                                        {{ relever_actuel.date_releve|date:"j M Y" }}
                                     </div>
                                     <div>
                                         {{ instance.num_contrat.client.id_client }}
@@ -103,7 +103,7 @@
                                         {{ instance.num_contrat.num_compteur_id }}
                                     </div>
                                     <div>
-                                        {{ instance.montant_total_ttc }} Ar
+                                        {{ total_net_a_payer }} Ar
                                     </div>
                                     <div>
                                         __________
@@ -119,7 +119,7 @@
                 <tr>
                     <td style="border-top: 1px solid black; border-left: 1px solid black; border-right: 1px solid black; margin-left: 5px; padding-top: 2px; width: 25%">
                         <div>
-                            Date de présentation : {{ relever_actuel.date_releve|date:"d/m/Y" }}
+                            Date de présentation : {{ relever_actuel.date_releve|date:"j M Y" }}
                         </div>
                     </td>
                     <td style="width: 4px;"></td>
@@ -127,7 +127,7 @@
                         Ancien
                     </td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ reveler_precedant.volume }}</td>
-                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ reveler_precedant.date_releve|date:"d/m/Y" }}</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ reveler_precedant.date_releve|date:"M Y" }}</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">Quantité</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">P.U (Ar)</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">Montant (Ar)</td>
@@ -135,13 +135,13 @@
                 <tr>
                     <td style="border-bottom: 1px solid black; border-left: 1px solid black; border-right: 1px solid black; margin-left: 5px">
                         <div>
-                            Payer avant : {{ instance.date_echeance|date:'d/m/Y' }}
+                            Payer avant : {{ instance.date_echeance|date:'j M Y' }}
                         </div>
                     </td>
                     <td style="width: 4px;"></td>
                     <td style="border: 1px solid black; width: 8%; margin-left: 5px; padding-top: 2px">Nouveau</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.volume }}</td>
-                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.date_releve|date:"d/m/Y" }}</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.date_releve|date:"M Y" }}</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.conso }}</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">
                         {{ prix_m3 }}
@@ -153,8 +153,23 @@
                 <tr>
                     <td colspan="5">
                         <div>
-                            <span style="font-weight: bold">Arrêté à la somme de :</span> {{ lettre }} Ariary
+                            <span style="font-weight: bold; padding-top: 1px">Arrêté à la somme de :</span> {{ lettre }} Ariary
                         </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="6">
+                        {% if montants_impayees_precedents %}
+                            <div>
+                                {% for facture in montants_impayees_precedents %}
+                                    <span>
+                                        <strong> {{ facture.num_facture }}</strong>
+                                        ({{ facture.date_facture|date:"M Y" }}) :
+                                        {{ facture.montant_total_ttc }} Ar <strong>(Impayé)</strong>
+                                    </span><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </td>
                 </tr>
                 <tr>
