@@ -157,21 +157,21 @@
                         </div>
                     </td>
                 </tr>
+                {% if montants_impayees_precedents %}
                 <tr>
                     <td colspan="6">
-                        {% if montants_impayees_precedents %}
-                            <div>
-                                {% for facture in montants_impayees_precedents %}
-                                    <span>
-                                        <strong> {{ facture.num_facture }}</strong>
-                                        ({{ facture.date_facture|date:"M Y" }}) :
-                                        {{ facture.montant_total_ttc }} Ar <strong>(Impayé)</strong>
-                                    </span><br>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                        <div>
+                            {% for facture in montants_impayees_precedents %}
+                                <span>
+                                    <strong> {{ facture.num_facture }}</strong>
+                                    ({{ facture.date_facture|date:"M Y" }}) :
+                                    {{ facture.montant_total_ttc }} Ar <strong>(Impayé)</strong>
+                                </span><br>
+                            {% endfor %}
+                        </div>
                     </td>
                 </tr>
+                {% endif %}
                 <tr>
                     <td>Payé le :</td>
                     <td></td>
