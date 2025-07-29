@@ -20,7 +20,7 @@ from Compteurs.models import ReleveCompteur, Compteur
 from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
 from Login.views import authentification_requis, role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
-from Acommune.models import Region, Province
+from Acommune.models import Province
 from Ranoo_Config.models import ConfigBranchement
 from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
@@ -436,7 +436,7 @@ def encode_entreprise_images(entreprise, context):
 
 
 def get_prix_m3_client(fact):
-    """Récupère le prix selon le type de client de manière optimisée"""
+    """Récupère le prix selon le type de client"""
     try:
         type_client_id = fact.num_contrat.client.type_client_id
         tarif = Tarif.objects.get(cp_commune=fact.num_contrat.cp_commune)
@@ -471,6 +471,8 @@ def facture_genere_pdf(request, num_facture):
         else:
             id_entreprise = request.session.get('entreprise')
             entreprise = Entreprise.objects.get(pk=id_entreprise)
+            context['nif'] = f"{entreprise.nif}" if entreprise.nif else '-'
+            context['stat'] = f"{entreprise.stat}" if entreprise.stat else '-'
             context = encode_entreprise_images(entreprise, context)
             template_path = 'all_page/facturation/facture/templatenoeatc.html'
 
@@ -581,8 +583,8 @@ def generate_multiple_pages_pdf(request):
 
             # Gestion des groupes de 5 pour les non-EATC
             if not eatc and temp_group:
-                for j in range(0, len(temp_group), 5):
-                    group = temp_group[j:j + 5]
+                for j in range(0, len(temp_group), 4):
+                    group = temp_group[j:j + 4]
                     html_sections.append(''.join(group))
             elif temp_group:
                 html_sections.extend(temp_group)

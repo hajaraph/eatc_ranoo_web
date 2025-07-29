@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Facture numéro {{ instance.num_facture }}</title>
 </head>
-<body style="font-size: 8px">
+<body style="font-size: 10px">
     <div>
         <table style="width: 100%">
             <tr>
@@ -24,22 +24,22 @@
                             </td>
                             <td colspan="4">
                                 <div>
-                                    <div style="text-align: center; font-size: 10px; font-weight: bold; text-decoration: underline">
+                                    <div style="text-align: center; font-weight: bold; text-decoration: underline">
                                         Facture d'eau
                                     </div>
-                                    <div style="font-size: 8px">
+                                    <div>
                                         Type client : {{ instance.num_contrat.client.type_client.designation_client }}
                                     </div>
-                                    <div style="font-size: 8px">
+                                    <div>
                                         Nom client : {{ instance.num_contrat.client.nom_client }}
                                                 {% if instance.num_contrat.client.prenom_client %}
                                                     {{ instance.num_contrat.client.prenom_client }}
                                                 {% endif %}
                                     </div>
-                                    <div style="font-size: 8px">
+                                    <div>
                                         Adresse : {{ instance.num_contrat.adresse_contrat }} ({{ instance.num_contrat.cp_commune.commune }})
                                     </div>
-                                    <div style="font-size: 8px">
+                                    <div>
                                         Code client : {{ instance.num_contrat.client.id_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
                                     </div>
                                 </div>
@@ -55,7 +55,10 @@
         <div>
             <table>
                 <tr style="padding-top: 2px">
-                    <td style="width: 25%"></td>
+                    <td style="width: 25%">
+                        <div>NIF : {{ nif }}</div>
+                        <div>STAT : {{ stat }}</div>
+                    </td>
                     <td style="width: 4px;"></td>
                     <td style="text-align: center; border: 1px solid black; " colspan="3">Index (m&#179)</td>
                     <td style="text-align: center; border: 1px solid black; " colspan="3">Consommation (m&#179)</td>
@@ -175,7 +178,7 @@
         </div>
     </div>
     <div>
-        =========================================================================================================================================================
+        ===========================================================================================================================
     </div>
 </body>
 </html>
