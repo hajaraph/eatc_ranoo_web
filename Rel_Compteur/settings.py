@@ -43,6 +43,7 @@ TENANT_APPS = (
     'corsheaders',
     'Clients',
     'Compteurs',
+    'Depense',
     'Facturation',
     'Main_Courante',
     'Parametre',
