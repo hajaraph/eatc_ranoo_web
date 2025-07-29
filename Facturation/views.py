@@ -583,7 +583,7 @@ def generate_multiple_pages_pdf(request):
                 date_fin = now.replace(month=now.month + 1, day=1).date() - timedelta(days=1)
 
         # Configuration des paramètres de performance
-        batch_size = 10  # Taille des lots pour le traitement
+        batch_size = 4  # Taille des lots alignée sur le nombre de factures par page
 
         # Préparation de la requête de base avec select_related et prefetch_related
         factures = Facture.objects.filter(statut=False).select_related(
@@ -667,13 +667,11 @@ def generate_multiple_pages_pdf(request):
                         f"Erreur lors du traitement de la facture {getattr(fact, 'num_facture', 'inconnu')}: {str(e)}")
                     continue
 
-            # Gestion des groupes de 5 pour les non-EATC
-            if not eatc and temp_group:
+            # Gestion uniforme des groupes de 4 pour tous les cas
+            if temp_group:
                 for j in range(0, len(temp_group), 4):
                     group = temp_group[j:j + 4]
                     html_sections.append(''.join(group))
-            elif temp_group:
-                html_sections.extend(temp_group)
 
             # Nettoyage de la mémoire après chaque lot
             del temp_group
