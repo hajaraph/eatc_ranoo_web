@@ -13,7 +13,7 @@
                         Facture n° : {{ instance.num_facture }}
                     </div>
                     <div>
-                        Mois de : {{ relever_actuel.date_releve|date:"j M Y" }}
+                        Mois de : {{ date_facture_actuel|date:"M Y" }}
                     </div>
                 </td>
                 <td colspan="2">
@@ -94,7 +94,7 @@
                                         {{ instance.num_facture}}
                                     </div>
                                     <div>
-                                        {{ relever_actuel.date_releve|date:"j M Y" }}
+                                        {{ date_facture_actuel|date:"M Y" }}
                                     </div>
                                     <div>
                                         {{ instance.num_contrat.client.id_client }}
@@ -127,7 +127,7 @@
                         Ancien
                     </td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ reveler_precedant.volume }}</td>
-                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ reveler_precedant.date_releve|date:"M Y" }}</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ date_facture_precedant|date:"M Y" }}</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">Quantité</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">P.U (Ar)</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">Montant (Ar)</td>
@@ -141,7 +141,7 @@
                     <td style="width: 4px;"></td>
                     <td style="border: 1px solid black; width: 8%; margin-left: 5px; padding-top: 2px">Nouveau</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.volume }}</td>
-                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.date_releve|date:"M Y" }}</td>
+                    <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ date_facture_actuel|date:"M Y" }}</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">{{ relever_actuel.conso }}</td>
                     <td style="border: 1px solid black; width: 8%; text-align: center; padding-top: 2px">
                         {{ prix_m3 }}

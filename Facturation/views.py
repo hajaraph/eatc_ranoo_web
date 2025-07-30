@@ -4,7 +4,7 @@ import logging
 from datetime import timedelta, datetime
 from io import BytesIO
 import qrcode
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.template.loader import get_template
 from django.utils import timezone
 
@@ -26,6 +26,17 @@ from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
 
 logger = logging.getLogger(__name__)
+
+def get_mois_courant():
+    now = datetime.now()
+    debut_mois = now.replace(day=1).date()
+    if now.month == 12:
+        fin_mois = now.replace(year=now.year + 1, month=1, day=1).date() - timedelta(days=1)
+    else:
+        fin_mois = now.replace(month=now.month + 1, day=1).date() - timedelta(days=1)
+
+    return debut_mois, fin_mois
+
 
 def date_range(request, model, datedeb, datefin, date_field, statut=None):
     if datedeb and datefin and datedeb > datefin:
@@ -64,8 +75,16 @@ def facture(request):
     title = 'Facturation | Etat Facture'
     font = 'custom-font'
     active = 'active'
-    avoir = Avoir.objects.count()
-    restant = Restant.objects.count()
+
+    # Calculer le total des montants TTC impayés pour le mois courant
+    debut_mois, fin_mois = get_mois_courant()
+
+    # Total des montants impayés du mois courant
+    total_impaye_mois = Facture.objects.filter(
+        statut=False,
+        date_facture__range=[debut_mois, fin_mois]
+    ).aggregate(total=Sum('montant_total_ttc'))['total'] or 0
+
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
     factures = date_range(request, Facture, datedeb, datefin, 'date_facture')
@@ -77,8 +96,8 @@ def facture(request):
         'font_facture': font,
         'factures': factures,
         'impayer_exist': impayer_exist,
-        'avoir_count': avoir,
-        'restant': restant,
+        'avoir_count': total_impaye_mois,
+        'restant': total_impaye_mois,
         'provinces': pronvince,
         'datedeb': datedeb if datedeb else '',
         'datefin': datefin if datefin else '',
@@ -378,6 +397,23 @@ def facture_context_pdf(request, factures):
         reveler_precedant = get_object_or_404(compteur.relevecompteurs, date_releve=factures.date_facture_precedant)
         relever_actuel = get_object_or_404(compteur.relevecompteurs, date_releve=factures.date_facture)
 
+        # Plus simple : utiliser directement la date de la facture pour le mois
+        # Mais en reculant d'un mois pour chaque date
+        date_facture_precedant = factures.date_facture_precedant
+        date_facture_actuel = factures.date_facture
+
+        # Reculer d'un mois pour la date actuelle
+        if date_facture_actuel.month == 1:
+            date_facture_actuel = date_facture_actuel.replace(year=date_facture_actuel.year - 1, month=12)
+        else:
+            date_facture_actuel = date_facture_actuel.replace(month=date_facture_actuel.month - 1)
+
+        # Reculer d'un mois pour la date précédente
+        if date_facture_precedant.month == 1:
+            date_facture_precedant = date_facture_precedant.replace(year=date_facture_precedant.year - 1, month=12)
+        else:
+            date_facture_precedant = date_facture_precedant.replace(month=date_facture_precedant.month - 1)
+
         try:
             nombre = float(factures.montant_total_ttc)
             lettre = num2words(nombre, lang='fr')
@@ -395,6 +431,8 @@ def facture_context_pdf(request, factures):
             'lettre': lettre,
             'reveler_precedant': reveler_precedant,
             'relever_actuel': relever_actuel,
+            'date_facture_precedant': date_facture_precedant,  # Date de la facture pour l'affichage du mois
+            'date_facture_actuel': date_facture_actuel,
             'montant_ht_total': round(montant.total_conso_ht, 0),
             'paiement_exist': paiement_exist,
             'qr_code': qr_code
@@ -506,7 +544,7 @@ def calculer_total_net_a_payer(montant_actuel, montants_impayees):
         total_net_a_payer = montant_actuel + total_impayees
         return total_net_a_payer
     except Exception as e:
-        messages.error(f"Erreur lors du calcul du total net à payer: {e}")
+        logger.error(f"Erreur lors du calcul du total net à payer: {e}")
 
 
 
@@ -573,14 +611,7 @@ def generate_multiple_pages_pdf(request):
 
         # Si aucune date n'est fournie, utiliser le mois actuel pour les factures impayées
         if not date_deb and not date_fin:
-            now = datetime.now()
-            # Premier jour du mois actuel
-            date_deb = now.replace(day=1).date()
-            # Dernier jour du mois actuel
-            if now.month == 12:
-                date_fin = now.replace(year=now.year + 1, month=1, day=1).date() - timedelta(days=1)
-            else:
-                date_fin = now.replace(month=now.month + 1, day=1).date() - timedelta(days=1)
+            date_deb, date_fin = get_mois_courant()
 
         # Configuration des paramètres de performance
         batch_size = 4  # Taille des lots alignée sur le nombre de factures par page
