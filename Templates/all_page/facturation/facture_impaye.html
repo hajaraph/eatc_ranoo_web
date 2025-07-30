@@ -39,7 +39,8 @@
             </div>
             <div class="stat-content">
                 <div class="stat-label">Total Impayé ce Mois</div>
-                <div class="stat-value">{{ total_impaye_mois|default:0 }} <span class="currency">Ar</span></div>
+                <div class="stat-value" data-animate-to="{{ total_impaye_mois }}" data-duration="2000">0</div>
+                <span class="currency">Ar</span>
             </div>
         </div>
     </div>

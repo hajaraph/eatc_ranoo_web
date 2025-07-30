@@ -49,7 +49,8 @@
             </div>
             <div class="stat-content">
                 <div class="stat-label">Total Payé ce Mois</div>
-                <div class="stat-value">{{ total_paye_mois }} <span class="currency">Ar</span></div>
+                <div class="stat-value" data-animate-to="{{ total_paye_mois }}" data-duration="2000">0</div>
+                <span class="currency">Ar</span>
             </div>
         </div>
         <div class="stat-card stat-card-danger">
@@ -58,7 +59,8 @@
             </div>
             <div class="stat-content">
                 <div class="stat-label">Total Impayé ce Mois</div>
-                <div class="stat-value">{{ total_impaye_mois }} <span class="currency">Ar</span></div>
+                <div class="stat-value" data-animate-to="{{ total_impaye_mois }}" data-duration="2000">0</div>
+                <span class="currency">Ar</span>
             </div>
         </div>
     </div>

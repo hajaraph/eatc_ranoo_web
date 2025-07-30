@@ -94,7 +94,6 @@ def facture(request):
     datefin = request.GET.get('datefin')
     factures = date_range(request, Facture, datedeb, datefin, 'date_facture')
     pronvince = Province.objects.order_by('province').all()
-    impayer_exist = Facture.objects.filter(statut=False).exists()
     context = {
         'title_etat': title,
         'active_etat': active,
@@ -528,9 +527,16 @@ def get_derniers_montants_impayees(num_contrat, date_facture_actuelle):
 
             # MODIFICATION: Toujours ajouter un élément, même si pas de facture impayée
             if facture_impayee:
+                # Reculer d'un mois la date de la facture impayée pour l'affichage (cohérence avec la logique métier)
+                date_facture_originale = facture_impayee['date_facture']
+                if date_facture_originale.month == 1:
+                    date_facture_moins_un_mois = date_facture_originale.replace(year=date_facture_originale.year - 1, month=12)
+                else:
+                    date_facture_moins_un_mois = date_facture_originale.replace(month=date_facture_originale.month - 1)
+
                 montants.append({
                     'num_facture': facture_impayee['num_facture'],
-                    'date_facture': facture_impayee['date_facture'],
+                    'date_facture': date_facture_moins_un_mois,  # Date reculée d'un mois pour cohérence
                     'montant_total_ttc': facture_impayee['montant_total_ttc']
                 })
 
@@ -585,6 +591,8 @@ def facture_genere_pdf(request, num_facture):
             entreprise = Entreprise.objects.get(pk=id_entreprise)
             context['nif'] = f"{entreprise.nif}" if entreprise.nif else '-'
             context['stat'] = f"{entreprise.stat}" if entreprise.stat else '-'
+            context['num_mvola'] = f"{entreprise.numero_mvola}" if entreprise.numero_mvola else '-'
+            context['nom_mvola'] = f"{entreprise.nom_mvola}" if entreprise.nom_mvola else '-'
             context = encode_entreprise_images(entreprise, context)
             template_path = 'all_page/facturation/facture/templatenoeatc.html'
 
@@ -688,6 +696,8 @@ def generate_multiple_pages_pdf(request):
                     if entreprise:
                         context['nif'] = f"{entreprise.nif}" if entreprise.nif else '-'
                         context['stat'] = f"{entreprise.stat}" if entreprise.stat else '-'
+                        context['num_mvola'] = f"{entreprise.numero_mvola}" if entreprise.numero_mvola else '-'
+                        context['nom_mvola'] = f"{entreprise.nom_mvola}" if entreprise.nom_mvola else '-'
                         context = encode_entreprise_images(entreprise, context)
 
                     # Rendu du template

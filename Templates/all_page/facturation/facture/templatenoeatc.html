@@ -37,7 +37,7 @@
                                                 {% endif %}
                                     </div>
                                     <div>
-                                        Adresse : {{ instance.num_contrat.adresse_contrat }} ({{ instance.num_contrat.cp_commune.commune }})
+                                        Adresse : {{ instance.num_contrat.adresse_contrat }}
                                     </div>
                                     <div>
                                         Code client : {{ instance.num_contrat.client.id_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
@@ -47,8 +47,20 @@
                         </tr>
                     </table>
                 </td>
-                <td style="font-size: 10px; font-weight: bold; text-align: center">
-                    REÇU
+                <td style="width: 4px;"></td>
+                <td>
+                    <div style="text-decoration: underline">
+                        <strong>MVOLA</strong>
+                    </div>
+                    <div>
+                        <strong>Numéro :</strong> {{ num_mvola }}
+                    </div>
+                    <div>
+                        <strong>Nom :</strong> {{ nom_mvola }}
+                    </div>
+                    <div>
+                        Soraty eo amin'ny "<strong>déscription</strong>" ny numéro Facture "<strong>Facture n°</strong>"
+                    </div>
                 </td>
             </tr>
         </table>
