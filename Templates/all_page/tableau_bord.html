@@ -73,7 +73,7 @@
                                         </div>
                                         <div class="flex-grow-1">
                                             <div class="stats-label">Chiffre d'affaires</div>
-                                            <div class="stats-value" id="chiffres-display">{{ chiffres }}</div>
+                                            <div class="stats-value" data-animate-to="{{ chiffres }}" data-duration="2000">0</div>
                                             <small class="text-muted">Ariary (AR)</small>
                                         </div>
                                     </div>
@@ -182,6 +182,7 @@
 
     <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
     <script src="{% static 'fontawesome/js/all.min.js' %}"></script>
+    <script src="{% static 'chiffre_espacement.js' %}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/2.0.0-alpha0/date_fns.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
@@ -225,11 +226,6 @@
         function formatNumberWithSpaces(number) {
             return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
         }
-
-        // Animation du chiffre d'affaires
-        const chiffresElement = document.getElementById('chiffres-display');
-        const originalValue = parseFloat('{{ chiffres }}'.replace(/\s/g, '')) || 0;
-        animateValue(chiffresElement, 0, originalValue, 2000);
 
         // Données pour le graphique doughnut
         const dataValues = [

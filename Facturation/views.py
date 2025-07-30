@@ -94,7 +94,6 @@ def facture(request):
     datefin = request.GET.get('datefin')
     factures = date_range(request, Facture, datedeb, datefin, 'date_facture')
     pronvince = Province.objects.order_by('province').all()
-    impayer_exist = Facture.objects.filter(statut=False).exists()
     context = {
         'title_etat': title,
         'active_etat': active,
