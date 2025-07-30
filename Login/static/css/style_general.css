@@ -27,6 +27,16 @@
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    /* Variables pour les cartes de statistiques */
+    --stat-card-padding: 1.5rem;
+    --stat-card-gap: 1rem;
+    --stat-card-min-width: 250px;
+    --stat-card-max-width: 280px;
+    --stat-icon-size: 60px;
+    --stat-border-height: 4px;
+    --stat-value-size: 1.75rem;
+    --stat-label-size: 0.875rem;
 }
 
 /* Styles généraux */
@@ -549,4 +559,177 @@
     background: rgba(156, 39, 176, 0.3) !important; /* Violet semi-transparent */
     color: var(--secondary-color) !important;
     border-color: var(--secondary-color) !important;
+}
+
+/* ===========================================
+   CARTES DE STATISTIQUES OPTIMISÉES
+   =========================================== */
+
+/* Carte principale */
+.stat-card {
+    flex: 1;
+    min-width: var(--stat-card-min-width);
+    max-width: var(--stat-card-max-width);
+    background: white;
+    border-radius: 16px;
+    padding: var(--stat-card-padding);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: var(--stat-card-gap);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Barre supérieure colorée */
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--stat-border-height);
+    transition: all 0.3s ease;
+}
+
+/* Effet de survol */
+.stat-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Icône de la carte */
+.stat-icon {
+    width: var(--stat-icon-size);
+    height: var(--stat-icon-size);
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-icon::before {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Contenu de la carte */
+.stat-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-label {
+    font-size: var(--stat-label-size);
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.stat-value {
+    font-size: var(--stat-value-size);
+    font-weight: 700;
+    color: var(--dark-color);
+    line-height: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+}
+
+.stat-value .currency {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+/* Variantes de couleurs - Utilise des custom properties pour éviter la répétition */
+.stat-card-primary {
+    --card-color: var(--primary-color);
+    --card-color-light: var(--primary-light);
+}
+
+.stat-card-success {
+    --card-color: var(--success-color);
+    --card-color-light: var(--success-light);
+}
+
+.stat-card-warning {
+    --card-color: var(--warning-color);
+    --card-color-light: var(--warning-light);
+}
+
+.stat-card-danger {
+    --card-color: var(--danger-color);
+    --card-color-light: var(--danger-light);
+}
+
+.stat-card-info {
+    --card-color: var(--info-color);
+    --card-color-light: var(--info-light);
+}
+
+.stat-card-secondary {
+    --card-color: var(--secondary-color);
+    --card-color-light: var(--secondary-light);
+}
+
+/* Application des couleurs via les custom properties */
+.stat-card[class*="stat-card-"]::before {
+    background: linear-gradient(135deg, var(--card-color) 0%, var(--card-color-light) 100%);
+}
+
+.stat-card[class*="stat-card-"] .stat-icon {
+    background: linear-gradient(135deg, var(--card-color) 0%, var(--card-color-light) 100%);
+}
+
+/* Animations échelonnées */
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+.stat-card:nth-child(5) { animation-delay: 0.5s; }
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    :root {
+        --stat-card-min-width: 220px;
+        --stat-card-max-width: 250px;
+        --stat-card-padding: 1.25rem;
+        --stat-icon-size: 50px;
+        --stat-value-size: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --stat-card-min-width: 100%;
+        --stat-card-max-width: 100%;
+        --stat-icon-size: 45px;
+        --stat-value-size: 1.375rem;
+        --stat-label-size: 0.8rem;
+    }
+
+    .stat-card {
+        margin-bottom: 1rem;
+    }
 }

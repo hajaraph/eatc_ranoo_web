@@ -24,9 +24,14 @@
         </form>
     </div>
     <div class="d-flex flex-wrap justify-content-end my-5">
-        <div class="col-md-2 border rounded p-4">
-            <div class="text-center">Nb Restant Disponible: </div>
-            <h3 class="text-center text-secondary">{{ restants.count }}</h3>
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Montants Restants</div>
+                <div class="stat-value">{{ restants.count }}</div>
+            </div>
         </div>
     </div>
     <div class="table-responsive my-5">

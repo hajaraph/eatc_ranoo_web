@@ -24,9 +24,14 @@
         </form>
     </div>
     <div class="d-flex flex-wrap justify-content-end my-5">
-        <div class="col-md-2 border rounded p-4">
-            <div class="text-center">Nb avoir Disponible: </div>
-            <h3 class="text-center text-secondary">{{ avoirs.count }}</h3>
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Avoirs Disponibles</div>
+                <div class="stat-value">{{ avoirs.count }}</div>
+            </div>
         </div>
     </div>
     <div class="table-responsive">
