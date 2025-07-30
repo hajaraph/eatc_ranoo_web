@@ -85,6 +85,11 @@ def facture(request):
         date_facture__range=[debut_mois, fin_mois]
     ).aggregate(total=Sum('montant_total_ttc'))['total'] or 0
 
+    total_paye_mois = Facture.objects.filter(
+        statut=True,
+        date_facture__range=[debut_mois, fin_mois]
+    ).aggregate(total=Sum('montant_total_ttc'))['total'] or 0
+
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
     factures = date_range(request, Facture, datedeb, datefin, 'date_facture')
@@ -95,9 +100,8 @@ def facture(request):
         'active_etat': active,
         'font_facture': font,
         'factures': factures,
-        'impayer_exist': impayer_exist,
-        'avoir_count': total_impaye_mois,
-        'restant': total_impaye_mois,
+        'total_impaye_mois': total_impaye_mois,
+        'total_paye_mois': total_paye_mois,
         'provinces': pronvince,
         'datedeb': datedeb if datedeb else '',
         'datefin': datefin if datefin else '',

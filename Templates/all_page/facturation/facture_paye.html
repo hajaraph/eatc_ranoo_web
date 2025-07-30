@@ -24,9 +24,14 @@
         </form>
     </div>
     <div class="d-flex flex-wrap justify-content-end my-5">
-        <div class="col-md-2 border rounded p-4">
-            <div class="text-center">Facture Payé : </div>
-            <h3 class="text-center text-secondary">{{ payes.count }}</h3>
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Factures Payées</div>
+                <div class="stat-value">{{ payes.count }}</div>
+            </div>
         </div>
     </div>
     <div class="table-responsive p-1">
