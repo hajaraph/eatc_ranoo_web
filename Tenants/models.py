@@ -11,6 +11,8 @@ from Acommune.models import Commune
 class Entreprise(TenantMixin):
     nom_entreprise = models.CharField(max_length=100)
     schema_name = models.CharField(max_length=100, verbose_name="Base de donnée")
+    numero_mvola = models.CharField(max_length=10, blank=True, null=True, verbose_name='Numéro Mvola')
+    nom_mvola = models.CharField(max_length=256, blank=True, null=True, verbose_name='Nom Mvola')
     nif = models.CharField(max_length=100, verbose_name="NIF", blank=True, null=True)
     stat = models.CharField(max_length=100, verbose_name="STAT", blank=True, null=True)
     logo_entreprise = models.ImageField(upload_to='logo/entreprise', blank=True, verbose_name='Logo')

@@ -588,6 +588,8 @@ def facture_genere_pdf(request, num_facture):
             entreprise = Entreprise.objects.get(pk=id_entreprise)
             context['nif'] = f"{entreprise.nif}" if entreprise.nif else '-'
             context['stat'] = f"{entreprise.stat}" if entreprise.stat else '-'
+            context['num_mvola'] = f"{entreprise.numero_mvola}" if entreprise.numero_mvola else '-'
+            context['nom_mvola'] = f"{entreprise.nom_mvola}" if entreprise.nom_mvola else '-'
             context = encode_entreprise_images(entreprise, context)
             template_path = 'all_page/facturation/facture/templatenoeatc.html'
 
@@ -691,6 +693,8 @@ def generate_multiple_pages_pdf(request):
                     if entreprise:
                         context['nif'] = f"{entreprise.nif}" if entreprise.nif else '-'
                         context['stat'] = f"{entreprise.stat}" if entreprise.stat else '-'
+                        context['num_mvola'] = f"{entreprise.numero_mvola}" if entreprise.numero_mvola else '-'
+                        context['nom_mvola'] = f"{entreprise.nom_mvola}" if entreprise.nom_mvola else '-'
                         context = encode_entreprise_images(entreprise, context)
 
                     # Rendu du template
