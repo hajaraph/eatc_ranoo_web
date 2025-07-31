@@ -5,11 +5,15 @@ from Tenants.models import Utilisateur
 
 
 class Categories(models.Model):
-    id_category = models.BigAutoField(primary_key=True)
+    id_category = models.CharField(
+        max_length=10,
+        primary_key=True,
+        verbose_name='ID Catégorie'
+    )
     nom_categorie = models.CharField(
         max_length=255,
         unique=True,
-        verbose_name="Nom de la catégorie"
+        verbose_name='Nom de la catégorie'
     )
 
     class Meta:

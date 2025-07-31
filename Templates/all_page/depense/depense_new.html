@@ -1,0 +1,111 @@
+<div class="card-body">
+    <h3 class="text-center mb-5">Nouvelle Dépense</h3>
+    <form method="post" id="formNew">
+        {% csrf_token %}
+        <div class="card-body">
+            <!-- Date de transaction -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="date" 
+                               name="date_transaction" 
+                               id="date_transaction" 
+                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                               value="{{ today|date:'Y-m-d' }}" 
+                               required>
+                        <label for="date_transaction">Date de la transaction</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catégorie -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <select name="categorie"
+                                id="categorie"
+                                class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0"
+                                required>
+                            <option value="" selected disabled>Sélectionnez une catégorie</option>
+                            {% for categorie in categories %}
+                                <option value="{{ categorie.id_category }}">
+                                    {{ categorie.pk }} | {{ categorie.nom_categorie }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <label for="categorie">Catégorie</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Libellé -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="form-floating">
+                        <input type="text" 
+                               name="libelle" 
+                               id="libelle" 
+                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                               placeholder="" 
+                               required>
+                        <label for="libelle">Libellé</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Montant -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="number" 
+                               name="montant" 
+                               id="montant" 
+                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                               step="0.01" 
+                               min="0.01" 
+                               placeholder="0.00" 
+                               required>
+                        <label for="montant">Montant (Ar)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Numéro de reçu -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="text" 
+                               name="numero_recu" 
+                               id="numero_recu" 
+                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                               placeholder="">
+                        <label for="numero_recu">Numéro de reçu (optionnel)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Boutons d'action -->
+            <div class="d-flex justify-content-between mt-5">
+                <div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Ajout du script pour la gestion du formulaire -->
+<script>
+    document.getElementById('formNew').addEventListener('submit', function(e) {
+        // Validation supplémentaire si nécessaire
+        const montant = parseFloat(document.getElementById('montant').value);
+        if (montant <= 0) {
+            e.preventDefault();
+            alert('Le montant doit être supérieur à 0');
+            return false;
+        }
+        return true;
+    });
+</script>

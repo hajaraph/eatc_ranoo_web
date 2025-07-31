@@ -27,7 +27,7 @@
                     <div class="card-header border-0">
                         <div class="row">
                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'depense' %}" class="btn btn-sm w-100 {{ active_depense_list }}">
+                                <a href="{% url 'depense' %}" class="btn btn-sm w-100 {{ active_depense }}">
                                     Dépenses
                                 </a>
                             </div>
@@ -38,11 +38,11 @@
                         {% if title_depense_list %}
                             {% include 'all_page/depense/depense_liste.html' %}
                         {% elif title_depense_new %}
-                            {% include 'all_page/main_courante/main_liste_mc_detail.html' %}
+                            {% include 'all_page/depense/depense_new.html' %}
                         {% elif title_categorie_list %}
-                            {% include 'all_page/main_courante/main_liste_mc_detail.html' %}
+                            {% include 'all_page/depense/categorie_liste.html' %}
                         {% elif title_categorie_new %}
-                            {% include 'all_page/main_courante/main_liste_mc_detail.html' %}
+                            {% include 'all_page/depense/categorie_new.html' %}
                         {% endif %}
                     </div>
                 </div>
@@ -56,6 +56,7 @@
     <script src="{% static 'client/modal.js' %}"></script>
     <script src="{% static 'photomc.js' %}"></script>
     <script src="{% static 'modal.js' %}"></script>
+    <script src="{% static 'chiffre_espacement.js' %}"></script>
     <script>
         function openUrlInNewTab(url) {
             window.open(url, '_blank');

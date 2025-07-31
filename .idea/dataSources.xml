@@ -8,7 +8,7 @@
       <jdbc-url>jdbc:postgresql://localhost:5432/rel_compteur</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="rel_compteur@remote" uuid="15736ebf-b9dc-4366-b95a-a2df7686cac4">
+    <data-source source="LOCAL" name="rel_compteur@remote" uuid="9b86cdc9-edb1-4872-acdc-ddd58afcce27">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>

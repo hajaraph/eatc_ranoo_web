@@ -48,7 +48,7 @@
                 <i class="fas fa-check-circle"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-label">Total Payé ce ({{ mois_actuel|date:"F" }})</div>
+                <div class="stat-label">Total Payé/({{ mois_actuel|date:"F" }})</div>
                 <div class="stat-value" data-animate-to="{{ total_paye_mois }}" data-duration="2000">0</div>
                 <span class="currency">Ar</span>
             </div>
@@ -58,7 +58,7 @@
                 <i class="fas fa-exclamation-circle"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-label">Total Impayé ce ({{ mois_actuel|date:"F" }})</div>
+                <div class="stat-label">Total Impayé/({{ mois_actuel|date:"F" }})</div>
                 <div class="stat-value" data-animate-to="{{ total_impaye_mois }}" data-duration="2000">0</div>
                 <span class="currency">Ar</span>
             </div>

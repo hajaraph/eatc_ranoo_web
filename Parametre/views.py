@@ -3,16 +3,14 @@ from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
 from django.http import FileResponse
 from django.shortcuts import render, redirect
-from django.views import View
 from openpyxl.workbook import Workbook
 
-from Tenants.middleware import schema_use
+from Tenants.middleware import schema_use, SchemaAwareView
 from Tenants.models import Utilisateur
-from Login.views import authentification_requis, role_requis, deconnexion
+from Login.views import role_requis, deconnexion
 from Parametre.models import Historique
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def para_utilisateur(request):
@@ -27,12 +25,12 @@ def para_utilisateur(request):
     return render(request, 'all_page/parametre/parametre.html', contexte)
 
 
-class ProfileModifier(View):
-    @staticmethod
-    @authentification_requis
+class ProfileModifier(SchemaAwareView):
+
+    template_name = 'all_page/parametre/parametre.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request):
+    def get(self, request):
         titre = 'Parametre | Profile'
         active = 'active'
         font = 'custom-font'
@@ -41,12 +39,10 @@ class ProfileModifier(View):
             'active_utilisateur': active,
             'font_parametre': font
         }
-        return render(request, 'all_page/parametre/parametre.html', contexte)
+        return render(request, self.template_name, contexte)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request):
         utilisateur = Utilisateur.objects.get(pk=request.session.get('id_utilisateur'))
         num_utilisateur = utilisateur.num_utilisateur
@@ -80,7 +76,6 @@ class ProfileModifier(View):
         return redirect('para_utilisateur')
 
 
-@authentification_requis
 @role_requis('Administrateur')
 @schema_use
 def historique(request):
@@ -97,12 +92,12 @@ def historique(request):
     return render(request, 'all_page/parametre/parametre.html', contexte)
 
 
-class ChangerMotdePasse(View):
-    @staticmethod
-    @authentification_requis
+class ChangerMotdePasse(SchemaAwareView):
+
+    template_name = 'all_page/parametre/parametre.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request):
+    def get(self, request):
         titre = 'Parametre | Profile | Changer Mot de Passe'
         active = 'active'
         font = 'custom-font'
@@ -111,12 +106,10 @@ class ChangerMotdePasse(View):
             'active_motde_passe': active,
             'font_parametre': font
         }
-        return render(request, 'all_page/parametre/parametre.html', contexte)
+        return render(request, self.template_name, contexte)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request):
         ancien_motpasse = request.POST.get('ancien_motpasse')
         nouveau_motpasse = request.POST.get('nouveau_motpasse')

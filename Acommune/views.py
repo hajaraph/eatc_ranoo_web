@@ -5,12 +5,10 @@ from django.views import View
 
 from Acommune.models import Commune, Region, Province
 from Login.views import authentification_requis, role_requis
-from Tenants.middleware import schema_use
 
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
-@schema_use
 def region(request):
     titre = 'Ranoo Config | Région'
     active = 'active'
@@ -26,11 +24,12 @@ def region(request):
 
 
 class CommuneNew(View):
-    @staticmethod
-    @authentification_requis
+
+    template_name = 'all_page/ranoo_config/content.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request):
+    @authentification_requis
+    def get(self, request):
         titre = 'Ranoo Config | Région | Nouveau Département'
         active = 'active'
         font = 'custom-font'
@@ -43,12 +42,11 @@ class CommuneNew(View):
             'regions': regions,
             'province': province,
         }
-        return render(request, 'all_page/ranoo_config/content.html', context)
+        return render(request, self.template_name, context)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
+    @authentification_requis
     def post(request):
         regions = request.POST['region']
         commune = request.POST['commune']
@@ -70,7 +68,6 @@ class CommuneNew(View):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
-@schema_use
 def supp_commune(request, pk):
     commune = Commune.objects.get(pk=pk)
     commune.delete()
@@ -80,7 +77,6 @@ def supp_commune(request, pk):
 
 @authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
-@schema_use
 def commune_list(request, province, *args, **kwargs):
     # Récupérer les régions distinctes pour la province
     regions = Region.objects.filter(province__province=province).order_by('region').distinct('region').values('region')

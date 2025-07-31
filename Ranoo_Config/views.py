@@ -1,20 +1,17 @@
 from django.contrib import messages
-from django.contrib.auth.hashers import make_password
 from django.db.models import ProtectedError
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views import View
 
 from Acommune.models import Region, Province
 from Clients.models import TypeClient
 from Facturation.models import Tarif, Taxe
 from Ranoo_Config.models import ConfigBranchement
-from Tenants.middleware import schema_use
+from Tenants.middleware import schema_use, SchemaAwareView
 from Tenants.models import Utilisateur, Role, Initial
-from Login.views import authentification_requis, role_requis
+from Login.views import role_requis
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def config_utilisateur(request):
@@ -32,12 +29,12 @@ def config_utilisateur(request):
     return render(request, 'all_page/ranoo_config/content.html', contexte)
 
 
-class NouvelUtilisateur(View):
-    @staticmethod
-    @authentification_requis
+class NouvelUtilisateur(SchemaAwareView):
+
+    template_name = 'all_page/ranoo_config/content.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request):
+    def get(self, request):
         titre = 'Parametre | Utilisateur | Crée un compte'
         active = 'active'
         font = 'custom-font'
@@ -55,12 +52,10 @@ class NouvelUtilisateur(View):
             'role': role,
             'provinces': provinces
         }
-        return render(request, 'all_page/ranoo_config/content.html', contexte)
+        return render(request, self.template_name, contexte)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request):
         nom_utilisateur = request.POST['nom_utilisateur']
         prenom_utilisateur = request.POST['prenom_utilisateur']
@@ -96,12 +91,12 @@ class NouvelUtilisateur(View):
         return redirect('nouvel_utilisateur')
 
 
-class UtilisateurMod(View):
-    @staticmethod
-    @authentification_requis
+class UtilisateurMod(SchemaAwareView):
+
+    template_name = 'all_page/ranoo_config/content.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request, pk):
+    def get(self, request, pk):
         active = 'active'
         font = 'custom-font'
 
@@ -121,12 +116,10 @@ class UtilisateurMod(View):
             'role': role,
             'regions': regions
         }
-        return render(request, 'all_page/ranoo_config/content.html', data)
+        return render(request, self.template_name, data)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur')
-    @schema_use
     def post(request, pk):
         utilisateur = get_object_or_404(Utilisateur, pk=pk)
         
@@ -168,7 +161,6 @@ class UtilisateurMod(View):
             return redirect('utilisateur_modifier', pk)
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def sup_utilisateur(request, pk):
@@ -183,7 +175,6 @@ def sup_utilisateur(request, pk):
     return redirect('config_utilisateur')
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def branchement(request):
@@ -200,12 +191,12 @@ def branchement(request):
     return render(request, 'all_page/ranoo_config/content.html', context)
 
 
-class BranchementConfig(View):
-    @staticmethod
-    @authentification_requis
+class BranchementConfig(SchemaAwareView):
+
+    template_name = 'all_page/ranoo_config/content.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request):
+    def get(self, request):
         titre = 'Ranoo Config | Branchement | Nouveau'
         active = 'active'
         font = 'custom-font'
@@ -214,12 +205,10 @@ class BranchementConfig(View):
             'active_branchement': active,
             'font_rano': font,
         }
-        return render(request, 'all_page/ranoo_config/content.html', context)
+        return render(request, self.template_name, context)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request):
         nom_branchement = request.POST['branchement']
         tva_applique = request.POST.get('tva_applique') == 'on'
@@ -241,9 +230,8 @@ class BranchementConfig(View):
             return redirect('branchement_nouveau')
 
 
-@authentification_requis
+
 @role_requis('Administrateur', 'Gestionnaire')
-@schema_use
 def get_branchement_list(request):
     configs = (ConfigBranchement.objects.all().order_by('type_client__designation_client')
                .values('id_config_branchement', 'type_client__designation_client'))
@@ -251,12 +239,12 @@ def get_branchement_list(request):
     return JsonResponse({'configs': list(configs)})
 
 
-class BranchementMod(View):
-    @staticmethod
-    @authentification_requis
+class BranchementMod(SchemaAwareView):
+
+    template_name = 'all_page/ranoo_config/content.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request, pk):
+    def get(self, request, pk):
         try:
             branchement_obj = get_object_or_404(ConfigBranchement, pk=pk)
             titre = f'Ranoo Config | Branchement | Modification de {branchement_obj.type_client.designation_client}'
@@ -268,15 +256,13 @@ class BranchementMod(View):
                 'font_rano': font,
                 'branchement': branchement_obj
             }
-            return render(request, 'all_page/ranoo_config/content.html', context)
+            return render(request, self.template_name, context)
         except ConfigBranchement.DoesNotExist:
             messages.error(request, f"Ce branchement n'exist pas !")
             return redirect('branchement')
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request, pk):
         designation_client = request.POST['branchement']
         tva_applique = request.POST.get('tva_applique') == 'on'
@@ -297,9 +283,7 @@ class BranchementMod(View):
             return redirect('branchement')
 
 
-@authentification_requis
 @role_requis('Administrateur')
-@schema_use
 def branchement_supp(request, pk):
     try:
         branchement_obj = get_object_or_404(TypeClient, pk=pk)
@@ -313,9 +297,7 @@ def branchement_supp(request, pk):
     return redirect('branchement')
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
-@schema_use
 def config_tarif(request):
     titre = 'Ranoo Config | Tarif'
     active = 'active'
@@ -337,12 +319,12 @@ def config_tarif(request):
     return render(request, 'all_page/ranoo_config/content.html', context)
 
 
-class TarifNew(View):
-    @staticmethod
-    @authentification_requis
+class TarifNew(SchemaAwareView):
+
+    template_name = 'all_page/ranoo_config/content.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request):
+    def get(self, request):
         titre = 'Ranoo Config | Tarif | Nouveau'
         active = 'active'
         font = 'custom-font'
@@ -353,12 +335,10 @@ class TarifNew(View):
             'font_rano': font,
             'provinces': provinces
         }
-        return render(request, 'all_page/ranoo_config/content.html', context)
+        return render(request, self.template_name, context)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request):
         cp_commune = request.POST['commune']
         conso_tva_app = float(request.POST['conso_tva_app']) if request.POST['conso_tva_app'] else 0
@@ -396,12 +376,12 @@ class TarifNew(View):
         return redirect('config_tarif')
 
 
-class TarifMod(View):
-    @staticmethod
-    @authentification_requis
+class TarifMod(SchemaAwareView):
+
+    template_name = 'all_page/ranoo_config/content.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request, pk):
+    def get(self, request, pk):
         titre = 'Ranoo Config | Tarif Modifier'
         active = 'active'
         font = 'custom-font'
@@ -414,12 +394,10 @@ class TarifMod(View):
             'tarif': tarif,
             'taxes': taxes
         }
-        return render(request, 'all_page/ranoo_config/content.html', context)
+        return render(request, self.template_name, context)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request, pk):
         prix_m3_bs = float(request.POST['prix_m3_bs'])
         prix_m3_bp = float(request.POST['prix_m3_bp'])

@@ -18,7 +18,7 @@ from Clients.models import Contrat
 from Clients.views import generate_pdf
 from Compteurs.models import ReleveCompteur, Compteur
 from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
-from Login.views import authentification_requis, role_requis
+from Login.views import role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 from Acommune.models import Province
 from Ranoo_Config.models import ConfigBranchement
@@ -69,7 +69,6 @@ def date_range_fact_pdf(date_deb, date_fin, commune, model):
     return model.filter(filters)
 
 
-@authentification_requis
 @schema_use
 def facture(request):
     title = 'Facturation | Etat Facture'
@@ -111,7 +110,6 @@ def facture(request):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
-@authentification_requis
 @schema_use
 def facture_etat_detail(request, num_facture):
     title = 'Facturation | Etat Facture | Détail'
@@ -139,7 +137,6 @@ def facture_etat_detail(request, num_facture):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
-@authentification_requis
 @schema_use
 def facture_paye(request):
     title = 'Facturation | Payé'
@@ -160,7 +157,6 @@ def facture_paye(request):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
-@authentification_requis
 @schema_use
 def facture_impaye(request):
     title = 'Facturation | Impayé'
@@ -180,7 +176,6 @@ def facture_impaye(request):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
-@authentification_requis
 @schema_use
 def facture_restant(request):
     title = 'Facturation | Facture'
@@ -200,7 +195,6 @@ def facture_restant(request):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
-@authentification_requis
 @schema_use
 def facture_retard(request):
     title = 'Facturation | Retard'
@@ -212,7 +206,6 @@ def facture_retard(request):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
-@authentification_requis
 @schema_use
 def facture_avoir(request):
     title = 'Facturation | Avoir'
@@ -561,7 +554,6 @@ def calculer_total_net_a_payer(montant_actuel, montants_impayees):
 
 
 
-@authentification_requis
 @schema_use
 def facture_genere_pdf(request, num_facture):
     try:
@@ -615,7 +607,6 @@ def render_html_to_pdf(template_src, context_dict):
     return html
 
 
-@authentification_requis
 @schema_use
 def generate_multiple_pages_pdf(request):
     try:
@@ -889,7 +880,6 @@ def paiement(id_releve, montant_payer, utilisateur):
     fact_paiement.save()
 
 
-@authentification_requis
 @schema_use
 def facture_paiement(request, *args, **kwargs):
     id_releve = request.POST['id_releve']
@@ -900,7 +890,6 @@ def facture_paiement(request, *args, **kwargs):
     return JsonResponse({'message': 'Paiement effectué avec succès'})
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def facture_export_excel(request):

@@ -9,13 +9,12 @@ from django.utils import timezone
 
 from Clients.models import Contrat, TypeClient
 from Facturation.models import Paiement, Facture
-from Login.views import authentification_requis, role_requis
+from Login.views import role_requis
 from Main_Courante.models import StatutMC
 from Acommune.models import Region, Commune
 from Tenants.middleware import schema_use
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire', 'Autre')
 @schema_use
 def tableau_bord(request, *args, **kwargs):

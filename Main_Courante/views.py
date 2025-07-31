@@ -2,17 +2,14 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.shortcuts import render, redirect
 from django.utils import timezone
-from django.views import View
 
 from Acommune.models import Region
 from Clients.models import Client
-from Login.views import authentification_requis
 from Main_Courante.models import MainCourante, StatutMC, SuivieMC
 from Parametre.views import exporter_en_excel, enregistre_historique
-from Tenants.middleware import schema_use
+from Tenants.middleware import schema_use, SchemaAwareView
 
 
-@authentification_requis
 @schema_use
 def main_liste_mc(request):
     title = 'Main Courante | Liste MC'
@@ -60,7 +57,6 @@ def main_liste_mc(request):
     return render(request, 'all_page/main_courante/main_courante.html', context)
 
 
-@authentification_requis
 @schema_use
 def detail_mc(request, pk):
     title = 'Main Courante| Détail'
@@ -82,11 +78,11 @@ def detail_mc(request, pk):
     return render(request, 'all_page/main_courante/main_courante.html', context)
 
 
-class MainCouranteNew(View):
-    @staticmethod
-    @authentification_requis
-    @schema_use
-    def get(request):
+class MainCouranteNew(SchemaAwareView):
+
+    template_name = 'all_page/main_courante/main_courante.html'
+
+    def get(self, request):
         title = 'Main Courante | Nouvelle Anomalie'
         active = 'active'
         font = 'custom-font'
@@ -100,11 +96,9 @@ class MainCouranteNew(View):
             'regions': region,
             'client': client
         }
-        return render(request, 'all_page/main_courante/main_courante.html', context)
+        return render(request, self.template_name, context)
 
     @staticmethod
-    @authentification_requis
-    @schema_use
     def post(request):
         client = request.POST['client_id']
         cp_commune = request.POST['commune'] if 'commune' in request.POST else None
@@ -162,7 +156,6 @@ def update_statut_mc(request, pk, en_cours=None, non_traite=None, realise=None,
     return redirect('detail_mc', pk)
 
 
-@authentification_requis
 @schema_use
 def lance_mc(request, pk):
     return update_statut_mc(
@@ -174,7 +167,6 @@ def lance_mc(request, pk):
     )
 
 
-@authentification_requis
 @schema_use
 def valide_mc(request, pk):
     return update_statut_mc(
@@ -186,7 +178,6 @@ def valide_mc(request, pk):
     )
 
 
-@authentification_requis
 @schema_use
 def supprimer_mc(request, pk):
     main = MainCourante.objects.get(pk=pk)
@@ -202,7 +193,6 @@ def supprimer_mc(request, pk):
     return redirect('main_liste_mc')
 
 
-@authentification_requis
 @schema_use
 def suivie(request, pk):
     commentaire = request.POST['commentaire']
@@ -215,7 +205,6 @@ def suivie(request, pk):
     return redirect('detail_mc', pk)
 
 
-@authentification_requis
 @schema_use
 def supp_suivie(request, pk):
     suivies = SuivieMC.objects.get(pk=pk)
@@ -226,7 +215,6 @@ def supp_suivie(request, pk):
     return redirect('detail_mc', main_courante_id)
 
 
-@authentification_requis
 @schema_use
 def export_mc_excel(request):
     date_deb = request.GET.get('date_deb')

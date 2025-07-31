@@ -9,12 +9,11 @@ from Compteurs.models import Compteur, ReleveCompteur
 from Clients.models import Contrat
 from Facturation.models import Facture
 from Facturation.views import facture_creation
-from Login.views import authentification_requis, role_requis
+from Login.views import role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
-from Tenants.middleware import schema_use
+from Tenants.middleware import schema_use, SchemaAwareView
 
 
-@authentification_requis
 @schema_use
 def compteur_liste(request):
     title = 'Compteurs | Liste'
@@ -60,12 +59,12 @@ def compteur_liste(request):
     return render(request, 'all_page/compteurs/compteurs.html', context)
 
 
-class CompteurNew(View):
-    @staticmethod
-    @authentification_requis
+class CompteurNew(SchemaAwareView):
+
+    template_name = 'all_page/compteurs/compteurs.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request):
+    def get(self, request):
         title = 'Compteurs | Nouveau'
         active = 'active'
         font = 'custom-font'
@@ -74,12 +73,10 @@ class CompteurNew(View):
             'active_li_co': active,
             'font_compteur': font
         }
-        return render(request, 'all_page/compteurs/compteurs.html', context)
+        return render(request, self.template_name, context)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request):
         num_compteur = request.POST['num_compteur']
         marque_compteur = request.POST['marque_compteur']
@@ -116,12 +113,12 @@ class CompteurNew(View):
             return redirect('compteur_list')
 
 
-class CompteurDetail(View):
-    @staticmethod
-    @authentification_requis
+class CompteurDetail(SchemaAwareView):
+
+    template_name = 'all_page/compteurs/compteur.html'
+
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
-    @schema_use
-    def get(request, pk):
+    def get(self, request, pk):
         try:
             active = 'active'
             font = 'custom-font'
@@ -140,15 +137,13 @@ class CompteurDetail(View):
                 'client': contrat.get().client if contrat.exists() else None,
                 'client_active': contrat.get().client.compte_actif if contrat.exists() else None
             }
-            return render(request, 'all_page/compteurs/compteurs.html', context)
+            return render(request, self.template_name, context)
         except Exception as e:
             messages.error(request, f"Une erreur est survenue sur le compteur : {e}")
             return redirect('compteur_list')
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
-    @schema_use
     def post(request, pk):
         mod_compteur = Compteur.objects.get(pk=pk)
         marque_compteur = request.POST['marque_compteur']
@@ -169,7 +164,6 @@ class CompteurDetail(View):
         return redirect('compteur_list')
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def compteur_supp(request, pk):
@@ -183,7 +177,6 @@ def compteur_supp(request, pk):
     return redirect('compteur_list')
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
 @schema_use
 def compteur_releve(request):
@@ -214,12 +207,12 @@ def compteur_releve(request):
     return render(request, 'all_page/compteurs/compteurs.html', context)
 
 
-class ReleveNew(View):
-    @staticmethod
-    @authentification_requis
+class ReleveNew(SchemaAwareView):
+
+    template_name = 'all_page/compteurs/compteurs_new.html'
+
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
-    @schema_use
-    def get(request, num_compteur):
+    def get(self, request, num_compteur):
         try:
             compteur = Compteur.objects.get(pk=num_compteur)
 
@@ -232,7 +225,7 @@ class ReleveNew(View):
                 'font_compteur': font,
                 'compteur': compteur,
             }
-            return render(request, 'all_page/compteurs/compteurs.html', context)
+            return render(request, self.template_name, context)
             
         except Compteur.DoesNotExist:
             messages.error(request, "Le compteur spécifié n'existe pas.")
@@ -242,9 +235,7 @@ class ReleveNew(View):
             return redirect('compteur_list')
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
-    @schema_use
     def post(request, num_compteur):
         date_releve = request.POST.get('date_releve')
         date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
@@ -295,11 +286,11 @@ def relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateu
 
 
 class ReleveMod(View):
-    @staticmethod
-    @authentification_requis
+
+    template_name = 'all_page/compteurs/compteurs.html'
+
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
-    @schema_use
-    def get(request, pk):
+    def get(self, request, pk):
         releve = ReleveCompteur.objects.get(pk=pk)
         title = f"Relevé | Détail | "
         active = 'active'
@@ -311,7 +302,7 @@ class ReleveMod(View):
             'font_compteur': font,
             'releve': releve
         }
-        return render(request, 'all_page/compteurs/compteurs.html', context)
+        return render(request, self.template_name, context)
 
     @staticmethod
     def mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur, dernier_releve):
@@ -327,9 +318,7 @@ class ReleveMod(View):
         return mod_releve
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
-    @schema_use
     def post(request, pk):
         date_releve = request.POST['date_releve']
         date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
@@ -353,7 +342,6 @@ class ReleveMod(View):
                 return redirect('compteur_detail', compteur.pk)
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
 @schema_use
 def del_releve(request, pk):
@@ -364,7 +352,6 @@ def del_releve(request, pk):
     return redirect('compteur_detail', releve.num_compteur.pk)
 
 
-@authentification_requis
 @schema_use
 def export_compteur(request):
     compteurs = Compteur.objects.all()
@@ -389,7 +376,6 @@ def export_compteur(request):
     return response
 
 
-@authentification_requis
 @schema_use
 def export_relever(request, num_compteur):
     relevecompteur = ReleveCompteur.objects.filter(num_compteur_id=num_compteur)

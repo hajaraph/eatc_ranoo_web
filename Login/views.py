@@ -23,31 +23,42 @@ def authentification_requis(view_func):
 
 
 # Fonction decorateur pour donné l'accès à un utilisateur
-def role_requis(*role):
-    def decorateur(view_func):
+def role_requis(*roles):
+    def decorator(view_func):
         @wraps(view_func)
-        def _wrapper_view(request, *args, **kwargs):
-            if request.session.get('role_utilisateur') in role:
-                return view_func(request, *args, **kwargs)
+        def _wrapped_view(request_or_self, *args, **kwargs):
+            # Si c'est une méthode de classe, request est le deuxième argument
+            if hasattr(request_or_self, 'request'):
+                request = request_or_self.request
             else:
-                return HttpResponseForbidden("Vous n'avez pas la permission necessaire d'effectuer cette tâche !")
+                request = request_or_self
 
-        return _wrapper_view
+            if not hasattr(request, 'session'):
+                return HttpResponseForbidden("Session non disponible")
 
-    return decorateur
+            user_role = request.session.get('role_utilisateur')
+            if user_role in roles:
+                return view_func(request_or_self, *args, **kwargs)
+            else:
+                return HttpResponseForbidden("Vous n'avez pas la permission nécessaire pour effectuer cette tâche !")
+
+        return _wrapped_view
+
+    return decorator
 
 
 class Authentification(View):
+    template_name = 'login/login_page.html'
 
-    @staticmethod
-    def get(request):
+
+    def get(self, request):
         if request.session.get('num_utilisateur'):
             if request.session.get('role_utilisateur') == 'Releveur':
                 return redirect('compteur_list')
             else:
                 return redirect('tableau_bord')
         else:
-            return render(request, 'login/login_page.html')
+            return render(request, self.template_name)
 
     @staticmethod
     def post(request):

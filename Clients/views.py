@@ -7,19 +7,17 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import get_template
 from datetime import datetime
-from django.views import View
 from xhtml2pdf import pisa
 
 from Clients.models import Client, PieceClient, Contrat, TypeClient
 from Compteurs.models import Compteur
 from Facturation.models import Tarif
-from Login.views import authentification_requis, role_requis
+from Login.views import role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
 from Acommune.models import Region, Province
-from Tenants.middleware import schema_use
+from Tenants.middleware import schema_use, SchemaAwareView
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire', 'Autre')
 @schema_use
 def client_liste(request):
@@ -65,11 +63,9 @@ def extract_contrat_data(request):
     }
 
 
-class ClientNew(View):
+class ClientNew(SchemaAwareView):
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def get(request):
         title = 'Nouveau Client'
         active = 'active'
@@ -86,9 +82,7 @@ class ClientNew(View):
         return render(request, 'all_page/clients/content_client.html', context)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request):
         try:
             client_data = extract_client_data(request)
@@ -155,11 +149,9 @@ class ClientNew(View):
             return redirect('client_new')
 
 
-class ClientDetail(View):
+class ClientDetail(SchemaAwareView):
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def get(request, pk, *args, **kwargs):
         client_detail = Client.objects.get(pk=pk)
         pieces_client = client_detail.piececlients.all()
@@ -184,9 +176,7 @@ class ClientDetail(View):
         return render(request, 'all_page/clients/content_client.html', context)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request, pk, *args, **kwargs):
         client_data = extract_client_data(request)
         client = Client.objects.get(pk=pk)
@@ -218,7 +208,6 @@ class ClientDetail(View):
         return redirect('client_detail', pk)
 
 
-@authentification_requis
 @role_requis('Administrateur')
 @schema_use
 def delete_client(request, pk):
@@ -237,7 +226,6 @@ def delete_client(request, pk):
     return redirect('client_liste')
 
 
-@authentification_requis
 @role_requis('Administrateur')
 @schema_use
 def supp_file_client(request, pk):
@@ -254,12 +242,12 @@ def supp_file_client(request, pk):
     return redirect('client_detail', file.client_id)
 
 
-class ClientContrat(View):
-    @staticmethod
-    @authentification_requis
+class ClientContrat(SchemaAwareView):
+
+    template_name = 'all_page/clients/content_client.html'
+
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
-    def get(request, pk, *args, **kwargs):
+    def get(self, request, pk, *args, **kwargs):
         active = 'active'
         font = 'custom-font'
 
@@ -298,12 +286,10 @@ class ClientContrat(View):
             'provinces': provinces,
             'type': type_client
         }
-        return render(request, 'all_page/clients/content_client.html', context)
+        return render(request, self.template_name, context)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request, pk, *args, **kwargs):
         nom_client = request.POST['nom_client']
         prenom_client = request.POST['prenom_client']
@@ -352,7 +338,6 @@ class ClientContrat(View):
         return redirect('client_li_contrat', pk)
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def client_contrat(request):
@@ -369,11 +354,9 @@ def client_contrat(request):
     return render(request, 'all_page/clients/content_client.html', context)
 
 
-class ContratNew(View):
+class ContratNew(SchemaAwareView):
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def get(request):
         title = 'Clients | Contrats | Nouveau'
         active = 'active'
@@ -393,9 +376,7 @@ class ContratNew(View):
         return render(request, 'all_page/clients/content_client.html', context)
 
     @staticmethod
-    @authentification_requis
     @role_requis('Administrateur', 'Gestionnaire')
-    @schema_use
     def post(request):
         try:
             contrat = extract_contrat_data(request)
@@ -465,7 +446,6 @@ class ContratNew(View):
             return redirect('client_new_contrat')
 
 
-@authentification_requis
 @role_requis('Administrateur')
 @schema_use
 def supp_contrat(request, pk):
@@ -479,7 +459,6 @@ def supp_contrat(request, pk):
     return redirect('client_detail', client_id)
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def export_clients(request):
@@ -526,7 +505,6 @@ def export_clients(request):
     return response
 
 
-@authentification_requis
 @role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def genere_pdf_contrat(request, pk):
