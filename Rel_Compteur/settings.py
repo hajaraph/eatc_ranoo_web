@@ -31,16 +31,6 @@ SHARED_APPS = (
 
 # Applications spécifiques aux tenants
 TENANT_APPS = (
-    'django.contrib.contenttypes',
-    'django.contrib.auth',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.admin',
-    'django_extensions',
-    'rest_framework',
-    'rest_framework.authtoken',
-    'corsheaders',
     'Clients',
     'Compteurs',
     'Depense',

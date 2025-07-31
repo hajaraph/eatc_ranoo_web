@@ -94,6 +94,7 @@ def facture(request):
     datefin = request.GET.get('datefin')
     factures = date_range(request, Facture, datedeb, datefin, 'date_facture')
     pronvince = Province.objects.order_by('province').all()
+    impayer_exist = Facture.objects.filter(statut=False).exists()
     context = {
         'title_etat': title,
         'active_etat': active,
@@ -104,6 +105,8 @@ def facture(request):
         'provinces': pronvince,
         'datedeb': datedeb if datedeb else '',
         'datefin': datefin if datefin else '',
+        'impayer_exist': impayer_exist,
+        'mois_actuel': datetime.now(),
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -621,7 +624,7 @@ def generate_multiple_pages_pdf(request):
         date_fin = request.GET.get('date_fin')
         commune = request.GET.get('commune')
 
-        # Si aucune date n'est fournie, utiliser le mois actuel pour les factures impayées
+        # Si aucune date n'est fournie, utiliser le mois actuel pour les factures impay��es
         if not date_deb and not date_fin:
             date_deb, date_fin = get_mois_courant()
 
