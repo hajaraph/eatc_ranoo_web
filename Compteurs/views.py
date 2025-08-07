@@ -285,7 +285,7 @@ def relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateu
     )
 
 
-class ReleveMod(View):
+class ReleveMod(SchemaAwareView):
 
     template_name = 'all_page/compteurs/compteurs.html'
 
