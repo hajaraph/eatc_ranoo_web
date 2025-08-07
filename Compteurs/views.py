@@ -115,7 +115,7 @@ class CompteurNew(SchemaAwareView):
 
 class CompteurDetail(SchemaAwareView):
 
-    template_name = 'all_page/compteurs/compteur.html'
+    template_name = 'all_page/compteurs/compteurs.html'
 
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def get(self, request, pk):
