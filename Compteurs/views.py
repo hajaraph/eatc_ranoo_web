@@ -3,7 +3,6 @@ from django.contrib import messages
 from django.db import models
 from django.db.models import OuterRef, Subquery
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views import View
 
 from Compteurs.models import Compteur, ReleveCompteur
 from Clients.models import Contrat
@@ -285,7 +284,7 @@ def relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateu
     )
 
 
-class ReleveMod(View):
+class ReleveMod(SchemaAwareView):
 
     template_name = 'all_page/compteurs/compteurs.html'
 
