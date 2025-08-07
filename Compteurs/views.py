@@ -209,7 +209,7 @@ def compteur_releve(request):
 
 class ReleveNew(SchemaAwareView):
 
-    template_name = 'all_page/compteurs/compteurs_new.html'
+    template_name = 'all_page/compteurs/compteurs.html'
 
     @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
     def get(self, request, num_compteur):
