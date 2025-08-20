@@ -232,6 +232,7 @@ class BranchementConfig(SchemaAwareView):
 
 
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def get_branchement_list(request):
     configs = (ConfigBranchement.objects.all().order_by('type_client__designation_client')
                .values('id_config_branchement', 'type_client__designation_client'))
