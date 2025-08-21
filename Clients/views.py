@@ -14,7 +14,7 @@ from Compteurs.models import Compteur
 from Facturation.models import Tarif, Facture
 from Login.views import role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
-from Acommune.models import Region, Province, Commune
+from Acommune.models import Province, Commune
 from Tenants.middleware import schema_use, SchemaAwareView
 
 
@@ -551,7 +551,7 @@ def export_clients_pdf(request):
     clients_data = []
     
     # Filtrer les clients par commune si spécifiée
-    clients = Client.objects.all()
+    clients = Client.objects.all().order_by('num_client')
     if cp_commune:
         clients = clients.filter(cp_commune_id=cp_commune)
     
