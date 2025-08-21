@@ -7,8 +7,8 @@
             </a>
         </div>
         <div class="mx-5">
-            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#export-client-excel">
-                <i class="fas fa-file-excel me-1"></i>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#export-client">
+                <i class="fas fa-file-download me-1"></i>
                 Exporter
             </button>
         </div>
@@ -64,35 +64,55 @@
     </div>
 </div>
 
-<div class="modal fade" id="export-client-excel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="export-client" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Exportation de la liste des Clients au format Excel</h5>
+                <h5 class="modal-title" id="exampleModalLabel">Exportation de la liste des Clients</h5>
                 <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="formNew">
                     {% csrf_token %}
                     <div class="container">
-                        <div class="row">
-                            <div class="col-md-6 col-sm-12 mt-3">
+                        <div class="mb-3">
+                            <label for="export-format" class="form-label">Format d'export :</label>
+                            <select class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" id="export-format" name="format" required>
+                                <option value="pdf">PDF</option>
+                                <option value="excel">Excel</option>
+                            </select>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-md-4 col-sm-12 mt-4">
                                 <div class="form-floating">
-                                    <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
-                                        <option value="" selected hidden>Selectionnez une région</option>
-                                        {% for region in regions %}
-                                            <option value="{{ region.region }}">{{ region.region }}</option>
+                                    <select name="province" id="province" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
+                                        <option value="" selected hidden>Selectionné une province</option>
+                                        {% for province in provinces %}
+                                            <option value="{{ province.province }}">{{ province.province }}</option>
                                         {% endfor %}
+                                    </select>
+                                    <label for="province">Province*</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-12 mt-4">
+                                <div class="form-floating">
+                                    <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
                                     </select>
                                     <label for="region">Région</label>
                                 </div>
                             </div>
-                            <div class="col-md-6 col-sm-12 mt-3">
+                            <div class="col-md-4 col-sm-12 mt-4">
                                 <div class="form-floating">
-                                    <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
-                                        <option value="" selected hidden></option>
+                                    <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
                                     </select>
-                                    <label for="commune">Commune</label>
+                                    <label for="commune">Commune :</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-12 mt-4">
+                                <div class="form-floating">
+                                    <select name="cp_commune" id="cp_commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" disabled>
+                                    </select>
+                                    <label for="cp_commune">CP Commune :</label>
                                 </div>
                             </div>
                         </div>
@@ -104,7 +124,7 @@
                     <i class="fas fa-xmark-circle"></i>
                     Annuler
                 </button>
-                <button type="button" class="btn btn-success confirmer-export-client-excel" id="confirmer-export-client-excel">
+                <button type="button" class="btn btn-success confirmer-export-client" id="confirmer-export-client">
                     <i class="fas fa-check-circle"></i>
                     Confirmer
                 </button>

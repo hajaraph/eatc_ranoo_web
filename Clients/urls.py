@@ -1,7 +1,7 @@
 from django.urls import path
 
 from Clients.views import client_liste, client_contrat, ClientNew, ContratNew, ClientContrat, \
-    ClientDetail, supp_file_client, export_clients, delete_client, genere_pdf_contrat, supp_contrat
+    ClientDetail, supp_file_client, export_clients, delete_client, genere_pdf_contrat, supp_contrat, export_clients_pdf
 
 urlpatterns = [
     path('liste', client_liste, name='client_liste'),
@@ -15,4 +15,5 @@ urlpatterns = [
     path('supprimer/id_client=<int:pk>', delete_client, name='client_delete'),
     path('suppression/num_contrat=<str:pk>', supp_contrat, name='supp_contrat'),
     path('pdf/num_contrat=<str:pk>', genere_pdf_contrat, name='genere_pdf_contrat'),
+    path('pdf/client', export_clients_pdf, name='export_clients_pdf'),
 ]

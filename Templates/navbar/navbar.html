@@ -48,10 +48,18 @@
                         <span class="nav-text">Compteurs</span>
                     </a>
                 </li>
+                <li class="nav-item {{ font_recette }}">
+                    <a href="{% url 'depense' %}" class="nav-link" title="Recette">
+                        <div class="nav-icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <span class="nav-text">Recette</span>
+                    </a>
+                </li>
                 <li class="nav-item {{ font_depense }}">
                     <a href="{% url 'depense' %}" class="nav-link" title="Dépense">
                         <div class="nav-icon">
-                            <i class="fas fa-money-bill-wave"></i>
+                            <i class="fas fa-receipt"></i>
                         </div>
                         <span class="nav-text">Dépenses</span>
                     </a>
