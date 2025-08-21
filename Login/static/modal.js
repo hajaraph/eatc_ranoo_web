@@ -7,7 +7,7 @@ $(document).ready(function(){
         },
     });
     $('.dataTables_filter input[type="search"]').css('height', '500px');
-    // Hide automatique le message après quelque seconde
+    // Hide automatique le message après quelques secondes
     $("#alert").animate({
         opacity: 1,
         }, 2000, function() {
@@ -55,14 +55,21 @@ $(document).ready(function(){
         $(this).val(numericValue);
     });
 
-    $('#confirmer-export-client-excel').click(function() {
+    $('#confirmer-export-client').click(function() {
+        const format = $('#export-format').val();
         const commune = $('#commune').val();
+        
         // Construire l'URL avec les paramètres GET
-        let url = '/clients/excel';
-        url += `?commune=${commune}`;
-        // Ouvrir une nouvelle onglet avec l'URL générée
+        let url = format === 'pdf' ? 'pdf/client' : 'excel';
+        
+        // Ajouter le paramètre de commune si sélectionné
+        if (commune) {
+            url += `?commune=${commune}`;
+        }
+        
+        // Ouvrir un nouvel onglet avec l'URL générée
         window.open(url, '_blank');
-        $('#export-client-excel').modal('hide');
+        $('#export-client').modal('hide');
     });
 
     $('#confirmer-exportmc-excel').click(function() {
@@ -72,7 +79,7 @@ $(document).ready(function(){
         // Construire l'URL avec les paramètres GET
         let url = '/main_courante/excel';
         url += `?date_deb=${date_deb}&date_fin=${date_fin}&statut=${statut}`;
-        // Ouvrir une nouvelle onglet avec l'URL générée
+        // Ouvrir un nouvel onglet avec l'URL générée
         window.open(url, '_blank');
         $('#exportmc-excel').modal('hide');
     });

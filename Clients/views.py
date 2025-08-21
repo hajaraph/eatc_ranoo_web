@@ -11,10 +11,10 @@ from xhtml2pdf import pisa
 
 from Clients.models import Client, PieceClient, Contrat, TypeClient
 from Compteurs.models import Compteur
-from Facturation.models import Tarif
+from Facturation.models import Tarif, Facture
 from Login.views import role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
-from Acommune.models import Region, Province
+from Acommune.models import Region, Province, Commune
 from Tenants.middleware import schema_use, SchemaAwareView
 
 
@@ -25,13 +25,13 @@ def client_liste(request):
     active = 'active'
     font = 'custom-font'
     client = Client.objects.all().order_by('pk')
-    regions = Region.objects.order_by('region').all()
+    province = Province.objects.order_by('region').all()
     context = {
         'title_liste': title,
         'active_liste': active,
         'font_client': font,
         'client': client,
-        'regions': regions
+        'provinces': province
     }
     return render(request, 'all_page/clients/content_client.html', context)
 
@@ -213,7 +213,7 @@ class ClientDetail(SchemaAwareView):
 def delete_client(request, pk):
     client = Client.objects.get(pk=pk)
     message = f"Client ID {client.pk} - Suppression du profil de {client.nom_client} {client.prenom_client}"
-    # Pour supprime tout les fichier stocker dans le serveur
+    # Pour supprimer tout le fichier stocker dans le serveur
     for piece in client.piececlients.all():
         if os.path.exists(piece.pieces_client.path):
             os.remove(piece.pieces_client.path)
@@ -316,7 +316,7 @@ class ClientContrat(SchemaAwareView):
             suffix = int(match.group(1)) + 1
             num_contrat = re.sub(suffix_pattern, f'({suffix})', num_contrat_original)
         else:
-            # Si aucun suffixe numérique avec parenthèses n'est trouvé, ajoute le suffixe (1)
+            # Si aucun suffixe numérique avec parenthèses n'est trouvé, ajoute le suffixe (1).
             num_contrat = f"{num_contrat_original}(1)"
 
         client.contrats.create(
@@ -394,9 +394,9 @@ class ContratNew(SchemaAwareView):
 
             cp_commune_tarif = Tarif.objects.filter(cp_commune_id=contrat['cp_commune'])
 
-            # Pour verifier si le tarif pour ce commune qu'on a seleectionné est déjà definie
+            # Pour verifier si le tarif pour ce commun qu'on a seleectionné est déjà definie
             if cp_commune_tarif.exists():
-                # Pour verifier si le numéro de contrat est déjà été utilisé
+                # Pour verifier si le numéro de contrat est déjà était utilisé
                 if not num_contrat_exist:
                     # Pour verifier si la date fin a un valeur
                     if date_fin:
@@ -539,3 +539,54 @@ def generate_pdf(request, context, template_path, nom_fichier_prefix):
     response['Content-Disposition'] = f'attachment; filename="{nom_fichier_prefix}.pdf"'
 
     return response
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def export_clients_pdf(request):
+    # Récupérer le paramètre de filtre par commune
+    cp_commune = request.GET.get('commune')
+    
+    # Récupérer les clients uniques avec leur dernière facture
+    clients_data = []
+    
+    # Filtrer les clients par commune si spécifiée
+    clients = Client.objects.all()
+    if cp_commune:
+        clients = clients.filter(cp_commune_id=cp_commune)
+    
+    # Récupérer la commune pour le nom du fichier
+    nom_commune = ""
+    if cp_commune:
+        try:
+            commune = Commune.objects.get(cp_commune=cp_commune)
+            nom_commune = f"_{commune.commune}"
+        except Commune.DoesNotExist:
+            pass
+    
+    for client in clients:
+        # Récupérer la dernière facture pour ce client
+        derniere_facture = Facture.objects.filter(
+            num_contrat__client=client
+        ).order_by('-date_facture').first()
+        
+        if derniere_facture:
+            clients_data.append({
+                'client': client,
+                'facture': derniere_facture,
+                'releve': derniere_facture.relevecompteur
+            })
+    
+    context = {
+        'clients_data': clients_data,
+        'date_export': datetime.now(),
+    }
+    
+    template_path = 'all_page/clients/export_client_pdf.html'
+    nom_fichier_prefix = f'Liste_des_clients{nom_commune}'
+    
+    # Enregistrement dans l'historique
+    message = f"Export PDF de la liste des clients {f'de la commune {nom_commune}' if nom_commune else ''} avec leurs dernières factures"
+    enregistre_historique(message, request.session.get('id_utilisateur'))
+    
+    return generate_pdf(request, context, template_path, nom_fichier_prefix)
