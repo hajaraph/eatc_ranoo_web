@@ -4,12 +4,11 @@ import logging
 from datetime import timedelta, datetime
 from io import BytesIO
 import qrcode
-from django.db import transaction
 from django.db.models import Q, Sum
 from django.template.loader import get_template
 from django.utils import timezone
 
-from django.http import JsonResponse, HttpResponse
+from django.http import HttpResponse
 from num2words import num2words
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
@@ -796,11 +795,9 @@ def generate_multiple_pages_pdf(request):
 
 
 def paiement(id_releve, montant_payer, utilisateur):
-    with transaction.atomic():
-        # Utilisation de select_for_update pour verrouiller la ligne
-        fact_paiement = Facture.objects.select_for_update().get(relevecompteur_id=id_releve)
-        net_paye = fact_paiement.montant_total_ttc - montant_payer
-        num_contrat = fact_paiement.num_contrat_id
+    fact_paiement = Facture.objects.select_for_update().get(relevecompteur_id=id_releve)
+    net_paye = fact_paiement.montant_total_ttc - montant_payer
+    num_contrat = fact_paiement.num_contrat_id
 
     fact_paiement.statut = True
     if net_paye == 0:
