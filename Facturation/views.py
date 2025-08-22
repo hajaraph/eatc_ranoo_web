@@ -4,6 +4,7 @@ import logging
 from datetime import timedelta, datetime
 from io import BytesIO
 import qrcode
+from django.db import transaction
 from django.db.models import Q, Sum
 from django.template.loader import get_template
 from django.utils import timezone
@@ -795,9 +796,11 @@ def generate_multiple_pages_pdf(request):
 
 
 def paiement(id_releve, montant_payer, utilisateur):
-    fact_paiement = Facture.objects.get(relevecompteur_id=id_releve)
-    net_paye = fact_paiement.montant_total_ttc - montant_payer
-    num_contrat = fact_paiement.num_contrat_id
+    with transaction.atomic():
+        # Utilisation de select_for_update pour verrouiller la ligne
+        fact_paiement = Facture.objects.select_for_update().get(relevecompteur_id=id_releve)
+        net_paye = fact_paiement.montant_total_ttc - montant_payer
+        num_contrat = fact_paiement.num_contrat_id
 
     fact_paiement.statut = True
     if net_paye == 0:
@@ -882,12 +885,41 @@ def paiement(id_releve, montant_payer, utilisateur):
 
 @schema_use
 def facture_paiement(request, *args, **kwargs):
-    id_releve = request.POST['id_releve']
-    montant_payer = float(request.POST['paiement'])
-    utilisateur = request.session.get('id_utilisateur')
-    paiement(id_releve, montant_payer, utilisateur)
-    messages.success(request, 'Facture payé avec succès !')
-    return JsonResponse({'message': 'Paiement effectué avec succès'})
+    try:
+        id_releve = request.POST['id_releve']
+        montant_payer = float(request.POST['paiement'])
+        utilisateur = request.session.get('id_utilisateur')
+        
+        # Vérifier d'abord si la facture existe et n'est pas déjà payée
+        fact = Facture.objects.select_for_update().get(relevecompteur_id=id_releve)
+        
+        if fact.statut:
+            messages.error(request, 'Cette facture a déjà été payée')
+            return redirect('facture_etat_detail', fact.num_facture)
+            
+        # Vérifier s'il existe déjà un paiement pour cette facture
+        paiement_existant = Paiement.objects.filter(facture=fact).first()
+        if paiement_existant:
+            # Si un paiement existe, mais que le statut de la facture est False, on le met à jour
+            if not fact.statut:
+                fact.statut = True
+                fact.save()
+                messages.success(request, 'Le statut de la facture a été mis à jour avec succès')
+            else:
+                messages.error(request, 'Un paiement existe déjà pour cette facture')
+            return redirect('facture_etat_detail', fact.num_facture)
+            
+        paiement(id_releve, montant_payer, utilisateur)
+        messages.success(request, 'Facture payée avec succès !')
+        return redirect('facture')
+        
+    except Facture.DoesNotExist:
+        messages.error(request, 'Facture introuvable')
+        return redirect('facture')
+    except Exception as e:
+        logger.error(f"Erreur lors du paiement: {str(e)}", exc_info=True)
+        messages.error(request, 'Une erreur est survenue lors du paiement')
+        return redirect('facture')
 
 
 @role_requis('Administrateur', 'Gestionnaire')
