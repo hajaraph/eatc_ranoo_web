@@ -17,6 +17,7 @@ urlpatterns = [
         path('', include('Ranoo_Config.urls')),
         path('', include('Acommune.urls')),
     ])),
+    path('recette/', include('Recette.urls')),
     path('depense/', include('Depense.urls')),
     path('api/', include([
         path('', include('Login.api_auth.urls')),
