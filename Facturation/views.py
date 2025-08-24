@@ -25,6 +25,7 @@ from Acommune.models import Province
 from Ranoo_Config.models import ConfigBranchement
 from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
+from Recette.views import enregistrer_recette_paiement
 
 logger = logging.getLogger(__name__)
 
@@ -228,13 +229,13 @@ def facture_avoir(request):
 
 class Calcule:
     @staticmethod
-    def get_prix_m3(tarif, config):
-        """Récupère le prix correspondant à l'id_config_branchement dans tarif.prix_m3."""
+    def get_prix_m3(tarif, config) -> float:
+        """Récupère le prix correspondant à l'id_config_branchement dans le tarif.prix_m3."""
         prix_m3_list = tarif.prix_m3 or []
         return next((item["prix"] for item in prix_m3_list if item["id"] == config.id_config_branchement), 0)
 
     @staticmethod
-    def calculate_total_conso_ht(tarif, consommation, config):
+    def calculate_total_conso_ht(tarif, consommation, config) -> float:
         """Calcule le montant HT total basé sur le tarif et la consommation."""
         try:
             prix_m3 = Calcule.get_prix_m3(tarif, config)
@@ -243,7 +244,7 @@ class Calcule:
             raise ValueError(f"Erreur lors du calcul du montant HT: {e}")
 
     @staticmethod
-    def montant_taxe(tarif, total_conso_ht):
+    def montant_taxe(tarif, total_conso_ht) -> list:
         """Calcule les taxes appliquées sur le montant HT."""
         try:
             taxes = Taxe.objects.filter(tarif=tarif)
@@ -252,7 +253,7 @@ class Calcule:
             raise ValueError(f"Erreur lors du calcul des taxes: {e}")
 
     @staticmethod
-    def montant_ht(total_conso_ht, tarif_id, factures):
+    def montant_ht(total_conso_ht, tarif_id, factures) -> MontantHT:
         """Crée et retourne un objet MontantHT."""
         try:
             return MontantHT.objects.create(
@@ -264,7 +265,7 @@ class Calcule:
             raise ValueError(f"Erreur lors de la création de MontantHT: {e}")
 
     @staticmethod
-    def montant_ttc(total_conso_ttc, montant_ht):
+    def montant_ttc(total_conso_ttc, montant_ht) -> MontantTTC:
         """Crée et retourne un objet MontantTTC."""
         try:
             return MontantTTC.objects.create(
@@ -275,7 +276,7 @@ class Calcule:
             raise ValueError(f"Erreur lors de la création de MontantTTC: {e}")
 
     @staticmethod
-    def cree_montant(tarif, consommation, factures, config, appliquer_tva=False):
+    def cree_montant(tarif, consommation, factures, config, appliquer_tva=False) -> MontantHT:
         """Crée les montants HT et TTC avec ou sans TVA."""
         try:
             total_conso_ht = Calcule.calculate_total_conso_ht(tarif, consommation, config)
@@ -554,7 +555,6 @@ def calculer_total_net_a_payer(montant_actuel, montants_impayees):
         logger.error(f"Erreur lors du calcul du total net à payer: {e}")
 
 
-
 @schema_use
 def facture_genere_pdf(request, num_facture):
     try:
@@ -807,12 +807,24 @@ def paiement(id_releve, montant_payer, utilisateur):
             montant_payer=montant_payer,
             facture_id=fact_paiement.pk
         )
+        enregistrer_recette_paiement(
+            facture_id=fact_paiement.pk,
+            montant=montant_payer,
+            utilisateur_id=utilisateur,
+            date_encaissement=timezone.now().date()
+        )
 
     elif net_paye < 0:
         net_paye = montant_payer - fact_paiement.montant_total_ttc
         Paiement.objects.create(
             montant_payer=fact_paiement.montant_total_ttc,
             facture_id=fact_paiement.pk
+        )
+        enregistrer_recette_paiement(
+            facture_id=fact_paiement.pk,
+            montant=fact_paiement.montant_total_ttc,
+            utilisateur_id=utilisateur,
+            date_encaissement=timezone.now().date()
         )
 
         avoir = Avoir.objects.filter(num_contrat=num_contrat)
@@ -836,7 +848,7 @@ def paiement(id_releve, montant_payer, utilisateur):
         restant_value = round(net_paye, 0)
         fact_paiement.restant_nouvel = restant_value
 
-        # Verifie si il exist déjà un restant et un paiement déjà fait
+        # Verifie s'il existe déjà un restant et un paiement déjà fait
         if restant.exists() and paiements.exists():
             restant_exist = Restant.objects.get(num_contrat=num_contrat)
             paiement_restant = Paiement.objects.get(facture_id=fact_paiement.pk)
@@ -856,11 +868,28 @@ def paiement(id_releve, montant_payer, utilisateur):
                 paiement_restant.montant_payer += montant_payer
                 paiement_restant.date_paiement = timezone.now()
 
+                # Enregistrement de la recette pour la partie payée
+                enregistrer_recette_paiement(
+                    facture_id=fact_paiement.pk,
+                    montant=montant_payer,
+                    utilisateur_id=utilisateur,
+                    date_encaissement=timezone.now().date()
+                )
+
                 fact_paiement.restant = round(restant_exist.restant, 0)
             else:
                 paiement_restant.montant_payer += restant_exist.restant
                 fact_paiement.restant_nouvel = None
-                # creation d'une nouvel avoir
+
+                # Enregistrement de la recette pour la partie payée (le reste du dû)
+                enregistrer_recette_paiement(
+                    facture_id=fact_paiement.pk,
+                    montant=restant_exist.restant,
+                    utilisateur_id=utilisateur,
+                    date_encaissement=timezone.now().date()
+                )
+
+                # Création de l'avoir pour le surplus
                 avoir = montant_payer - restant_exist.restant
                 Avoir.objects.create(
                     montant_avoir=round(avoir, 0),
@@ -878,6 +907,12 @@ def paiement(id_releve, montant_payer, utilisateur):
             Paiement.objects.create(
                 montant_payer=round(montant_payer, 0),
                 facture_id=fact_paiement.pk
+            )
+            enregistrer_recette_paiement(
+                facture_id=fact_paiement.pk,
+                montant=round(montant_payer, 0),
+                utilisateur_id=utilisateur,
+                date_encaissement=timezone.now().date()
             )
     fact_paiement.save()
 

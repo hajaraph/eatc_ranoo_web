@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.db import connection
 from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q
@@ -58,10 +58,12 @@ def tableau_bord(request, *args, **kwargs):
         chiffres = Paiement.objects.filter(facture__relevecompteur__date_releve__range=[date_deb, date_fin])
 
     elif region and date_deb and date_fin:
-        date_fin = date_fin + timedelta(days=1)
+        date_deb = datetime.strptime(date_deb, '%Y-%m-%d').date() if isinstance(date_deb, str) else date_deb
+        date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date() if isinstance(date_fin, str) else date_fin
+        date_fin_plus_one = date_fin + timedelta(days=1)
         commune = Commune.objects.filter(
             region_id=region,
-            contrat__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]).annotate(
+            contrat__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin_plus_one]).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
 
@@ -178,14 +180,14 @@ def tableau_bord(request, *args, **kwargs):
     # Pour obtenir seulement l'année precedant de notre requete precedant
     # annee_contrat_prec = contrats_annee_prec[0]['annee_contrat_prec'] if contrats_annee_prec else 0
 
-    # Pour obtenir le nombre de contrat pour l'année precedant depuis notre requete precedanat
+    # Pour obtenir le nombre de contrats pour l'année precedant depuis notre requete precedanat
     nb_client_prec = contrats_annee_prec[0]['nb_client_prec'] if contrats_annee_prec else 0
 
     # Pour obtenir seulement l'année actuelle de notre requete precedant
     annee_contrat_actuelle = contrats_annee_actuelle[0]['annee_contrat_actuelle'] if contrats_annee_actuelle else 0
     annee_contrat_prec = 0 if annee_contrat_actuelle == 0 else annee_contrat_actuelle - 1
 
-    # Pour obtenir le nombre de contrat pour l'année actuelle depuis notre requete precedanat
+    # Pour obtenir le nombre de contrats pour l'année actuelle depuis notre requete precedanat
     nb_client_actuelle = contrats_annee_actuelle[0]['nb_client_actuelle'] if contrats_annee_actuelle else 0
 
     context = {

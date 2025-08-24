@@ -1,0 +1,190 @@
+<div class="card-body">
+    <div class="mb-4">
+        <form>
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <input type="date" name="datedeb" id="datedeb" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" value="{{ datedeb }}" required>
+                        <label for="datedeb">Période du </label>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <input type="date" name="datefin" id="datefin" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" value="{{ datefin }}" required>
+                        <label for="datefin">au </label>
+                    </div>
+                </div>
+                <div class="col-md-1 col-sm-6 col-6 d-flex align-items-center justify-content-center">
+                    <div class="mb-2"></div>
+                    <button class="btn btn-primary" type="submit" style="width: 50px; height: 50px;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="d-flex flex-wrap justify-content-between my-5 gap-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Recette/({{ mois_actuel|date:"F" }})</div>
+                <div class="stat-value" data-animate-to="{{ total_recettes_mois }}" data-duration="2000">0</div>
+            </div>
+        </div>
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Nb Recette/({{ mois_actuel|date:"F" }})</div>
+                <div class="stat-value">{{ nombre_recettes|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex justify-content-between mb-5">
+        <div class="mx-5 col-md">
+            <a href="{% url 'recette_new' %}" class="btn btn-warning">
+                <i class="fas fa-plus me-1"></i>
+                Nouveau encaissement
+            </a>
+        </div>
+        <div class="mx-5">
+            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#export-client-excel">
+                <i class="fas fa-file-excel me-1"></i>
+                Exporter
+            </button>
+        </div>
+    </div>
+    <div class="table-responsive mt-4 p-1">
+        <table class="table" id="myTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Référence</th>
+                    <th>Type</th>
+                    <th>Date d'encaissement</th>
+                    <th>Montant</th>
+                    <th>N°Facture</th>
+                    {% if request.session.role_utilisateur == 'Administrateur' %}
+                    <th>Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for trans in recettes %}
+                <tr>
+                    <td>{{ trans.pk }}</td>
+                    <td>{{ trans.reference|default:'-' }}</td>
+                    <td>{{ trans.type_recette.libelle }}</td>
+                    <td>{{ trans.date_encaissement|date:"d/m/Y" }}</td>
+                    <td>{{ trans.montant }} Ar</td>
+                    <td>{{ trans.facture.num_facture|default:"-" }}</td>
+                    {% if request.session.role_utilisateur == 'Administrateur' %}
+                    <td>
+                        <a href="{% url 'recette_suppression' trans.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce recette {{ trans.reference }} ?');">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        {% if recettes.has_other_pages %}
+        <div class="pagination mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if recettes.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ recettes.previous_page_number }}{% if datedeb %}&datedeb={{ datedeb|date:'Y-m-d' }}{% endif %}{% if datefin %}&datefin={{ datefin|date:'Y-m-d' }}{% endif %}" aria-label="Précédent">
+                                <span aria-hidden="true">Précédant</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">Précédant</span>
+                        </li>
+                    {% endif %}
+
+                    {% for i in recettes.paginator.page_range %}
+                        {% if recettes.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }} <span class="sr-only">(actuel)</span></span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{% if datedeb %}&datedeb={{ datedeb|date:'Y-m-d' }}{% endif %}{% if datefin %}&datefin={{ datefin|date:'Y-m-d' }}{% endif %}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if recettes.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ recettes.next_page_number }}{% if datedeb %}&datedeb={{ datedeb|date:'Y-m-d' }}{% endif %}{% if datefin %}&datefin={{ datefin|date:'Y-m-d' }}{% endif %}" aria-label="Suivant">
+                                <span aria-hidden="true">Suivant</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">Suivant</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal fade" id="export-client-excel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Exportation de la liste des Clients au format Excel</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNew">
+                    {% csrf_token %}
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-md-6 col-sm-12 mt-3">
+                                <div class="form-floating">
+                                    <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                        <option value="" selected hidden>Selectionnez une région</option>
+                                        {% for region in regions %}
+                                            <option value="{{ region.region }}">{{ region.region }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="region">Région</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-sm-12 mt-3">
+                                <div class="form-floating">
+                                    <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                        <option value="" selected hidden></option>
+                                    </select>
+                                    <label for="commune">Commune</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <i class="fas fa-xmark-circle"></i>
+                    Annuler
+                </button>
+                <button type="button" class="btn btn-success confirmer-export-client-excel" id="confirmer-export-client-excel">
+                    <i class="fas fa-check-circle"></i>
+                    Confirmer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

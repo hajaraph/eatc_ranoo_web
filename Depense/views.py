@@ -39,7 +39,7 @@ class DepenseNew(SchemaAwareView):
     template_name = 'all_page/depense/depense.html'
 
     @staticmethod
-    def get_context_data(**kwargs):
+    def get_context_data(**kwargs) -> dict:
         context = {
             'title_depense_new': "Dépense | Nouvelle Dépense",
             'active_depense': "active",
