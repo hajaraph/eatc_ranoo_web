@@ -91,7 +91,7 @@ def donne_tout(request):
         for main_courante in main_courantes
     ]
 
-    mission = Missions.get_liste_mission(request)
+    mission = Missions.get(request)
 
     return JsonResponse(
         {

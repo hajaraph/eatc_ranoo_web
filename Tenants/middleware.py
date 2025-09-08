@@ -6,6 +6,7 @@ from django.views import View
 from django_tenants.utils import schema_exists, schema_context
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from Tenants.models import Entreprise
 
@@ -89,6 +90,17 @@ def schema_use_api(view_func):
 
 class SchemaAwareView(View):
     """Classe de base pour les vues basées sur les classes"""
+    def dispatch(self, request, *args, **kwargs):
+        entreprise, schema_name, error_response = get_entreprise_and_schema(request)
+        if error_response:
+            return error_response
+
+        with schema_context(schema_name):
+            return super().dispatch(request, *args, **kwargs)
+
+
+class SchemaAwareAPIView(APIView):
+    """Classe de base pour les APIView basées sur les schémas"""
     def dispatch(self, request, *args, **kwargs):
         entreprise, schema_name, error_response = get_entreprise_and_schema(request)
         if error_response:
