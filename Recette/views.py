@@ -31,7 +31,7 @@ def recette(request):
 
     # Récupérer et filtrer les recettes
     recettes_qs = Recette.objects.all().select_related('type_recette', 'facture').order_by('date_encaissement')
-    recettes_filtrees, _, _ = filter_by_date_range(
+    recettes_filtrees, date_debut, date_fin = filter_by_date_range(
         queryset=recettes_qs,
         date_field='date_encaissement',
         date_start=datedeb,
@@ -39,15 +39,24 @@ def recette(request):
         default_month=mois_actuel
     )
 
+    # Mettre à jour les dates formatées pour le template
+    datedeb = date_debut.strftime('%Y-%m-%d') if date_debut else ''
+    datefin = date_fin.strftime('%Y-%m-%d') if date_fin else ''
+
     # Calculer le total des recettes et le nombre de recettes
     total_recettes_mois = recettes_filtrees.aggregate(total=Sum('montant'))['total'] or 0
     nombre_recettes = recettes_filtrees.count()
 
-    # Pagination
+    # Pagination avec préservation des paramètres de date
     paginator = Paginator(recettes_filtrees, 10)
 
     try:
         recettes = paginator.page(page)
+        # Ajouter les paramètres de date à chaque numéro de page
+        if datedeb or datefin:
+            recettes.paginator.url_template = '?page={0}&datedeb={1}&datefin={2}'.format(
+                '{0}', datedeb, datefin
+            )
     except PageNotAnInteger:
         recettes = paginator.page(1)
     except EmptyPage:

@@ -100,7 +100,7 @@
                 <ul class="pagination justify-content-center">
                     {% if recettes.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ recettes.previous_page_number }}{% if datedeb %}&datedeb={{ datedeb|date:'Y-m-d' }}{% endif %}{% if datefin %}&datefin={{ datefin|date:'Y-m-d' }}{% endif %}" aria-label="Précédent">
+                            <a class="page-link" href="{{ recettes.previous_page_number|stringformat:'s'|urlencode }}" aria-label="Précédent">
                                 <span aria-hidden="true">Précédant</span>
                             </a>
                         </li>
@@ -110,21 +110,61 @@
                         </li>
                     {% endif %}
 
-                    {% for i in recettes.paginator.page_range %}
-                        {% if recettes.number == i %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ i }} <span class="sr-only">(actuel)</span></span>
-                            </li>
+                    {% with max_visible_pages=5 %}
+                        {% if recettes.paginator.num_pages > max_visible_pages %}
+                            {% if recettes.number > 2 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ 1|stringformat:'s'|urlencode }}">1</a>
+                                </li>
+                                {% if recettes.number > 3 %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endif %}
+                            
+                            {% for i in recettes.paginator.page_range %}
+                                {% if i >= recettes.number|add:'-2' and i <= recettes.number|add:'2' %}
+                                    {% if recettes.number == i %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ i }} <span class="sr-only">(actuel)</span></span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ i|stringformat:'s'|urlencode }}">{{ i }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if recettes.number < recettes.paginator.num_pages|add:'-1' %}
+                                {% if recettes.number < recettes.paginator.num_pages|add:'-2' %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ recettes.paginator.num_pages|stringformat:'s'|urlencode }}">{{ recettes.paginator.num_pages }}</a>
+                                </li>
+                            {% endif %}
                         {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ i }}{% if datedeb %}&datedeb={{ datedeb|date:'Y-m-d' }}{% endif %}{% if datefin %}&datefin={{ datefin|date:'Y-m-d' }}{% endif %}">{{ i }}</a>
-                            </li>
+                            {% for i in recettes.paginator.page_range %}
+                                {% if recettes.number == i %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ i }} <span class="sr-only">(actuel)</span></span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ i|stringformat:'s'|urlencode }}">{{ i }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
                         {% endif %}
-                    {% endfor %}
+                    {% endwith %}
 
                     {% if recettes.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ recettes.next_page_number }}{% if datedeb %}&datedeb={{ datedeb|date:'Y-m-d' }}{% endif %}{% if datefin %}&datefin={{ datefin|date:'Y-m-d' }}{% endif %}" aria-label="Suivant">
+                            <a class="page-link" href="{{ recettes.next_page_number|stringformat:'s'|urlencode }}" aria-label="Suivant">
                                 <span aria-hidden="true">Suivant</span>
                             </a>
                         </li>
