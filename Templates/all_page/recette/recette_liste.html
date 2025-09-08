@@ -155,7 +155,7 @@
                                     </li>
                                 {% else %}
                                     <li class="page-item">
-                                        <a class="page-link" href="{{ i|stringformat:'s'|urlencode }}">{{ i }}</a>
+                                        <a class="page-link" href="?page={{ i }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}">{{ i }}</a>
                                     </li>
                                 {% endif %}
                             {% endfor %}
