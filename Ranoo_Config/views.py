@@ -299,6 +299,7 @@ def branchement_supp(request, pk):
 
 
 @role_requis('Administrateur', 'Gestionnaire')
+@schema_use
 def config_tarif(request):
     titre = 'Ranoo Config | Tarif'
     active = 'active'
