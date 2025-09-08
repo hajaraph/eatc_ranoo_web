@@ -100,8 +100,8 @@
                 <ul class="pagination justify-content-center">
                     {% if recettes.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ recettes.previous_page_number|stringformat:'s'|urlencode }}" aria-label="Précédent">
-                                <span aria-hidden="true">Précédant</span>
+                            <a class="page-link" href="?page={{ recettes.previous_page_number }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}" aria-label="Précédent">
+                                <span aria-hidden="true">Précédent</span>
                             </a>
                         </li>
                     {% else %}
@@ -131,7 +131,7 @@
                                         </li>
                                     {% else %}
                                         <li class="page-item">
-                                            <a class="page-link" href="{{ i|stringformat:'s'|urlencode }}">{{ i }}</a>
+                                            <a class="page-link" href="?page={{ i }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}">{{ i }}</a>
                                         </li>
                                     {% endif %}
                                 {% endif %}
@@ -164,7 +164,7 @@
 
                     {% if recettes.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ recettes.next_page_number|stringformat:'s'|urlencode }}" aria-label="Suivant">
+                            <a class="page-link" href="?page={{ recettes.next_page_number }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}" aria-label="Suivant">
                                 <span aria-hidden="true">Suivant</span>
                             </a>
                         </li>
