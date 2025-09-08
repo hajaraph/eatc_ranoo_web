@@ -16,6 +16,7 @@
                     <th>Commune</th>
                     <th>Prix / m&#179;</th>
                     <th>TVA (En %)</th>
+                    <th>Taxes</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -33,7 +34,14 @@
                     </td>
                     <td>{{ row.tva }} %</td>
                     <td>
-                        <a href="{% url 'tarif_mod' row.pk %}" class="btn btn-sm btn-warning">
+                        {% for taxe in row.taxes.all %}
+                            {{ taxe.nom_taxe }}: <strong>{{ taxe.taux_taxe|floatformat:0 }}%</strong>{% if not forloop.last %}<br>{% endif %}
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{% url 'tarif_mod' row.pk %}" class="btn btn-sm btn-warning" title="Modifier le tarif">
                             <i class="fas fa-edit"></i>
                         </a>
                     </td>

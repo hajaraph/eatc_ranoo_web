@@ -389,53 +389,110 @@ class TarifMod(SchemaAwareView):
         font = 'custom-font'
         tarif = Tarif.objects.get(pk=pk)
         taxes = tarif.taxes.all()
+        branchements = ConfigBranchement.objects.all()
+        
+        # Créer un dictionnaire des prix par type de branchement pour un accès facile
+        prix_par_branchement = {}
+        for item in tarif.prix_m3:
+            try:
+                branchementc = ConfigBranchement.objects.get(pk=item['id'])
+                prix_par_branchement[branchementc.id_config_branchement] = item['prix']
+            except ConfigBranchement.DoesNotExist:
+                continue
+        
         context = {
             'titre_mod_tarif': titre,
             'active_config_constates': active,
             'font_rano': font,
             'tarif': tarif,
-            'taxes': taxes
+            'taxes': taxes,
+            'branchements': branchements,
+            'prix_par_branchement': prix_par_branchement
         }
         return render(request, self.template_name, context)
 
     @staticmethod
     @role_requis('Administrateur', 'Gestionnaire')
     def post(request, pk):
-        prix_m3_bs = float(request.POST['prix_m3_bs'])
-        prix_m3_bp = float(request.POST['prix_m3_bp'])
-        prix_m3_k = float(request.POST['prix_m3_k'])
-        conso_tva_app = float(request.POST['conso_tva_app'])
-        nom_taxes = request.POST.getlist('nom_taxe')
-        taux_taxes = request.POST.getlist('taux_taxe')
-        nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
-        tva = float(request.POST['tva'])
+        try:
+            # Récupération des données du formulaire
+            conso_tva_app = float(request.POST.get('conso_tva_app', 0)) or 0
+            tva = float(request.POST.get('tva', 0)) or 0
+            nom_taxes = request.POST.getlist('nom_taxe')
+            taux_taxes = [taux for taux in request.POST.getlist('taux_taxe') if taux]
+            nb_jour_echeance_fct = int(request.POST.get('nb_jour_echeance_fct', 15))
+            prix_location_compteur = request.POST.get('prix_location_compteur', 0) or 0
 
-        tarif = Tarif.objects.get(pk=pk)
-        tarif.prix_m3_bs = round(prix_m3_bs, 2)
-        tarif.prix_m3_bp = round(prix_m3_bp, 2)
-        tarif.prix_m3_k = round(prix_m3_k, 2)
-        tarif.tva = round(tva, 2)
-        tarif.conso_tva_app = round(conso_tva_app, 2)
-        tarif.nb_jour_echeance_fct = nb_jour_echeance_fct
-        tarif.save()
+            # Récupérer les prix par type de branchement
+            prix_m3 = []
+            for branchementc in ConfigBranchement.objects.all():
+                prix = request.POST.get(f'prix_m3_{branchementc.id_config_branchement}')
+                if prix is not None:  # Vérifier si le champ existe
+                    try:
+                        prix_float = float(prix)
+                        prix_m3.append({
+                            "id": branchementc.id_config_branchement,
+                            "prix": round(prix_float, 2)
+                        })
+                    except (ValueError, TypeError):
+                        # En cas d'erreur de conversion, on utilise 0 comme valeur par défaut
+                        prix_m3.append({
+                            "id": branchementc.id_config_branchement,
+                            "prix": 0.0
+                        })
 
-        exist_taxes = {taxe.nom_taxe: taxe for taxe in tarif.taxes.all()}
-        new_taxes = []
+            # Mise à jour du tarif
+            tarif = Tarif.objects.get(pk=pk)
+            tarif.prix_m3 = prix_m3
+            tarif.tva = round(tva, 2)
+            tarif.conso_tva_app = round(conso_tva_app, 2)
+            tarif.nb_jour_echeance_fct = nb_jour_echeance_fct
+            tarif.prix_location_compteur = prix_location_compteur
+            tarif.save()
 
-        for nom, taux in zip(nom_taxes, taux_taxes):
-            taux = round(float(taux), 2)
-            if nom in exist_taxes:
-                taxe = exist_taxes[nom]
-                taxe.taux_taxe = taux
-                taxe.save()
-            else:
-                taxe = Taxe.objects.create(nom_taxe=nom, taux_taxe=taux, tarif=tarif)
-            new_taxes.append(taxe)
+            # Gestion des taxes existantes
+            exist_taxes = {taxe.id_taxe: taxe for taxe in tarif.taxes.all()}
+            updated_tax_ids = []
 
-        # Supprimer les taxes qui ne sont plus présentes dans le formulaire
-        for nom in exist_taxes:
-            if nom not in nom_taxes:
-                exist_taxes[nom].delete()
+            # Mise à jour ou création des taxes
+            for nom, taux_str in zip(nom_taxes, taux_taxes):
+                if not nom:  # Ignorer les champs vides
+                    continue
+                    
+                try:
+                    taux = round(float(taux_str), 2)
+                    # Vérifier si une taxe avec ce nom existe déjà
+                    existing_tax = next((t for t in exist_taxes.values() if t.nom_taxe == nom), None)
+                    
+                    if existing_tax:
+                        # Mise à jour de la taxe existante
+                        existing_tax.taux_taxe = taux
+                        existing_tax.save()
+                        updated_tax_ids.append(existing_tax.id_taxe)
+                    else:
+                        # Création d'une nouvelle taxe
+                        new_tax = Taxe.objects.create(
+                            nom_taxe=nom,
+                            taux_taxe=taux,
+                            tarif=tarif
+                        )
+                        updated_tax_ids.append(new_tax.id_taxe)
+                except (ValueError, TypeError) as e:
+                    # Ignorer les valeurs de taxe invalides
+                    print(f"Erreur lors de la gestion de la taxe: {str(e)}")
+                    continue
 
-        messages.success(request, f'Mofication de Tarif enregistré avec succès !')
-        return redirect('config_tarif')
+            # Supprimer les taxes qui ne sont plus dans le formulaire
+            for taxe_id, taxe in exist_taxes.items():
+                if taxe_id not in updated_tax_ids:
+                    taxe.delete()
+
+            messages.success(request, 'Modification du tarif enregistrée avec succès !')
+            return redirect('config_tarif')
+            
+        except Tarif.DoesNotExist:
+            messages.error(request, 'Le tarif spécifié n\'existe pas.')
+            return redirect('config_tarif')
+        except Exception as e:
+            messages.error(request, f'Une erreur est survenue lors de la modification du tarif: {str(e)}')
+            return redirect('config_tarif')

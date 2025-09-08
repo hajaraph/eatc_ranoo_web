@@ -1,75 +1,93 @@
+{% load filtres %}
 <div class="card-body px-4">
     <h4 class="text-center mb-5">Modification de {{ tarif.cp_commune.cp_commune }}</h4>
     <form action="{% url 'tarif_mod' tarif.pk %}" method="post">
         {% csrf_token %}
-        <div class="row">
-            <div class="col-md-4 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="prix_m3_bs" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.prix_m3_bs }}" placeholder="" required>
-                    <label for="prix_m3">Prix / m&#179; (Branchement Social)*</label>
-                </div>
-            </div>
+        <div class="card-header bg-white mt-4">
+            <h5>Tarif</h5>
         </div>
-        <div class="row">
-            <div class="col-md-4 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="prix_m3_bp" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.prix_m3_bp }}" placeholder="" required>
-                    <label for="prix_m3">Prix / m&#179; (Branchement Privé)*</label>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-4 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="prix_m3_k" id="prix_m3" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.prix_m3_k }}" placeholder="" required>
-                    <label for="prix_m3">Prix / m&#179; (Kiosque)*</label>
-                </div>
-            </div>
-        </div>
-        <div class="mt-4" id="afficher_taxe">
-            {% for taxe in taxes %}
-            <div class="row mt-4 taxe_groupe" id="taxe_groupe">
-                <div class="col-md-4">
+        <div class="card-body">
+            <div class="row">
+                {% for branchement in branchements %}
+                <div class="col-md-4 col-sm-12 mt-4">
                     <div class="form-floating">
-                        <input type="text" name="nom_taxe" id="nom_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ taxe.nom_taxe }}" placeholder="">
-                        <label for="nom_taxe">Nom Taxe</label>
+                        <input type="text"
+                               name="prix_m3_{{ branchement.id_config_branchement }}"
+                               id="prix_m3_{{ branchement.id_config_branchement }}"
+                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                               value="{{ prix_par_branchement|get_item:branchement.id_config_branchement|default:0|format_number }}"
+                               placeholder=""
+                               required>
+                        <label for="prix_m3_{{ branchement.id_config_branchement }}">
+                            Prix / m³ ({{ branchement.type_client.designation_client }})*
+                        </label>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-floating">
-                        <input type="text" name="taux_taxe" id="taux_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ taxe.taux_taxe }}" placeholder="">
-                        <label for="taux_taxe">Taux (%)</label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card-header bg-white mt-4">
+            <h5>Taxe</h5>
+        </div>
+        <div class="card-body">
+            <div id="afficher_taxe">
+                {% for taxe in taxes %}
+                <div class="row taxe_groupe" id="taxe_groupe">
+                    <div class="col-md-4 col-sm-12 mt-4">
+                        <div class="form-floating">
+                            <input type="text" name="nom_taxe" id="nom_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ taxe.nom_taxe }}" placeholder="">
+                            <label for="nom_taxe">Nom Taxe</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-12 mt-4">
+                        <div class="form-floating">
+                            <input type="text" name="taux_taxe" id="taux_taxe" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ taxe.taux_taxe|format_number }}" placeholder="">
+                            <label for="taux_taxe">Taux (%)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-1 col-sm-12 mt-4">
+                        <button type="button" class="btn btn-sm btn-warning rounded-circle retirer-taxe" title="Supprimer cette taxe">
+                            <i class="fas fa-minus"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="col-md-1">
-                    <div class="btn btn-sm btn-warning rounded-circle mt-4" id="retirer"><i class="fas fa-minus"></i></div>
-                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
-        <div class="btn btn-sm btn-success  mt-3" id="add_taxe">
-            <i class="fas fa-plus"></i>
-            Plus Taxe
-        </div>
-        <div class="row mt-4">
-            <div class="col-md-4">
-                <div class="form-floating">
-                    <input type="text" name="tva" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.tva }}" placeholder="" required>
-                    <label for="tva">TVA*</label>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-floating">
-                    <input type="text" name="conso_tva_app" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.conso_tva_app }}" placeholder="" required>
-                    <label for="tva">Consommation Appliquer (m&#179;)*</label>
-                </div>
+            <div class="btn btn-sm btn-success mt-3" id="add_taxe">
+                <i class="fas fa-plus"></i>
+                Plus Taxe
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-4 mt-4">
-                <div class="form-floating">
-                    <input type="text" name="nb_jour_echeance_fct" id="nb_jour_echeance_fct" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.nb_jour_echeance_fct }}" placeholder="">
-                    <label for="nb_jour_echeance_fct">Nombre Jour Echeance Facture</label>
+        <div class="card-header bg-white mt-4">
+            <h5>Autre</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="tva" id="tva" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.tva|format_number }}" placeholder="">
+                        <label for="tva">TVA (%)</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="conso_tva_app" id="conso_tva_app" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.conso_tva_app|format_number }}" placeholder="">
+                        <label for="conso_tva_app">Consommation Appliquer (m&#179;)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="nb_jour_echeance_fct" id="nb_jour_echeance_fct" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.nb_jour_echeance_fct|format_number }}" placeholder="" required>
+                        <label for="nb_jour_echeance_fct">Nombre Jour Echeance Facture*</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <input type="text" name="prix_location_compteur" id="prix_location_compteur" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ tarif.prix_location_compteur|default:''|format_number }}" placeholder="">
+                        <label for="prix_location_compteur">Prix Location Compteur</label>
+                    </div>
                 </div>
             </div>
         </div>
