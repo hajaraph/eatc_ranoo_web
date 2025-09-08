@@ -114,7 +114,7 @@
                         {% if recettes.paginator.num_pages > max_visible_pages %}
                             {% if recettes.number > 2 %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ 1|stringformat:'s'|urlencode }}">1</a>
+                                    <a class="page-link" href="?page=1{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}">1</a>
                                 </li>
                                 {% if recettes.number > 3 %}
                                     <li class="page-item disabled">
@@ -144,7 +144,7 @@
                                     </li>
                                 {% endif %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ recettes.paginator.num_pages|stringformat:'s'|urlencode }}">{{ recettes.paginator.num_pages }}</a>
+                                    <a class="page-link" href="?page={{ recettes.paginator.num_pages }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}">{{ recettes.paginator.num_pages }}</a>
                                 </li>
                             {% endif %}
                         {% else %}
