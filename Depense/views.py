@@ -5,6 +5,7 @@ from django.db.models import Sum
 from django.shortcuts import render, redirect
 
 from Depense.models import Transactions, Categories
+from Rel_Compteur.utils import filter_by_date_range
 from Tenants.middleware import schema_use, SchemaAwareView
 
 
@@ -14,23 +15,36 @@ def depense(request):
     active_depense = "active"
     font_depense = "custom-font"
 
+    datedeb = request.GET.get('datedeb')
+    datefin = request.GET.get('datefin')
+
     now = datetime.now()
     mois_actuel = now.month
 
-    transaction = Transactions.objects.all().order_by('pk')
-    transactions_mois = transaction.filter(date_transaction__month=mois_actuel)
+    # Récupérer et filtrer les transactions
+    transactions_qs = Transactions.objects.all().order_by('date_transaction')
+    transactions_mois, _, _ = filter_by_date_range(
+        queryset=transactions_qs,
+        date_field='date_transaction',
+        date_start=datedeb,
+        date_end=datefin,
+        default_month=mois_actuel
+    )
 
-    total_depenses_mois = transactions_mois.aggregate(Sum('montant'))['montant__sum']
+    # Calculer le total des dépenses et le nombre de transactions
+    total_depenses_mois = transactions_mois.aggregate(Sum('montant'))['montant__sum'] or 0
     nombre_transactions = transactions_mois.count()
 
     context = {
         'title_depense_list': title_depense_list,
         'active_depense': active_depense,
         'font_depense': font_depense,
-        'transaction': transaction,
+        'transaction': transactions_mois,
         'mois_actuel': now,
         'total_depenses_mois': total_depenses_mois,
         'nombre_transactions': nombre_transactions,
+        'datedeb': datedeb,  # Pour préremplir les champs de date dans le formulaire
+        'datefin': datefin   # Pour préremplir les champs de date dans le formulaire
     }
     return render(request, 'all_page/depense/depense.html', context)
 

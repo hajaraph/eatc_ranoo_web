@@ -13,6 +13,7 @@ from Facturation.models import Facture
 from Tenants.models import Utilisateur
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from Rel_Compteur.utils import filter_by_date_range
 
 @schema_use
 def recette(request):
@@ -20,30 +21,30 @@ def recette(request):
     active_recette = "active"
     font_recette = "custom-font"
 
-    # Dates de filtre : du 1er jour du mois courant à aujourd'hui si non fournis
-    today = timezone.now().date()
-    first_day = today.replace(day=1)
-
-    datedeb_str = request.GET.get('datedeb')
-    datefin_str = request.GET.get('datefin')
+    # Récupération des paramètres de date
+    datedeb = request.GET.get('datedeb')
+    datefin = request.GET.get('datefin')
     page = request.GET.get('page', 1)
 
-    try:
-        datedeb = datetime.strptime(datedeb_str, '%Y-%m-%d').date() if datedeb_str else first_day
-    except ValueError:
-        datedeb = first_day
-    try:
-        datefin = datetime.strptime(datefin_str, '%Y-%m-%d').date() if datefin_str else today
-    except ValueError:
-        datefin = today
+    now = timezone.now()
+    mois_actuel = now.month
 
-    # Liste et statistiques des recettes sur la période
-    recettes_qs = Recette.objects.filter(date_encaissement__range=(datedeb, datefin)).select_related('type_recette', 'facture')
-    total_recettes_mois = recettes_qs.aggregate(total=Sum('montant'))['total'] or 0
-    nombre_recettes = recettes_qs.count()
+    # Récupérer et filtrer les recettes
+    recettes_qs = Recette.objects.all().select_related('type_recette', 'facture').order_by('date_encaissement')
+    recettes_filtrees, _, _ = filter_by_date_range(
+        queryset=recettes_qs,
+        date_field='date_encaissement',
+        date_start=datedeb,
+        date_end=datefin,
+        default_month=mois_actuel
+    )
+
+    # Calculer le total des recettes et le nombre de recettes
+    total_recettes_mois = recettes_filtrees.aggregate(total=Sum('montant'))['total'] or 0
+    nombre_recettes = recettes_filtrees.count()
 
     # Pagination
-    paginator = Paginator(recettes_qs, 10)
+    paginator = Paginator(recettes_filtrees, 10)
 
     try:
         recettes = paginator.page(page)
@@ -56,9 +57,9 @@ def recette(request):
         'title_recette_list': title_recette_list,
         'active_recette': active_recette,
         'font_recette': font_recette,
-        'datedeb': datedeb,
-        'datefin': datefin,
-        'mois_actuel': today,
+        'datedeb': datedeb,  # Pour préremplir les champs de date dans le formulaire
+        'datefin': datefin,  # Pour préremplir les champs de date dans le formulaire
+        'mois_actuel': now,
         'total_recettes_mois': total_recettes_mois,
         'nombre_recettes': nombre_recettes,
         'recettes': recettes,

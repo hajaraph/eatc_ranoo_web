@@ -132,7 +132,7 @@ DATABASES = {
         'ENGINE': 'django_tenants.postgresql_backend',
         'NAME': 'rel_compteur',
         # 'USER': 'postgres',
-        # # 'PASSWORD': '12121212',
+        # 'PASSWORD': '12121212',
         'USER': 'eatcrano',
         'PASSWORD': 'eatc301',
         'HOST': 'localhost',
