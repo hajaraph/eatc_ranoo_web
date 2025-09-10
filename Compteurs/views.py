@@ -2,7 +2,10 @@ from datetime import datetime
 from django.contrib import messages
 from django.db import models
 from django.db.models import OuterRef, Subquery
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
+from weasyprint import HTML
 
 from Compteurs.models import Compteur, ReleveCompteur
 from Clients.models import Contrat
@@ -353,25 +356,71 @@ def del_releve(request, pk):
 
 @schema_use
 def export_compteur(request):
-    compteurs = Compteur.objects.all()
-    nom_fichier = "compteurs.xlsx"
-    champs = [
-        'contrats__num_contrat',
-        'num_compteur',
-        'relevecompteurs__date_releve',
-        'relevecompteurs__volume',
-        'relevecompteurs__conso',
-    ]
-    nom_colonnes = [
-        'N° Contrat',
-        'N° Compteur',
-        'Date de Relevé',
-        'volume',
-        'Consommation'
-    ]
-    response = exporter_en_excel(compteurs, nom_fichier, champs, nom_colonnes)
-    message = f"Export de tout les compteurs"
+    
+    # D'abord récupérer les contrats actifs avec leurs relations
+    contrats = Contrat.objects.select_related(
+        'client',
+        'client__type_client',
+        'num_compteur'
+    ).prefetch_related(
+        'num_compteur__relevecompteurs'
+    ).all()
+    
+    # Préparer les données pour le template
+    data = []
+    for contrat in contrats:
+        compteur = contrat.num_compteur
+        if not compteur:
+            continue
+            
+        # Récupérer les relevés triés par date décroissante
+        releves = list(compteur.relevecompteurs.all().order_by('-date_releve'))
+        dernier_releve = releves[0] if releves else None
+        avant_dernier_releve = releves[1] if len(releves) > 1 else None
+        
+        # Calculer la consommation
+        conso = 0
+        if dernier_releve and avant_dernier_releve:
+            conso = dernier_releve.volume - avant_dernier_releve.volume
+        elif dernier_releve:
+            conso = dernier_releve.volume
+            
+        data.append({
+            'num_client': contrat.client.num_client,
+            'num': compteur.num_compteur,
+            'nom_client': f"{contrat.client.nom_client} {contrat.client.prenom_client or ''}".strip(),
+            'adresse': contrat.adresse_contrat,
+            'ancien_releve': avant_dernier_releve.volume if avant_dernier_releve else 0,
+            'conso': conso,
+            'type_client': contrat.client.type_client.designation_client if contrat.client and contrat.client.type_client else ''
+        })
+
+    # Préparer le contexte pour le template
+    context = {
+        'compteurs': data,
+        'date_export': datetime.now()
+    }
+    
+    # Rendre le template en chaîne HTML
+    html_string = render_to_string(
+        'all_page/compteurs/pdf/recouvrement.html', 
+        context
+    )
+    
+    # Créer une réponse HTTP avec le type MIME PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'filename="liste_compteurs.pdf"'
+    
+    # Générer le PDF
+    HTML(
+        string=html_string,
+        base_url=request.build_absolute_uri('/')
+    ).write_pdf(response)
+    
+    # Enregistrer dans l'historique
+    message = "Export PDF de la liste des compteurs"
     enregistre_historique(message, request.session.get('id_utilisateur'))
+    
     return response
 
 

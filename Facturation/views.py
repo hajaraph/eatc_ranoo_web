@@ -449,7 +449,7 @@ def facture_context_pdf(request, factures):
         return HttpResponse(f"An error occurred: {e}", content_type='text/plain')
 
 
-def is_eatc_schema(request):
+def is_eatc_schema(request) -> bool:
     id_entreprise = request.session.get('entreprise')
     entreprise = Entreprise.objects.get(pk=id_entreprise)
     return entreprise.schema_name == "eatc"
@@ -494,7 +494,7 @@ def get_prix_m3_client(fact):
 
 
 def get_derniers_montants_impayees(num_contrat, date_facture_actuelle):
-    """Récupère les 3 derniers mois de factures impayées - seulement le montant_total_ttc"""
+    """Récupère les 3 derniers mois de factures impayées — seulement le montant_total_ttc"""
     try:
         montants = []
 
@@ -523,7 +523,7 @@ def get_derniers_montants_impayees(num_contrat, date_facture_actuelle):
                 montant_total_ttc__isnull=False  # S'assurer que le montant existe
             ).values('num_facture', 'date_facture', 'montant_total_ttc').order_by('date_facture').first()
 
-            # MODIFICATION: Toujours ajouter un élément, même si pas de facture impayée
+            # MODIFICATION : Toujours ajouter un élément, même si pas de facture impayée
             if facture_impayee:
                 # Reculer d'un mois la date de la facture impayée pour l'affichage (cohérence avec la logique métier)
                 date_facture_originale = facture_impayee['date_facture']
@@ -559,38 +559,18 @@ def calculer_total_net_a_payer(montant_actuel, montants_impayees):
 def facture_genere_pdf(request, num_facture):
     try:
         factures = Facture.objects.get(num_facture=num_facture)
-        context = facture_context_pdf(request, factures)
-
-        if isinstance(context, HttpResponse):
-            return context
-
-        context['prix_m3'] = get_prix_m3_client(factures)
-
-        # Récupérer les 3 derniers mois de factures impayées (statut=False)
-        montants_impayees = get_derniers_montants_impayees(
-            factures.num_contrat_id,
-            factures.date_facture
+        
+        # Utilisation de la fonction utilitaire pour préparer le contexte
+        from Rel_Compteur.utils import prepare_facture_context
+        context, error_response = prepare_facture_context(request, factures)
+        
+        if error_response:
+            return error_response
+            
+        # Déterminer le template à utiliser
+        template_path = 'all_page/facturation/facture/{}'.format(
+            'templatepdf.html' if is_eatc_schema(request) else 'templatenoeatc.html'
         )
-        context['montants_impayees_precedents'] = montants_impayees
-
-        # Calculer le total net à payer incluant les impayés précédents
-        total_net_a_payer = calculer_total_net_a_payer(
-            factures.montant_total_ttc,
-            montants_impayees
-        )
-        context['total_net_a_payer'] = total_net_a_payer
-
-        if is_eatc_schema(request):
-            template_path = 'all_page/facturation/facture/templatepdf.html'
-        else:
-            id_entreprise = request.session.get('entreprise')
-            entreprise = Entreprise.objects.get(pk=id_entreprise)
-            context['nif'] = f"{entreprise.nif}" if entreprise.nif else '-'
-            context['stat'] = f"{entreprise.stat}" if entreprise.stat else '-'
-            context['num_mvola'] = f"{entreprise.numero_mvola}" if entreprise.numero_mvola else '-'
-            context['nom_mvola'] = f"{entreprise.nom_mvola}" if entreprise.nom_mvola else '-'
-            context = encode_entreprise_images(entreprise, context)
-            template_path = 'all_page/facturation/facture/templatenoeatc.html'
 
         filename_prefix = f"{factures.num_facture}-({datetime.now().strftime('%d/%m/%Y')})"
         return generate_pdf(request, context, template_path, filename_prefix)
@@ -616,7 +596,7 @@ def generate_multiple_pages_pdf(request):
         date_fin = request.GET.get('date_fin')
         commune = request.GET.get('commune')
 
-        # Si aucune date n'est fournie, utiliser le mois actuel pour les factures impay��es
+        # Si aucune date n'est fournie, utiliser le mois actuel pour les factures impayées
         if not date_deb and not date_fin:
             date_deb, date_fin = get_mois_courant()
 
@@ -653,12 +633,8 @@ def generate_multiple_pages_pdf(request):
         )
         template = get_template(template_name)
 
-        # Chargement des données de l'entreprise si nécessaire
-        if not eatc:
-            id_entreprise = request.session.get('entreprise')
-            entreprise = Entreprise.objects.get(pk=id_entreprise)
-        else:
-            entreprise = None
+        # Import de la fonction utilitaire
+        from Rel_Compteur.utils import prepare_facture_context
 
         # Traitement par lots
         for i in range(0, len(factures), batch_size):
@@ -667,33 +643,10 @@ def generate_multiple_pages_pdf(request):
 
             for fact in batch:
                 try:
-                    # Préparation du contexte
-                    context = facture_context_pdf(request, fact)
-                    if isinstance(context, HttpResponse):
-                        return context
-
-                    # Ajout des données supplémentaires
-                    context['prix_m3'] = get_prix_m3_client(fact)
-
-                    # Récupérer les 3 derniers mois de factures impayées pour chaque facture
-                    montants_impayees = get_derniers_montants_impayees(
-                        fact.num_contrat_id,
-                        fact.date_facture
-                    )
-                    context['montants_impayees_precedents'] = montants_impayees
-
-                    total_net_a_payer = calculer_total_net_a_payer(
-                        fact.montant_total_ttc,
-                        montants_impayees
-                    )
-                    context['total_net_a_payer'] = total_net_a_payer
-
-                    if entreprise:
-                        context['nif'] = f"{entreprise.nif}" if entreprise.nif else '-'
-                        context['stat'] = f"{entreprise.stat}" if entreprise.stat else '-'
-                        context['num_mvola'] = f"{entreprise.numero_mvola}" if entreprise.numero_mvola else '-'
-                        context['nom_mvola'] = f"{entreprise.nom_mvola}" if entreprise.nom_mvola else '-'
-                        context = encode_entreprise_images(entreprise, context)
+                    # Utilisation de la fonction utilitaire pour préparer le contexte
+                    context, error_response = prepare_facture_context(request, fact)
+                    if error_response:
+                        return error_response
 
                     # Rendu du template
                     html = template.render(context)
