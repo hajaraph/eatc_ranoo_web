@@ -32,16 +32,15 @@
             font-size: 10px;
         }
         /* Largeurs des colonnes optimisées pour A4 paysage */
-        th:first-child, td:first-child { width: 3%; }  /* N° */
+        th:first-child, td:first-child { width: 4%; }  /* N° */
         th:nth-child(2), td:nth-child(2) { width: 25%; text-align: left; padding-left: 2px; }  /* Nom client */
         th:nth-child(3), td:nth-child(3) { width: 20%; text-align: left; padding-left: 2px; }  /* Adresse */
-        th:nth-child(4), td:nth-child(4) { width: 7%; }  /* N° Compteur */
         th:nth-child(5), td:nth-child(5) { width: 6%; }  /* Date */
         th:nth-child(6), td:nth-child(6) { width: 5%; }  /* Ancien Index */
         th:nth-child(7), td:nth-child(7) { width: 5%; }  /* Nouvel Index */
         th:nth-child(8), td:nth-child(8) { width: 5%; }  /* Conso */
         th:nth-child(9), td:nth-child(9) { width: 7%; }  /* Signature */
-        th:last-child, td:last-child { width: 7%; font-size: 7px; }  /* Type Client */
+        th:last-child, td:last-child { width: 7%; }  /* Type Client */
         th {
             background-color: #f2f2f2;
             font-weight: bold;
@@ -72,7 +71,6 @@
                 <th style="padding: 0">N°</th>
                 <th>Nom du Client</th>
                 <th>Adresse</th>
-                <th>N° Compteur</th>
                 <th>Date De Relevé</th>
                 <th>Ancien Index</th>
                 <th>Nouvel Index</th>
@@ -87,7 +85,6 @@
                 <td>{{ compteur.num_client }}</td>
                 <td style="text-align: left">{{ compteur.nom_client|default:'' }}</td>
                 <td style="text-align: left">{{ compteur.adresse|default:'' }}</td>
-                <td>{{ compteur.num|default:'' }}</td>
                 <td></td>
                 <td>{{ compteur.ancien_releve|default:'0' }}</td>
                 <td></td>
@@ -95,7 +92,7 @@
                 <td>
                     <div class="signature"></div>
                 </td>
-                <td>{{ compteur.type_client|default:'' }}</td>
+                <td style=" font-size: 7px; ">{{ compteur.type_client|default:'' }}</td>
             </tr>
             {% endfor %}
         </tbody>
