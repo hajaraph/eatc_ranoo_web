@@ -508,11 +508,17 @@ def export_recouvrement(request):
         )
     
     # Exécuter la requête avec les jointures nécessaires
+    # Récupérer d'abord toutes les factures sans tri
     factures_impayees = factures_query.select_related(
         'num_contrat__client',
         'num_contrat__num_compteur',
         'num_contrat__cp_commune'
-    ).order_by('num_contrat__num_compteur')
+    )
+
+    factures_impayees = sorted(
+        factures_impayees,
+        key=lambda x: int(x.num_contrat.num_compteur.num_compteur) if x.num_contrat.num_compteur and x.num_contrat.num_compteur.num_compteur.isdigit() else float('inf')
+    )
     
     # Créer une structure pour stocker les données par client
     clients_data = defaultdict(dict)
