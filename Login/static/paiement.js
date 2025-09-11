@@ -1,4 +1,4 @@
-(document).ready(function () {
+$(document).ready(function () {
     $(".paiement-valide").on('click', function (event) {
         const id_releve = $(this).attr('id');
 
