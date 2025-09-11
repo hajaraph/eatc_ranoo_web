@@ -54,7 +54,7 @@
             
             <!-- Ligne de total -->
             <tr class="total-row">
-                <td colspan="4" style="text-align: right"><strong>Total par mois :</strong></td>
+                <td colspan="3" style="text-align: right"><strong>Total par mois :</strong></td>
                 {% for mois in mois_headers %}
                     <td class="total">
                         {{ clients|sum_mois:forloop.counter0|floatformat:2 }}
