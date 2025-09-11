@@ -1,23 +1,98 @@
+{% load filtres %}
 <!DOCTYPE html>
-<html lang="FR">
+<html lang="fr">
 <head>
-    <meta charset="utf-8">
-    <title>Relevé des Compteurs</title>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div class="header">
+        <h1>ETAT DE RECOUVREMENT DES IMPAYES</h1>
+        <div class="date-range-form">
+            <form method="get" action="{{ form_action }}" onsubmit="return validateDates()">
+                <label for="date_debut">Du :</label>
+                <input type="date" id="date_debut" name="date_debut" value="{{ date_debut }}" required>
+                
+                <label for="date_fin">Au :</label>
+                <input type="date" id="date_fin" name="date_fin" value="{{ date_fin }}" required>
+                
+                <button type="submit">Actualiser</button>
+            </form>
+        </div>
+        <div class="date-export">Date d'édition : {{ date_export|date:"d/m/Y H:i" }}</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2">N°</th>
+                <th rowspan="2">Nom du Client</th>
+                <th rowspan="2">Adresse</th>
+                <th rowspan="2">N° Compteur</th>
+                <th colspan="{{ mois_headers|length }}">Mois</th>
+                <th rowspan="2">Total</th>
+                <th rowspan="2">Signature</th>
+            </tr>
+            <tr>
+                {% for mois in mois_headers %}
+                <th>{{ mois }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td style="text-align: left">{{ client.nom }}</td>
+                <td style="text-align: left">{{ client.adresse }}</td>
+                <td>{{ client.compteur }}</td>
+                
+                {% for mois in mois_headers %}
+                    {% with montant=client.mois|get_item:mois %}
+                    <td class="{% if montant > 0 %}montant-due{% endif %}">
+                        {% if montant > 0 %}{{ montant|floatformat:2 }}{% endif %}
+                    </td>
+                    {% endwith %}
+                {% endfor %}
+                
+                <td class="total">
+                    {{ client.mois|dict_values|sum_values|floatformat:2 }}
+                </td>
+                <td class="signature"></td>
+            </tr>
+            {% endfor %}
+            
+            <!-- Ligne de total -->
+            <tr class="total-row">
+                <td colspan="4" style="text-align: right"><strong>Total par mois :</strong></td>
+                {% for mois in mois_headers %}
+                    <td class="total">
+                        {{ clients|sum_mois:forloop.counter0|floatformat:2 }}
+                    </td>
+                {% endfor %}
+                <td class="total">
+                    {{ clients|sum_total|sum_values|floatformat:2 }}
+                </td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    
     <style>
         @page {
-            size: A4;
+            size: A4 landscape;
             margin: 0.5cm;
         }
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-size: 9px;
             line-height: 1.2;
         }
         h1 {
             color: #2c3e50;
             text-align: center;
             margin-bottom: 10px;
-            font-size: 16px;
+            font-size: 14px;
         }
         table {
             width: 100%;
@@ -27,20 +102,10 @@
         }
         th, td {
             border: 1px solid #000;
+            padding: 3px;
             text-align: center;
-            padding: 2px 4px;
-            font-size: 10px;
+            vertical-align: middle;
         }
-        /* Largeurs des colonnes optimisées pour A4 paysage */
-        th:first-child, td:first-child { width: 4%; }  /* N° */
-        th:nth-child(2), td:nth-child(2) { width: 25%; text-align: left; padding-left: 2px; }  /* Nom client */
-        th:nth-child(3), td:nth-child(3) { width: 20%; text-align: left; padding-left: 2px; }  /* Adresse */
-        th:nth-child(5), td:nth-child(5) { width: 5%; }  /* Date */
-        th:nth-child(6), td:nth-child(6) { width: 5%; }  /* Ancien Index */
-        th:nth-child(7), td:nth-child(7) { width: 5%; }  /* Nouvel Index */
-        th:nth-child(8), td:nth-child(8) { width: 5%; }  /* Conso */
-        th:nth-child(9), td:nth-child(9) { width: 8%; }  /* Signature */
-        th:last-child, td:last-child { width: 7%; }  /* Type Client */
         th {
             background-color: #f2f2f2;
             font-weight: bold;
@@ -50,52 +115,28 @@
         }
         .header {
             text-align: center;
+            margin-bottom: 10px;
         }
         .date-export {
             text-align: right;
             font-style: italic;
-            margin-bottom: 10px;
-            font-size: 10px;
+            margin-bottom: 5px;
+            font-size: 9px;
+        }
+        .montant-due {
+            color: #d9534f;
+            font-weight: bold;
+        }
+        .total {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .total-row {
+            background-color: #e9ecef !important;
+        }
+        .signature {
+            min-width: 60px;
         }
     </style>
-</head>
-<body>
-    <div class="header">
-        <h1>RELEVE DES INDEX DES COMPTEURS</h1>
-        <div class="date-export">Date d'édition : {{ date_export|date:"d/m/Y H:i" }}</div>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th style="padding: 0">N°</th>
-                <th>Nom du Client</th>
-                <th>Adresse</th>
-                <th>Date De Relevé</th>
-                <th>Ancien Index</th>
-                <th>Nouvel Index</th>
-                <th>Conso (m³)</th>
-                <th>Signature</th>
-                <th>Type Client</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for compteur in compteurs %}
-            <tr>
-                <td>{{ compteur.num_client }}</td>
-                <td style="text-align: left">{{ compteur.nom_client|default:'' }}</td>
-                <td style="text-align: left">{{ compteur.adresse|default:'' }}</td>
-                <td></td>
-                <td>{{ compteur.ancien_releve|default:'0' }}</td>
-                <td></td>
-                <td></td>
-                <td>
-                    <div class="signature"></div>
-                </td>
-                <td style=" font-size: 7px; ">{{ compteur.type_client|default:'' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </body>
 </html>

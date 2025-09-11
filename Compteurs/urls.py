@@ -1,7 +1,7 @@
 from django.urls import path
 
 from Compteurs.views import compteur_liste, CompteurNew, CompteurDetail, compteur_releve, ReleveNew, \
-    ReleveMod, del_releve, compteur_supp, export_compteur, export_relever
+    ReleveMod, del_releve, compteur_supp, export_compteur, export_relever, export_recouvrement
 
 urlpatterns = [
     path('liste', compteur_liste, name='compteur_list'),
@@ -13,5 +13,6 @@ urlpatterns = [
     path('detail/id_releve=<int:pk>', ReleveMod.as_view(), name='releve_mod'),
     path('supprimer/id_releve=<int:pk>', del_releve, name='del_releve'),
     path('exporte/compteur', export_compteur, name='export_compteur'),
+    path('exporte/recouvrement', export_recouvrement, name='export_recouvrement'),
     path('exporte/relever/num_compteur=<str:num_compteur>', export_relever, name='export_relever')
 ]
