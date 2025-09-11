@@ -499,7 +499,7 @@ def export_recouvrement(request):
     factures_query = Facture.objects.filter(
         statut=False,
         date_facture__range=[date_debut, date_fin]
-    ).order_by('num_contrat__num_compteur')
+    )
     
     # Filtrer par commune si spécifiée
     if commune_id:
@@ -512,7 +512,7 @@ def export_recouvrement(request):
         'num_contrat__client',
         'num_contrat__num_compteur',
         'num_contrat__cp_commune'
-    ).order_by('num_contrat__client__nom_client', 'date_facture')
+    ).order_by('num_contrat__num_compteur')
     
     # Créer une structure pour stocker les données par client
     clients_data = defaultdict(dict)
