@@ -582,7 +582,7 @@ def export_recouvrement(request):
     
     # Création du PDF
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'filename="Recouvrement_{commune_nom}({date_debut.strftime('%Y-%m-%d')})_au_({date_fin.strftime('%Y-%m-%d')}).pdf"'
+    response['Content-Disposition'] = f'filename="Recouvrement_{commune_nom}_{date_debut.strftime("%Y-%m-%d")}_au_{date_fin.strftime("%Y-%m-%d")}.pdf"'
     
     HTML(
         string=html_string,
