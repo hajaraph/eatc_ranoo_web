@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from django.contrib import messages
 from django.db import models
 from django.db.models import OuterRef, Subquery
@@ -16,6 +16,7 @@ from Facturation.views import facture_creation
 from Login.views import role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
 from Tenants.middleware import schema_use, SchemaAwareView
+from Rel_Compteur.utils import get_month_name_fr
 
 
 @schema_use
@@ -491,11 +492,14 @@ def export_recouvrement(request):
     # Générer la liste des mois dans l'intervalle
     months = get_months_range(date_debut, date_fin)
     
+    # Ajuster la date de fin pour inclure toute la journée
+    date_fin = date_fin.replace(day=1, month=date_fin.month % 12 + 1) - timedelta(days=1) if date_fin.day == 1 else date_fin
+    
     # Préparer la requête de base pour les factures impayées
     factures_query = Facture.objects.filter(
         statut=False,
         date_facture__range=[date_debut, date_fin]
-    )
+    ).order_by('num_contrat__num_compteur')
     
     # Filtrer par commune si spécifiée
     if commune_id:
@@ -545,19 +549,19 @@ def export_recouvrement(request):
         
         # Ajouter les montants par mois
         for year, month in months:
-            month_key = f"{year:04d}-{month:02d}"
-            client_row['mois'][month_key] = montants.get(month_key, 0)
+            month_key = f"{year:04d}-{month:02d}"  # Clé pour la recherche dans les montants
+            display_month = get_month_name_fr(month)  # Format d'affichage : nom du mois
+            client_row['mois'][display_month] = montants.get(month_key, 0)
         
         data.append(client_row)
     
-    # Préparer les en-têtes de colonnes de mois
-    mois_headers = [f"{year:04d}-{month:02d}" for year, month in months]
+    # Préparer les en-têtes de colonnes avec le nom du mois
+    mois_headers = [get_month_name_fr(month) for year, month in months]
     
     # Récupérer le nom de la commune pour le titre
     commune_nom = 'Toutes les communes'
     if commune_id:
         try:
-            from Acommune.models import Commune
             commune = Commune.objects.get(pk=commune_id)
             commune_nom = commune.commune
         except (Commune.DoesNotExist, Exception):
@@ -567,8 +571,8 @@ def export_recouvrement(request):
         'clients': data,
         'mois_headers': mois_headers,
         'date_export': datetime.now(),
-        'date_debut': date_debut.strftime('%Y-%m-%d'),
-        'date_fin': date_fin.strftime('%Y-%m-%d'),
+        'date_debut': date_debut,
+        'date_fin': date_fin,
         'form_action': request.path,
         'commune': commune_nom
     }
@@ -578,7 +582,7 @@ def export_recouvrement(request):
     
     # Création du PDF
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'filename="recouvrement.pdf"'
+    response['Content-Disposition'] = f'filename="Recouvrement_{commune_nom}({date_debut.strftime('%Y-%m-%d')})_au_({date_fin.strftime('%Y-%m-%d')}).pdf"'
     
     HTML(
         string=html_string,

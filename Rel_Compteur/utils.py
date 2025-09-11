@@ -1,11 +1,28 @@
 from datetime import datetime
-
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import DatabaseError
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse
 from typing import Optional, Tuple, Any
 from Facturation.models import Facture
+
+def get_month_name_fr(month_num) -> str:
+    month_names = {
+        1: 'Janvier',
+        2: 'Février',
+        3: 'Mars',
+        4: 'Avril',
+        5: 'Mai',
+        6: 'Juin',
+        7: 'Juillet',
+        8: 'Août',
+        9: 'Septembre',
+        10: 'Octobre',
+        11: 'Novembre',
+        12: 'Décembre'
+    }
+    return month_names.get(month_num, '')
+
 
 def prepare_facture_context(request: HttpRequest, facture: Facture) -> tuple[None, HttpResponse] | tuple[Any, None]:
 

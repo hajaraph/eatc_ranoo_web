@@ -3,21 +3,13 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>RECOUVREMENT</title>
 </head>
 <body>
     <div class="header">
         <h1>ETAT DE RECOUVREMENT DES IMPAYES</h1>
         <div class="date-range-form">
-            <form method="get" action="{{ form_action }}" onsubmit="return validateDates()">
-                <label for="date_debut">Du :</label>
-                <input type="date" id="date_debut" name="date_debut" value="{{ date_debut }}" required>
-                
-                <label for="date_fin">Au :</label>
-                <input type="date" id="date_fin" name="date_fin" value="{{ date_fin }}" required>
-                
-                <button type="submit">Actualiser</button>
-            </form>
+           Période : Du {{ date_debut|date:"d F Y" }} au {{ date_fin|date:"d F Y" }}
         </div>
         <div class="date-export">Date d'édition : {{ date_export|date:"d/m/Y H:i" }}</div>
     </div>
@@ -25,10 +17,9 @@
     <table>
         <thead>
             <tr>
-                <th rowspan="2">N°</th>
-                <th rowspan="2">Nom du Client</th>
-                <th rowspan="2">Adresse</th>
-                <th rowspan="2">N° Compteur</th>
+                <th rowspan="2" style="width: 4%;">Compteur</th>
+                <th rowspan="2" style="width: 20%;">Nom Client</th>
+                <th rowspan="2" style="width: 20%;">Adresse</th>
                 <th colspan="{{ mois_headers|length }}">Mois</th>
                 <th rowspan="2">Total</th>
                 <th rowspan="2">Signature</th>
@@ -42,10 +33,9 @@
         <tbody>
             {% for client in clients %}
             <tr>
-                <td>{{ forloop.counter }}</td>
+                <td>{{ client.compteur }}</td>
                 <td style="text-align: left">{{ client.nom }}</td>
                 <td style="text-align: left">{{ client.adresse }}</td>
-                <td>{{ client.compteur }}</td>
                 
                 {% for mois in mois_headers %}
                     {% with montant=client.mois|get_item:mois %}
