@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.db import models
 from django.db.models import OuterRef, Subquery
 from django.http import HttpResponse
+import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from weasyprint import HTML
@@ -135,6 +136,11 @@ class CompteurDetail(SchemaAwareView):
             contrat = compteur.contrats
 
             title = f'Compteurs | Detail de {compteur.num_compteur}'
+            
+            # Ajouter un champ image_exists pour chaque relevé
+            for r in releve:
+                r.image_exists = r.image_compteur and os.path.exists(r.image_compteur.path) if r.image_compteur else False
+            
             context = {
                 'title_detail': title,
                 'active_li_co': active,

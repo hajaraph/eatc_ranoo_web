@@ -109,9 +109,15 @@
                         </td>
                         <td>
                             {% if relever.image_compteur %}
-                                <a href="{{ relever.image_compteur.url }}" target="_blank" class="btn btn-sm btn-info" title="Voir la photo">
-                                    <i class="fas fa-image"></i>
-                                </a>
+                                {% if relever.image_exists %}
+                                    <a href="{{ relever.image_compteur.url }}" target="_blank" class="btn btn-sm btn-info" title="Voir la photo">
+                                        <i class="fas fa-image"></i>
+                                    </a>
+                                {% else %}
+                                    <span class="text-danger" title="Image introuvable sur le serveur">
+                                        <i class="fas fa-exclamation-triangle"></i> Erreur
+                                    </span>
+                                {% endif %}
                             {% else %}
                                 <span class="text-muted">Aucune image</span>
                             {% endif %}
