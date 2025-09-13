@@ -91,6 +91,7 @@
                         <th>Conso</th>
                         <th>Relevé le</th>
                         <th>Utilisateur</th>
+                        <th>Photo</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -105,6 +106,15 @@
                         <td>
                             {{ relever.utilisateur.nom_utilisateur }}
                             <span class="badge bg-primary">{{ relever.utilisateur.role.role }}</span>
+                        </td>
+                        <td>
+                            {% if relever.image_compteur %}
+                                <a href="{{ relever.image_compteur.url }}" target="_blank" class="btn btn-sm btn-info" title="Voir la photo">
+                                    <i class="fas fa-image"></i>
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Aucune image</span>
+                            {% endif %}
                         </td>
                         {% if client_active and forloop.last %}
                         <td>
