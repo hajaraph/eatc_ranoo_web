@@ -107,7 +107,7 @@
                             {{ relever.utilisateur.nom_utilisateur }}
                             <span class="badge bg-primary">{{ relever.utilisateur.role.role }}</span>
                         </td>
-                        <td>
+                        <td class="text-center">
                             {% if relever.image_compteur %}
                                 {% if relever.image_exists %}
                                     <a href="{{ relever.image_compteur.url }}" target="_blank" class="btn btn-sm btn-info" title="Voir la photo">
