@@ -114,12 +114,14 @@
                                         <i class="fas fa-image"></i>
                                     </a>
                                 {% else %}
-                                    <span class="text-danger" title="Image introuvable sur le serveur">
-                                        <i class="fas fa-exclamation-triangle"></i> Erreur
+                                    <span class="text-warning" title="Image introuvable sur le serveur">
+                                        <i class="fas fa-exclamation-triangle"></i>
                                     </span>
                                 {% endif %}
                             {% else %}
-                                <span class="text-muted">Aucune image</span>
+                                <span class="text-warning" title="Image introuvable sur le serveur">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </span>
                             {% endif %}
                         </td>
                         {% if client_active and forloop.last %}
