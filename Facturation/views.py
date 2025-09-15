@@ -283,7 +283,12 @@ class Calcule:
             montant_taxe = sum(Calcule.montant_taxe(tarif, total_conso_ht))
             montant_ht = Calcule.montant_ht(total_conso_ht, tarif.pk, factures)
 
-            total_conso_ttc = total_conso_ht + montant_taxe + tarif.prix_location_compteur
+            # Verification du taxe si on va l'appliquer dans tout taxe compris ou pas
+            if config.taxe_applique:
+                total_conso_ttc = total_conso_ht + montant_taxe + tarif.prix_location_compteur
+            else:
+                total_conso_ttc = total_conso_ht + tarif.prix_location_compteur
+
             if appliquer_tva:
                 tva = (total_conso_ht * tarif.tva) / 100
                 total_conso_ttc += tva
@@ -366,10 +371,9 @@ def facture_creation(date_facture, num_compteur, releve):
             "date_facture": date_facture,
             "date_echeance": date_echeance,
             "num_contrat_id": contrat.num_contrat,
-            "relevecompteur_id": releve.pk
+            "relevecompteur_id": releve.pk,
+            "taxes_appliquees": taxes_appliquees
         }
-        if config.taxe_applique:
-            facture_data["taxes_appliquees"] = taxes_appliquees
 
         factures = Facture.objects.create(**facture_data)
 
