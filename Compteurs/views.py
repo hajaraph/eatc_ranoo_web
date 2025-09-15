@@ -17,7 +17,7 @@ from Facturation.views import facture_creation
 from Login.views import role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
 from Tenants.middleware import schema_use, SchemaAwareView
-from Rel_Compteur.utils import get_month_name_fr
+from Rel_Compteur.utils import get_month_name_fr, get_previous_month
 
 
 @schema_use
@@ -32,7 +32,7 @@ def compteur_liste(request):
         derniers_releves = ReleveCompteur.objects.filter(
             num_compteur_id=OuterRef('pk')
         ).order_by('-date_releve')
-        
+
         # Récupération des compteurs avec leurs contrats et clients associés
         compteurs = list(
             Compteur.objects.prefetch_related(
@@ -136,11 +136,11 @@ class CompteurDetail(SchemaAwareView):
             contrat = compteur.contrats
 
             title = f'Compteurs | Detail de {compteur.num_compteur}'
-            
+
             # Ajouter un champ image_exists pour chaque relevé
             for r in releve:
                 r.image_exists = r.image_compteur and os.path.exists(r.image_compteur.path) if r.image_compteur else False
-            
+
             context = {
                 'title_detail': title,
                 'active_li_co': active,
@@ -240,7 +240,7 @@ class ReleveNew(SchemaAwareView):
                 'compteur': compteur,
             }
             return render(request, self.template_name, context)
-            
+
         except Compteur.DoesNotExist:
             messages.error(request, "Le compteur spécifié n'existe pas.")
             return redirect('compteur_list')
@@ -370,7 +370,7 @@ def del_releve(request, pk):
 def export_compteur(request):
     # Récupérer le paramètre de filtre par commune
     commune_id = request.GET.get('commune')
-    
+
     # Construire la requête de base pour les contrats actifs avec leurs relations
     contrats_query = Contrat.objects.select_related(
         'client',
@@ -380,33 +380,33 @@ def export_compteur(request):
     ).prefetch_related(
         'num_compteur__relevecompteurs'
     )
-    
+
     # Appliquer le filtre par commune si spécifié
     if commune_id:
         contrats_query = contrats_query.filter(cp_commune_id=commune_id)
-    
+
     # Exécuter la requête
     contrats = contrats_query.all()
-    
+
     # Préparer les données pour le template
     data = []
     for contrat in contrats:
         compteur = contrat.num_compteur
         if not compteur:
             continue
-            
+
         # Récupérer les relevés triés par date décroissante
         releves = list(compteur.relevecompteurs.all().order_by('-date_releve'))
         dernier_releve = releves[0] if releves else None
         avant_dernier_releve = releves[1] if len(releves) > 1 else None
-        
+
         # Calculer la consommation
         conso = 0
         if dernier_releve and avant_dernier_releve:
             conso = dernier_releve.volume - avant_dernier_releve.volume
         elif dernier_releve:
             conso = dernier_releve.volume
-            
+
         data.append({
             'num_client': contrat.client.num_client,
             'num': compteur.num_compteur,
@@ -425,34 +425,34 @@ def export_compteur(request):
             commune_nom = commune.commune
         except (Commune.DoesNotExist, Exception):
             pass
-    
+
     # Préparer le contexte pour le template
     context = {
         'compteurs': data,
         'date_export': datetime.now(),
         'commune': commune_nom
     }
-    
+
     # Rendre le template en chaîne HTML
     html_string = render_to_string(
         'all_page/compteurs/pdf/fiche_releve.html',
         context
     )
-    
+
     # Créer une réponse HTTP avec le type MIME PDF
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'filename="Fiche_de_releve_{commune_nom}({datetime.now()}).pdf"'
-    
+
     # Générer le PDF
     HTML(
         string=html_string,
         base_url=request.build_absolute_uri('/')
     ).write_pdf(response)
-    
+
     # Enregistrer dans l'historique
     message = "Export PDF de la liste des compteurs"
     enregistre_historique(message, request.session.get('id_utilisateur'))
-    
+
     return response
 
 
@@ -461,20 +461,18 @@ def get_months_range(start_date, end_date):
     months = []
     current = start_date.replace(day=1)
     end_date = end_date.replace(day=1)
-    
+
     while current <= end_date:
-        # Ajouter le mois précédent
-        if current.month == 1:
-            months.append((current.year - 1, 12))  # Décembre de l'année précédente
-        else:
-            months.append((current.year, current.month - 1))  # Mois précédent
-            
+        # Utiliser get_previous_month pour obtenir le mois précédent
+        prev_month = get_previous_month(current)
+        months.append((prev_month.year, prev_month.month))
+
         # Passer au mois suivant
         if current.month == 12:
             current = current.replace(year=current.year + 1, month=1)
         else:
             current = current.replace(month=current.month + 1)
-    
+
     return months
 
 @schema_use
@@ -483,7 +481,7 @@ def export_recouvrement(request):
     date_debut = request.GET.get('date_debut')
     date_fin = request.GET.get('date_fin')
     commune_id = request.GET.get('commune')
-    
+
     # Définir les dates par défaut si non fournies (3 mois en arrière par défaut)
     today = date.today()
     if not date_debut:
@@ -494,30 +492,30 @@ def export_recouvrement(request):
             date_debut = today.replace(year=today.year-1, month=12-(3-today.month), day=1)
     else:
         date_debut = datetime.strptime(date_debut, '%Y-%m-%d').date()
-    
+
     if not date_fin:
         date_fin = today  # Aujourd'hui par défaut
     else:
         date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date()
-    
+
     # Générer la liste des mois dans l'intervalle
     months = get_months_range(date_debut, date_fin)
-    
+
     # Ajuster la date de fin pour inclure toute la journée
     date_fin = date_fin.replace(day=1, month=date_fin.month % 12 + 1) - timedelta(days=1) if date_fin.day == 1 else date_fin
-    
+
     # Préparer la requête de base pour les factures impayées
     factures_query = Facture.objects.filter(
         statut=False,
         date_facture__range=[date_debut, date_fin]
     )
-    
+
     # Filtrer par commune si spécifiée
     if commune_id:
         factures_query = factures_query.filter(
             num_contrat__cp_commune_id=commune_id
         )
-    
+
     # Exécuter la requête avec les jointures nécessaires
     # Récupérer d'abord toutes les factures sans tri
     factures_impayees = factures_query.select_related(
@@ -530,11 +528,11 @@ def export_recouvrement(request):
         factures_impayees,
         key=lambda x: int(x.num_contrat.num_compteur.num_compteur) if x.num_contrat.num_compteur and x.num_contrat.num_compteur.num_compteur.isdigit() else float('inf')
     )
-    
+
     # Créer une structure pour stocker les données par client
     clients_data = defaultdict(dict)
     clients_info = {}
-    
+
     # Remplir les données
     for facture in factures_impayees:
         client = facture.num_contrat.client
@@ -544,9 +542,9 @@ def export_recouvrement(request):
             adjusted_date = facture_date.replace(year=facture_date.year-1, month=12)
         else:
             adjusted_date = facture_date.replace(month=facture_date.month-1)
-        
+
         month_key = adjusted_date.strftime('%Y-%m')
-        
+
         if client.id_client not in clients_info:
             clients_info[client.id_client] = {
                 'nom': f"{client.nom_client} {client.prenom_client or ''}".strip(),
@@ -554,12 +552,12 @@ def export_recouvrement(request):
                 'compteur': facture.num_contrat.num_compteur.num_compteur if facture.num_contrat.num_compteur else '',
                 'commune': facture.num_contrat.cp_commune.commune if hasattr(facture.num_contrat.cp_commune, 'commune') else 'Non spécifiée'
             }
-        
+
         if month_key not in clients_data[client.id_client]:
             clients_data[client.id_client][month_key] = 0
-            
+
         clients_data[client.id_client][month_key] += float(facture.montant_total_ttc or 0)
-    
+
     # Préparer les données pour le template
     data = []
     for client_id, montants in clients_data.items():
@@ -570,15 +568,15 @@ def export_recouvrement(request):
             'compteur': clients_info[client_id]['compteur'],
             'mois': {}
         }
-        
+
         # Ajouter les montants par mois
         for year, month in months:
             month_key = f"{year:04d}-{month:02d}"  # Clé pour la recherche dans les montants
             display_month = get_month_name_fr(month)  # Format d'affichage : nom du mois
             client_row['mois'][display_month] = montants.get(month_key, 0)
-        
+
         data.append(client_row)
-    
+
     # Préparer les en-têtes de colonnes avec le nom du mois
     mois_headers = [get_month_name_fr(month) for year, month in months]
     
@@ -590,14 +588,17 @@ def export_recouvrement(request):
             commune_nom = commune.commune
         except (Commune.DoesNotExist, Exception):
             pass
-    
+
+    # Ajuster les dates pour l'affichage
+    date_debut = get_previous_month(date_debut)
+    date_fin = get_previous_month(date_fin)
+
     context = {
         'clients': data,
         'mois_headers': mois_headers,
         'date_export': datetime.now(),
         'date_debut': date_debut,
         'date_fin': date_fin,
-        'form_action': request.path,
         'commune': commune_nom
     }
     
@@ -621,9 +622,11 @@ def export_relever(request, num_compteur):
     # Récupérer le paramètre de filtre par commune
     commune_id = request.GET.get('commune')
     
-    # Construire la requête de base pour les relevés
+    # Construire la requête de base pour les rel    from Rel_Compteur.utils import get_previous_month
+    #     date_debut_affichage = get_previous_month(date_debut)
+    #     date_fin_affichage = get_previous_month(date_fin)evés
     releves_query = ReleveCompteur.objects.filter(num_compteur_id=num_compteur)
-    
+
     # Filtrer par commune si spécifiée
     if commune_id:
         releves_query = releves_query.filter(

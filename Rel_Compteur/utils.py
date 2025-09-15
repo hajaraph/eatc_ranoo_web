@@ -1,10 +1,20 @@
-from datetime import datetime
+from datetime import datetime, date
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from typing import Tuple, Optional, Union
 from django.db import DatabaseError
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, Union
 from Facturation.models import Facture
+
+
+def get_previous_month(input_date: Union[date, datetime]) -> date:
+    if isinstance(input_date, datetime):
+        input_date = input_date.date()
+        
+    if input_date.month == 1:
+        return input_date.replace(year=input_date.year - 1, month=12)
+    return input_date.replace(month=input_date.month - 1)
 
 def get_month_name_fr(month_num) -> str:
     month_names = {

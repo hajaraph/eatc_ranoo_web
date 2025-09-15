@@ -23,6 +23,7 @@ from Login.views import role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 from Acommune.models import Province
 from Ranoo_Config.models import ConfigBranchement
+from Rel_Compteur.utils import get_previous_month
 from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
 from Recette.views import enregistrer_recette_paiement
@@ -407,17 +408,9 @@ def facture_context_pdf(request, factures):
         date_facture_precedant = factures.date_facture_precedant
         date_facture_actuel = factures.date_facture
 
-        # Reculer d'un mois pour la date actuelle
-        if date_facture_actuel.month == 1:
-            date_facture_actuel = date_facture_actuel.replace(year=date_facture_actuel.year - 1, month=12)
-        else:
-            date_facture_actuel = date_facture_actuel.replace(month=date_facture_actuel.month - 1)
-
-        # Reculer d'un mois pour la date précédente
-        if date_facture_precedant.month == 1:
-            date_facture_precedant = date_facture_precedant.replace(year=date_facture_precedant.year - 1, month=12)
-        else:
-            date_facture_precedant = date_facture_precedant.replace(month=date_facture_precedant.month - 1)
+        # Reculer d'un mois pour les dates actuelles et précédentes
+        date_facture_actuel = get_previous_month(date_facture_actuel)
+        date_facture_precedant = get_previous_month(date_facture_precedant)
 
         try:
             nombre = float(factures.montant_total_ttc)
