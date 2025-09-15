@@ -10,7 +10,6 @@ from django.template.loader import get_template
 from django.utils import timezone
 
 from django.http import HttpResponse
-from num2words import num2words
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from xhtml2pdf import pisa
@@ -412,12 +411,8 @@ def facture_context_pdf(request, factures):
         date_facture_actuel = get_previous_month(date_facture_actuel)
         date_facture_precedant = get_previous_month(date_facture_precedant)
 
-        try:
-            nombre = float(factures.montant_total_ttc)
-            lettre = num2words(nombre, lang='fr')
-            lettre = lettre[0].upper() + lettre[1:]
-        except ValueError:
-            lettre = "Nombre invalide"
+        from Rel_Compteur.utils import montant_en_lettres
+        lettre = montant_en_lettres(factures.montant_total_ttc)
 
         qr_code = generate_qr_code(request, factures.num_facture)
         paiement_exist = Paiement.objects.filter(facture_id=factures.pk).exists()

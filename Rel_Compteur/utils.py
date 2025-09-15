@@ -1,10 +1,10 @@
 from datetime import datetime, date
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
-from typing import Tuple, Optional, Union
 from django.db import DatabaseError
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse
 from typing import Optional, Tuple, Any, Union
+from num2words import num2words
 from Facturation.models import Facture
 
 
@@ -93,6 +93,7 @@ def prepare_facture_context(request: HttpRequest, facture: Facture) -> tuple[Non
 
     return context, None
 
+
 def filter_by_date_range(
     queryset: QuerySet,
     date_field: str,
@@ -123,3 +124,12 @@ def filter_by_date_range(
         return queryset.filter(**filter_kwargs), None, None
     
     return queryset, None, None
+
+
+def montant_en_lettres(montant) -> str:
+    try:
+        nombre = float(montant)
+        lettre = num2words(nombre, lang='fr')
+        return lettre[0].upper() + lettre[1:]
+    except (ValueError, TypeError, AttributeError):
+        return "Nombre invalide"
