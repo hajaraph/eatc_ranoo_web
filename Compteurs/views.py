@@ -457,13 +457,18 @@ def export_compteur(request):
 
 
 def get_months_range(start_date, end_date):
-    """Génère une liste de tuples (année, mois) entre deux dates"""
+    """Génère une liste de tuples (année, mois) entre deux dates, avec un décalage d'un mois en arrière"""
     months = []
     current = start_date.replace(day=1)
     end_date = end_date.replace(day=1)
     
     while current <= end_date:
-        months.append((current.year, current.month))
+        # Ajouter le mois précédent
+        if current.month == 1:
+            months.append((current.year - 1, 12))  # Décembre de l'année précédente
+        else:
+            months.append((current.year, current.month - 1))  # Mois précédent
+            
         # Passer au mois suivant
         if current.month == 12:
             current = current.replace(year=current.year + 1, month=1)
@@ -533,7 +538,14 @@ def export_recouvrement(request):
     # Remplir les données
     for facture in factures_impayees:
         client = facture.num_contrat.client
-        month_key = facture.date_facture.strftime('%Y-%m')
+        # Ajuster la date pour afficher le mois précédent
+        facture_date = facture.date_facture
+        if facture_date.month == 1:
+            adjusted_date = facture_date.replace(year=facture_date.year-1, month=12)
+        else:
+            adjusted_date = facture_date.replace(month=facture_date.month-1)
+        
+        month_key = adjusted_date.strftime('%Y-%m')
         
         if client.id_client not in clients_info:
             clients_info[client.id_client] = {
