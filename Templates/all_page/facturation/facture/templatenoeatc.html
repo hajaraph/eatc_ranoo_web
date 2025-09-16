@@ -40,7 +40,7 @@
                                         Adresse : {{ instance.num_contrat.adresse_contrat }}
                                     </div>
                                     <div>
-                                        Code client : {{ instance.num_contrat.client.id_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
+                                        Code client : {{ instance.num_contrat.client.num_client }}; N° Compteur : {{ instance.num_contrat.num_compteur_id }}
                                     </div>
                                 </div>
                             </td>
@@ -109,7 +109,7 @@
                                         {{ date_facture_actuel|date:"M Y" }}
                                     </div>
                                     <div>
-                                        {{ instance.num_contrat.client.id_client }}
+                                        {{ instance.num_contrat.client.num_client }}
                                     </div>
                                     <div>
                                         {{ instance.num_contrat.num_compteur_id }}
