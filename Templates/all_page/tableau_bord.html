@@ -174,6 +174,128 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Nouvelle section : Factures par Type de Client -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="chart-card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Paiement par Type de Branchement</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="chart-container" style="position: relative; height:400px;">
+                                            <canvas id="facturesParTypeClient"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // Préparer les données pour le graphique
+                            const facturesData = {
+                                labels: [],
+                                payees: [],
+                                impayees: [],
+                                backgroundColors: []
+                            };
+                            
+                            const typeClientColors = {
+                                'Domestique': '#4e73df',
+                                'Commercial': '#1cc88a',
+                                'Industriel': '#36b9cc',
+                                'Administratif': '#f6c23e',
+                                'Autre': '#e74a3b',
+                                'Non spécifié': '#858796'
+                            };
+                            
+                            // Récupérer les données du template
+                            {% regroup factures_par_type_client by annee as factures_par_annee %}
+                            {% for annee in factures_par_annee %}
+                                {% regroup annee.list by mois as factures_par_mois %}
+                                {% for mois in factures_par_mois %}
+                                    {% for facture in mois.list %}
+                                        facturesData.labels.push('{{ facture.type_client|default:"Non spécifié" }} - {% if facture.mois < 10 %}0{% endif %}{{ facture.mois }}/{{ facture.annee }}');
+                                        facturesData.payees.push({{ facture.payees }});
+                                        facturesData.impayees.push({{ facture.impayees }});
+                                        
+                                        // Définir une couleur par type de client
+                                        const typeClient = '{{ facture.type_client|default:"Non spécifié" }}';
+                                        facturesData.backgroundColors.push(typeClientColors[typeClient] || '#858796');
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                            
+                            // Créer le graphique
+                            const ctx = document.getElementById('facturesParTypeClient').getContext('2d');
+                            new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: facturesData.labels,
+                                    datasets: [
+                                        {
+                                            label: 'Factures payées',
+                                            data: facturesData.payees,
+                                            backgroundColor: facturesData.backgroundColors.map(c => `${c}cc`),
+                                            borderColor: facturesData.backgroundColors,
+                                            borderWidth: 1,
+                                            stack: 'Stack 0',
+                                        },
+                                        {
+                                            label: 'Factures impayées',
+                                            data: facturesData.impayees,
+                                            backgroundColor: facturesData.backgroundColors.map(c => `${c}66`),
+                                            borderColor: facturesData.backgroundColors,
+                                            borderWidth: 1,
+                                            stack: 'Stack 0',
+                                        }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        x: {
+                                            stacked: true,
+                                            grid: {
+                                                display: false
+                                            },
+                                            ticks: {
+                                                maxRotation: 45,
+                                                minRotation: 45
+                                            }
+                                        },
+                                        y: {
+                                            stacked: true,
+                                            beginAtZero: true,
+                                            title: {
+                                                display: true,
+                                                text: 'Nombre de factures'
+                                            }
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: {
+                                            position: 'top',
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                afterLabel: function(context) {
+                                                    const label = context.dataset.label;
+                                                    const value = context.parsed.y;
+                                                    const total = context.dataset.data[context.dataIndex] + 
+                                                                context.chart.data.datasets[1 - context.datasetIndex].data[context.dataIndex];
+                                                    const percentage = Math.round((value / total) * 100);
+                                                    return `${percentage}% du total`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        });
+                        </script>
                     </div>
                 </div>
             </div>

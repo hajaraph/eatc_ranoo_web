@@ -1,9 +1,11 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import DatabaseError
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse
 from typing import Optional, Tuple, Any, Union
+
+from django.utils import timezone
 from num2words import num2words
 from Facturation.models import Facture
 
@@ -15,6 +17,38 @@ def get_previous_month(input_date: Union[date, datetime]) -> date:
     if input_date.month == 1:
         return input_date.replace(year=input_date.year - 1, month=12)
     return input_date.replace(month=input_date.month - 1)
+
+
+def get_month_range(year_month):
+    """Retourne le premier et dernier jour d'un mois donné (format YYYY-MM)"""
+    year, month = map(int, year_month.split('-'))
+    start = timezone.make_aware(datetime(year, month, 1))
+    if month == 12:
+        end = timezone.make_aware(datetime(year + 1, 1, 1)) - timedelta(seconds=1)
+    else:
+        end = timezone.make_aware(datetime(year, month + 1, 1)) - timedelta(seconds=1)
+    return start, end
+
+
+def get_default_month_range(now=None):
+    """
+    Retourne les dates de début et de fin par défaut pour le mois en cours.
+    
+    Args:
+        now (datetime, optional): Date de référence. Si non fourni, utilise la date actuelle.
+        
+    Returns:
+        tuple: (date_debut, date_fin) - Les dates de début et de fin du mois
+    """
+    if now is None:
+        now = timezone.now()
+        
+    date_debut = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    date_fin = (date_debut.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(seconds=1)
+    date_fin = date_fin.replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    return date_debut, date_fin
+
 
 def get_month_name_fr(month_num) -> str:
     month_names = {
