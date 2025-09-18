@@ -8,6 +8,7 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from django.template.loader import get_template
 from django.utils import timezone
+import json
 
 from django.http import HttpResponse
 from django.contrib import messages
@@ -79,23 +80,50 @@ def facture(request):
 
     # Calculer le total des montants TTC impayés pour le mois courant
     debut_mois, fin_mois = get_mois_courant()
+    factures = Facture.objects.all()
 
     # Total des montants impayés du mois courant
-    total_impaye_mois = Facture.objects.filter(
+    total_impaye_mois = factures.filter(
         statut=False,
         date_facture__range=[debut_mois, fin_mois]
     ).aggregate(total=Sum('montant_total_ttc'))['total'] or 0
 
-    total_paye_mois = Facture.objects.filter(
+    total_paye_mois = factures.filter(
         statut=True,
         date_facture__range=[debut_mois, fin_mois]
     ).aggregate(total=Sum('montant_total_ttc'))['total'] or 0
+
+    # Calculer le total des taxes par type pour le mois en cours
+    factures_mois = factures.filter(date_facture__range=[debut_mois, fin_mois])
+    total_taxes_par_type = {}
+
+    for facture_items in factures_mois:
+        if facture_items.taxes_appliquees:
+            try:
+                # Si c'est une chaîne JSON, on la désérialise
+                if isinstance(facture_items.taxes_appliquees, str):
+                    taxes = json.loads(facture_items.taxes_appliquees)
+                else:
+                    # Si c'est déjà une liste, on l'utilise directement
+                    taxes = facture_items.taxes_appliquees
+
+                for taxe in taxes:
+                    nom_taxe = taxe['nom_taxe']
+                    montant = float(taxe['montant_taxe'])
+                    if nom_taxe in total_taxes_par_type:
+                        total_taxes_par_type[nom_taxe] += montant
+                    else:
+                        total_taxes_par_type[nom_taxe] = montant
+            except Exception as e:
+                logger.error(f"Erreur lors du traitement des taxes pour la facture {facture_items.num_facture}: {str(e)}")
+                continue
 
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
     factures = date_range(request, Facture, datedeb, datefin, 'date_facture')
     pronvince = Province.objects.order_by('province').all()
-    impayer_exist = Facture.objects.filter(statut=False).exists()
+    impayer_exist = factures.filter(statut=False).exists()
+
     context = {
         'title_etat': title,
         'active_etat': active,
@@ -103,6 +131,7 @@ def facture(request):
         'factures': factures,
         'total_impaye_mois': total_impaye_mois,
         'total_paye_mois': total_paye_mois,
+        'total_taxes_par_type': total_taxes_par_type,
         'provinces': pronvince,
         'datedeb': datedeb if datedeb else '',
         'datefin': datefin if datefin else '',

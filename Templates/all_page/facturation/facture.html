@@ -36,11 +36,21 @@
         </div>
         <div class="stat-card stat-card-warning">
             <div class="stat-icon">
-                <i class="fas fa-clock"></i>
+                <i class="fas fa-calculator"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-label">Factures en Retard</div>
-                <div class="stat-value">0</div>
+                <div class="stat-label">Taxes/({{ mois_actuel|date:"F" }})</div>
+                {% for nom_taxe, montant in total_taxes_par_type.items %}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span data-fullname="{{ nom_taxe }}" title="{{ nom_taxe }}">
+                            {{ nom_taxe|truncatechars:8 }}:
+                        </span>
+                        <div class="d-flex align-items-center">
+                            <span class="fw-bold" data-animate-to="{{ montant }}" data-duration="2000">0</span>
+                            <span class="currency ms-1">Ar</span>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
         <div class="stat-card stat-card-success">
