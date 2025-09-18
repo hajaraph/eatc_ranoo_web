@@ -98,7 +98,7 @@ def facture(request):
     total_taxes_par_type = {}
 
     for facture_items in factures_mois:
-        if facture_items.taxes_appliquees:
+        if facture_items.taxes_appliquees and facture_items.statut:
             try:
                 # Si c'est une chaîne JSON, on la désérialise
                 if isinstance(facture_items.taxes_appliquees, str):
