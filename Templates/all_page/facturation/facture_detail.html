@@ -170,18 +170,34 @@
                                 Ar
                             </td>
                         </tr>
-                        {% if paiement.montant_payer %}
-                        <tr class="border-bottom fw-bold">
+                        {% if total_paiements > 0 %}
+                        <tr class="border-bottom">
+                            <td colspan="5">
+                                <strong>Historique des paiements :</strong>
+                            </td>
+                        </tr>
+                        {% for paiement in paiements %}
+                        <tr class="border-bottom">
                             <td>
-                                <span class="text-success">Montant Payé</span>
+                                <span class="text-success">Paiement du {{ paiement.date_paiement|date:"d/m/Y" }}</span>
                             </td>
                             <td></td>
                             <td></td>
                             <td></td>
                             <td class="text-right text-success">{{ paiement.montant_payer }} Ar</td>
                         </tr>
+                        {% endfor %}
+                        <tr class="border-bottom fw-bold">
+                            <td>
+                                <span class="text-success">Total Payé</span>
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-right text-success">{{ total_paiements }} Ar</td>
+                        </tr>
                         {% endif %}
-                        {% if facture.restant_nouvel %}
+                        {% if factures.restant_nouvel %}
                         <tr class="border-bottom fw-bold">
                             <td>
                                 <span class="text-danger">Montant Restant</span>
@@ -192,7 +208,7 @@
                             <td class="text-right text-danger">{{ factures.restant_nouvel }} Ar</td>
                         </tr>
                         {% endif %}
-                        {% if facture.avoir_nouveau %}
+                        {% if factures.avoir_nouveau %}
                         <tr class="border-bottom fw-bold">
                             <td>
                                 <span class="text-dark">Montant Avoir</span>
@@ -211,23 +227,29 @@
                         <p class="text-center text-secondary"><strong>{{ factures.montant_total_ttc }} Ar</strong></p>
                     </div>
                 </div>
-                {% if not factures.statut %}
-                    <div class="d-flex justify-content-end mt-4 mx-1">
-                        <div class="mb-2">
-                            <a href="" class="btn btn-warning">
-                                <i class="fas fa-arrows-rotate"></i>
-                                Relancer
-                            </a>
-                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' factures.num_facture %}')" class="btn btn-success mx-4 px-4">
-                                <i class="fas fa-file-pdf"></i>
-                                 PDF
+                {% if not existe_facture_recente %}
+                    {% if not factures.statut or factures.restant_nouvel %}
+                        <div class="d-flex justify-content-end mt-4 mx-1">
+                            <div class="mb-2">
+                                <a href="" class="btn btn-warning">
+                                    <i class="fas fa-arrows-rotate"></i>
+                                    Relancer
+                                </a>
+                                <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' factures.num_facture %}')" class="btn btn-success mx-4 px-4">
+                                    <i class="fas fa-file-pdf"></i>
+                                     PDF
+                                </div>
+                                <button id="{{ factures.relevecompteur_id }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
+                                    <i class="fas fa-credit-card"></i>
+                                    {% if factures.restant_nouvel %}
+                                        Payer le Restant
+                                    {% else %}
+                                        Paiement
+                                    {% endif %}
+                                </button>
                             </div>
-                            <button id="{{ factures.relevecompteur_id }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
-                                <i class="fas fa-credit-card"></i>
-                                Paiements
-                            </button>
                         </div>
-                    </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>

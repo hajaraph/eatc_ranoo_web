@@ -4,7 +4,7 @@ import logging
 from datetime import timedelta, datetime
 from io import BytesIO
 import qrcode
-from django.db import transaction
+from django.db import transaction, models
 from django.db.models import Q, Sum
 from django.template.loader import get_template
 from django.utils import timezone
@@ -149,21 +149,33 @@ def facture_etat_detail(request, num_facture):
 
     # Requete pour chaque detail
     factures = Facture.objects.get(num_facture=num_facture)
+
+    # Vérifier s'il existe une facture plus récente pour ce contrat
+    existe_facture_recente = Facture.objects.filter(
+        num_contrat=factures.num_contrat,
+        date_facture__gt=factures.date_facture
+    ).exists()
+
+    # Récupérer tous les paiements pour la facture
     paiements = Paiement.objects.filter(facture__num_facture=num_facture)
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
     typeclient = factures.num_contrat.client.type_client_id
 
-    if paiements.exists():
-        paiements = Paiement.objects.get(facture__num_facture=num_facture)
+    # Calculer le total des paiements
+    total_paiements = paiements.aggregate(total=models.Sum('montant_payer'))['total'] or 0
+    dernier_paiement = paiements.order_by('-date_paiement').first() if paiements.exists() else None
 
     context = {
         'title_etat_detail': title,
         'active_etat': active,
         'font_facture': font,
         'factures': factures,
-        'paiement': paiements,
+        'paiement': dernier_paiement,
+        'total_paiements': total_paiements,
+        'paiements': paiements,
         'montant': montant,
         'typeclient': typeclient,
+        'existe_facture_recente': existe_facture_recente,
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -772,15 +784,23 @@ def generate_multiple_pages_pdf(request):
 def paiement(id_releve, montant_payer, utilisateur):
     with transaction.atomic():
         fact_paiement = Facture.objects.select_for_update().get(relevecompteur_id=id_releve)
-        net_paye = fact_paiement.montant_total_ttc - montant_payer
         num_contrat = fact_paiement.num_contrat_id
 
-    fact_paiement.statut = True
-    if net_paye == 0:
+        # Vérifier le montant total déjà payé pour cette facture
+        total_deja_paye = Paiement.objects.filter(facture_id=fact_paiement.pk).aggregate(
+            total=models.Sum('montant_payer'))['total'] or 0
+
+        # Créer un nouveau paiement
         Paiement.objects.create(
             montant_payer=montant_payer,
-            facture_id=fact_paiement.pk
+            facture_id=fact_paiement.pk,
+            date_paiement=timezone.now()
         )
+
+        # Calculer le nouveau total payé
+        nouveau_total_paye = total_deja_paye + montant_payer
+
+        # Enregistrer la recette
         enregistrer_recette_paiement(
             facture_id=fact_paiement.pk,
             montant=montant_payer,
@@ -788,140 +808,94 @@ def paiement(id_releve, montant_payer, utilisateur):
             date_encaissement=timezone.now().date()
         )
 
-    elif net_paye < 0:
-        net_paye = montant_payer - fact_paiement.montant_total_ttc
-        Paiement.objects.create(
-            montant_payer=fact_paiement.montant_total_ttc,
-            facture_id=fact_paiement.pk
-        )
-        enregistrer_recette_paiement(
-            facture_id=fact_paiement.pk,
-            montant=fact_paiement.montant_total_ttc,
-            utilisateur_id=utilisateur,
-            date_encaissement=timezone.now().date()
-        )
+        if nouveau_total_paye >= fact_paiement.montant_total_ttc:
+            # Il y a un surplus
+            surplus = nouveau_total_paye - fact_paiement.montant_total_ttc
 
-        avoir = Avoir.objects.filter(num_contrat=num_contrat)
-        if avoir.exists():
-            avoir = Avoir.objects.get(num_contrat_id=num_contrat)
-            avoir.montant_avoir += round(net_paye, 0)
-            avoir.utilisateur_id = utilisateur,
-            fact_paiement.avoir_nouveau = avoir.montant_avoir
-            avoir.save()
-        else:
-            fact_paiement.avoir_nouveau = round(net_paye, 0)
-            Avoir.objects.create(
-                montant_avoir=round(net_paye, 2),
-                utilisateur_id=utilisateur,
-                num_contrat_id=num_contrat
-            )
-
-    else:
-        restant = Restant.objects.filter(num_contrat=num_contrat)
-        paiements = Paiement.objects.filter(facture_id=fact_paiement.pk)
-        restant_value = round(net_paye, 0)
-        fact_paiement.restant_nouvel = restant_value
-
-        # Verifie s'il existe déjà un restant et un paiement déjà fait
-        if restant.exists() and paiements.exists():
-            restant_exist = Restant.objects.get(num_contrat=num_contrat)
-            paiement_restant = Paiement.objects.get(facture_id=fact_paiement.pk)
-
-            if montant_payer == restant_exist.restant:
-                restant_exist.delete()
-                paiement_restant.montant_payer += montant_payer
-                fact_paiement.restant_nouvel = None
-
-            elif montant_payer < restant_exist.restant:
-                restant_exist.restant -= montant_payer
-                restant_exist.restant = round(restant_exist.restant, 0)
-                restant_exist.date_restant = timezone.now()
-                fact_paiement.restant_nouvel = restant_exist.restant
-                restant_exist.save()
-
-                paiement_restant.montant_payer += montant_payer
-                paiement_restant.date_paiement = timezone.now()
-
-                # Enregistrement de la recette pour la partie payée
-                enregistrer_recette_paiement(
-                    facture_id=fact_paiement.pk,
-                    montant=montant_payer,
-                    utilisateur_id=utilisateur,
-                    date_encaissement=timezone.now().date()
-                )
-
-                fact_paiement.restant = round(restant_exist.restant, 0)
+            # Créer ou mettre à jour l'avoir avec le surplus
+            avoir = Avoir.objects.filter(num_contrat=num_contrat).first()
+            if avoir:
+                avoir.montant_avoir += round(surplus, 0)
+                avoir.save()
             else:
-                paiement_restant.montant_payer += restant_exist.restant
-                fact_paiement.restant_nouvel = None
-
-                # Enregistrement de la recette pour la partie payée (le reste du dû)
-                enregistrer_recette_paiement(
-                    facture_id=fact_paiement.pk,
-                    montant=restant_exist.restant,
-                    utilisateur_id=utilisateur,
-                    date_encaissement=timezone.now().date()
-                )
-
-                # Création de l'avoir pour le surplus
-                avoir = montant_payer - restant_exist.restant
                 Avoir.objects.create(
-                    montant_avoir=round(avoir, 0),
+                    montant_avoir=round(surplus, 0),
                     utilisateur_id=utilisateur,
                     num_contrat_id=num_contrat
                 )
-                restant_exist.delete()
-            paiement_restant.save()
+
+            fact_paiement.avoir_nouveau = round(surplus, 0)
+            fact_paiement.restant_nouvel = None
+
+            # Supprimer le restant car tout est payé
+            Restant.objects.filter(num_contrat=num_contrat).delete()
+
         else:
-            Restant.objects.create(
-                restant=round(net_paye, 0),
-                num_contrat_id=num_contrat,
-                utilisateur_id=utilisateur
-            )
-            Paiement.objects.create(
-                montant_payer=round(montant_payer, 0),
-                facture_id=fact_paiement.pk
-            )
-            enregistrer_recette_paiement(
-                facture_id=fact_paiement.pk,
-                montant=round(montant_payer, 0),
-                utilisateur_id=utilisateur,
-                date_encaissement=timezone.now().date()
-            )
-    fact_paiement.save()
+            # Il reste un montant à payer
+            nouveau_restant = fact_paiement.montant_total_ttc - nouveau_total_paye
+
+            # Mettre à jour ou créer le restant
+            restant = Restant.objects.filter(num_contrat=num_contrat).first()
+            if restant:
+                restant.restant = round(nouveau_restant, 0)
+                restant.date_restant = timezone.now()
+                restant.utilisateur_id = utilisateur
+                restant.save()
+            else:
+                Restant.objects.create(
+                    restant=round(nouveau_restant, 0),
+                    num_contrat_id=num_contrat,
+                    utilisateur_id=utilisateur,
+                    date_restant=timezone.now()
+                )
+
+            fact_paiement.restant_nouvel = round(nouveau_restant, 0)
+            fact_paiement.avoir_nouveau = None
+
+        # Marquer la facture comme payée dès qu'un paiement est effectué
+        fact_paiement.statut = True
+        fact_paiement.save()
 
 
 @schema_use
-def facture_paiement(request, *args, **kwargs):
+def facture_paiement(request):
     try:
         id_releve = request.POST['id_releve']
         montant_payer = float(request.POST['paiement'])
         utilisateur = request.session.get('id_utilisateur')
         
-            # Vérifier d'abord si la facture existe et n'est pas déjà payée
         with transaction.atomic():
             fact = Facture.objects.select_for_update().get(relevecompteur_id=id_releve)
-
-            if fact.statut:
-                messages.error(request, 'Cette facture a déjà été payée')
-                return redirect('facture_etat_detail', fact.num_facture)
 
             # Vérifier s'il existe déjà un paiement pour cette facture
             paiement_existant = Paiement.objects.filter(facture=fact).first()
             if paiement_existant:
-                # Si un paiement existe, mais que le statut de la facture est False, on le met à jour
+                # Si un paiement existe mais que le statut de la facture est False, on le met à jour
                 if not fact.statut:
                     fact.statut = True
                     fact.save()
                     messages.success(request, 'Le statut de la facture a été mis à jour avec succès')
-                else:
-                    messages.error(request, 'Un paiement existe déjà pour cette facture')
+                    return redirect('facture_etat_detail', fact.num_facture)
+
+            # On autorise toujours le paiement si la facture a un restant
+            if fact.statut and not fact.restant_nouvel:
+                messages.error(request, 'Cette facture est déjà totalement payée')
+                return redirect('facture_etat_detail', fact.num_facture)
+
+            # Vérifier s'il existe une facture plus récente
+            existe_facture_recente = Facture.objects.filter(
+                num_contrat=fact.num_contrat,
+                date_facture__gt=fact.date_facture
+            ).exists()
+
+            if existe_facture_recente and not fact.restant_nouvel:
+                messages.error(request, 'Une facture plus récente existe déjà')
                 return redirect('facture_etat_detail', fact.num_facture)
 
             paiement(id_releve, montant_payer, utilisateur)
-            messages.success(request, 'Facture payée avec succès !')
-            return redirect('facture')
-        
+            messages.success(request, 'Paiement effectué avec succès !')
+            return redirect('facture_etat_detail', fact.num_facture)
+
     except Facture.DoesNotExist:
         messages.error(request, 'Facture introuvable')
         return redirect('facture')
