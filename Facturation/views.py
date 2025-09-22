@@ -23,7 +23,7 @@ from Login.views import role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 from Acommune.models import Province
 from Ranoo_Config.models import ConfigBranchement
-from Rel_Compteur.utils import get_previous_month
+from Rel_Compteur.utils import get_previous_month, get_month_range
 from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
 from Recette.views import enregistrer_recette_paiement
@@ -78,9 +78,17 @@ def facture(request):
     font = 'custom-font'
     active = 'active'
 
-    # Calculer le total des montants TTC impayés pour le mois courant
-    debut_mois, fin_mois = get_mois_courant()
-    factures = Facture.objects.all()
+    datedeb = request.GET.get('datedeb')
+    datefin = request.GET.get('datefin')
+
+    if datedeb and datefin:
+        debut_mois, _ = get_month_range(datedeb)
+        _, fin_mois = get_month_range(datefin)
+        factures = date_range(request, Facture, debut_mois, fin_mois, 'date_facture')
+    else:
+        debut_mois, fin_mois = get_mois_courant()
+        factures = Facture.objects.all().order_by('-date_facture')
+
 
     # Total des montants impayés du mois courant
     total_impaye_mois = factures.filter(
@@ -118,9 +126,6 @@ def facture(request):
                 logger.error(f"Erreur lors du traitement des taxes pour la facture {facture_items.num_facture}: {str(e)}")
                 continue
 
-    datedeb = request.GET.get('datedeb')
-    datefin = request.GET.get('datefin')
-    factures = date_range(request, Facture, datedeb, datefin, 'date_facture')
     pronvince = Province.objects.order_by('province').all()
     impayer_exist = factures.filter(statut=False).exists()
 
