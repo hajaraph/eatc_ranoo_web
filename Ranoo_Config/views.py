@@ -12,7 +12,7 @@ from Tenants.models import Utilisateur, Role, Initial
 from Login.views import role_requis
 
 
-@role_requis('Administrateur', 'Gestionnaire')
+@role_requis('Administrateur')
 @schema_use
 def config_utilisateur(request):
     titre = 'Ranoo Config | Utilisateur'
@@ -33,7 +33,7 @@ class NouvelUtilisateur(SchemaAwareView):
 
     template_name = 'all_page/ranoo_config/content.html'
 
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def get(self, request):
         titre = 'Parametre | Utilisateur | Crée un compte'
         active = 'active'
@@ -55,7 +55,7 @@ class NouvelUtilisateur(SchemaAwareView):
         return render(request, self.template_name, contexte)
 
     @staticmethod
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def post(request):
         nom_utilisateur = request.POST['nom_utilisateur']
         prenom_utilisateur = request.POST['prenom_utilisateur']
@@ -95,7 +95,7 @@ class UtilisateurMod(SchemaAwareView):
 
     template_name = 'all_page/ranoo_config/content.html'
 
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def get(self, request, pk):
         active = 'active'
         font = 'custom-font'
@@ -161,7 +161,7 @@ class UtilisateurMod(SchemaAwareView):
             return redirect('utilisateur_modifier', pk)
 
 
-@role_requis('Administrateur', 'Gestionnaire')
+@role_requis('Administrateur')
 @schema_use
 def sup_utilisateur(request, pk):
     try:
@@ -175,7 +175,7 @@ def sup_utilisateur(request, pk):
     return redirect('config_utilisateur')
 
 
-@role_requis('Administrateur', 'Gestionnaire')
+@role_requis('Administrateur')
 @schema_use
 def branchement(request):
     titre = 'Ranoo Config | Branchement'
@@ -195,7 +195,7 @@ class BranchementConfig(SchemaAwareView):
 
     template_name = 'all_page/ranoo_config/content.html'
 
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def get(self, request):
         titre = 'Ranoo Config | Branchement | Nouveau'
         active = 'active'
@@ -208,7 +208,7 @@ class BranchementConfig(SchemaAwareView):
         return render(request, self.template_name, context)
 
     @staticmethod
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def post(request):
         nom_branchement = request.POST['branchement']
         tva_applique = request.POST.get('tva_applique') == 'on'
@@ -231,7 +231,7 @@ class BranchementConfig(SchemaAwareView):
 
 
 
-@role_requis('Administrateur', 'Gestionnaire')
+@role_requis('Administrateur')
 @schema_use
 def get_branchement_list(request):
     configs = (ConfigBranchement.objects.all().order_by('type_client__designation_client')
@@ -244,7 +244,7 @@ class BranchementMod(SchemaAwareView):
 
     template_name = 'all_page/ranoo_config/content.html'
 
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def get(self, request, pk):
         try:
             branchement_obj = get_object_or_404(ConfigBranchement, pk=pk)
@@ -263,7 +263,7 @@ class BranchementMod(SchemaAwareView):
             return redirect('branchement')
 
     @staticmethod
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def post(request, pk):
         designation_client = request.POST['branchement']
         tva_applique = request.POST.get('tva_applique') == 'on'
@@ -298,7 +298,7 @@ def branchement_supp(request, pk):
     return redirect('branchement')
 
 
-@role_requis('Administrateur', 'Gestionnaire')
+@role_requis('Administrateur')
 @schema_use
 def config_tarif(request):
     titre = 'Ranoo Config | Tarif'
@@ -325,7 +325,7 @@ class TarifNew(SchemaAwareView):
 
     template_name = 'all_page/ranoo_config/content.html'
 
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def get(self, request):
         titre = 'Ranoo Config | Tarif | Nouveau'
         active = 'active'
@@ -340,7 +340,7 @@ class TarifNew(SchemaAwareView):
         return render(request, self.template_name, context)
 
     @staticmethod
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def post(request):
         cp_commune = request.POST['commune']
         conso_tva_app = float(request.POST['conso_tva_app']) if request.POST['conso_tva_app'] else 0
@@ -382,7 +382,7 @@ class TarifMod(SchemaAwareView):
 
     template_name = 'all_page/ranoo_config/content.html'
 
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def get(self, request, pk):
         titre = 'Ranoo Config | Tarif Modifier'
         active = 'active'
@@ -412,7 +412,7 @@ class TarifMod(SchemaAwareView):
         return render(request, self.template_name, context)
 
     @staticmethod
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def post(request, pk):
         try:
             # Récupération des données du formulaire

@@ -150,12 +150,6 @@ def facture_etat_detail(request, num_facture):
     # Requete pour chaque detail
     factures = Facture.objects.get(num_facture=num_facture)
 
-    # Vérifier s'il existe une facture plus récente pour ce contrat
-    existe_facture_recente = Facture.objects.filter(
-        num_contrat=factures.num_contrat,
-        date_facture__gt=factures.date_facture
-    ).exists()
-
     # Récupérer tous les paiements pour la facture
     paiements = Paiement.objects.filter(facture__num_facture=num_facture)
     montant = MontantTTC.objects.get(montant_ht__facture__num_facture=num_facture)
@@ -175,7 +169,6 @@ def facture_etat_detail(request, num_facture):
         'paiements': paiements,
         'montant': montant,
         'typeclient': typeclient,
-        'existe_facture_recente': existe_facture_recente,
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -863,7 +856,7 @@ def facture_paiement(request):
         id_releve = request.POST['id_releve']
         montant_payer = float(request.POST['paiement'])
         utilisateur = request.session.get('id_utilisateur')
-        
+
         with transaction.atomic():
             fact = Facture.objects.select_for_update().get(relevecompteur_id=id_releve)
 
@@ -882,15 +875,15 @@ def facture_paiement(request):
                 messages.error(request, 'Cette facture est déjà totalement payée')
                 return redirect('facture_etat_detail', fact.num_facture)
 
-            # Vérifier s'il existe une facture plus récente
-            existe_facture_recente = Facture.objects.filter(
-                num_contrat=fact.num_contrat,
-                date_facture__gt=fact.date_facture
-            ).exists()
-
-            if existe_facture_recente and not fact.restant_nouvel:
-                messages.error(request, 'Une facture plus récente existe déjà')
-                return redirect('facture_etat_detail', fact.num_facture)
+            # # Vérifier s'il existe une facture plus récente
+            # existe_facture_recente = Facture.objects.filter(
+            #     num_contrat=fact.num_contrat,
+            #     date_facture__gt=fact.date_facture
+            # ).exists()
+            #
+            # if existe_facture_recente and not fact.restant_nouvel:
+            #     messages.error(request, 'Une facture plus récente existe déjà')
+            #     return redirect('facture_etat_detail', fact.num_facture)
 
             paiement(id_releve, montant_payer, utilisateur)
             messages.success(request, 'Paiement effectué avec succès !')

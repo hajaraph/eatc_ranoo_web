@@ -190,112 +190,6 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            // Préparer les données pour le graphique
-                            const facturesData = {
-                                labels: [],
-                                payees: [],
-                                impayees: [],
-                                backgroundColors: []
-                            };
-                            
-                            const typeClientColors = {
-                                'Domestique': '#4e73df',
-                                'Commercial': '#1cc88a',
-                                'Industriel': '#36b9cc',
-                                'Administratif': '#f6c23e',
-                                'Autre': '#e74a3b',
-                                'Non spécifié': '#858796'
-                            };
-                            
-                            // Récupérer les données du template
-                            {% regroup factures_par_type_client by annee as factures_par_annee %}
-                            {% for annee in factures_par_annee %}
-                                {% regroup annee.list by mois as factures_par_mois %}
-                                {% for mois in factures_par_mois %}
-                                    {% for facture in mois.list %}
-                                        facturesData.labels.push('{{ facture.type_client|default:"Non spécifié" }} - {% if facture.mois < 10 %}0{% endif %}{{ facture.mois }}/{{ facture.annee }}');
-                                        facturesData.payees.push({{ facture.payees }});
-                                        facturesData.impayees.push({{ facture.impayees }});
-                                        
-                                        // Définir une couleur par type de client
-                                        const typeClient = '{{ facture.type_client|default:"Non spécifié" }}';
-                                        facturesData.backgroundColors.push(typeClientColors[typeClient] || '#858796');
-                                    {% endfor %}
-                                {% endfor %}
-                            {% endfor %}
-                            
-                            // Créer le graphique
-                            const ctx = document.getElementById('facturesParTypeClient').getContext('2d');
-                            new Chart(ctx, {
-                                type: 'bar',
-                                data: {
-                                    labels: facturesData.labels,
-                                    datasets: [
-                                        {
-                                            label: 'Factures payées',
-                                            data: facturesData.payees,
-                                            backgroundColor: facturesData.backgroundColors.map(c => `${c}cc`),
-                                            borderColor: facturesData.backgroundColors,
-                                            borderWidth: 1,
-                                            stack: 'Stack 0',
-                                        },
-                                        {
-                                            label: 'Factures impayées',
-                                            data: facturesData.impayees,
-                                            backgroundColor: facturesData.backgroundColors.map(c => `${c}66`),
-                                            borderColor: facturesData.backgroundColors,
-                                            borderWidth: 1,
-                                            stack: 'Stack 0',
-                                        }
-                                    ]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    scales: {
-                                        x: {
-                                            stacked: true,
-                                            grid: {
-                                                display: false
-                                            },
-                                            ticks: {
-                                                maxRotation: 45,
-                                                minRotation: 45
-                                            }
-                                        },
-                                        y: {
-                                            stacked: true,
-                                            beginAtZero: true,
-                                            title: {
-                                                display: true,
-                                                text: 'Nombre de factures'
-                                            }
-                                        }
-                                    },
-                                    plugins: {
-                                        legend: {
-                                            position: 'top',
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                afterLabel: function(context) {
-                                                    const label = context.dataset.label;
-                                                    const value = context.parsed.y;
-                                                    const total = context.dataset.data[context.dataIndex] + 
-                                                                context.chart.data.datasets[1 - context.datasetIndex].data[context.dataIndex];
-                                                    const percentage = Math.round((value / total) * 100);
-                                                    return `${percentage}% du total`;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                        });
-                        </script>
                     </div>
                 </div>
             </div>
@@ -725,6 +619,123 @@
         document.querySelectorAll('.chart-container').forEach(el => {
             observer.observe(el);
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const facturesData = {
+                labels: [],
+                payees: [],
+                impayees: [],
+                montantTotal: [],
+                montantPaye: [],
+                backgroundColors: []
+            };
+
+            const typeClientColors = {
+                'Domestique': primaryColor,
+                'Commercial': successColor,
+                'Industriel': infoColor,
+                'Administratif': warningColor,
+                'Autre': dangerColor,
+            };
+
+            {% regroup factures_par_type_client by type_client as factures_par_type %}
+                {% for type in factures_par_type %}
+                    {% for facture in type.list %}
+                        (function() {
+                            console.log('Traitement des données pour {{ type.grouper }} - {{ facture.mois }}/{{ facture.annee }}');
+                            const typeLabel = '{{ type.grouper }}';
+                            facturesData.labels.push(`${typeLabel} - {% if facture.mois < 10 %}0{% endif %}{{ facture.mois }}/{{ facture.annee }}`);
+                            facturesData.payees.push({{ facture.payees|default:0 }});
+                            facturesData.impayees.push({{ facture.impayees|default:0 }});
+                            facturesData.montantTotal.push({{ facture.montant_total|default_if_none:0 }});
+                            facturesData.montantPaye.push({{ facture.montant_paye|default_if_none:0 }});
+                            facturesData.backgroundColors.push(typeClientColors[typeLabel] || '#858796');
+                        })();
+                    {% endfor %}
+                {% endfor %}
+
+                if (facturesData.labels.length > 0) {
+                    const ctx = document.getElementById('facturesParTypeClient').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: facturesData.labels,
+                            datasets: [
+                                {
+                                    label: 'Factures payées',
+                                    data: facturesData.payees,
+                                    backgroundColor: facturesData.backgroundColors.map(c => `${c}cc`),
+                                    borderColor: facturesData.backgroundColors,
+                                    borderWidth: 1,
+                                    stack: 'Stack 0',
+                                },
+                                {
+                                    label: 'Factures impayées',
+                                    data: facturesData.impayees,
+                                    backgroundColor: facturesData.backgroundColors.map(c => `${c}66`),
+                                    borderColor: facturesData.backgroundColors,
+                                    borderWidth: 1,
+                                    stack: 'Stack 0',
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    stacked: true,
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        maxRotation: 45,
+                                        minRotation: 45
+                                    }
+                                },
+                                y: {
+                                    stacked: true,
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Nombre de factures'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        afterLabel: function(context) {
+                                            const datasetIndex = context.datasetIndex;
+                                            const index = context.dataIndex;
+                                            const value = context.parsed.y;
+                                            const total = facturesData.payees[index] + facturesData.impayees[index];
+                                            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+
+                                            let tooltipText = [`${percentage}% du total`];
+
+                                            if (datasetIndex === 0) {
+                                                const montantPaye = facturesData.montantPaye[index];
+                                                tooltipText.push(`Montant payé: ${montantPaye.toLocaleString()} AR`);
+                                            }
+
+                                            const montantTotal = facturesData.montantTotal[index];
+                                            tooltipText.push(`Montant total: ${montantTotal.toLocaleString()} AR`);
+
+                                            return tooltipText;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    document.getElementById('facturesParTypeClient').parentNode.innerHTML = '<div class="text-center text-muted">Aucune donnée disponible pour la période sélectionnée</div>';
+                }
+            });
     </script>
 </body>
 </html>

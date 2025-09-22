@@ -227,29 +227,27 @@
                         <p class="text-center text-secondary"><strong>{{ factures.montant_total_ttc }} Ar</strong></p>
                     </div>
                 </div>
-                {% if not existe_facture_recente %}
-                    {% if not factures.statut or factures.restant_nouvel %}
-                        <div class="d-flex justify-content-end mt-4 mx-1">
-                            <div class="mb-2">
-                                <a href="" class="btn btn-warning">
-                                    <i class="fas fa-arrows-rotate"></i>
-                                    Relancer
-                                </a>
-                                <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' factures.num_facture %}')" class="btn btn-success mx-4 px-4">
-                                    <i class="fas fa-file-pdf"></i>
-                                     PDF
-                                </div>
-                                <button id="{{ factures.relevecompteur_id }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
-                                    <i class="fas fa-credit-card"></i>
-                                    {% if factures.restant_nouvel %}
-                                        Payer le Restant
-                                    {% else %}
-                                        Paiement
-                                    {% endif %}
-                                </button>
+                {% if not factures.statut or factures.restant_nouvel %}
+                    <div class="d-flex justify-content-end mt-4 mx-1">
+                        <div class="mb-2">
+                            <a href="" class="btn btn-warning">
+                                <i class="fas fa-arrows-rotate"></i>
+                                Relancer
+                            </a>
+                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' factures.num_facture %}')" class="btn btn-success mx-4 px-4">
+                                <i class="fas fa-file-pdf"></i>
+                                 PDF
                             </div>
+                            <button id="{{ factures.relevecompteur_id }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
+                                <i class="fas fa-credit-card"></i>
+                                {% if factures.restant_nouvel %}
+                                    Payer le Restant
+                                {% else %}
+                                    Paiement
+                                {% endif %}
+                            </button>
                         </div>
-                    {% endif %}
+                    </div>
                 {% endif %}
             </div>
         </div>

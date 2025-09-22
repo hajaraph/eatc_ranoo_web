@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 
 from django.db import connection
-from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q, F
+from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q, F, BooleanField
 from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
 from django.http.response import HttpResponse
 from django.shortcuts import render
@@ -108,10 +108,31 @@ def tableau_bord(request, *args, **kwargs):
                 ]
             }
         )
-    # Paiement
     # Statistiques de facturation par type de client
-    factures_par_type_client = Facture.objects.all()
-    
+    factures_par_type_client = (
+        Facture.objects
+        .filter(date_facture__year=annee_actuelle)
+        .values(
+            'id_facture',
+            'montant_total_ttc',
+            mois=ExtractMonth('date_facture'),
+            annee=ExtractYear('date_facture'),
+            type_client=Coalesce('num_contrat__client__type_client__designation_client', Value('Non spécifié'))
+        )
+        .values('mois', 'annee', 'type_client')
+        .annotate(
+            total=Count('id_facture'),
+            montant_total=Sum('montant_total_ttc'),
+            payees=Count('id_facture', filter=Q(statut=True)),
+            impayees=Count('id_facture', filter=Q(statut=False)),
+            montant_paye_total=Coalesce(
+                Sum('paiements__montant_payer'),
+                Value(0.0)
+            )
+        )
+        .order_by('annee', 'mois', 'type_client')
+    )
+
     # Appliquer les filtres région et date
     if region:
         factures_par_type_client = factures_par_type_client.filter(
@@ -121,17 +142,6 @@ def tableau_bord(request, *args, **kwargs):
         factures_par_type_client = factures_par_type_client.filter(
             date_facture__range=[date_deb, date_fin]
         )
-    
-    # Annoter et agréger les données
-    factures_par_type_client = factures_par_type_client.annotate(
-        mois=ExtractMonth('date_facture'),
-        annee=ExtractYear('date_facture'),
-        type_client=F('num_contrat__client__type_client__designation_client')
-    ).values('mois', 'annee', 'type_client').annotate(
-        payees=Count('id_facture', filter=Q(statut=True)),
-        impayees=Count('id_facture', filter=Q(statut=False)),
-        total=Count('id_facture')
-    ).order_by('annee', 'mois', 'type_client')
 
     factures = factures.annotate(
         mois=ExtractMonth('date_facture'),
