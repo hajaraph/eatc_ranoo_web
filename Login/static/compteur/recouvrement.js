@@ -34,20 +34,9 @@ $(document).ready(function() {
         const exportType = $exportType.val();
         const startMonth = $('#recouvrementStartMonth').val();
         const endMonth = $('#recouvrementEndMonth').val();
-        
-        // Validation des dates pour le recouvrement
-        if (exportType === 'recouvrement') {
-            if (!startMonth || !endMonth) {
-                alert('Veuillez sélectionner une plage de dates valide pour le recouvrement.');
-                return;
-            }
-            
-            if (startMonth > endMonth) {
-                alert('La date de début doit être antérieure à la date de fin.');
-                return;
-            }
-        }
-        
+        const numClientDeb = $('#num_client_deb').val();
+        const numClientFin = $('#num_client_fin').val();
+
         // Construire l'URL en fonction du type d'export
         let url;
         if (exportType === 'fiche_releve') {
@@ -58,21 +47,24 @@ $(document).ready(function() {
             const communeId = $('#commune').val();
             if (communeId) {
                 url += `?commune=${communeId}`;
+            } else {
+                url += '?';
             }
         } else {
-            // Pour le recouvrement, on utilise les dates au format YYYY-MM et la commune
-            const startDate = startMonth + '-01';
-            const endDate = endMonth + '-01';
+            // Pour le recouvrement, on utilise les dates au format YYYY-MM uniquement
+            // startMonth et endMonth sont déjà au format YYYY-MM
             const communeId = $('#commune').val();
             
-            // Construire l'URL de base
-            url = `/compteurs/exporte/recouvrement?date_debut=${startDate}&date_fin=${endDate}`;
+            // Construire l'URL de base avec les dates au format YYYY-MM
+            url = `/compteurs/exporte/recouvrement?date_debut=${startMonth}&date_fin=${endMonth}`;
             
             // Ajouter le filtre de commune si une commune est sélectionnée
             if (communeId) {
                 url += `&commune=${communeId}`;
             }
         }
+        if (numClientDeb) url += `&num_client_deb=${numClientDeb}`;
+        if (numClientFin) url += `&num_client_fin=${numClientFin}`;
         
         // Rediriger vers l'URL d'export
         window.location.href = url;

@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 
 from django.db import connection
-from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q, F, BooleanField
+from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q
 from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
 from django.http.response import HttpResponse
 from django.shortcuts import render

@@ -346,7 +346,7 @@ def client_contrat(request):
     title = 'Clients | Contrats'
     active = 'active'
     font = 'custom-font'
-    contrat = Contrat.objects.all()
+    contrat = filter_by_user_role(request, Contrat.objects.all(), 'cp_commune')
     context = {
         'title_contrat': title,
         'active_contrat': active,

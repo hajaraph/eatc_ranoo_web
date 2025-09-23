@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, date, timedelta
+from datetime import datetime
 from django.contrib import messages
 from django.db import models
 from django.db.models import OuterRef, Subquery
@@ -7,6 +7,7 @@ from django.http import HttpResponse
 import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
+from django.utils import timezone
 from weasyprint import HTML
 
 from Acommune.models import Province, Commune
@@ -17,8 +18,8 @@ from Facturation.views import facture_creation
 from Login.views import role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
 from Tenants.middleware import schema_use, SchemaAwareView
-from Rel_Compteur.utils import get_month_name_fr, get_previous_month, filter_by_user_role, \
-    get_3_months_range
+from Rel_Compteur.utils import get_month_name_fr, filter_by_user_role, \
+    get_3_months_range, get_month_range, filter_by_client_number
 
 
 @schema_use
@@ -360,9 +361,11 @@ def del_releve(request, pk):
 
 
 @schema_use
-def export_compteur(request):
+def export_fiche_releve(request):
     # Récupérer le paramètre de filtre par commune
     commune_id = request.GET.get('commune')
+    num_client_deb = request.GET.get('num_client_deb')
+    num_client_fin = request.GET.get('num_client_fin')
 
     # Construire la requête de base pour les contrats actifs avec leurs relations
     contrats_query = Contrat.objects.select_related(
@@ -372,6 +375,13 @@ def export_compteur(request):
         'cp_commune'  # Ajout de la jointure avec la commune
     ).prefetch_related(
         'num_compteur__relevecompteurs'
+    )
+
+    contrats_query = filter_by_client_number(
+        queryset=contrats_query,
+        client_field='client__num_client',
+        num_client_deb=num_client_deb,
+        num_client_fin=num_client_fin
     )
 
     # Appliquer le filtre par commune si spécifié
@@ -455,9 +465,11 @@ def export_recouvrement(request):
     date_debut = request.GET.get('date_debut')
     date_fin = request.GET.get('date_fin')
     commune_id = request.GET.get('commune')
+    num_client_deb = request.GET.get('num_client_deb')
+    num_client_fin = request.GET.get('num_client_fin')
 
     # Définir les dates par défaut si non fournies (3 mois en arrière par défaut)
-    today = date.today()
+    today = timezone.now()
     if not date_debut:
         # Premier jour du mois il y a 3 mois
         if today.month > 3:
@@ -465,23 +477,29 @@ def export_recouvrement(request):
         else:
             date_debut = today.replace(year=today.year-1, month=12-(3-today.month), day=1)
     else:
-        date_debut = datetime.strptime(date_debut, '%Y-%m-%d').date()
+        # Si date_debut est fournie, la convertir en datetime
+        date_debut, _ = get_month_range(date_debut)
 
     if not date_fin:
         date_fin = today  # Aujourd'hui par défaut
     else:
-        date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date()
+        _, date_fin = get_month_range(date_fin)
 
     # Générer la liste des mois dans l'intervalle
     months = get_3_months_range(date_debut, date_fin)
-
-    # Ajuster la date de fin pour inclure toute la journée
-    date_fin = date_fin.replace(day=1, month=date_fin.month % 12 + 1) - timedelta(days=1) if date_fin.day == 1 else date_fin
 
     # Préparer la requête de base pour les factures impayées
     factures_query = Facture.objects.filter(
         statut=False,
         date_facture__range=[date_debut, date_fin]
+    )
+
+    # Filtrer par intervalle de numéros de client si spécifiés
+    factures_query = filter_by_client_number(
+        queryset=factures_query,
+        client_field='num_contrat__client__num_client',
+        num_client_deb=num_client_deb,
+        num_client_fin=num_client_fin
     )
 
     # Filtrer par commune si spécifiée
@@ -562,10 +580,6 @@ def export_recouvrement(request):
             commune_nom = commune.commune
         except (Commune.DoesNotExist, Exception):
             pass
-
-    # Ajuster les dates pour l'affichage
-    date_debut = get_previous_month(date_debut)
-    date_fin = get_previous_month(date_fin)
 
     context = {
         'clients': data,

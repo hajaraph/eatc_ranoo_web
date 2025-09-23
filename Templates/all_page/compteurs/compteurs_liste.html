@@ -107,7 +107,7 @@
                                         <option value="{{ province.province }}">{{ province.province }}</option>
                                     {% endfor %}
                                 </select>
-                                <label for="province">Province*</label>
+                                <label for="province">Province</label>
                             </div>
                         </div>
                         <div class="col-md-4 col-sm-12">
@@ -135,7 +135,7 @@
                     <div class="row mt-4">
                         <div class="col-md-4 col-sm-12">
                             <div class="form-floating">
-                                <select class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" id="num_client_deb" name="num_client_deb">
+                                <select id="num_client_deb" name="num_client_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
                                     <option value=""></option>
                                     {% for list in compteur %}
                                         <option value="{{ list.contrats.first.client.num_client }}">{{ list.contrats.first.client.num_client }}</option>
@@ -146,7 +146,11 @@
                         </div>
                         <div class="col-md-4 col-sm-12">
                             <div class="form-floating">
-                                <select class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" id="num_client_fin" name="num_client_fin">
+                                <select id="num_client_fin" name="num_client_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                    <option value=""></option>
+                                    {% for list in compteur %}
+                                        <option value="{{ list.contrats.first.client.num_client }}">{{ list.contrats.first.client.num_client }}</option>
+                                    {% endfor %}
                                 </select>
                                 <label for="num_client_fin">au :</label>
                             </div>

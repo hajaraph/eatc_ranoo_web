@@ -159,13 +159,13 @@
                             <div class="row">
                                 <div class="col-md-auto col-sm-12">
                                     <div class="form-floating">
-                                        <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
+                                        <input type="month" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ datedeb }}" placeholder="" required>
                                         <label for="date_deb">Periode du </label>
                                     </div>
                                 </div>
                                 <div class="col-md-auto col-sm-12">
                                     <div class="form-floating">
-                                        <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
+                                        <input type="month" name="date_fin" id="date_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" value="{{ datefin }}" placeholder="">
                                         <label for="date_fin">au </label>
                                     </div>
                                 </div>
@@ -204,6 +204,30 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="row mt-4">
+                                <div class="col-md-4 col-sm-12">
+                                    <div class="form-floating">
+                                        <select id="num_client_deb" name="num_client_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                            <option value=""></option>
+                                            {% for list in client %}
+                                                <option value="{{ list.num_contrat.client.num_client }}">{{ list.num_contrat.client.num_client }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <label for="num_client_deb">N° Client (Optionnel) :</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-12">
+                                    <div class="form-floating">
+                                        <select id="num_client_fin" name="num_client_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+                                            <option value=""></option>
+                                            {% for list in client %}
+                                                <option value="{{ list.num_contrat.client.num_client }}">{{ list.num_contrat.client.num_client }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <label for="num_client_fin">au :</label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -237,13 +261,13 @@
                             <div class="row">
                                 <div class="col-md-auto col-sm-12">
                                     <div class="form-floating">
-                                        <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
+                                        <input type="month" name="date_deb" id="date_deb" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="" required>
                                         <label for="date_deb">Periode du </label>
                                     </div>
                                 </div>
                                 <div class="col-md-auto col-sm-12">
                                     <div class="form-floating">
-                                        <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
+                                        <input type="month" name="date_fin" id="date_fin" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
                                         <label for="date_fin">au </label>
                                     </div>
                                 </div>

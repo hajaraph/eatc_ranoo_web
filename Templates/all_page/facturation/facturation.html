@@ -84,28 +84,6 @@
     <script src="{% static 'modal.js' %}"></script>
     <script src="{% static 'client/modal.js' %}"></script>
     <script src="{% static 'chiffre_espacement.js' %}"></script>
-    <script>
-        function openUrlInNewTab(url) {
-            window.open(url, '_blank');
-        }
-        $(document).ready(function () {
-            $('#confirmer-export').click(function() {
-                const dateDeb = $('#date_deb').val();
-                const dateFin = $('#date_fin').val();
-                const commune = $('#commune').val();
-
-                // Construire l'URL avec les paramètres GET
-                let url = '/facture/pdf';
-                url += `?date_deb=${dateDeb}&date_fin=${dateFin}&commune=${commune}`;
-                {% if impayer_exist %}
-                    // Ouvrir une nouvelle onglet avec l'URL générée
-                    window.open(url, '_blank');
-                    $('#export-pdf').modal('hide');
-                {% else %}
-                    $('#alert').fadeIn().delay(3000).fadeOut();
-                {% endif %}
-            });
-        })
-    </script>
+    <script src="{% static 'facture/facture_export.js' %}"></script>
 </body>
 </html>

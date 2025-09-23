@@ -9,6 +9,31 @@ from django.utils import timezone
 from num2words import num2words
 from Facturation.models import Facture
 
+# Type variable for queryset
+def filter_by_client_number(
+    queryset: QuerySet,
+    client_field: str = 'num_contrat__client__num_client',
+    num_client_deb: Optional[str] = None,
+    num_client_fin: Optional[str] = None
+) -> QuerySet:
+    """
+    Filtre un queryset par plage de numéros de client.
+    
+    Args:
+        queryset: Le queryset à filtrer
+        client_field: Le champ du modèle contenant le numéro de client
+        num_client_deb: Numéro de client de départ (inclus)
+        num_client_fin: Numéro de client de fin (inclus)
+        
+    Returns:
+        QuerySet: Le queryset filtré
+    """
+    if num_client_deb:
+        queryset = queryset.filter(**{f"{client_field}__gte": num_client_deb})
+        if num_client_fin:
+            queryset = queryset.filter(**{f"{client_field}__lte": num_client_fin})
+    return queryset
+
 
 def get_previous_month(input_date: Union[date, datetime]) -> date:
     """
