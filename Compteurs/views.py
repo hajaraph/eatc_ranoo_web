@@ -57,6 +57,7 @@ def compteur_liste(request):
         'active_li_co': active,
         'font_compteur': font,
         'compteur': compteurs,
+        'client': Contrat.objects.all().order_by('client__num_client'),
         'provinces': provinces,
     }
     return render(request, 'all_page/compteurs/compteurs.html', context)
