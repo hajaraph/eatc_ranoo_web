@@ -76,7 +76,6 @@ def supp_commune(request, pk):
 
 
 @authentification_requis
-@role_requis('Administrateur', 'Gestionnaire')
 def commune_list(request, province, *args, **kwargs):
     # Récupérer les régions distinctes pour la province
     regions = Region.objects.filter(province__province=province).order_by('region').distinct('region').values('region')

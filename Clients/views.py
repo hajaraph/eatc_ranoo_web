@@ -3,7 +3,7 @@ import re
 from io import BytesIO
 
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import get_template
 from datetime import datetime
@@ -592,3 +592,23 @@ def export_clients_pdf(request):
     enregistre_historique(message, request.session.get('id_utilisateur'))
     
     return generate_pdf(request, context, template_path, nom_fichier_prefix)
+
+
+@schema_use
+def liste_num_client_lte(request, num_client_deb) -> JsonResponse:
+    clients = Contrat.objects.filter(
+        client__num_client__gte=num_client_deb
+    ).order_by('client__num_client')
+
+    # Créer une liste des numéros de clients uniques
+    clients_list = [
+        {
+            'client__num_client': liste.client.num_client
+        }
+        for liste in clients.distinct('client__num_client')
+
+    ]
+
+    return JsonResponse({
+        'clients': clients_list
+    })
