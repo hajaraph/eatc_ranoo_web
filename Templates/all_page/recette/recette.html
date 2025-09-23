@@ -10,8 +10,14 @@
     <link rel="stylesheet" href="{% static 'datatable/datatables.min.css' %}">
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tableau_bord.css' %}">
     <link rel="stylesheet" href="{% static 'css/style_general.css' %}">
     <title>{{ title_recette_list }}{{ title_recette_new }}</title>
+    <style>
+        .dataTables_filter input[type="search"] {
+            height: 50px;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -41,16 +47,12 @@
         </div>
     </div>
     <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
+    <script src="{% static 'datatable/datatables.min.js' %}"></script>
     <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
     <script src="{% static 'fontawesome/js/all.min.js' %}"></script>
     <script src="{% static 'client/modal.js' %}"></script>
     <script src="{% static 'photomc.js' %}"></script>
     <script src="{% static 'modal.js' %}"></script>
     <script src="{% static 'chiffre_espacement.js' %}"></script>
-    <script>
-        function openUrlInNewTab(url) {
-            window.open(url, '_blank');
-        }
-    </script>
 </body>
 </html>

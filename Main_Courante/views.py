@@ -7,6 +7,7 @@ from Acommune.models import Region
 from Clients.models import Client
 from Main_Courante.models import MainCourante, StatutMC, SuivieMC
 from Parametre.views import exporter_en_excel, enregistre_historique
+from Rel_Compteur.utils import filter_by_month_range, get_default_month_range
 from Tenants.middleware import schema_use, SchemaAwareView
 
 
@@ -28,14 +29,20 @@ def main_liste_mc(request):
     realise = statistiques['count_realise']
     en_cours = statistiques['count_en_cours']
 
-    if datedeb and datefin:
-        if datedeb > datefin:
-            messages.warning(request, f'La Date Début ne doit pas être superieure à la Date Fin !')
-            main_courante = MainCourante.objects.all()
-        else:
-            main_courante = MainCourante.objects.filter(date_mc__range=[datedeb, datefin])
-    else:
-        main_courante = MainCourante.objects.all()
+    # Utilisation de la fonction utilitaire pour filtrer par plage de dates
+    main_courante, datedeb, datefin = filter_by_month_range(
+        queryset=MainCourante.objects.all(),
+        date_field='date_mc',
+        date_start=datedeb,
+        date_end=datefin,
+        default_month=timezone.now().month
+    )
+    
+    # Si les dates sont None (cas où le mois par défaut est utilisé)
+    if datedeb is None or datefin is None:
+        datedeb, datefin = get_default_month_range()
+        datedeb = datedeb.strftime('%Y-%m')
+        datefin = datefin.strftime('%Y-%m')
 
     main_courante_statut = []
     for main_courantes in main_courante:
@@ -51,8 +58,8 @@ def main_liste_mc(request):
         'non_traite': non_traite,
         'realise': realise,
         'en_cours': en_cours,
-        'datedeb': datedeb if datedeb else '',
-        'datefin': datefin if datefin else ''
+        'datedeb': datedeb,
+        'datefin': datefin
     }
     return render(request, 'all_page/main_courante/main_courante.html', context)
 

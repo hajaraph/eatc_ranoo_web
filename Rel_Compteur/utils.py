@@ -11,12 +11,17 @@ from Facturation.models import Facture
 
 
 def get_previous_month(input_date: Union[date, datetime]) -> date:
+    """
+    Retourne le premier jour du mois précédent pour éviter les problèmes de jours invalides.
+    Par exemple, le mois précédent de 2025-03-31 sera 2025-02-01
+    """
     if isinstance(input_date, datetime):
         input_date = input_date.date()
-        
+    
+    # On retourne toujours le premier jour du mois précédent pour éviter les problèmes de jours
     if input_date.month == 1:
-        return input_date.replace(year=input_date.year - 1, month=12)
-    return input_date.replace(month=input_date.month - 1)
+        return date(input_date.year - 1, 12, 1)
+    return date(input_date.year, input_date.month - 1, 1)
 
 
 def get_month_range(year_month):
@@ -30,24 +35,42 @@ def get_month_range(year_month):
     return start, end
 
 
-def get_default_month_range(now=None):
-    """
-    Retourne les dates de début et de fin par défaut pour le mois en cours.
-    
-    Args:
-        now (datetime, optional): Date de référence. Si non fourni, utilise la date actuelle.
-        
-    Returns:
-        tuple: (date_debut, date_fin) - Les dates de début et de fin du mois
-    """
-    if now is None:
-        now = timezone.now()
-        
+def get_default_month_range():
+    now = timezone.now()
+
     date_debut = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     date_fin = (date_debut.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(seconds=1)
     date_fin = date_fin.replace(hour=23, minute=59, second=59, microsecond=999999)
-    
+
     return date_debut, date_fin
+
+
+def get_3_months_range(start_date, end_date):
+    """Génère une liste de tuples (année, mois) entre deux dates, avec un décalage d'un mois en arrière.
+
+    Args:
+        start_date: Date de début (objet date)
+        end_date: Date de fin (objet date)
+
+    Returns:
+        Liste de tuples (année, mois) pour chaque mois dans l'intervalle
+    """
+    months = []
+    current = start_date.replace(day=1)
+    end_date = end_date.replace(day=1)
+
+    while current <= end_date:
+        # Obtenir le mois précédent pour l'affichage
+        prev_month = get_previous_month(current)
+        months.append((prev_month.year, prev_month.month))
+
+        # Passer au mois suivant
+        if current.month == 12:
+            current = current.replace(year=current.year + 1, month=1)
+        else:
+            current = current.replace(month=current.month + 1)
+
+    return months
 
 
 def get_month_name_fr(month_num) -> str:
@@ -128,7 +151,7 @@ def prepare_facture_context(request: HttpRequest, facture: Facture) -> tuple[Non
     return context, None
 
 
-def filter_by_date_range(
+def filter_by_month_range(
     queryset: QuerySet,
     date_field: str,
     date_start: Optional[str],
@@ -139,9 +162,9 @@ def filter_by_date_range(
     if date_start and date_end:
         try:
             # Convertir les chaînes de date en objets date
-            date_debut = datetime.strptime(date_start, '%Y-%m-%d').date()
-            date_fin = datetime.strptime(date_end, '%Y-%m-%d').date()
-            
+            date_debut, _ = get_month_range(date_start)
+            _, date_fin = get_month_range(date_end)
+
             # Créer le filtre dynamique
             filter_kwargs = {f"{date_field}__range": [date_debut, date_fin]}
             return (
@@ -151,12 +174,12 @@ def filter_by_date_range(
             )
         except ValueError:
             pass
-    
+
     # Si on arrive ici, soit les dates sont invalides, soit elles ne sont pas fournies
     if default_month is not None:
         filter_kwargs = {f"{date_field}__month": default_month}
         return queryset.filter(**filter_kwargs), None, None
-    
+
     return queryset, None, None
 
 
@@ -167,3 +190,24 @@ def montant_en_lettres(montant) -> str:
         return lettre[0].upper() + lettre[1:]
     except (ValueError, TypeError, AttributeError):
         return "Nombre invalide"
+
+
+def filter_by_user_role(request, queryset, filter_field) -> QuerySet:
+    """
+    Filtre un queryset en fonction du rôle de l'utilisateur.
+
+    Args:
+        request: La requête HTTP
+        queryset: Le queryset à filtrer
+        filter_field: Le champ à utiliser pour le filtrage (par défaut: 'contrats__cp_commune_id')
+
+    Returns:
+        QuerySet: Le queryset filtré selon le rôle de l'utilisateur
+    """
+    role = request.session.get('role_utilisateur')
+
+    if role in ['Releveur', 'Gestionnaire']:
+        cp_commune = request.session.get('cp_commune')
+        return queryset.filter(**{filter_field: cp_commune})
+
+    return queryset

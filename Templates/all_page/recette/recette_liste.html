@@ -9,7 +9,7 @@
                                name="datedeb" 
                                id="datedeb" 
                                class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
-                               value="{{ datedeb }}" 
+                               value="{{ datedeb|default:'' }}"
                                required>
                         <label for="datedeb">Mois de début</label>
                     </div>
@@ -102,90 +102,6 @@
             {% endfor %}
             </tbody>
         </table>
-
-        {% if recettes.has_other_pages %}
-        <div class="pagination mt-4">
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
-                    {% if recettes.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ recettes.previous_page_number }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}" aria-label="Précédent">
-                                <span aria-hidden="true">Précédent</span>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-hidden="true">Précédant</span>
-                        </li>
-                    {% endif %}
-
-                    {% with max_visible_pages=5 %}
-                        {% if recettes.paginator.num_pages > max_visible_pages %}
-                            {% if recettes.number > 2 %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page=1{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}">1</a>
-                                </li>
-                                {% if recettes.number > 3 %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link">...</span>
-                                    </li>
-                                {% endif %}
-                            {% endif %}
-                            
-                            {% for i in recettes.paginator.page_range %}
-                                {% if i >= recettes.number|add:'-2' and i <= recettes.number|add:'2' %}
-                                    {% if recettes.number == i %}
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ i }} <span class="sr-only">(actuel)</span></span>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ i }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}">{{ i }}</a>
-                                        </li>
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                            
-                            {% if recettes.number < recettes.paginator.num_pages|add:'-1' %}
-                                {% if recettes.number < recettes.paginator.num_pages|add:'-2' %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link">...</span>
-                                    </li>
-                                {% endif %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ recettes.paginator.num_pages }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}">{{ recettes.paginator.num_pages }}</a>
-                                </li>
-                            {% endif %}
-                        {% else %}
-                            {% for i in recettes.paginator.page_range %}
-                                {% if recettes.number == i %}
-                                    <li class="page-item active">
-                                        <span class="page-link">{{ i }} <span class="sr-only">(actuel)</span></span>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ i }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}">{{ i }}</a>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-
-                    {% if recettes.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ recettes.next_page_number }}{% if datedeb %}&datedeb={{ datedeb }}{% endif %}{% if datefin %}&datefin={{ datefin }}{% endif %}" aria-label="Suivant">
-                                <span aria-hidden="true">Suivant</span>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-hidden="true">Suivant</span>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-        </div>
-        {% endif %}
     </div>
 </div>
 

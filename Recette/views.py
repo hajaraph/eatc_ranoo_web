@@ -4,10 +4,9 @@ from django.utils import timezone
 from django.db.models import Sum
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from Login.views import role_requis
-from Rel_Compteur.utils import get_month_range, get_default_month_range
+from Rel_Compteur.utils import get_default_month_range, filter_by_month_range
 from Tenants.middleware import schema_use, SchemaAwareView
 from Tenants.models import Utilisateur
 from .models import Recette, TypeRecette
@@ -22,35 +21,22 @@ def recette(request):
     # Récupération des paramètres de date (format YYYY-MM)
     mois_debut = request.GET.get('datedeb')
     mois_fin = request.GET.get('datefin')
-    page = request.GET.get('page', 1)
 
     # Récupérer et filtrer les recettes
     recettes_qs = Recette.objects.all().select_related('type_recette', 'facture').order_by('date_encaissement')
 
-    date_debut = None
-    date_fin = None
-    try:
-        # Dates par défaut (mois en cours)
-        default_start, default_end = get_default_month_range(timezone.now())
-        
-        # Gestion des dates de début et fin
-        if mois_debut:
-            date_debut, _ = get_month_range(mois_debut)
-        else:
-            date_debut = default_start
-            mois_debut = date_debut.strftime('%Y-%m')
-            
-        if mois_fin:
-            _, date_fin = get_month_range(mois_fin)
-        else:
-            date_fin = default_end
-            mois_fin = date_fin.strftime('%Y-%m')
-            
-        # Appliquer le filtre
-        recettes_filtrees = recettes_qs.filter(date_encaissement__range=(date_debut, date_fin))
-        
-    except (ValueError, IndexError):
-        recettes_filtrees = recettes_qs.filter(date_encaissement__range=(date_debut, date_fin))
+    # Utilisation de la fonction utilitaire
+    recettes_filtrees, mois_debut, mois_fin = filter_by_month_range(
+        queryset=recettes_qs,
+        date_field='date_encaissement',
+        date_start=mois_debut,
+        date_end=mois_fin,
+        default_month=timezone.now().month  # Optionnel: mois par défaut
+    )
+
+    # Si les dates sont None (cas où le mois par défaut est utilisé)
+    if mois_debut is None or mois_fin is None:
+        date_debut, date_fin = get_default_month_range()
         mois_debut = date_debut.strftime('%Y-%m')
         mois_fin = date_fin.strftime('%Y-%m')
     
@@ -62,21 +48,6 @@ def recette(request):
     total_recettes_mois = recettes_filtrees.aggregate(total=Sum('montant'))['total'] or 0
     nombre_recettes = recettes_filtrees.count()
 
-    # Pagination avec préservation des paramètres de date
-    paginator = Paginator(recettes_filtrees, 10)
-
-    try:
-        recettes = paginator.page(page)
-        # Ajouter les paramètres de date à chaque numéro de page
-        if datedeb or datefin:
-            recettes.paginator.url_template = '?page={0}&datedeb={1}&datefin={2}'.format(
-                '{0}', datedeb, datefin
-            )
-    except PageNotAnInteger:
-        recettes = paginator.page(1)
-    except EmptyPage:
-        recettes = paginator.page(paginator.num_pages)
-
     context = {
         'title_recette_list': title_recette_list,
         'active_recette': active_recette,
@@ -86,7 +57,7 @@ def recette(request):
         'mois_actuel': timezone.now(),
         'total_recettes_mois': total_recettes_mois,
         'nombre_recettes': nombre_recettes,
-        'recettes': recettes,
+        'recettes': recettes_filtrees,
     }
 
     return render(request, 'all_page/recette/recette.html', context)

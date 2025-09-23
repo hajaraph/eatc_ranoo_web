@@ -23,22 +23,12 @@ from Login.views import role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 from Acommune.models import Province
 from Ranoo_Config.models import ConfigBranchement
-from Rel_Compteur.utils import get_previous_month, get_month_range
+from Rel_Compteur.utils import get_previous_month, get_month_range, get_default_month_range, filter_by_user_role
 from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
 from Recette.views import enregistrer_recette_paiement
 
 logger = logging.getLogger(__name__)
-
-def get_mois_courant():
-    now = datetime.now()
-    debut_mois = now.replace(day=1).date()
-    if now.month == 12:
-        fin_mois = now.replace(year=now.year + 1, month=1, day=1).date() - timedelta(days=1)
-    else:
-        fin_mois = now.replace(month=now.month + 1, day=1).date() - timedelta(days=1)
-
-    return debut_mois, fin_mois
 
 
 def date_range(request, model, datedeb, datefin, date_field, statut=None):
@@ -71,7 +61,6 @@ def date_range_fact_pdf(date_deb, date_fin, commune, model):
 
     return model.filter(filters)
 
-
 @schema_use
 def facture(request):
     title = 'Facturation | Etat Facture'
@@ -81,14 +70,17 @@ def facture(request):
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
 
+    # Filtrage par date si spécifié
     if datedeb and datefin:
         debut_mois, _ = get_month_range(datedeb)
         _, fin_mois = get_month_range(datefin)
         factures = date_range(request, Facture, debut_mois, fin_mois, 'date_facture')
     else:
-        debut_mois, fin_mois = get_mois_courant()
+        debut_mois, fin_mois = get_default_month_range()
         factures = Facture.objects.all().order_by('-date_facture')
-
+    
+    # Application du filtre par rôle après le filtrage par date
+    factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
 
     # Total des montants impayés du mois courant
     total_impaye_mois = factures.filter(
@@ -123,7 +115,7 @@ def facture(request):
                     else:
                         total_taxes_par_type[nom_taxe] = montant
             except Exception as e:
-                logger.error(f"Erreur lors du traitement des taxes pour la facture {facture_items.num_facture}: {str(e)}")
+                messages.error(request, f"Erreur lors du traitement des taxes pour la facture {facture_items.num_facture}: {str(e)}")
                 continue
 
     pronvince = Province.objects.order_by('province').all()
@@ -138,8 +130,8 @@ def facture(request):
         'total_paye_mois': total_paye_mois,
         'total_taxes_par_type': total_taxes_par_type,
         'provinces': pronvince,
-        'datedeb': datedeb if datedeb else '',
-        'datefin': datefin if datefin else '',
+        'datedeb': debut_mois,
+        'datefin': fin_mois,
         'impayer_exist': impayer_exist,
         'mois_actuel': datetime.now(),
     }
@@ -629,7 +621,7 @@ def generate_multiple_pages_pdf(request):
 
         # Si aucune date n'est fournie, utiliser le mois actuel pour les factures impayées
         if not date_deb and not date_fin:
-            date_deb, date_fin = get_mois_courant()
+            date_deb, date_fin = get_default_month_range()
 
         # Configuration des paramètres de performance
         batch_size = 4  # Taille des lots alignée sur le nombre de factures par page

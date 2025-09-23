@@ -16,15 +16,17 @@ from Login.views import role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
 from Acommune.models import Province, Commune
 from Tenants.middleware import schema_use, SchemaAwareView
+from Rel_Compteur.utils import filter_by_user_role
 
 
-@role_requis('Administrateur', 'Gestionnaire', 'Autre')
+@role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def client_liste(request):
     title = 'Clients | Liste'
     active = 'active'
     font = 'custom-font'
-    client = Client.objects.all().order_by('pk')
+
+    client = filter_by_user_role(request, Client.objects.all().order_by('pk'), 'cp_commune')
     province = Province.objects.order_by('region').all()
     context = {
         'title_liste': title,
@@ -190,7 +192,7 @@ class ClientDetail(SchemaAwareView):
         client.compte_actif = client_data['compte_actif']
         client.adresse_client = client_data['adresse_client']
         client.cp_commune_id = client_data['cp_commune']
-        client.pays_client = client_data['pays_client']
+        client.pays_client = client_data['pays_contrat']
         client.tel1_client = client_data['tel1_client']
         client.tel2_client = client_data['tel2_client']
         client.email_client = client_data['email_client']

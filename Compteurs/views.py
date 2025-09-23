@@ -17,7 +17,8 @@ from Facturation.views import facture_creation
 from Login.views import role_requis
 from Parametre.views import enregistre_historique, exporter_en_excel
 from Tenants.middleware import schema_use, SchemaAwareView
-from Rel_Compteur.utils import get_month_name_fr, get_previous_month
+from Rel_Compteur.utils import get_month_name_fr, get_previous_month, filter_by_user_role, \
+    get_3_months_range
 
 
 @schema_use
@@ -26,33 +27,25 @@ def compteur_liste(request):
     active = 'active'
     header = 'Liste Compteurs'
     font = 'custom-font'
-    # Pour recuperer tout les compteur et affciher leur dernier relever
-    if request.session.get('role_utilisateur') != 'Releveur':
-        # Récupération des derniers relevés
-        derniers_releves = ReleveCompteur.objects.filter(
-            num_compteur_id=OuterRef('pk')
-        ).order_by('-date_releve')
 
-        # Récupération des compteurs avec leurs contrats et clients associés
-        compteurs = list(
-            Compteur.objects.prefetch_related(
-                models.Prefetch('contrats', queryset=Contrat.objects.select_related('client'))
-            ).annotate(
-                dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
-            ).order_by('pk')
-        )
-    else:
-        cp_commune = request.session.get('cp_commune')
+    # Récupération des derniers relevés
+    derniers_releves = ReleveCompteur.objects.filter(
+        num_compteur_id=OuterRef('pk')
+    ).order_by('-date_releve')
 
-        derniers_releves = ReleveCompteur.objects.filter(
-            num_compteur_id=OuterRef('pk')
-        ).order_by('-date_releve')
+    # Récupération des compteurs avec leurs contrats et clients associés
+    compteurs_query = Compteur.objects.prefetch_related(
+        models.Prefetch('contrats', queryset=Contrat.objects.select_related('client'))
+    ).annotate(
+        dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
+    )
 
-        compteurs = list(
-            Compteur.objects.annotate(
-                dernier_releve=Subquery(derniers_releves.values('date_releve')[:1])
-            ).filter(contrats__cp_commune_id=cp_commune).order_by('num_compteur')
-        )
+    # Application du filtre par rôle
+    compteurs = filter_by_user_role(request, compteurs_query, 'contrats__cp_commune_id')
+    
+    # Conversion en liste et tri
+    compteurs = list(compteurs.order_by('num_compteur'))
+
     compteurs.sort(key=lambda x: int(x.num_compteur))
 
     provinces = Province.objects.all().order_by('province')
@@ -456,25 +449,6 @@ def export_compteur(request):
     return response
 
 
-def get_months_range(start_date, end_date):
-    """Génère une liste de tuples (année, mois) entre deux dates, avec un décalage d'un mois en arrière"""
-    months = []
-    current = start_date.replace(day=1)
-    end_date = end_date.replace(day=1)
-
-    while current <= end_date:
-        # Utiliser get_previous_month pour obtenir le mois précédent
-        prev_month = get_previous_month(current)
-        months.append((prev_month.year, prev_month.month))
-
-        # Passer au mois suivant
-        if current.month == 12:
-            current = current.replace(year=current.year + 1, month=1)
-        else:
-            current = current.replace(month=current.month + 1)
-
-    return months
-
 @schema_use
 def export_recouvrement(request):
     # Récupérer les paramètres de requête
@@ -499,7 +473,7 @@ def export_recouvrement(request):
         date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date()
 
     # Générer la liste des mois dans l'intervalle
-    months = get_months_range(date_debut, date_fin)
+    months = get_3_months_range(date_debut, date_fin)
 
     # Ajuster la date de fin pour inclure toute la journée
     date_fin = date_fin.replace(day=1, month=date_fin.month % 12 + 1) - timedelta(days=1) if date_fin.day == 1 else date_fin

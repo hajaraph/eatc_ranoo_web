@@ -33,8 +33,8 @@
                                 <div class="row filter-row">
                                     <div class="col-md-3 col-sm-6 mb-3">
                                         <div class="form-floating">
-                                            <select name="region" id="region" class="form-select">
-                                                <option value="" disabled selected hidden></option>
+                                            <select name="region" id="region" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                                                <option value="" disabled selected hidden>Selectionné une région</option>
                                                 {% for region in regions %}
                                                 <option value="{{ region.pk }}">{{ region.region }}</option>
                                                 {% endfor %}
@@ -44,13 +44,13 @@
                                     </div>
                                     <div class="col-md-3 col-sm-6 mb-3">
                                         <div class="form-floating">
-                                            <input type="date" name="date_deb" id="date_deb" class="form-control" value="{{ datedeb }}">
+                                            <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ datedeb }}">
                                             <label for="date_deb"><i class="fas fa-calendar-alt me-2"></i>Période du</label>
                                         </div>
                                     </div>
                                     <div class="col-md-3 col-sm-6 mb-3">
                                         <div class="form-floating">
-                                            <input type="date" name="date_fin" id="date_fin" class="form-control" value="{{ datefin }}">
+                                            <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ datefin }}">
                                             <label for="date_fin"><i class="fas fa-calendar-alt me-2"></i>au</label>
                                         </div>
                                     </div>
