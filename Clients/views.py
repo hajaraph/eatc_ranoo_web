@@ -190,6 +190,8 @@ class ClientDetail(SchemaAwareView):
         client.nom_client = client_data['nom_client']
         client.prenom_client = client_data['prenom_client']
         client.compte_actif = client_data['compte_actif']
+        client.profession_client = client_data['profession_client']
+        client.nb_personne_menage = client_data['nb_personne_menage']
         client.adresse_client = client_data['adresse_client']
         client.cp_commune_id = client_data['cp_commune']
         client.pays_client = client_data['pays_client']
