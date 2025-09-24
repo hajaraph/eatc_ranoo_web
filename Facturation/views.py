@@ -23,7 +23,8 @@ from Login.views import role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
 from Acommune.models import Province
 from Ranoo_Config.models import ConfigBranchement
-from Rel_Compteur.utils import get_previous_month, get_month_range, get_default_month_range, filter_by_user_role
+from Rel_Compteur.utils import get_previous_month, get_month_range, get_default_month_range, filter_by_user_role, \
+    filter_by_client_number
 from Tenants.middleware import schema_use
 from Tenants.models import Entreprise
 from Recette.views import enregistrer_recette_paiement
@@ -129,8 +130,8 @@ def facture(request):
         'total_paye_mois': total_paye_mois,
         'total_taxes_par_type': total_taxes_par_type,
         'provinces': pronvince,
-        'datedeb': debut_mois,
-        'datefin': fin_mois,
+        'datedeb': debut_mois.strftime('%Y-%m'),
+        'datefin': fin_mois.strftime('%Y-%m'),
         'client': Contrat.objects.all().order_by('client__num_client'),
         'mois_actuel': datetime.now(),
     }
@@ -617,6 +618,8 @@ def generate_multiple_pages_pdf(request):
         date_deb = request.GET.get('date_deb')
         date_fin = request.GET.get('date_fin')
         commune = request.GET.get('commune')
+        num_client_deb = request.GET.get('num_client_deb')
+        num_client_fin = request.GET.get('num_client_fin')
 
         # Si aucune date n'est fournie, utiliser le mois actuel pour les factures impayées
         if not date_deb and not date_fin:
@@ -635,11 +638,26 @@ def generate_multiple_pages_pdf(request):
             'montantht_set__montantttc'  # Relation OneToOneField vers MontantTTC
         ).order_by("num_contrat_id__adresse_contrat")
 
+        factures = filter_by_client_number(
+            queryset=factures,
+            client_field='num_contrat__client__num_client',
+            num_client_deb=num_client_deb,
+            num_client_fin=num_client_fin
+        )
+
         # Filtrage initial
         if date_deb and date_fin:
+            date_deb, _ = get_month_range(date_deb)
+            _, date_fin = get_month_range(date_fin)
             factures = factures.filter(date_facture__range=[date_deb, date_fin])
-        if commune:
-            factures = factures.filter(num_contrat__cp_commune=commune)
+
+        # Vérifier si une commune valide est sélectionnée
+        if not commune or commune.lower() == 'null':
+            messages.warning(request, "Veuillez sélectionner une commune")
+            return redirect('facture')
+
+        # Appliquer le filtre de commune
+        factures = factures.filter(num_contrat__cp_commune=commune)
 
         # Vérification des résultats
         factures = list(factures)  # Force l'évaluation de la requête

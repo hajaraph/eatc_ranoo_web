@@ -17,5 +17,5 @@ urlpatterns = [
     path('suppression/num_contrat=<str:pk>', supp_contrat, name='supp_contrat'),
     path('pdf/num_contrat=<str:pk>', genere_pdf_contrat, name='genere_pdf_contrat'),
     path('pdf/client', export_clients_pdf, name='export_clients_pdf'),
-    path('liste/num_client_deb=<int:num_client_deb>', liste_num_client_lte, name='liste_num_client_lte')
+    path('liste/num_client_deb=<str:num_client_deb>', liste_num_client_lte, name='liste_num_client_lte')
 ]
