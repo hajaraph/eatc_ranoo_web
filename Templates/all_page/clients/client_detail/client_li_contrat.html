@@ -1,4 +1,5 @@
-<input type="text" name="num_contrat" value="{{ detail_co.num_contrat }}" class="invisible" hidden>
+<input type="text" name="num_contrat" id="num_contrat" value="{{ detail_co.num_contrat }}" class="invisible" hidden>
+<label for="num_contrat" class="invisible" hidden></label>
 <div class="row">
     <div class="col-md-4">
         <div class="form-floating">
@@ -10,7 +11,7 @@
 <div class="row mt-4">
     <div class="col-md-4 col-sm-12 mt-4">
         <div class="form-floating">
-            <select name="province" id="province" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+            <select name="province" id="province" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
                 <option value="" selected hidden>{{ detail_co.cp_commune.region.province.province }}</option>
                 {% for province in provinces %}
                     <option value="{{ province.province }}">{{ province.province }}</option>
@@ -21,7 +22,7 @@
     </div>
     <div class="col-md-4 col-sm-12 mt-4">
         <div class="form-floating">
-            <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+            <select name="region" id="region" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
                 <option value="" selected hidden>{{ detail_co.cp_commune.region.region }}</option>
             </select>
             <label for="region">Région</label>
@@ -29,7 +30,7 @@
     </div>
     <div class="col-md-4 col-sm-12 mt-4">
         <div class="form-floating">
-            <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
+            <select name="commune" id="commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
                 <option value="{{ detail_co.cp_commune.cp_commune }}">{{ detail_co.cp_commune.commune }}</option>
             </select>
             <label for="commune">Commune</label>
@@ -60,7 +61,7 @@
         </div>
     </div>
 </div>
-<div class="card border-0 mt-4">
+<div class="border-0 mt-4">
     <div class="table-responsive">
         <table class="table">
             <thead>

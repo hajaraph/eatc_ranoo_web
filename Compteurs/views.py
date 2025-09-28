@@ -336,6 +336,16 @@ class ReleveMod(SchemaAwareView):
         compteur = Compteur.objects.get(relevecompteurs__id_releve=pk)
         dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
 
+        if not dernier_releve:
+            releve = compteur.relevecompteurs.get(pk=pk)
+            releve.date_releve = date_releve
+            releve.volume = volume
+            releve.conso = 0
+            releve.image_compteur = image_compteur
+            releve.save()
+            messages.success(request, f"Relevé enregistré avec succès !")
+            return redirect('compteur_detail', compteur.pk)
+
         if date_releve < dernier_releve.date_releve:
             messages.error(request, f"Veuillez fournir une date valide pour le relevé !")
             return redirect('releve_mod', pk)
