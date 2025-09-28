@@ -334,18 +334,22 @@ class ReleveMod(SchemaAwareView):
         volume = int(request.POST['volume'])
         image_compteur = request.FILES.get('image_compteur')
         compteur = Compteur.objects.get(relevecompteurs__id_releve=pk)
-        dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
 
-        if not dernier_releve:
+        releves = list(compteur.relevecompteurs.order_by('-id_releve'))
+        if len(releves) < 2:
+            # Cas où c'est le premier relevé
             releve = compteur.relevecompteurs.get(pk=pk)
             releve.date_releve = date_releve
             releve.volume = volume
             releve.conso = 0
-            releve.image_compteur = image_compteur
+            if image_compteur:  # Ne mettre à jour l'image que si une nouvelle est fournie
+                releve.image_compteur = image_compteur
             releve.save()
-            messages.success(request, f"Relevé enregistré avec succès !")
+            messages.success(request, "Relevé enregistré avec succès !")
             return redirect('compteur_detail', compteur.pk)
 
+        # Si on a au moins 2 relevés, on prend le deuxième le plus récent
+        dernier_releve = releves[1]
         if date_releve < dernier_releve.date_releve:
             messages.error(request, f"Veuillez fournir une date valide pour le relevé !")
             return redirect('releve_mod', pk)
