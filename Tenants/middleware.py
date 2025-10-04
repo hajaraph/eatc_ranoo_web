@@ -1,25 +1,13 @@
 from functools import wraps
+from typing import Any
 
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.views import View
 from django_tenants.utils import schema_exists, schema_context
-from rest_framework import status, exceptions
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.views import APIView
-
-
-class APIError(exceptions.APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = 'Une erreur est survenue.'
-    default_code = 'error'
-
-    def __init__(self, detail=None, code=None, status_code=None):
-        if status_code is not None:
-            self.status_code = status_code
-        if detail is not None:
-            self.detail = detail
-        if code is not None:
-            self.code = code
 
 from Tenants.models import Entreprise
 
@@ -29,10 +17,10 @@ def get_entreprise_and_schema(request, is_api=False):
     # Authentification
     if is_api:
         if not (hasattr(request, 'user') and request.user.is_authenticated):
-            return None, None, {
-                'detail': "Authentification requise.",
-                'status_code': status.HTTP_401_UNAUTHORIZED
-            }
+            return None, None, Response(
+                {"detail": "Authentification requise."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         entreprise_id = request.user.entreprise_id
     else:
         if not request.session.get('num_utilisateur'):
@@ -43,10 +31,10 @@ def get_entreprise_and_schema(request, is_api=False):
     # Vérification de l'entreprise
     if not entreprise_id:
         if is_api:
-            return None, None, {
-                'detail': "Aucune entreprise n'est associée à votre compte.",
-                'status_code': status.HTTP_403_FORBIDDEN
-            }
+            return None, None, Response(
+                {"detail": "Aucune entreprise n'est associée à votre compte."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         messages.error(request, "Aucune entreprise n'est associée à votre compte.")
         return None, None, redirect('authentification')
 
@@ -55,20 +43,20 @@ def get_entreprise_and_schema(request, is_api=False):
         schema_name = entreprise.schema_name
     except (Entreprise.DoesNotExist, AttributeError):
         if is_api:
-            return None, None, {
-                'detail': "Impossible de déterminer le schéma de l'entreprise.",
-                'status_code': status.HTTP_404_NOT_FOUND
-            }
+            return None, None, Response(
+                {"detail": "Impossible de déterminer le schéma de l'entreprise."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         messages.error(request, "Impossible de déterminer le schéma de l'entreprise.")
         return None, None, redirect('authentification')
 
     # Vérification du schéma
     if not schema_exists(schema_name):
         if is_api:
-            return None, None, {
-                'detail': "Le schéma associé à cette entreprise est inexistant.",
-                'status_code': status.HTTP_404_NOT_FOUND
-            }
+            return None, None, Response(
+                {"detail": "Le schéma associé à cette entreprise est inexistant."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         messages.error(request, "Le schéma associé à cette entreprise est inexistant.")
         return None, None, redirect('authentification')
 
@@ -114,20 +102,25 @@ class SchemaAwareView(View):
 
 class SchemaAwareAPIView(APIView):
     """Classe de base pour les APIView basées sur les schémas"""
-    def dispatch(self, request, *args, **kwargs):
-        try:
-            entreprise, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
-            if error_response:
-                raise APIError(
-                    detail=error_response['detail'],
-                    status_code=error_response['status_code']
-                )
 
-            with schema_context(schema_name):
-                return super().dispatch(request, *args, **kwargs)
-                
-        except exceptions.APIException as exc:
-            # Gestion des exceptions de l'API
-            response = self.handle_exception(exc)
-            self.response = self.finalize_response(request, response, *args, **kwargs)
-            return self.response
+    def __init__(self):
+        super().__init__()
+        self.format_kwarg = None
+
+    def dispatch(self, request, *args, **kwargs):
+        # Initialiser le renderer avant tout
+        self.format_kwarg = None
+        self.perform_authentication(request)
+        self.check_permissions(request)
+        self.check_throttles(request)
+
+        entreprise, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
+        if error_response:
+            # S'assurer que le renderer est configuré sur la réponse d'erreur
+            error_response.accepted_renderer = self.get_renderers()[0]
+            error_response.accepted_media_type = self.get_renderers()[0].media_type
+            error_response.renderer_context = self.get_renderer_context()
+            return error_response
+
+        with schema_context(schema_name):
+            return super().dispatch(request, *args, **kwargs)
