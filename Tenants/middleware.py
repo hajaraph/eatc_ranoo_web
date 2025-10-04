@@ -1,5 +1,4 @@
 from functools import wraps
-from typing import Any
 
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -16,11 +15,6 @@ def get_entreprise_and_schema(request, is_api=False):
     """Récupère l'entreprise et le schéma en fonction de la requête (API ou Web)"""
     # Authentification
     if is_api:
-        if not (hasattr(request, 'user') and request.user.is_authenticated):
-            return None, None, Response(
-                {"detail": "Authentification requise."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
         entreprise_id = request.user.entreprise_id
     else:
         if not request.session.get('num_utilisateur'):
@@ -102,26 +96,10 @@ class SchemaAwareView(View):
 
 class SchemaAwareAPIView(APIView):
     """Classe de base pour les APIView basées sur les schémas"""
-
     def dispatch(self, request, *args, **kwargs):
-        """Handle the request with proper schema context"""
-        # Gardons une référence à la requête HTTP originale
-        original_request = request
-
-        # Initialisation de la requête DRF après avoir vérifié le schéma
-        entreprise, schema_name, error_response = get_entreprise_and_schema(original_request, is_api=True)
+        entreprise, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
         if error_response:
-            error_response.accepted_renderer = self.get_renderers()[0]
-            error_response.accepted_media_type = self.get_renderers()[0].media_type
-            error_response.renderer_context = self.get_renderer_context()
             return error_response
 
         with schema_context(schema_name):
-            # Initialisation de la requête DRF seulement après la vérification du schéma
-            request = super().initialize_request(original_request, *args, **kwargs)
-            self.request = request
-            self.args = args
-            self.kwargs = kwargs
-
-            response = super().dispatch(request, *args, **kwargs)
-            return self.finalize_response(request, response, *args, **kwargs)
+            return super().dispatch(request, *args, **kwargs)
