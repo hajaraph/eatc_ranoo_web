@@ -104,6 +104,10 @@ class SchemaAwareAPIView(APIView):
     def dispatch(self, request, *args, **kwargs):
         entreprise, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
         if error_response:
+            # On utilise la méthode initialize_request pour s'assurer que la requête est correctement initialisée
+            request = self.initialize_request(request, *args, **kwargs)
+            # On s'assure que le renderer est correctement configuré
+            self.initial(request, *args, **kwargs)
             return error_response
 
         with schema_context(schema_name):
