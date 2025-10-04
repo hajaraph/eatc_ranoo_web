@@ -103,25 +103,25 @@ class SchemaAwareView(View):
 class SchemaAwareAPIView(APIView):
     """Classe de base pour les APIView basées sur les schémas"""
 
-    def initialize_request(self, request, *args, **kwargs):
-        """Initialize the request properly for DRF"""
-        request = super().initialize_request(request, *args, **kwargs)
-        return request
-
     def dispatch(self, request, *args, **kwargs):
         """Handle the request with proper schema context"""
-        request = self.initialize_request(request, *args, **kwargs)
-        self.request = request
-        self.args = args
-        self.kwargs = kwargs
+        # Gardons une référence à la requête HTTP originale
+        original_request = request
 
-        entreprise, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
+        # Initialisation de la requête DRF après avoir vérifié le schéma
+        entreprise, schema_name, error_response = get_entreprise_and_schema(original_request, is_api=True)
         if error_response:
             error_response.accepted_renderer = self.get_renderers()[0]
             error_response.accepted_media_type = self.get_renderers()[0].media_type
             error_response.renderer_context = self.get_renderer_context()
-            return self.finalize_response(request, error_response, *args, **kwargs)
+            return error_response
 
         with schema_context(schema_name):
+            # Initialisation de la requête DRF seulement après la vérification du schéma
+            request = super().initialize_request(original_request, *args, **kwargs)
+            self.request = request
+            self.args = args
+            self.kwargs = kwargs
+
             response = super().dispatch(request, *args, **kwargs)
             return self.finalize_response(request, response, *args, **kwargs)
