@@ -38,9 +38,9 @@ def client_liste(request):
     return render(request, 'all_page/clients/content_client.html', context)
 
 
-def extract_client_data(request):
+def extract_client_data(request) -> dict:
     return {
-        'num_client': request.POST.get('id_client'),  # Utilisation de .get() au lieu de []
+        'num_client': request.POST.get('id_client'),
         'nom_client': request.POST['nom_client'],
         'prenom_client': request.POST.get('prenom_client'),
         'profession_client': request.POST.get('profession_client'),
@@ -57,7 +57,7 @@ def extract_client_data(request):
     }
 
 
-def extract_contrat_data(request):
+def extract_contrat_data(request) -> dict:
     return {
         'adresse_contrat': request.POST['adresse_contrat'],
         'cp_commune': request.POST['commune'],
@@ -154,7 +154,7 @@ class ClientNew(SchemaAwareView):
 class ClientDetail(SchemaAwareView):
     @staticmethod
     @role_requis('Administrateur', 'Gestionnaire')
-    def get(request, pk, *args, **kwargs):
+    def get(request, pk):
         client_detail = Client.objects.get(pk=pk)
         pieces_client = client_detail.piececlients.all()
         contrat = client_detail.contrats.exists()
@@ -179,7 +179,7 @@ class ClientDetail(SchemaAwareView):
 
     @staticmethod
     @role_requis('Administrateur', 'Gestionnaire')
-    def post(request, pk, *args, **kwargs):
+    def post(request, pk):
         client_data = extract_client_data(request)
         client = Client.objects.get(pk=pk)
         historique = (f"Client ID {client.pk} - Modification des informations pour {client.nom_client} "

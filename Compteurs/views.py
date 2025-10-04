@@ -1,5 +1,7 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, date
+
+from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.db import models
 from django.db.models import OuterRef, Subquery
@@ -377,7 +379,6 @@ def del_releve(request, pk):
 
 @schema_use
 def export_fiche_releve(request):
-    # Récupérer le paramètre de filtre par commune
     commune_id = request.GET.get('commune')
     num_client_deb = request.GET.get('num_client_deb')
     num_client_fin = request.GET.get('num_client_fin')
@@ -407,32 +408,47 @@ def export_fiche_releve(request):
     contrats = contrats_query.all()
 
     # Préparer les données pour le template
+    aujourdhui = date.today()
+    mois_precedent = aujourdhui - relativedelta(months=1)
+
+    # Préparer les données pour le template
     data = []
     for contrat in contrats:
         compteur = contrat.num_compteur
         if not compteur:
             continue
 
-        # Récupérer les relevés triés par date décroissante
-        releves = list(compteur.relevecompteurs.all().order_by('-date_releve'))
-        dernier_releve = releves[0] if releves else None
-        avant_dernier_releve = releves[1] if len(releves) > 1 else None
+        # Récupérer le relevé du mois actuel
+        releve_actuel = compteur.relevecompteurs.filter(
+            date_releve__year=aujourdhui.year,
+            date_releve__month=aujourdhui.month
+        ).order_by('-date_releve').first()
+
+        # Récupérer le relevé du mois précédent
+        releve_precedent = compteur.relevecompteurs.filter(
+            date_releve__year=mois_precedent.year,
+            date_releve__month=mois_precedent.month
+        ).order_by('-date_releve').first()
+
+        # Si pas de relevé ce mois-ci, on prend le plus récent
+        if not releve_actuel:
+            releve_actuel = compteur.relevecompteurs.order_by('-date_releve').first()
 
         # Calculer la consommation
         conso = 0
-        if dernier_releve and avant_dernier_releve:
-            conso = dernier_releve.volume - avant_dernier_releve.volume
-        elif dernier_releve:
-            conso = dernier_releve.volume
+        if releve_actuel and releve_precedent:
+            conso = releve_actuel.volume - releve_precedent.volume
+        elif releve_actuel:
+            conso = releve_actuel.volume
 
         data.append({
             'num_client': contrat.client.num_client,
-            'num': compteur.num_compteur,
             'nom_client': f"{contrat.client.nom_client} {contrat.client.prenom_client or ''}".strip(),
             'adresse': contrat.adresse_contrat,
-            'ancien_releve': avant_dernier_releve.volume if avant_dernier_releve else 0,
+            'ancien_releve': releve_precedent.volume if releve_precedent else 0,
             'conso': conso,
-            'type_client': contrat.client.type_client.designation_client if contrat.client and contrat.client.type_client else ''
+            'type_client': contrat.client.type_client.designation_client if contrat.client and contrat.client.type_client else '',
+            'date_releve': releve_actuel.date_releve if releve_actuel else 'N/A'
         })
 
     # Récupérer le nom de la commune pour le titre

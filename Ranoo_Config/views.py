@@ -348,6 +348,11 @@ class TarifNew(SchemaAwareView):
         nb_jour_echeance_fct = int(request.POST['nb_jour_echeance_fct'])
         prix_location_compteur = request.POST['prix_location_compteur']
 
+        cp_commune_tarif = Tarif.objects.filter(cp_commune_id=cp_commune).exists()
+        if cp_commune_tarif:
+            messages.warning(request, f'Le commune {cp_commune} a déjà un Tarif!')
+            return redirect('tarif_nouveau')
+
         prix_m3 = [
             {
                 "id": branchements.id_config_branchement,
