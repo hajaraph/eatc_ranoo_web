@@ -103,24 +103,25 @@ class SchemaAwareView(View):
 class SchemaAwareAPIView(APIView):
     """Classe de base pour les APIView basées sur les schémas"""
 
-    def __init__(self):
-        super().__init__()
-        self.format_kwarg = None
+    def initialize_request(self, request, *args, **kwargs):
+        """Initialize the request properly for DRF"""
+        request = super().initialize_request(request, *args, **kwargs)
+        return request
 
     def dispatch(self, request, *args, **kwargs):
-        # Initialiser le renderer avant tout
-        self.format_kwarg = None
-        self.perform_authentication(request)
-        self.check_permissions(request)
-        self.check_throttles(request)
+        """Handle the request with proper schema context"""
+        request = self.initialize_request(request, *args, **kwargs)
+        self.request = request
+        self.args = args
+        self.kwargs = kwargs
 
         entreprise, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
         if error_response:
-            # S'assurer que le renderer est configuré sur la réponse d'erreur
             error_response.accepted_renderer = self.get_renderers()[0]
             error_response.accepted_media_type = self.get_renderers()[0].media_type
             error_response.renderer_context = self.get_renderer_context()
-            return error_response
+            return self.finalize_response(request, error_response, *args, **kwargs)
 
         with schema_context(schema_name):
-            return super().dispatch(request, *args, **kwargs)
+            response = super().dispatch(request, *args, **kwargs)
+            return self.finalize_response(request, response, *args, **kwargs)
