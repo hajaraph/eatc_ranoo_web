@@ -13,10 +13,11 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
 
 from Clients.models import Contrat
 from Parametre.views import enregistre_historique
-from Tenants.middleware import schema_use_api, SchemaAwareAPIView
+from Tenants.middleware import schema_use_api
 
 from .serializer import MissionSerializer
 from Tasks.tasks import TaskMission, process_compteur_details, TaskFactureDetail
@@ -145,10 +146,12 @@ async def relever_client(request):
         return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
 
 
-class Missions(SchemaAwareAPIView):
+class Missions(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
     @staticmethod
+    @schema_use_api
     @async_to_sync
     async def get(request):
         logger.info("Début get")
@@ -168,6 +171,7 @@ class Missions(SchemaAwareAPIView):
             return Response({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
+    @schema_use_api
     @async_to_sync
     async def post(request):
         logger.info("Début de la requête POST /api/missions")
@@ -253,11 +257,12 @@ class Missions(SchemaAwareAPIView):
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class FactureDetail(SchemaAwareAPIView):
+class FactureDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     @staticmethod
+    @schema_use_api
     @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
     async def get(request):
         id_releve = request.GET.get('id_releve')
@@ -282,6 +287,7 @@ class FactureDetail(SchemaAwareAPIView):
             return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
 
     @staticmethod
+    @schema_use_api
     @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
     async def post(request):
         id_releve = request.data.get('relevecompteur_id')

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class DeclareMaincourate(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     @staticmethod
     @schema_use_api
@@ -79,7 +80,6 @@ class DeclareMaincourate(APIView):
         return response
 
     @staticmethod
-    @parser_classes((MultiPartParser, FormParser, JSONParser))
     @schema_use_api
     @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
     async def post(request):
