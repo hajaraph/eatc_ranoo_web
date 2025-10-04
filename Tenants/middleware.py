@@ -102,7 +102,7 @@ class SchemaAwareView(View):
 class SchemaAwareAPIView(APIView):
     """Classe de base pour les APIView basées sur les schémas"""
     def dispatch(self, request, *args, **kwargs):
-        entreprise, schema_name, error_response = get_entreprise_and_schema(request)
+        entreprise, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
         if error_response:
             return error_response
 

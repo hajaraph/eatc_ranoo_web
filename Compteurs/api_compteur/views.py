@@ -13,7 +13,6 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
 
 from Clients.models import Contrat
 from Parametre.views import enregistre_historique
@@ -146,12 +145,11 @@ async def relever_client(request):
         return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
 
 
-class Missions(APIView):
+class Missions(SchemaAwareAPIView):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
     @staticmethod
-    @schema_use_api
     @async_to_sync
     async def get(request):
         logger.info("Début get")
@@ -171,7 +169,6 @@ class Missions(APIView):
             return Response({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
-    @schema_use_api
     @async_to_sync
     async def post(request):
         logger.info("Début de la requête POST /api/missions")
