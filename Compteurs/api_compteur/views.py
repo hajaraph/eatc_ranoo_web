@@ -146,7 +146,6 @@ async def relever_client(request):
 
 
 class Missions(SchemaAwareAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
     @staticmethod

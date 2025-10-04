@@ -15,6 +15,11 @@ def get_entreprise_and_schema(request, is_api=False):
     """Récupère l'entreprise et le schéma en fonction de la requête (API ou Web)"""
     # Authentification
     if is_api:
+        if not hasattr(request, 'user') or not request.user.is_authenticated:
+            return None, None, Response(
+                {"detail": "Authentification requise."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         entreprise_id = request.user.entreprise_id
     else:
         if not request.session.get('num_utilisateur'):
