@@ -78,7 +78,7 @@ def facture(request):
         factures = date_range(request, Facture, debut_mois, fin_mois, 'date_facture')
     else:
         debut_mois, fin_mois = get_default_month_range()
-        factures = Facture.objects.all().order_by('-date_facture', 'num_contrat__num_compteur')
+        factures = Facture.objects.all()
 
     # Application du filtre par rôle après le filtrage par date
     factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
@@ -120,6 +120,8 @@ def facture(request):
                 continue
 
     pronvince = Province.objects.order_by('province').all()
+    factures = list(factures.order_by('-date_facture', 'num_contrat__num_compteur__num_compteur'))
+    factures.sort(key=lambda x: int(x.num_contrat.num_compteur_id))
 
     context = {
         'title_etat': title,
