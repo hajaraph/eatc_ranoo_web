@@ -13,7 +13,6 @@ class Compteur(models.Model):
     modele_compteur = models.CharField(max_length=100, blank=True, null=True)
     DN_compteur = models.CharField(max_length=100, blank=True, null=True)
     origin_compteur = models.CharField(max_length=100, blank=True, null=True)
-    hors_service = models.BooleanField(default=False)
 
 
 class ReleveCompteur(models.Model):
