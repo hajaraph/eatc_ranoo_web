@@ -120,8 +120,11 @@ def facture(request):
                 continue
 
     pronvince = Province.objects.order_by('province').all()
-    factures = list(factures.order_by('-date_facture', 'num_contrat__num_compteur__num_compteur'))
-    factures.sort(key=lambda x: int(x.num_contrat.num_compteur_id))
+    # Trier d'abord par date (décroissant) puis par numéro de compteur (croissant)
+    factures = sorted(
+        factures,
+        key=lambda x: (-x.date_facture.toordinal(), int(x.num_contrat.num_compteur.num_compteur))
+    )
 
     context = {
         'title_etat': title,
