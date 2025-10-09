@@ -90,7 +90,7 @@ class Authentification(View):
                         # La session expirera immédiatement
                         request.session.set_expiry(0)
 
-                    if utilisateur.role.role == 'Releveur':
+                    if utilisateur.role.role in ['Releveur', 'Gestionnaire']:
                         request.session['cp_commune'] = utilisateur.cp_commune_id
                         return redirect('compteur_list')
                     else:

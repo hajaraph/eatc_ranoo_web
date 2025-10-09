@@ -13,11 +13,12 @@ from Login.views import role_requis
 from Main_Courante.models import StatutMC
 from Acommune.models import Region, Commune
 from Tenants.middleware import schema_use
+from Rel_Compteur.utils import filter_by_user_role
 
 
 @role_requis('Administrateur', 'Gestionnaire', 'Autre')
 @schema_use
-def tableau_bord(request, *args, **kwargs):
+def tableau_bord(request):
     font = 'custom-font'
     region = request.GET.get('region')
     date_deb = request.GET.get('date_deb')
@@ -27,6 +28,7 @@ def tableau_bord(request, *args, **kwargs):
     annee_actuelle = date_actuelle.year
     regions = Region.objects.all()
 
+    # Requêtes initiales avec filtre par rôle
     commune = Commune.objects.filter(
         contrat__num_compteur__relevecompteurs__date_releve__year=annee_actuelle
     ).annotate(
@@ -34,51 +36,74 @@ def tableau_bord(request, *args, **kwargs):
     ).exclude(total_conso=0)
     factures = Facture.objects.filter(date_facture__year=annee_actuelle)
     main_courante = StatutMC.objects.filter(date_status__year=annee_actuelle)
-
     chiffres = Paiement.objects.all()
+    
+    # Application du filtre par rôle
+    commune = filter_by_user_role(request, commune, 'contrats__cp_commune_id')
+    factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
+    chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
 
     if region:
+        # Filtrage par région avec filtre par rôle
         commune = Commune.objects.filter(
-            region_id=region).annotate(
+            region_id=region
+        ).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
-
         factures = Facture.objects.filter(num_contrat__cp_commune__region=region)
         chiffres = Paiement.objects.filter(facture__num_contrat__cp_commune__region=region)
+        
+        # Application du filtre par rôle
+        commune = filter_by_user_role(request, commune, 'contrats__cp_commune_id')
+        factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
+        chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
 
     elif date_deb and date_fin:
+        # Filtrage par date avec filtre par rôle
         commune = Commune.objects.filter(
             contrat__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]
         ).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
-
         factures = Facture.objects.filter(date_facture__range=[date_deb, date_fin])
         main_courante = StatutMC.objects.filter(date_status__range=[date_deb, date_fin])
         chiffres = Paiement.objects.filter(facture__relevecompteur__date_releve__range=[date_deb, date_fin])
+        
+        # Application du filtre par rôle
+        commune = filter_by_user_role(request, commune, 'contrats__cp_commune_id')
+        factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
+        chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
 
     elif region and date_deb and date_fin:
+        # Filtrage par région et date avec filtre par rôle
         date_deb = datetime.strptime(date_deb, '%Y-%m-%d').date() if isinstance(date_deb, str) else date_deb
         date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date() if isinstance(date_fin, str) else date_fin
         date_fin_plus_one = date_fin + timedelta(days=1)
+        
+        # Filtrage par région et date
         commune = Commune.objects.filter(
             region_id=region,
-            contrat__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin_plus_one]).annotate(
+            contrat__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin_plus_one]
+        ).annotate(
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
-
         factures = Facture.objects.filter(
             num_contrat__cp_commune__region=region,
             date_facture__range=[date_deb, date_fin]
         )
-
         chiffres = Paiement.objects.filter(
             facture__num_contrat__cp_commune__region=region,
             facture__relevecompteur__date_releve__range=[date_deb, date_fin]
         )
+        
+        # Application du filtre par rôle
+        commune = filter_by_user_role(request, commune, 'contrats__cp_commune_id')
+        factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
+        chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
 
     commune = commune.annotate(
-        total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0)))
+        total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
+    )
     commune = commune.exclude(total_conso=0)
     chiffres = chiffres.aggregate(Sum('montant_payer'))['montant_payer__sum'] or 0
     chiffres = round(chiffres, 2)
