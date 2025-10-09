@@ -39,7 +39,6 @@ def tableau_bord(request):
     chiffres = Paiement.objects.all()
     
     # Application du filtre par rôle
-    commune = filter_by_user_role(request, commune, 'contrats__cp_commune_id')
     factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
     chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
 
@@ -54,7 +53,6 @@ def tableau_bord(request):
         chiffres = Paiement.objects.filter(facture__num_contrat__cp_commune__region=region)
         
         # Application du filtre par rôle
-        commune = filter_by_user_role(request, commune, 'contrats__cp_commune_id')
         factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
         chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
 
@@ -70,7 +68,6 @@ def tableau_bord(request):
         chiffres = Paiement.objects.filter(facture__relevecompteur__date_releve__range=[date_deb, date_fin])
         
         # Application du filtre par rôle
-        commune = filter_by_user_role(request, commune, 'contrats__cp_commune_id')
         factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
         chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
 
@@ -96,8 +93,6 @@ def tableau_bord(request):
             facture__relevecompteur__date_releve__range=[date_deb, date_fin]
         )
         
-        # Application du filtre par rôle
-        commune = filter_by_user_role(request, commune, 'contrats__cp_commune_id')
         factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
         chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
 
