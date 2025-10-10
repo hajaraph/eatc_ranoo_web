@@ -29,7 +29,7 @@ class ProfileModifier(SchemaAwareView):
 
     template_name = 'all_page/parametre/parametre.html'
 
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def get(self, request):
         titre = 'Parametre | Profile'
         active = 'active'
@@ -42,7 +42,7 @@ class ProfileModifier(SchemaAwareView):
         return render(request, self.template_name, contexte)
 
     @staticmethod
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def post(request):
         utilisateur = Utilisateur.objects.get(pk=request.session.get('id_utilisateur'))
         num_utilisateur = utilisateur.num_utilisateur
@@ -109,7 +109,7 @@ class ChangerMotdePasse(SchemaAwareView):
         return render(request, self.template_name, contexte)
 
     @staticmethod
-    @role_requis('Administrateur', 'Gestionnaire')
+    @role_requis('Administrateur')
     def post(request):
         ancien_motpasse = request.POST.get('ancien_motpasse')
         nouveau_motpasse = request.POST.get('nouveau_motpasse')

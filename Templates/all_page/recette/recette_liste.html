@@ -77,6 +77,7 @@
                     <th>Date d'encaissement</th>
                     <th>Montant</th>
                     <th>N°Facture</th>
+                    <th>Utilisateur</th>
                     {% if request.session.role_utilisateur == 'Administrateur' %}
                     <th>Action</th>
                     {% endif %}
@@ -91,6 +92,7 @@
                     <td>{{ trans.date_encaissement|date:"d/m/Y" }}</td>
                     <td>{{ trans.montant }} Ar</td>
                     <td>{{ trans.facture.num_facture|default:"-" }}</td>
+                    <td>{{ trans.cree_par.nom }} {{ trans.cree_par.prenom }}</td>
                     {% if request.session.role_utilisateur == 'Administrateur' %}
                     <td>
                         <a href="{% url 'recette_suppression' trans.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce recette {{ trans.reference }} ?');">
