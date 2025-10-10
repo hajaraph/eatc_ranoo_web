@@ -92,7 +92,7 @@ class Authentification(View):
 
                     if utilisateur.role.role in ['Releveur', 'Gestionnaire']:
                         request.session['cp_commune'] = utilisateur.cp_commune_id
-                        return redirect('compteur_list')
+                        return redirect('tableau_bord')
                     else:
                         return redirect('tableau_bord')
                 else:

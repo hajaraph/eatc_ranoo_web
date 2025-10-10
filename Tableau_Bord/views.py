@@ -38,9 +38,11 @@ def tableau_bord(request):
     main_courante = StatutMC.objects.filter(date_status__year=annee_actuelle)
     chiffres = Paiement.objects.all()
     
-    # Application du filtre par rôle
+    # Application du filtre par rôle sur TOUS les querysets
     factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
     chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
+    main_courante = filter_by_user_role(request, main_courante, 'main_courante__cp_commune_id')
+    commune = filter_by_user_role(request, commune, 'contrat__cp_commune_id')
 
     if region:
         # Filtrage par région avec filtre par rôle
@@ -50,11 +52,14 @@ def tableau_bord(request):
             total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
         )
         factures = Facture.objects.filter(num_contrat__cp_commune__region=region)
+        main_courante = StatutMC.objects.filter(main_courante__cp_commune__region=region)
         chiffres = Paiement.objects.filter(facture__num_contrat__cp_commune__region=region)
         
-        # Application du filtre par rôle
+        # Application du filtre par rôle sur TOUS les querysets
         factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
         chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
+        main_courante = filter_by_user_role(request, main_courante, 'main_courante__cp_commune_id')
+        commune = filter_by_user_role(request, commune, 'contrat__cp_commune_id')
 
     elif date_deb and date_fin:
         # Filtrage par date avec filtre par rôle
@@ -67,9 +72,11 @@ def tableau_bord(request):
         main_courante = StatutMC.objects.filter(date_status__range=[date_deb, date_fin])
         chiffres = Paiement.objects.filter(facture__relevecompteur__date_releve__range=[date_deb, date_fin])
         
-        # Application du filtre par rôle
+        # Application du filtre par rôle sur TOUS les querysets
         factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
         chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
+        main_courante = filter_by_user_role(request, main_courante, 'main_courante__cp_commune_id')
+        commune = filter_by_user_role(request, commune, 'contrat__cp_commune_id')
 
     elif region and date_deb and date_fin:
         # Filtrage par région et date avec filtre par rôle
@@ -88,13 +95,20 @@ def tableau_bord(request):
             num_contrat__cp_commune__region=region,
             date_facture__range=[date_deb, date_fin]
         )
+        main_courante = StatutMC.objects.filter(
+            main_courante__cp_commune__region=region,
+            date_status__range=[date_deb, date_fin]
+        )
         chiffres = Paiement.objects.filter(
             facture__num_contrat__cp_commune__region=region,
             facture__relevecompteur__date_releve__range=[date_deb, date_fin]
         )
         
+        # Application du filtre par rôle sur TOUS les querysets
         factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
         chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
+        main_courante = filter_by_user_role(request, main_courante, 'main_courante__cp_commune_id')
+        commune = filter_by_user_role(request, commune, 'contrat__cp_commune_id')
 
     commune = commune.annotate(
         total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso'), Value(0))
@@ -153,13 +167,21 @@ def tableau_bord(request):
         .order_by('annee', 'mois', 'type_client')
     )
 
-    # Appliquer les filtres région et date
+    # Appliquer le filtre par rôle sur factures_par_type_client
+    factures_par_type_client = filter_by_user_role(request, factures_par_type_client, 'num_contrat__cp_commune_id')
+
+    # Appliquer les mêmes filtres que pour les autres données
     if region:
         factures_par_type_client = factures_par_type_client.filter(
             num_contrat__cp_commune__region=region
         )
     if date_deb and date_fin:
         factures_par_type_client = factures_par_type_client.filter(
+            date_facture__range=[date_deb, date_fin]
+        )
+    if region and date_deb and date_fin:
+        factures_par_type_client = factures_par_type_client.filter(
+            num_contrat__cp_commune__region=region,
             date_facture__range=[date_deb, date_fin]
         )
 
@@ -203,16 +225,19 @@ def tableau_bord(request):
         )
     ).filter(conso_mensuelle__gt=0).order_by('annee', 'mois', 'designation_client')
 
+    # Appliquer le filtre par rôle sur types_client_conso
+    types_client_conso = filter_by_user_role(request, types_client_conso, 'clients__contrats__cp_commune_id')
+
     # Appliquer les mêmes filtres que pour les autres données
     if region:
         types_client_conso = types_client_conso.filter(
             clients__contrats__cp_commune__region=region
         )
-    elif date_deb and date_fin:
+    if date_deb and date_fin:
         types_client_conso = types_client_conso.filter(
             clients__contrats__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]
         )
-    elif region and date_deb and date_fin:
+    if region and date_deb and date_fin:
         types_client_conso = types_client_conso.filter(
             clients__contrats__cp_commune__region=region,
             clients__contrats__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]
@@ -230,6 +255,9 @@ def tableau_bord(request):
         nb_client_actuelle=Count('client')
     )
 
+    # Appliquer le filtre par rôle sur contrats_annee_actuelle
+    contrats_annee_actuelle = filter_by_user_role(request, contrats_annee_actuelle, 'cp_commune_id')
+
     # pour recuperé les nombres de client lié à un contrat pour l'année precedant
     contrats_annee_prec = Contrat.objects.filter(
         date_debut__year=date_precedant.year
@@ -239,8 +267,27 @@ def tableau_bord(request):
         nb_client_prec=Count('client')
     )
 
+    # Appliquer le filtre par rôle sur contrats_annee_prec
+    contrats_annee_prec = filter_by_user_role(request, contrats_annee_prec, 'cp_commune_id')
+
+    # Appliquer les mêmes filtres que pour les autres données
+    if region:
+        contrats_annee_actuelle = contrats_annee_actuelle.filter(
+            cp_commune__region=region
+        )
+        contrats_annee_prec = contrats_annee_prec.filter(
+            cp_commune__region=region
+        )
+    if date_deb and date_fin:
+        contrats_annee_actuelle = contrats_annee_actuelle.filter(
+            date_debut__range=[date_deb, date_fin]
+        )
+        contrats_annee_prec = contrats_annee_prec.filter(
+            date_debut__range=[date_precedant.replace(month=1, day=1), date_precedant.replace(month=12, day=31)]
+        )
+
     # Pour obtenir seulement l'année precedant de notre requete precedant
-    # annee_contrat_prec = contrats_annee_prec[0]['annee_contrat_prec'] if contrats_annee_prec else 0
+    annee_contrat_prec = contrats_annee_prec[0]['annee_contrat_prec'] if contrats_annee_prec else 0
 
     # Pour obtenir le nombre de contrats pour l'année precedant depuis notre requete precedanat
     nb_client_prec = contrats_annee_prec[0]['nb_client_prec'] if contrats_annee_prec else 0

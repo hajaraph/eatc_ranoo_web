@@ -39,10 +39,15 @@
                 </div>
             </div>
         <div class="d-flex justify-content-between mt-5">
-            <label for="compte_actif">
-                <input type="checkbox" name="compte_actif" id="compte_actif" value="True" class="form-check-label" {% if detail.compte_actif %} checked {% endif %}>
-                Compte actif
-            </label>
+            <div class="d-flex flex-column">
+                <label for="compte_actif">
+                    <input type="checkbox" name="compte_actif" id="compte_actif" value="True" class="form-check-label" {% if detail.compte_actif %} checked {% endif %}>
+                    Compte actif
+                </label>
+                <small class="form-text text-muted mt-1">
+                    <em>Cochez cette option si le client est encore abonné. Décochez-la si le client a résilié son abonnement.</em>
+                </small>
+            </div>
             <button class="btn btn-success " type="submit" onclick="return confirm('Êtes-vous sûr de vouloir Sauvegarder la modification ?')">
                 <i class="fas fa-save"></i>
                 Enregistrer

@@ -83,6 +83,7 @@ class ClientNew(SchemaAwareView):
         }
         return render(request, 'all_page/clients/content_client.html', context)
 
+
     @staticmethod
     @role_requis('Administrateur', 'Gestionnaire')
     def post(request):
@@ -101,13 +102,26 @@ class ClientNew(SchemaAwareView):
                 if client_existant:
                     messages.warning(request, f'Le numéro Client {num_client} existe déjà dans cette commune !')
                     return redirect('client_new')
+            else:
+                # Générer automatiquement un numéro client à 4 chiffres
+                import random
+                while True:
+                    # Générer un nombre aléatoire à 4 chiffres
+                    num_client_genere = str(random.randint(1, 9999))
 
-            tel1_value = client_data['tel1_client']
-            if tel1_value:  # Ne vérifie que si tel1_client n'est pas None ou ''
-                tel = Client.objects.filter(tel1_client=tel1_value)
-                if tel.exists():
-                    messages.warning(request, f'Téléphone 1 déjà utilisé par un client !')
-                    return redirect('client_new')
+                    # Vérifier s'il existe déjà dans cette commune
+                    client_existant = Client.objects.filter(
+                        num_client=num_client_genere,
+                        cp_commune_id=client_data['cp_commune']
+                    ).exists()
+
+                    if not client_existant:
+                        # Numéro unique trouvé, on l'utilise
+                        num_client = num_client_genere
+                        break
+
+                # Mettre à jour le client_data avec le numéro généré
+                client_data['num_client'] = num_client
 
             tel2_value = client_data['tel2_client']
             if tel2_value:  # Ne vérifie que si tel2_client n'est pas None ou ''

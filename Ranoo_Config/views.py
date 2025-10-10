@@ -76,7 +76,7 @@ class NouvelUtilisateur(SchemaAwareView):
                     'entreprise_id': request.session.get('entreprise'),
                     'role_id': role_id
                 }
-                if role_id not in [1, 2]:
+                if role_id in [2, 3]:
                     utilisateur_data['cp_commune_id'] = request.POST['commune']
 
                 utilisateur_cree = Utilisateur(**utilisateur_data)
