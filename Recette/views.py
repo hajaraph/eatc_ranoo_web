@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 
 from Login.views import role_requis
-from Rel_Compteur.utils import get_default_month_range, filter_by_month_range
+from Rel_Compteur.utils import get_default_month_range, filter_by_month_range, filter_by_user_role
 from Tenants.middleware import schema_use, SchemaAwareView
 from Tenants.models import Utilisateur
 from .models import Recette, TypeRecette
@@ -24,6 +24,9 @@ def recette(request):
 
     # Récupérer et filtrer les recettes
     recettes_qs = Recette.objects.all().select_related('type_recette', 'facture').order_by('date_encaissement')
+
+    # Appliquer le filtre par rôle utilisateur
+    recettes_qs = filter_by_user_role(request, recettes_qs, 'facture__num_contrat__cp_commune_id')
 
     # Utilisation de la fonction utilitaire
     recettes_filtrees, mois_debut, mois_fin = filter_by_month_range(
