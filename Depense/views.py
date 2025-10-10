@@ -5,7 +5,7 @@ from django.db.models import Sum
 from django.shortcuts import render, redirect
 
 from Depense.models import Transactions, Categories
-from Rel_Compteur.utils import filter_by_month_range, get_default_month_range
+from Rel_Compteur.utils import filter_by_month_range, get_default_month_range, filter_by_user_role
 from Tenants.middleware import schema_use, SchemaAwareView
 
 
@@ -23,6 +23,10 @@ def depense(request):
 
     # Récupérer et filtrer les transactions
     transactions_qs = Transactions.objects.all().order_by('date_transaction')
+
+    # Appliquer le filtre par rôle utilisateur
+    transactions_qs = filter_by_user_role(request, transactions_qs, 'utilisateur__cp_commune_id')
+
     transactions_mois, _, _ = filter_by_month_range(
         queryset=transactions_qs,
         date_field='date_transaction',
