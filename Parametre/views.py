@@ -118,7 +118,7 @@ class ChangerMotdePasse(SchemaAwareView):
         utilisateur = Utilisateur.objects.get(pk=request.session.get('id_utilisateur'))
         if check_password(ancien_motpasse, utilisateur.password):
             if nouveau_motpasse == confirmer_motpasse:
-                utilisateur.password = make_password(nouveau_motpasse)
+                utilisateur.password = nouveau_motpasse
                 utilisateur.save()
                 messages.success(request, 'Mot de passe changer avec succès !')
                 return redirect('para_utilisateur')
