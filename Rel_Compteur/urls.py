@@ -19,7 +19,7 @@ urlpatterns = [
     ])),
     path('recette/', include('Recette.urls')),
     path('depense/', include('Depense.urls')),
-    path('rubrique/', include('Rubrique.urls')),
+    # path('rubrique/', include('Rubrique.urls')),
     path('api/', include([
         path('', include('Login.api_auth.urls')),
         path('', include('Compteurs.api_compteur.urls')),
