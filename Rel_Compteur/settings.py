@@ -39,6 +39,7 @@ TENANT_APPS = (
     'Main_Courante',
     'Parametre',
     'Ranoo_Config',
+    'Rubrique',
     'Tableau_Bord',
 )
 

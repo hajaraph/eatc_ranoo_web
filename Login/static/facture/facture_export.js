@@ -1,7 +1,7 @@
 $(document).ready(function () {
     $('#confirmer-export').click(function() {
-        const dateDeb = $('#date_deb').val();
-        const dateFin = $('#date_fin').val();
+        const dateDeb = $('#datedeb').val();
+        const dateFin = $('#datefin').val();
         const commune = $('#commune').val();
         const num_client_deb = $('#num_client_deb').val();
         const num_client_fin = $('#num_client_fin').val();
