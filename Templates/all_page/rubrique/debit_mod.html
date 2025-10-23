@@ -1,0 +1,85 @@
+<div class="card-body">
+    <h3 class="text-center mb-5">Modification du Débit d'Eau </h3>
+    <form method="post" id="formNew">
+        {% csrf_token %}
+        <div class="card-body">
+            <!-- Date de création -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="date"
+                               name="date_creation"
+                               id="date_creation"
+                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                               value="{% now 'Y-m-d' %}"
+                               required>
+                        <label for="date_creation">Date de création</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Valeur du débit -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="number"
+                               name="debit"
+                               id="debit"
+                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                               min="1"
+                               required>
+                        <label for="debit">Débit (m³/s)</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commune -->
+            <div class="row">
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <select name="province" id="province" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
+                            <option value="" selected hidden>Selectionné une province</option>
+                            {% for province in provinces %}
+                                <option value="{{ province.province }}">{{ province.province }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="province">Province*</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <select name="region" id="region" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
+                        </select>
+                        <label for="region">Région</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <select name="commune" id="commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
+                        </select>
+                        <label for="commune">Commune :</label>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="form-floating">
+                        <select name="cp_commune" id="cp_commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" disabled>
+                        </select>
+                        <label for="cp_commune">CP Commune :</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="d-flex justify-content-between mt-5">
+                <div>
+                    <a href="{% url 'debit' %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>Retour
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

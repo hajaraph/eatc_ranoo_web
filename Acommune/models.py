@@ -5,6 +5,12 @@ class Province(models.Model):
     id_province = models.BigAutoField(primary_key=True)
     province = models.CharField(max_length=50, blank=False, null=False)
 
+    class Meta:
+        ordering = ['province']
+
+    def __str__(self):
+        return self.province
+
 class Region(models.Model):
     id_region = models.BigAutoField(primary_key=True)
     region = models.CharField(max_length=20, blank=False)

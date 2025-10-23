@@ -9,7 +9,7 @@ from Tenants.models import Utilisateur
 
 
 class TypeRecette(models.Model):
-    id_type_recette = models.AutoField(primary_key=True)
+    id_type_recette = models.BigAutoField(primary_key=True)
     libelle = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
 
@@ -18,7 +18,7 @@ class TypeRecette(models.Model):
 
 
 class Recette(models.Model):
-    id_recette = models.AutoField(primary_key=True)
+    id_recette = models.BigAutoField(primary_key=True)
     type_recette = models.ForeignKey(TypeRecette, on_delete=models.PROTECT)
     montant = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0.01)])
     reference = models.CharField( max_length=100, blank=True, null=True)
