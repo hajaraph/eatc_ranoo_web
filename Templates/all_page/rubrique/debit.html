@@ -69,12 +69,12 @@
                     <td>{{ debits.date_creation|date:"d/m/Y" }}</td>
                     {% if request.session.role_utilisateur == 'Administrateur' %}
                     <td class="text-center">
-                        <a href="" class="btn btn-sm btn-warning me-1" title="Modifier">
+                        <a href="{% url 'debit_mod' debits.pk %}" class="btn btn-sm btn-warning me-1" title="Modifier">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href=""
+                        <a href="{% url 'debit_delete' debits.pk %}"
                            class="btn btn-sm btn-danger" 
-                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce débit du {{ debit.date_creation|date:'d/m/Y' }} ?');"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce débit du {{ debits.date_creation|date:'d/m/Y' }} ?');"
                            title="Supprimer">
                             <i class="fas fa-trash"></i>
                         </a>

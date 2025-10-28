@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/tableau_bord.css' %}">
     <link rel="stylesheet" href="{% static 'css/style_general.css' %}">
-    <title>{{ title_debit }}{{ title_debit_new }}</title>
+    <title>{{ title_debit }}{{ title_debit_new }} {{ title_debit_mod }} {{ title_marnage }} {{ title_marnage_new }} {{ title_marnage_mod }}</title>
     <style>
         .dataTables_filter input[type="search"] {
             height: 50px;
@@ -33,7 +33,7 @@
                                 </a>
                             </div>
                             <div class="col-md-2 mt-4">
-                                <a href="" class="btn btn-sm w-100 {{ active_marnage }}">
+                                <a href="{% url 'marnage' %}" class="btn btn-sm w-100 {{ active_marnage }}">
                                     Marnage
                                 </a>
                             </div>
@@ -45,10 +45,14 @@
                             {% include 'all_page/rubrique/debit.html' %}
                         {% elif title_debit_new %}
                             {% include 'all_page/rubrique/debit_new.html' %}
+                        {% elif title_debit_mod %}
+                            {% include 'all_page/rubrique/debit_mod.html' %}
                         {% elif title_marnage %}
                             {% include 'all_page/rubrique/marnage.html' %}
                         {% elif title_marnage_new %}
                             {% include 'all_page/rubrique/marnage_new.html' %}
+                        {% elif title_marnage_mod %}
+                            {% include 'all_page/rubrique/marnage_mod.html' %}
                         {% endif %}
                     </div>
                 </div>

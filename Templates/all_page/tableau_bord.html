@@ -160,30 +160,29 @@
                         </div>
 
                         <!-- Secondary Chart Row -->
-                        <div class="row secondary-chart-row">
-                            <div class="col-12">
-                                <div class="chart-card">
+                        <div class="row">
+                            <!-- Consommation par Type de Client -->
+                            <div class="col-md-6">
+                                <div class="chart-card h-100">
                                     <div class="card-header">
                                         <h5><i class="fas fa-chart-bar me-2 text-primary"></i>Consommation par Type de Client (Mensuelle)</h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="chart-container">
+                                        <div class="chart-container" style="position: relative; height:300px;">
                                             <canvas id="typeClientConso"></canvas>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Nouvelle section : Factures par Type de Client -->
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="chart-card">
+                            <!-- Paiement par Type de Branchement -->
+                            <div class="col-md-6">
+                                <div class="chart-card h-100">
                                     <div class="card-header">
                                         <h5><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Paiement par Type de Branchement</h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="chart-container" style="position: relative; height:400px;">
+                                        <div class="chart-container" style="position: relative; height:300px;">
                                             <canvas id="facturesParTypeClient"></canvas>
                                         </div>
                                     </div>
