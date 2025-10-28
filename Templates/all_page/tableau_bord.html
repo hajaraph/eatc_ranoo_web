@@ -189,6 +189,20 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="chart-card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-tint me-2 text-primary"></i>Évolution du débit mensuel</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="chart-container" style="position: relative; height: 400px;">
+                                            <canvas id="debitChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -641,16 +655,21 @@
             {% regroup factures_par_type_client by type_client as factures_par_type %}
                 {% for type in factures_par_type %}
                     {% for facture in type.list %}
-                        (function() {
-                            console.log('Traitement des données pour {{ type.grouper }} - {{ facture.mois }}/{{ facture.annee }}');
-                            const typeLabel = '{{ type.grouper }}';
-                            facturesData.labels.push(`${typeLabel} - {% if facture.mois < 10 %}0{% endif %}{{ facture.mois }}/{{ facture.annee }}`);
-                            facturesData.payees.push({{ facture.payees|default:0 }});
-                            facturesData.impayees.push({{ facture.impayees|default:0 }});
-                            facturesData.montantTotal.push({{ facture.montant_total|default_if_none:0 }});
-                            facturesData.montantPaye.push({{ facture.montant_paye|default_if_none:0 }});
-                            facturesData.backgroundColors.push(typeClientColors[typeLabel] || '#858796');
-                        })();
+                        // Utilisation de la syntaxe JavaScript avec des backticks pour les chaînes
+                        const typeLabel = '{{ type.grouper|escapejs }}';
+                        const moisFormatte = `{{ facture.mois|stringformat:"02d" }}/{{ facture.annee }}`;
+
+                        facturesData.labels.push(`${typeLabel} - ${moisFormatte}`);
+                        facturesData.payees.push({{ facture.payees|default:0 }});
+                        facturesData.impayees.push({{ facture.impayees|default:0 }});
+                        facturesData.montantTotal.push({{ facture.montant_total|default_if_none:0 }});
+                        facturesData.montantPaye.push({{ facture.montant_paye|default_if_none:0 }});
+
+                        // Gestion des couleurs
+                        if (!typeClientColors[typeLabel]) {
+                            typeClientColors[typeLabel] = `hsl(${Object.keys(typeClientColors).length * 137.5 % 360}, 70%, 60%)`;
+                        }
+                        facturesData.backgroundColors.push(typeClientColors[typeLabel]);
                     {% endfor %}
                 {% endfor %}
 
@@ -734,6 +753,71 @@
                     });
                 } else {
                     document.getElementById('facturesParTypeClient').parentNode.innerHTML = '<div class="text-center text-muted">Aucune donnée disponible pour la période sélectionnée</div>';
+                }
+            });
+            const debitData = {{ debit_data|safe }};
+
+            // Préparation des données pour le graphique
+            const labels = debitData.map(item =>
+                `${item.date_creation__month}/${item.date_creation__year}`
+            );
+            const debitValues  = debitData.map(item => parseFloat(item.debit) || 0);
+
+            // Configuration du graphique
+            const ctx = document.getElementById('debitChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Débit (m³)',
+                        data: debitValues,
+                        borderColor: primaryColor,  // Utilisation de la couleur primaire
+                        backgroundColor: primaryColor + '1A',  // Ajout d'opacité 10% à la couleur primaire
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: {
+                            target: 'origin',
+                            above: primaryColor + '1A',  // Remplissage avec opacité
+                            below: primaryColor + '1A'
+                        },
+                        pointBackgroundColor: primaryColor,
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: primaryColor
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Débit: ${context.raw.toLocaleString()} m³`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Volume (m³)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Mois/Année'
+                            }
+                        }
+                    }
                 }
             });
     </script>

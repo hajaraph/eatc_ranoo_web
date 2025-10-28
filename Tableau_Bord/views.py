@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 
 from django.db import connection
-from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q
+from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q, F
 from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
 from django.http.response import HttpResponse
 from django.shortcuts import render
@@ -12,6 +12,7 @@ from Facturation.models import Paiement, Facture
 from Login.views import role_requis
 from Main_Courante.models import StatutMC
 from Acommune.models import Region, Commune
+from Rubrique.models import DebitEau
 from Tenants.middleware import schema_use
 from Rel_Compteur.utils import filter_by_user_role
 
@@ -37,7 +38,7 @@ def tableau_bord(request):
     factures = Facture.objects.filter(date_facture__year=annee_actuelle)
     main_courante = StatutMC.objects.filter(date_status__year=annee_actuelle)
     chiffres = Paiement.objects.all()
-    
+
     # Application du filtre par rôle sur TOUS les querysets
     factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
     chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
@@ -299,6 +300,24 @@ def tableau_bord(request):
     # Pour obtenir le nombre de contrats pour l'année actuelle depuis notre requete precedanat
     nb_client_actuelle = contrats_annee_actuelle[0]['nb_client_actuelle'] if contrats_annee_actuelle else 0
 
+    # Requête de base avec filtres
+    debit_query = DebitEau.objects.all()
+
+    # Application des filtres région/date
+    if region:
+        debit_query = debit_query.filter(cp_commune__region=region)
+    if date_deb and date_fin:
+        date_fin_plus_one = date_fin + timedelta(days=1)
+        debit_query = debit_query.filter(
+            date_creation__range=[date_deb, date_fin_plus_one]
+        )
+
+    debit_data = debit_query.values(
+        'date_creation__month',
+        'date_creation__year',
+        'debit'
+    ).order_by('date_creation__year', 'date_creation__month')
+
     context = {
         'font_tableau': font,
         'regions': regions,
@@ -314,7 +333,8 @@ def tableau_bord(request):
         'types_client_conso': types_client_conso,
         'datedeb': date_deb if date_deb else '',
         'datefin': date_fin if date_fin else '',
-        'factures_par_type_client': factures_par_type_client
+        'factures_par_type_client': factures_par_type_client,
+        'debit_data': list(debit_data),
     }
 
     return render(request, 'all_page/tableau_bord.html', context)
