@@ -655,8 +655,8 @@
             {% regroup factures_par_type_client by type_client as factures_par_type %}
                 {% for type in factures_par_type %}
                     {% for facture in type.list %}
-                        // Utilisation de la syntaxe JavaScript avec des backticks pour les chaînes
-                        const typeLabel = '{{ type.grouper|escapejs }}';
+                        // Utilisation de let pour la déclaration de variable dans la boucle
+                        let typeLabel = '{{ type.grouper|escapejs }}';
                         const moisFormatte = `{{ facture.mois|stringformat:"02d" }}/{{ facture.annee }}`;
 
                         facturesData.labels.push(`${typeLabel} - ${moisFormatte}`);
@@ -755,8 +755,8 @@
                     document.getElementById('facturesParTypeClient').parentNode.innerHTML = '<div class="text-center text-muted">Aucune donnée disponible pour la période sélectionnée</div>';
                 }
             });
+        
             const debitData = {{ debit_data|safe }};
-
             // Préparation des données pour le graphique
             const labels = debitData.map(item =>
                 `${item.date_creation__month}/${item.date_creation__year}`
