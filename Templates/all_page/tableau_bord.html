@@ -655,21 +655,16 @@
             {% regroup factures_par_type_client by type_client as factures_par_type %}
                 {% for type in factures_par_type %}
                     {% for facture in type.list %}
-                        // Utilisation de let pour la déclaration de variable dans la boucle
-                        let typeLabel = '{{ type.grouper|escapejs }}';
-                        const moisFormatte = `{{ facture.mois|stringformat:"02d" }}/{{ facture.annee }}`;
-
-                        facturesData.labels.push(`${typeLabel} - ${moisFormatte}`);
-                        facturesData.payees.push({{ facture.payees|default:0 }});
-                        facturesData.impayees.push({{ facture.impayees|default:0 }});
-                        facturesData.montantTotal.push({{ facture.montant_total|default_if_none:0 }});
-                        facturesData.montantPaye.push({{ facture.montant_paye|default_if_none:0 }});
-
-                        // Gestion des couleurs
-                        if (!typeClientColors[typeLabel]) {
-                            typeClientColors[typeLabel] = `hsl(${Object.keys(typeClientColors).length * 137.5 % 360}, 70%, 60%)`;
-                        }
-                        facturesData.backgroundColors.push(typeClientColors[typeLabel]);
+                        (function() {
+                            console.log('Traitement des données pour {{ type.grouper }} - {{ facture.mois }}/{{ facture.annee }}');
+                            const typeLabel = '{{ type.grouper }}';
+                            facturesData.labels.push(`${typeLabel} - {% if facture.mois < 10 %}0{% endif %}{{ facture.mois }}/{{ facture.annee }}`);
+                            facturesData.payees.push({{ facture.payees|default:0 }});
+                            facturesData.impayees.push({{ facture.impayees|default:0 }});
+                            facturesData.montantTotal.push({{ facture.montant_total|default_if_none:0 }});
+                            facturesData.montantPaye.push({{ facture.montant_paye|default_if_none:0 }});
+                            facturesData.backgroundColors.push(typeClientColors[typeLabel] || '#858796');
+                        })();
                     {% endfor %}
                 {% endfor %}
 
