@@ -175,11 +175,6 @@ def tableau_bord(request):
             mois=ExtractMonth('date_facture'),
             annee=ExtractYear('date_facture'),
             type_client=Coalesce('num_contrat__client__type_client__designation_client', Value('Non spécifié')),
-            total_paye_facture=Coalesce(
-                Subquery(paiements_par_facture, output_field=DecimalField()),
-                Value(0, output_field=DecimalField()),
-                output_field=DecimalField()
-            )
         )
         .values('mois', 'annee', 'type_client')
         .annotate(
@@ -211,7 +206,7 @@ def tableau_bord(request):
                 Sum('relevecompteur__conso', filter=Q(statut=False)),
                 Value(0)
             ),
-            montant_paye=Sum('total_paye_facture')
+            montant_paye=Coalesce(Sum('paiements__montant_payer'), Value(0.0))
         )
         .order_by('annee', 'mois', 'type_client')
     )

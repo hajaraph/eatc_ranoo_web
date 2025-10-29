@@ -1,4 +1,4 @@
-{% load static %}
+{% load static l10n %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -724,36 +724,16 @@
                 montantTotalImpayees: [],
             };
 
-            const typeClientColors = {
-                'Domestique': primaryColor,
-                'Commercial': successColor,
-                'Industriel': infoColor,
-                'Administratif': warningColor,
-                'Autre': dangerColor,
-            };
-
             {% for facture in factures_par_type_client %}
-                (function() {
-                    const typeLabel = '{{ facture.type_client|escapejs }}';
-                    const moisFormatte = '{{ facture.mois|stringformat:"02d" }}/{{ facture.annee }}';
-
-                    facturesData.labels.push(`${typeLabel} - ${moisFormatte}`);
-                    facturesData.payees.push({{ facture.payees|default:0 }});
-                    facturesData.impayees.push({{ facture.impayees|default:0 }});
-                    facturesData.montantTotal.push({{ facture.montant_total|default_if_none:0 }});
-                    facturesData.montantPaye.push({{ facture.montant_paye|default_if_none:0 }});
-                    facturesData.volumePaye.push({{ facture.volume_paye|default:0 }});
-                    facturesData.volumeImpaye.push({{ facture.volume_impaye|default:0 }});
-                    facturesData.montantTotalPayees.push({{ facture.montant_total_payees|default_if_none:0 }});
-                    facturesData.montantTotalImpayees.push({{ facture.montant_total_impayees|default_if_none:0 }});
-
-
-                    // Gestion des couleurs par type de client
-                    if (!typeClientColors[typeLabel]) {
-                        typeClientColors[typeLabel] = `hsl(${Object.keys(typeClientColors).length * 137.5 % 360}, 70%, 60%)`;
-                    }
-                    facturesData.backgroundColors.push(typeClientColors[typeLabel]);
-                })();
+                facturesData.labels.push('{{ facture.type_client|escapejs }} - {{ facture.mois|stringformat:"02d" }}/{{ facture.annee }}');
+                facturesData.payees.push({{ facture.payees|default:0 }});
+                facturesData.impayees.push({{ facture.impayees|default:0 }});
+                facturesData.montantTotal.push({% localize off %}{{ facture.montant_total|default_if_none:0 }}{% endlocalize %});
+                facturesData.montantPaye.push({% localize off %}{{ facture.montant_paye|default_if_none:0 }}{% endlocalize %});
+                facturesData.volumePaye.push({{ facture.volume_paye|default:0 }});
+                facturesData.volumeImpaye.push({{ facture.volume_impaye|default:0 }});
+                facturesData.montantTotalPayees.push({% localize off %}{{ facture.montant_total_payees|default_if_none:0 }}{% endlocalize %});
+                facturesData.montantTotalImpayees.push({% localize off %}{{ facture.montant_total_impayees|default_if_none:0 }}{% endlocalize %});
             {% endfor %}
 
                 if (facturesData.labels.length > 0) {
@@ -880,7 +860,7 @@
                                             const volumePaye = facturesData.volumePaye[index];
                                             const volumeImpaye = facturesData.volumeImpaye[index];
                                             const volumeTotal = volumePaye + volumeImpaye;
-                                            
+
                                             if (datasetIndex === 0) {
                                                 // Pour les factures payées
                                                 const montantPayees = facturesData.montantTotalPayees[index];
@@ -892,7 +872,7 @@
                                                 tooltipText.push(`💰 Montant factures impayées: ${montantImpayees.toLocaleString('fr-FR')} AR`);
                                                 tooltipText.push(`💧 Volume impayé: ${volumeImpaye.toLocaleString('fr-FR')} m³`);
                                             }
-                                            
+
                                             tooltipText.push(`💧 Volume total: ${volumeTotal.toLocaleString('fr-FR')} m³`);
                                             tooltipText.push(`📊 Taux de recouvrement: ${tauxPaiement}%`);
 
