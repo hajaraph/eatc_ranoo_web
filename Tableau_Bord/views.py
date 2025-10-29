@@ -9,7 +9,7 @@ from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 
-from Clients.models import Contrat, TypeClient
+from Clients.models import Contrat
 from Compteurs.models import ReleveCompteur
 from Facturation.models import Paiement, Facture
 from Login.views import role_requis
@@ -184,9 +184,33 @@ def tableau_bord(request):
         .values('mois', 'annee', 'type_client')
         .annotate(
             total=Count('id_facture'),
-            montant_total=Sum('montant_total_ttc'),
+            montant_total=Coalesce(
+                Sum('montant_total_ttc'),
+                Value(0.0)
+            ),
             payees=Count('id_facture', filter=Q(statut=True)),
             impayees=Count('id_facture', filter=Q(statut=False)),
+            # Montant réellement payé = somme de tous les paiements effectués
+            montant_total_payees=Coalesce(
+                Sum('paiements__montant_payer'),
+                Value(0.0)
+            ),
+            # Montant impayé = restants (partiellement payées) + factures complètement impayées
+            montant_total_impayees=Coalesce(
+                Sum('restant_nouvel'),
+                Value(0.0)
+            ) + Coalesce(
+                Sum('montant_total_ttc', filter=Q(statut=False)),
+                Value(0.0)
+            ),
+            volume_paye=Coalesce(
+                Sum('relevecompteur__conso', filter=Q(statut=True)),
+                Value(0)
+            ),
+            volume_impaye=Coalesce(
+                Sum('relevecompteur__conso', filter=Q(statut=False)),
+                Value(0)
+            ),
             montant_paye=Sum('total_paye_facture')
         )
         .order_by('annee', 'mois', 'type_client')

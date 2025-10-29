@@ -717,7 +717,11 @@
                 impayees: [],
                 montantTotal: [],
                 montantPaye: [],
-                backgroundColors: []
+                volumePaye: [],
+                volumeImpaye: [],
+                backgroundColors: [],
+                montantTotalPayees: [],
+                montantTotalImpayees: [],
             };
 
             const typeClientColors = {
@@ -738,6 +742,11 @@
                     facturesData.impayees.push({{ facture.impayees|default:0 }});
                     facturesData.montantTotal.push({{ facture.montant_total|default_if_none:0 }});
                     facturesData.montantPaye.push({{ facture.montant_paye|default_if_none:0 }});
+                    facturesData.volumePaye.push({{ facture.volume_paye|default:0 }});
+                    facturesData.volumeImpaye.push({{ facture.volume_impaye|default:0 }});
+                    facturesData.montantTotalPayees.push({{ facture.montant_total_payees|default_if_none:0 }});
+                    facturesData.montantTotalImpayees.push({{ facture.montant_total_impayees|default_if_none:0 }});
+
 
                     // Gestion des couleurs par type de client
                     if (!typeClientColors[typeLabel]) {
@@ -862,15 +871,30 @@
 
                                             let tooltipText = [`${percentage}% du total (${total} factures)`];
 
-                                            // Afficher les montants
-                                            const montantPaye = facturesData.montantPaye[index];
+                                            // Afficher les montants selon le type (payées/impayées)
                                             const montantTotal = facturesData.montantTotal[index];
+                                            const montantPaye = facturesData.montantPaye[index];
                                             const tauxPaiement = montantTotal > 0 ? Math.round((montantPaye / montantTotal) * 100) : 0;
 
-                                            tooltipText.push('---');
-                                            tooltipText.push(`Montant payé: ${montantPaye.toLocaleString('fr-FR')} AR`);
-                                            tooltipText.push(`Montant total: ${montantTotal.toLocaleString('fr-FR')} AR`);
-                                            tooltipText.push(`Taux de recouvrement: ${tauxPaiement}%`);
+                                            // Afficher les volumes
+                                            const volumePaye = facturesData.volumePaye[index];
+                                            const volumeImpaye = facturesData.volumeImpaye[index];
+                                            const volumeTotal = volumePaye + volumeImpaye;
+                                            
+                                            if (datasetIndex === 0) {
+                                                // Pour les factures payées
+                                                const montantPayees = facturesData.montantTotalPayees[index];
+                                                tooltipText.push(`💰 Montant factures payées: ${montantPayees.toLocaleString('fr-FR')} AR`);
+                                                tooltipText.push(`💧 Volume payé: ${volumePaye.toLocaleString('fr-FR')} m³`);
+                                            } else {
+                                                // Pour les factures impayées
+                                                const montantImpayees = facturesData.montantTotalImpayees[index];
+                                                tooltipText.push(`💰 Montant factures impayées: ${montantImpayees.toLocaleString('fr-FR')} AR`);
+                                                tooltipText.push(`💧 Volume impayé: ${volumeImpaye.toLocaleString('fr-FR')} m³`);
+                                            }
+                                            
+                                            tooltipText.push(`💧 Volume total: ${volumeTotal.toLocaleString('fr-FR')} m³`);
+                                            tooltipText.push(`📊 Taux de recouvrement: ${tauxPaiement}%`);
 
                                             return tooltipText;
                                         }
