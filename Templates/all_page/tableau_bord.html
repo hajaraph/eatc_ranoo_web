@@ -160,7 +160,7 @@
                         </div>
 
                         <!-- Secondary Chart Row -->
-                        <div class="row">
+                        <div class="row main-charts-row">
                             <!-- Consommation par Type de Client -->
                             <div class="col-md-6">
                                 <div class="chart-card h-100">
@@ -189,15 +189,27 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="chart-card">
+                        <div class="row main-charts-row">
+                            <div class="col-md-6">
+                                <div class="chart-card h-100">
                                     <div class="card-header">
-                                        <h5><i class="fas fa-tint me-2 text-primary"></i>Évolution du débit mensuel</h5>
+                                        <h5><i class="fas fa-tint me-2 text-primary"></i>Évolution du Débit mensuel</h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="chart-container" style="position: relative; height: 400px;">
+                                        <div class="chart-container" style="position: relative; height: 300px;">
                                             <canvas id="debitChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-card h-100">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-tint me-2 text-primary"></i>Évolution du Marnage</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="chart-container" style="position: relative; height: 300px;">
+                                            <canvas id="marnageChart"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -652,21 +664,24 @@
                 'Autre': dangerColor,
             };
 
-            {% regroup factures_par_type_client by type_client as factures_par_type %}
-                {% for type in factures_par_type %}
-                    {% for facture in type.list %}
-                        (function() {
-                            console.log('Traitement des données pour {{ type.grouper }} - {{ facture.mois }}/{{ facture.annee }}');
-                            const typeLabel = '{{ type.grouper }}';
-                            facturesData.labels.push(`${typeLabel} - {% if facture.mois < 10 %}0{% endif %}{{ facture.mois }}/{{ facture.annee }}`);
-                            facturesData.payees.push({{ facture.payees|default:0 }});
-                            facturesData.impayees.push({{ facture.impayees|default:0 }});
-                            facturesData.montantTotal.push({{ facture.montant_total|default_if_none:0 }});
-                            facturesData.montantPaye.push({{ facture.montant_paye|default_if_none:0 }});
-                            facturesData.backgroundColors.push(typeClientColors[typeLabel] || '#858796');
-                        })();
-                    {% endfor %}
-                {% endfor %}
+            {% for facture in factures_par_type_client %}
+                (function() {
+                    const typeLabel = '{{ facture.type_client|escapejs }}';
+                    const moisFormatte = '{{ facture.mois|stringformat:"02d" }}/{{ facture.annee }}';
+
+                    facturesData.labels.push(`${typeLabel} - ${moisFormatte}`);
+                    facturesData.payees.push({{ facture.payees|default:0 }});
+                    facturesData.impayees.push({{ facture.impayees|default:0 }});
+                    facturesData.montantTotal.push({{ facture.montant_total|default_if_none:0 }});
+                    facturesData.montantPaye.push({{ facture.montant_paye|default_if_none:0 }});
+
+                    // Gestion des couleurs par type de client
+                    if (!typeClientColors[typeLabel]) {
+                        typeClientColors[typeLabel] = `hsl(${Object.keys(typeClientColors).length * 137.5 % 360}, 70%, 60%)`;
+                    }
+                    facturesData.backgroundColors.push(typeClientColors[typeLabel]);
+                })();
+            {% endfor %}
 
                 if (facturesData.labels.length > 0) {
                     const ctx = document.getElementById('facturesParTypeClient').getContext('2d');
@@ -678,17 +693,19 @@
                                 {
                                     label: 'Factures payées',
                                     data: facturesData.payees,
-                                    backgroundColor: facturesData.backgroundColors.map(c => `${c}cc`),
-                                    borderColor: facturesData.backgroundColors,
-                                    borderWidth: 1,
+                                    backgroundColor: successColor,
+                                    borderColor: successColor,
+                                    borderWidth: 2,
+                                    borderRadius: 6,
                                     stack: 'Stack 0',
                                 },
                                 {
                                     label: 'Factures impayées',
                                     data: facturesData.impayees,
-                                    backgroundColor: facturesData.backgroundColors.map(c => `${c}66`),
-                                    borderColor: facturesData.backgroundColors,
-                                    borderWidth: 1,
+                                    backgroundColor: dangerColor,
+                                    borderColor: dangerColor,
+                                    borderWidth: 2,
+                                    borderRadius: 6,
                                     stack: 'Stack 0',
                                 }
                             ]
@@ -704,24 +721,74 @@
                                     },
                                     ticks: {
                                         maxRotation: 45,
-                                        minRotation: 45
+                                        minRotation: 45,
+                                        font: {
+                                            size: 11
+                                        }
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Type de Branchement - Mois/Année',
+                                        font: {
+                                            weight: '600',
+                                            size: 12
+                                        }
                                     }
                                 },
                                 y: {
                                     stacked: true,
                                     beginAtZero: true,
+                                    grid: {
+                                        color: '#f1f5f9'
+                                    },
+                                    ticks: {
+                                        stepSize: 1,
+                                        font: {
+                                            size: 11
+                                        }
+                                    },
                                     title: {
                                         display: true,
-                                        text: 'Nombre de factures'
+                                        text: 'Nombre de factures',
+                                        font: {
+                                            weight: '600',
+                                            size: 12
+                                        }
                                     }
                                 }
+                            },
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
                             },
                             plugins: {
                                 legend: {
                                     position: 'top',
+                                    labels: {
+                                        usePointStyle: true,
+                                        padding: 15,
+                                        font: {
+                                            size: 12,
+                                            weight: '500'
+                                        }
+                                    }
                                 },
                                 tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#ffffff',
+                                    borderColor: primaryColor,
+                                    borderWidth: 1,
+                                    cornerRadius: 8,
+                                    padding: 12,
                                     callbacks: {
+                                        title: function(context) {
+                                            return context[0].label;
+                                        },
+                                        label: function(context) {
+                                            const value = context.parsed.y;
+                                            return `${context.dataset.label}: ${value} facture${value > 1 ? 's' : ''}`;
+                                        },
                                         afterLabel: function(context) {
                                             const datasetIndex = context.datasetIndex;
                                             const index = context.dataIndex;
@@ -729,15 +796,17 @@
                                             const total = facturesData.payees[index] + facturesData.impayees[index];
                                             const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
 
-                                            let tooltipText = [`${percentage}% du total`];
+                                            let tooltipText = [`${percentage}% du total (${total} factures)`];
 
-                                            if (datasetIndex === 0) {
-                                                const montantPaye = facturesData.montantPaye[index];
-                                                tooltipText.push(`Montant payé: ${montantPaye.toLocaleString()} AR`);
-                                            }
-
+                                            // Afficher les montants
+                                            const montantPaye = facturesData.montantPaye[index];
                                             const montantTotal = facturesData.montantTotal[index];
-                                            tooltipText.push(`Montant total: ${montantTotal.toLocaleString()} AR`);
+                                            const tauxPaiement = montantTotal > 0 ? Math.round((montantPaye / montantTotal) * 100) : 0;
+
+                                            tooltipText.push('---');
+                                            tooltipText.push(`Montant payé: ${montantPaye.toLocaleString('fr-FR')} AR`);
+                                            tooltipText.push(`Montant total: ${montantTotal.toLocaleString('fr-FR')} AR`);
+                                            tooltipText.push(`Taux de recouvrement: ${tauxPaiement}%`);
 
                                             return tooltipText;
                                         }
@@ -747,74 +816,201 @@
                         }
                     });
                 } else {
-                    document.getElementById('facturesParTypeClient').parentNode.innerHTML = '<div class="text-center text-muted">Aucune donnée disponible pour la période sélectionnée</div>';
+                    const container = document.getElementById('facturesParTypeClient').parentNode;
+                    container.innerHTML = '<div class="alert alert-info text-center mb-0"><i class="fas fa-info-circle me-2"></i>Aucune donnée de paiement disponible pour la période sélectionnée</div>';
+                    container.style.height = '100px';
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
                 }
             });
-        
+            // Initialisation du graphique de débit
             const debitData = {{ debit_data|safe }};
-            // Préparation des données pour le graphique
-            const labels = debitData.map(item =>
-                `${item.date_creation__month}/${item.date_creation__year}`
-            );
-            const debitValues  = debitData.map(item => parseFloat(item.debit) || 0);
 
-            // Configuration du graphique
-            const ctx = document.getElementById('debitChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Débit (m³)',
-                        data: debitValues,
-                        borderColor: primaryColor,  // Utilisation de la couleur primaire
-                        backgroundColor: primaryColor + '1A',  // Ajout d'opacité 10% à la couleur primaire
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: {
-                            target: 'origin',
-                            above: primaryColor + '1A',  // Remplissage avec opacité
-                            below: primaryColor + '1A'
+            if (debitData && debitData.communes && Array.isArray(debitData.communes)) {
+                const datasets = debitData.communes.map((commune, index) => ({
+                    label: commune.nom,
+                    data: commune.valeurs,
+                    borderColor: modernColors[index % modernColors.length],
+                    backgroundColor: modernColors[index % modernColors.length] + '1A',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointBackgroundColor: modernColors[index % modernColors.length],
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: modernColors[index % modernColors.length]
+                }));
+
+                // Configuration du graphique de débit
+                const ctx = document.getElementById('debitChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: debitData.periodes || [],
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
                         },
-                        pointBackgroundColor: primaryColor,
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: primaryColor
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw.toLocaleString()} Litre/Sec`;
+                                    }
+                                }
+                            }
                         },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Débit: ${context.raw.toLocaleString()} m³`;
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Débit (Litre/Sec)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Période (Mois/Année)'
+                                },
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    autoSkip: false
                                 }
                             }
                         }
+                    }
+                });
+            } else {
+                console.error("Les données de débit ne sont pas au format attendu ou sont vides", debitData);
+                const container = document.getElementById('debitChart').parentNode;
+                container.innerHTML = '<div class="alert alert-warning">Aucune donnée de débit disponible pour la période sélectionnée</div>';
+                container.style.height = '100px';
+            }
+
+            // Initialisation du graphique de marnage
+            const marnageData = {{ marnage_data|safe }};
+
+            if (marnageData && marnageData.communes && Array.isArray(marnageData.communes) && marnageData.communes.length > 0) {
+                // Créer un ensemble de tous les timestamps uniques (pour les labels de l'axe X)
+                const allTimestamps = new Set();
+                marnageData.communes.forEach(commune => {
+                    commune.mesures.forEach(mesure => {
+                        allTimestamps.add(mesure.timestamp);
+                    });
+                });
+
+                // Convertir en tableau et trier chronologiquement
+                const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => {
+                    const dateA = new Date(a.split(' ')[0].split('/').reverse().join('-') + 'T' + a.split(' ')[1]);
+                    const dateB = new Date(b.split(' ')[0].split('/').reverse().join('-') + 'T' + b.split(' ')[1]);
+                    return dateA - dateB;
+                });
+
+                // Créer les datasets pour chaque commune
+                const marnageDatasets = marnageData.communes.map((commune, index) => {
+                    // Créer un mapping timestamp -> valeur pour cette commune
+                    const timestampToValue = {};
+                    commune.mesures.forEach(mesure => {
+                        timestampToValue[mesure.timestamp] = mesure.valeur;
+                    });
+
+                    // Créer le tableau de données aligné avec les timestamps
+                    const data = sortedTimestamps.map(timestamp =>
+                        timestampToValue[timestamp] !== undefined ? timestampToValue[timestamp] : null
+                    );
+
+                    return {
+                        label: commune.nom,
+                        data: data,
+                        backgroundColor: modernColors[index % modernColors.length],
+                        borderColor: modernColors[index % modernColors.length],
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barPercentage: 0.8,
+                        categoryPercentage: 0.9
+                    };
+                });
+
+                // Configuration du graphique de marnage
+                const marnageCtx = document.getElementById('marnageChart').getContext('2d');
+                new Chart(marnageCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: sortedTimestamps,
+                        datasets: marnageDatasets
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
                                 display: true,
-                                text: 'Volume (m³)'
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.parsed.y !== null) {
+                                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+                                        }
+                                        return null;
+                                    }
+                                }
                             }
                         },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Mois/Année'
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Marnage (%)'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date et Heure'
+                                },
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    maxRotation: 90,
+                                    minRotation: 45,
+                                    autoSkip: true,
+                                    maxTicksLimit: 20
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                console.error("Les données de marnage ne sont pas au format attendu ou sont vides", marnageData);
+                const container = document.getElementById('marnageChart').parentNode;
+                container.innerHTML = '<div class="alert alert-warning">Aucune donnée de marnage disponible pour la période sélectionnée</div>';
+                container.style.height = '100px';
+            }
     </script>
 </body>
 </html>
