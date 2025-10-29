@@ -1,7 +1,9 @@
 from datetime import timedelta, datetime
+import json
+from asyncio.log import logger
 
 from django.db import connection
-from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q, F
+from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q, OuterRef, Subquery, DecimalField
 from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
 from django.http.response import HttpResponse
 from django.shortcuts import render
@@ -12,7 +14,7 @@ from Facturation.models import Paiement, Facture
 from Login.views import role_requis
 from Main_Courante.models import StatutMC
 from Acommune.models import Region, Commune
-from Rubrique.models import DebitEau
+from Rubrique.models import DebitEau, Marnage
 from Tenants.middleware import schema_use
 from Rel_Compteur.utils import filter_by_user_role
 
@@ -55,7 +57,7 @@ def tableau_bord(request):
         factures = Facture.objects.filter(num_contrat__cp_commune__region=region)
         main_courante = StatutMC.objects.filter(main_courante__cp_commune__region=region)
         chiffres = Paiement.objects.filter(facture__num_contrat__cp_commune__region=region)
-        
+
         # Application du filtre par rôle sur TOUS les querysets
         factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
         chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
@@ -72,7 +74,7 @@ def tableau_bord(request):
         factures = Facture.objects.filter(date_facture__range=[date_deb, date_fin])
         main_courante = StatutMC.objects.filter(date_status__range=[date_deb, date_fin])
         chiffres = Paiement.objects.filter(facture__relevecompteur__date_releve__range=[date_deb, date_fin])
-        
+
         # Application du filtre par rôle sur TOUS les querysets
         factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
         chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
@@ -84,7 +86,7 @@ def tableau_bord(request):
         date_deb = datetime.strptime(date_deb, '%Y-%m-%d').date() if isinstance(date_deb, str) else date_deb
         date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date() if isinstance(date_fin, str) else date_fin
         date_fin_plus_one = date_fin + timedelta(days=1)
-        
+
         # Filtrage par région et date
         commune = Commune.objects.filter(
             region_id=region,
@@ -104,7 +106,7 @@ def tableau_bord(request):
             facture__num_contrat__cp_commune__region=region,
             facture__relevecompteur__date_releve__range=[date_deb, date_fin]
         )
-        
+
         # Application du filtre par rôle sur TOUS les querysets
         factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
         chiffres = filter_by_user_role(request, chiffres, 'facture__num_contrat__cp_commune_id')
@@ -144,15 +146,39 @@ def tableau_bord(request):
             }
         )
     # Statistiques de facturation par type de client
+    # Créer une sous-requête pour calculer le total des paiements par facture
+    paiements_par_facture = (
+        Paiement.objects
+        .filter(facture=OuterRef('pk'))
+        .values('facture')
+        .annotate(total_paye=Sum('montant_payer'))
+        .values('total_paye')
+    )
+    
+    # Requête de base avec filtres appliqués AVANT le groupement
+    factures_par_type_base = Facture.objects.filter(date_facture__year=annee_actuelle)
+    
+    # Appliquer le filtre par rôle
+    factures_par_type_base = filter_by_user_role(request, factures_par_type_base, 'num_contrat__cp_commune_id')
+    
+    # Appliquer les filtres région/date
+    if region:
+        factures_par_type_base = factures_par_type_base.filter(num_contrat__cp_commune__region=region)
+    if date_deb and date_fin:
+        factures_par_type_base = factures_par_type_base.filter(date_facture__range=[date_deb, date_fin])
+    
+    # Effectuer le groupement et l'agrégation
     factures_par_type_client = (
-        Facture.objects
-        .filter(date_facture__year=annee_actuelle)
-        .values(
-            'id_facture',
-            'montant_total_ttc',
+        factures_par_type_base
+        .annotate(
             mois=ExtractMonth('date_facture'),
             annee=ExtractYear('date_facture'),
-            type_client=Coalesce('num_contrat__client__type_client__designation_client', Value('Non spécifié'))
+            type_client=Coalesce('num_contrat__client__type_client__designation_client', Value('Non spécifié')),
+            total_paye_facture=Coalesce(
+                Subquery(paiements_par_facture, output_field=DecimalField()),
+                Value(0, output_field=DecimalField()),
+                output_field=DecimalField()
+            )
         )
         .values('mois', 'annee', 'type_client')
         .annotate(
@@ -160,31 +186,10 @@ def tableau_bord(request):
             montant_total=Sum('montant_total_ttc'),
             payees=Count('id_facture', filter=Q(statut=True)),
             impayees=Count('id_facture', filter=Q(statut=False)),
-            montant_paye_total=Coalesce(
-                Sum('paiements__montant_payer'),
-                Value(0.0)
-            )
+            montant_paye=Sum('total_paye_facture')
         )
         .order_by('annee', 'mois', 'type_client')
     )
-
-    # Appliquer le filtre par rôle sur factures_par_type_client
-    factures_par_type_client = filter_by_user_role(request, factures_par_type_client, 'num_contrat__cp_commune_id')
-
-    # Appliquer les mêmes filtres que pour les autres données
-    if region:
-        factures_par_type_client = factures_par_type_client.filter(
-            num_contrat__cp_commune__region=region
-        )
-    if date_deb and date_fin:
-        factures_par_type_client = factures_par_type_client.filter(
-            date_facture__range=[date_deb, date_fin]
-        )
-    if region and date_deb and date_fin:
-        factures_par_type_client = factures_par_type_client.filter(
-            num_contrat__cp_commune__region=region,
-            date_facture__range=[date_deb, date_fin]
-        )
 
     factures = factures.annotate(
         mois=ExtractMonth('date_facture'),
@@ -216,12 +221,14 @@ def tableau_bord(request):
         annee=ExtractYear('clients__contrats__num_compteur__relevecompteurs__date_releve')
     ).values('id_type_client', 'designation_client', 'mois', 'annee').annotate(
         conso_mensuelle=Coalesce(
-            Sum('clients__contrats__num_compteur__relevecompteurs__conso', 
+            Sum('clients__contrats__num_compteur__relevecompteurs__conso',
                 filter=Q(
-                    clients__contrats__num_compteur__relevecompteurs__date_releve__year=ExtractYear('clients__contrats__num_compteur__relevecompteurs__date_releve'),
-                    clients__contrats__num_compteur__relevecompteurs__date_releve__month=ExtractMonth('clients__contrats__num_compteur__relevecompteurs__date_releve')
+                    clients__contrats__num_compteur__relevecompteurs__date_releve__year=ExtractYear(
+                        'clients__contrats__num_compteur__relevecompteurs__date_releve'),
+                    clients__contrats__num_compteur__relevecompteurs__date_releve__month=ExtractMonth(
+                        'clients__contrats__num_compteur__relevecompteurs__date_releve')
                 )
-            ), 
+                ),
             Value(0)
         )
     ).filter(conso_mensuelle__gt=0).order_by('annee', 'mois', 'designation_client')
@@ -288,7 +295,7 @@ def tableau_bord(request):
         )
 
     # Pour obtenir seulement l'année precedant de notre requete precedant
-    annee_contrat_prec = contrats_annee_prec[0]['annee_contrat_prec'] if contrats_annee_prec else 0
+    # annee_contrat_prec = contrats_annee_prec[0]['annee_contrat_prec'] if contrats_annee_prec else 0
 
     # Pour obtenir le nombre de contrats pour l'année precedant depuis notre requete precedanat
     nb_client_prec = contrats_annee_prec[0]['nb_client_prec'] if contrats_annee_prec else 0
@@ -302,28 +309,159 @@ def tableau_bord(request):
 
     # Requête de base avec filtres
     debit_query = DebitEau.objects.all()
+    marnage_query = Marnage.objects.all()
 
-    # Application des filtres région/date
+    # Application des filtres région/date pour le débit et le marnage
     if region:
         debit_query = debit_query.filter(cp_commune__region=region)
+        marnage_query = marnage_query.filter(cp_commune__region=region)
+
     if date_deb and date_fin:
         date_fin_plus_one = date_fin + timedelta(days=1)
-        debit_query = debit_query.filter(
-            date_creation__range=[date_deb, date_fin_plus_one]
-        )
+        date_range = [date_deb, date_fin_plus_one]
+        debit_query = debit_query.filter(date_creation__range=date_range)
+        marnage_query = marnage_query.filter(date_creation__range=date_range)
 
-    debit_data = debit_query.values(
+    # Données de débit brutes par commune
+    debit_par_commune = debit_query.values(
+        'cp_commune_id',
+        'cp_commune__commune',
         'date_creation__month',
         'date_creation__year',
         'debit'
-    ).order_by('date_creation__year', 'date_creation__month')
+    ).order_by('cp_commune__commune', 'date_creation__year', 'date_creation__month', 'date_creation')
+
+    # Préparer les données pour le graphique
+    communes_debit = {}
+    for item in debit_par_commune:
+        commune_id = item['cp_commune_id']
+        commune_nom = item['cp_commune__commune']
+        mois = item['date_creation__month']
+        annee = item['date_creation__year']
+
+        if commune_id not in communes_debit:
+            communes_debit[commune_id] = {
+                'nom': commune_nom,
+                'donnees': {}
+            }
+
+        # Stocker les données par année-mois pour cette commune
+        cle_periode = f"{annee}-{mois:02d}"
+        # Utiliser la dernière valeur de débit pour cette période
+        communes_debit[commune_id]['donnees'][cle_periode] = {
+            'valeur': float(item['debit']),
+            'mois': mois,
+            'annee': annee
+        }
+
+    # Créer la structure finale des données pour le template
+    periodes = sorted(list(set(
+        f"{item['date_creation__month']:02d}/{item['date_creation__year']}"
+        for item in debit_par_commune
+    )))
+
+    communes_list = []
+    for commune_id, data in communes_debit.items():
+        valeurs = []
+        for periode in periodes:
+            if periode in data['donnees']:
+                valeurs.append(data['donnees'][periode]['valeur'])
+            else:
+                valeurs.append(0.0)
+        logger.info(valeurs)
+        communes_list.append({
+            'nom': str(data['nom']),  # S'assurer que le nom est une chaîne
+            'valeurs': valeurs
+        })
+
+    debit_data = {
+        'periodes': periodes,
+        'communes': communes_list
+    }
+
+    # Obtenir la date du jour et calculer le lundi de la semaine en cours
+    aujourd_hui = timezone.now().date()
+    lundi_semaine = aujourd_hui - timedelta(days=aujourd_hui.weekday())
+    # Définir les dates de début et fin de la semaine
+    debut_semaine = timezone.make_aware(datetime.combine(lundi_semaine, datetime.min.time()))
+    fin_semaine = timezone.make_aware(datetime.combine(lundi_semaine + timedelta(days=6), datetime.max.time()))
+
+    # Récupérer les données de marnage pour la semaine en cours
+    marnage_semaine = []
+    
+    # Récupérer les données brutes
+    marnage_data = marnage_query.filter(
+        date_creation__isnull=False
+    ).values(
+        'cp_commune_id',
+        'cp_commune__commune',
+        'marnage',
+        'date_creation'
+    ).order_by('cp_commune__commune', 'date_creation')
+
+    # Traiter manuellement les dates
+    for item in marnage_data:
+        try:
+            # Convertir la chaîne en datetime (format: 2025-10-29T11:06)
+            date_creation = timezone.make_aware(datetime.strptime(item['date_creation'], '%Y-%m-%dT%H:%M'))
+
+            # Vérifier si la date est dans l'intervalle
+            if debut_semaine <= date_creation <= fin_semaine:
+                # weekday() retourne 0=Lundi, 1=Mardi, ..., 6=Dimanche
+                jour_semaine = date_creation.weekday()
+
+                marnage_semaine.append({
+                    'cp_commune_id': item['cp_commune_id'],
+                    'cp_commune__commune': item['cp_commune__commune'],
+                    'marnage': item['marnage'],
+                    'date_creation': date_creation,
+                    'jour_semaine': jour_semaine
+                })
+        except (ValueError, TypeError):
+            continue
+
+    # Initialiser la structure des données - conserver toutes les mesures avec leurs heures
+    communes_marnage = {}
+
+    # Remplir les données pour chaque commune avec toutes les mesures et leurs heures
+    for item in marnage_semaine:
+        commune_id = item['cp_commune_id']
+        commune_nom = item['cp_commune__commune']
+        date_creation = item['date_creation']
+
+        if commune_id not in communes_marnage:
+            communes_marnage[commune_id] = {
+                'nom': str(commune_nom),
+                'mesures': []
+            }
+
+        # Stocker chaque mesure avec son timestamp complet et sa valeur
+        communes_marnage[commune_id]['mesures'].append({
+            'timestamp': date_creation.strftime('%d/%m/%Y %H:%M'),
+            'valeur': float(item['marnage']) if item['marnage'] is not None else 0.0
+        })
+
+    # Préparer les données pour le template
+    communes_marnage_list = []
+
+    for commune_id, data in communes_marnage.items():
+        communes_marnage_list.append({
+            'nom': data['nom'],
+            'mesures': data['mesures']
+        })
+
+    # Préparer les données pour le template
+    marnage_data = {
+        'communes': communes_marnage_list,
+        'date_debut': lundi_semaine.strftime('%d/%m/%Y'),
+        'date_fin': (lundi_semaine + timedelta(days=6)).strftime('%d/%m/%Y')
+    }
 
     context = {
         'font_tableau': font,
         'regions': regions,
         'communes': commune,
         'chiffres': chiffres,
-        'annee_contrat_actuelle': annee_contrat_actuelle,
         'nb_client_actuelle': nb_client_actuelle,
         'annee_contrat_prec': annee_contrat_prec,
         'nb_client_prec': nb_client_prec,
@@ -334,7 +472,8 @@ def tableau_bord(request):
         'datedeb': date_deb if date_deb else '',
         'datefin': date_fin if date_fin else '',
         'factures_par_type_client': factures_par_type_client,
-        'debit_data': list(debit_data),
+        'debit_data': json.dumps(debit_data),
+        'marnage_data': json.dumps(marnage_data)
     }
 
     return render(request, 'all_page/tableau_bord.html', context)

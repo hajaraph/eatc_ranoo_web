@@ -7,11 +7,11 @@
             <div class="row mb-4">
                 <div class="col-md-4">
                     <div class="form-floating">
-                        <input type="date"
+                        <input type="datetime-local"
                                name="date_creation"
                                id="date_creation"
                                class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
-                               value="{% now 'Y-m-d' %}"
+                               value="{% now 'Y-m-d H:i' %}"
                                required>
                         <label for="date_creation">Date de création</label>
                     </div>
