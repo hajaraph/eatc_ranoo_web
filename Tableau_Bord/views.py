@@ -10,6 +10,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from Clients.models import Contrat, TypeClient
+from Compteurs.models import ReleveCompteur
 from Facturation.models import Paiement, Facture
 from Login.views import role_requis
 from Main_Courante.models import StatutMC
@@ -214,41 +215,34 @@ def tableau_bord(request):
     ).order_by('annee', 'mois')
 
     # Nouveau graphique : Consommation par type de client par mois
-    types_client_conso = TypeClient.objects.filter(
-        clients__contrats__num_compteur__relevecompteurs__date_releve__year=annee_actuelle
-    ).annotate(
-        mois=ExtractMonth('clients__contrats__num_compteur__relevecompteurs__date_releve'),
-        annee=ExtractYear('clients__contrats__num_compteur__relevecompteurs__date_releve')
-    ).values('id_type_client', 'designation_client', 'mois', 'annee').annotate(
-        conso_mensuelle=Coalesce(
-            Sum('clients__contrats__num_compteur__relevecompteurs__conso',
-                filter=Q(
-                    clients__contrats__num_compteur__relevecompteurs__date_releve__year=ExtractYear(
-                        'clients__contrats__num_compteur__relevecompteurs__date_releve'),
-                    clients__contrats__num_compteur__relevecompteurs__date_releve__month=ExtractMonth(
-                        'clients__contrats__num_compteur__relevecompteurs__date_releve')
-                )
-                ),
-            Value(0)
+    types_client_conso = (
+        ReleveCompteur.objects
+        .filter(date_releve__year=annee_actuelle)
+        .annotate(
+            mois=ExtractMonth('date_releve'),
+            annee=ExtractYear('date_releve'),
+            designation_client=Coalesce(
+                'num_compteur__contrats__client__type_client__designation_client',
+                Value('Non spécifié')
+            )
         )
-    ).filter(conso_mensuelle__gt=0).order_by('annee', 'mois', 'designation_client')
+        .values('designation_client', 'mois', 'annee')
+        .annotate(conso_mensuelle=Sum('conso'))
+        .filter(conso_mensuelle__gt=0)
+        .order_by('annee', 'mois', 'designation_client')
+    )
 
     # Appliquer le filtre par rôle sur types_client_conso
-    types_client_conso = filter_by_user_role(request, types_client_conso, 'clients__contrats__cp_commune_id')
+    types_client_conso = filter_by_user_role(request, types_client_conso, 'num_compteur__contrats__cp_commune_id')
 
     # Appliquer les mêmes filtres que pour les autres données
     if region:
         types_client_conso = types_client_conso.filter(
-            clients__contrats__cp_commune__region=region
+            num_compteur__contrats__cp_commune__region=region
         )
     if date_deb and date_fin:
         types_client_conso = types_client_conso.filter(
-            clients__contrats__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]
-        )
-    if region and date_deb and date_fin:
-        types_client_conso = types_client_conso.filter(
-            clients__contrats__cp_commune__region=region,
-            clients__contrats__num_compteur__relevecompteurs__date_releve__range=[date_deb, date_fin]
+            date_releve__range=[date_deb, date_fin]
         )
 
     # Filtrage de main courante non traité

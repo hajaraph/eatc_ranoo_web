@@ -534,42 +534,58 @@
         });
 
         // Graphique de consommation par type de client
-        let typeClientConso = document.getElementById('typeClientConso').getContext('2d');
-        let typeClientData = {
+        const typeClientConso = document.getElementById('typeClientConso').getContext('2d');
+        const typeClientData = {
             labels: [],
             datasets: []
         };
 
-        let dataByMonth = {};
-        let typesClient = new Set();
+        const dataByMonth = {};
+        const typesClient = new Set();
+        const totalsByMonth = {};
 
+        // Collecter les données depuis Django
         {% for conso in types_client_conso %}
             (function() {
-                let monthKey = '{% if conso.mois < 10 %}0{% endif %}{{ conso.mois }}/{{ conso.annee }}';
-                let typeClient = '{{ conso.designation_client }}';
-                let consommation = {{ conso.conso_mensuelle }};
+                const monthKey = '{{ conso.mois|stringformat:"02d" }}/{{ conso.annee }}';
+                const typeClient = '{{ conso.designation_client|escapejs }}';
+                const consommation = {{ conso.conso_mensuelle|default:0 }};
 
                 if (!dataByMonth[monthKey]) {
                     dataByMonth[monthKey] = {};
+                    totalsByMonth[monthKey] = 0;
                 }
                 dataByMonth[monthKey][typeClient] = consommation;
+                totalsByMonth[monthKey] += consommation;
                 typesClient.add(typeClient);
             })();
         {% endfor %}
 
-        typeClientData.labels = Object.keys(dataByMonth).sort();
-        let colorIndex = 0;
+        // Créer les labels triés chronologiquement
+        typeClientData.labels = Object.keys(dataByMonth).sort((a, b) => {
+            const [monthA, yearA] = a.split('/').map(Number);
+            const [monthB, yearB] = b.split('/').map(Number);
+            return (yearA * 12 + monthA) - (yearB * 12 + monthB);
+        });
 
-        typesClient.forEach(function(typeClient) {
-            let dataset = {
+        // Créer les datasets pour chaque type de client
+        let colorIndex = 0;
+        const sortedTypesClient = Array.from(typesClient).sort();
+
+        sortedTypesClient.forEach(function(typeClient) {
+            const dataset = {
                 label: typeClient,
                 backgroundColor: modernColors[colorIndex % modernColors.length],
+                borderColor: modernColors[colorIndex % modernColors.length],
+                borderWidth: 2,
                 borderRadius: 6,
-                data: []
+                data: [],
+                hoverBackgroundColor: modernColors[colorIndex % modernColors.length] + 'dd',
+                hoverBorderWidth: 3
             };
 
             typeClientData.labels.forEach(function(monthKey) {
-                let value = dataByMonth[monthKey][typeClient] || 0;
+                const value = dataByMonth[monthKey][typeClient] || 0;
                 dataset.data.push(value);
             });
 
@@ -577,42 +593,72 @@
             colorIndex++;
         });
 
+        // Créer le graphique
         new Chart(typeClientConso, {
             type: 'bar',
             data: typeClientData,
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
+                        stacked: false,
                         title: {
                             display: true,
                             text: 'Consommation (m³)',
                             font: {
-                                weight: '600'
+                                weight: '600',
+                                size: 12
                             }
                         },
                         grid: {
                             color: '#f1f5f9'
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            },
+                            callback: function(value) {
+                                return value.toLocaleString('fr-FR') + ' m³';
+                            }
                         }
                     },
                     x: {
+                        stacked: false,
                         title: {
                             display: true,
-                            text: 'Mois/Année',
+                            text: 'Période (Mois/Année)',
                             font: {
-                                weight: '600'
+                                weight: '600',
+                                size: 12
                             }
                         },
                         grid: {
                             display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
                         }
                     }
                 },
                 plugins: {
                     legend: {
-                        position: 'top'
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            }
+                        }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -620,7 +666,25 @@
                         bodyColor: '#ffffff',
                         borderColor: primaryColor,
                         borderWidth: 1,
-                        cornerRadius: 8
+                        cornerRadius: 8,
+                        padding: 12,
+                        callbacks: {
+                            title: function(context) {
+                                return 'Période: ' + context[0].label;
+                            },
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                return context.dataset.label + ': ' + value.toLocaleString('fr-FR') + ' m³';
+                            },
+                            afterBody: function(context) {
+                                const monthKey = context[0].label;
+                                const total = totalsByMonth[monthKey] || 0;
+                                return [
+                                    '---',
+                                    'Total du mois: ' + total.toLocaleString('fr-FR') + ' m³'
+                                ];
+                            }
+                        }
                     }
                 }
             }
