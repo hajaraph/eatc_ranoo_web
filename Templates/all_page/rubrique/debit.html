@@ -55,6 +55,7 @@
                     <th>Débit (litre/s)</th>
                     <th>Commune</th>
                     <th>Date d'enregistrement</th>
+                    <th>Date de modification</th>
                     {% if request.session.role_utilisateur == 'Administrateur' %}
                     <th class="text-center">Actions</th>
                     {% endif %}
@@ -67,6 +68,7 @@
                     <td>{{ debits.debit }}</td>
                     <td>{{ debits.cp_commune.commune }}</td>
                     <td>{{ debits.date_creation|date:"d/m/Y" }}</td>
+                    <td>{{ debits.date_modification|date:"d/m/Y" }}</td>
                     {% if request.session.role_utilisateur == 'Administrateur' %}
                     <td class="text-center">
                         <a href="{% url 'debit_mod' debits.pk %}" class="btn btn-sm btn-warning me-1" title="Modifier">

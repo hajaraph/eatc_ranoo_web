@@ -1,3 +1,4 @@
+{% load recouvrement_filters %}
 <div class="card-body">
     <div class="mb-4">
         <form>
@@ -22,7 +23,7 @@
                                class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
                                value="{% now 'Y-m-d' %}"
                                required>
-                        <label for="datefin">Mois de fin</label>
+                        <label for="datefin">Mois de fin</label
                     </div>
                 </div>
                 <div class="col-md-2 col-sm-6 d-flex align-items-center">
@@ -67,7 +68,7 @@
                     <td>{{ m.pk }}</td>
                     <td>{{ m.marnage }}%</td>
                     <td>{{ m.cp_commune.commune }}</td>
-                    <td>{{ m.date_creation|date:"d/m/Y" }}</td>
+                    <td>{{ m.date_creation|string_to_date }}</td>
                     <td>{{ m.date_modification|date:"d/m/Y" }}</td>
                     {% if request.session.role_utilisateur == 'Administrateur' %}
                     <td class="text-center">
@@ -79,7 +80,7 @@
                         {% if request.session.role_utilisateur == 'Administrateur' %}
                         <a href="{% url 'marnage_delete' m.pk %}"
                            class="btn btn-sm btn-danger" 
-                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce marnage du {{ m.date_creation|date:'d/m/Y' }} ?');"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce marnage du {{ m.date_creation|string_to_date }} ?');"
                            title="Supprimer">
                             <i class="fas fa-trash"></i>
                         </a>

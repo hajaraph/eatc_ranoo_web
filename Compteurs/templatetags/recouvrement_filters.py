@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django import template
 
 register = template.Library()
@@ -20,3 +22,19 @@ def sum_total(clients):
     for client in clients:
         total += sum(client['mois'].values())
     return total
+
+@register.filter
+def string_to_date(value, date_format="%d/%m/%Y %H:%M"):
+    """
+    Converts a date string from format 'YYYY-MM-DDTHH:MM' to a formatted date string.
+    Example: '2025-10-29T11:50' -> '29/10/2025 11:50'
+    """
+    if not value or not isinstance(value, str):
+        return value
+    try:
+        # datetime.fromisoformat handles 'YYYY-MM-DDTHH:MM' directly
+        dt_object = datetime.fromisoformat(value)
+        return dt_object.strftime(date_format)
+    except ValueError:
+        # If parsing fails for any reason, return the original value
+        return value
