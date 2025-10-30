@@ -3,7 +3,7 @@ import json
 from asyncio.log import logger
 
 from django.db import connection
-from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q, OuterRef, Subquery, DecimalField
+from django.db.models import Sum, Value, Count, Case, When, IntegerField, Q, OuterRef, F
 from django.db.models.functions import Coalesce, ExtractYear, ExtractMonth
 from django.http.response import HttpResponse
 from django.shortcuts import render
@@ -146,28 +146,18 @@ def tableau_bord(request):
                 ]
             }
         )
-    # Statistiques de facturation par type de client
-    # Créer une sous-requête pour calculer le total des paiements par facture
-    paiements_par_facture = (
-        Paiement.objects
-        .filter(facture=OuterRef('pk'))
-        .values('facture')
-        .annotate(total_paye=Sum('montant_payer'))
-        .values('total_paye')
-    )
-    
     # Requête de base avec filtres appliqués AVANT le groupement
     factures_par_type_base = Facture.objects.filter(date_facture__year=annee_actuelle)
-    
+
     # Appliquer le filtre par rôle
     factures_par_type_base = filter_by_user_role(request, factures_par_type_base, 'num_contrat__cp_commune_id')
-    
+
     # Appliquer les filtres région/date
     if region:
         factures_par_type_base = factures_par_type_base.filter(num_contrat__cp_commune__region=region)
     if date_deb and date_fin:
         factures_par_type_base = factures_par_type_base.filter(date_facture__range=[date_deb, date_fin])
-    
+
     # Effectuer le groupement et l'agrégation
     factures_par_type_client = (
         factures_par_type_base
@@ -189,15 +179,15 @@ def tableau_bord(request):
             montant_total_payees=Coalesce(
                 Sum('paiements__montant_payer'),
                 Value(0.0)
-            ),
+            ) - Coalesce(Sum('montantht__tarif__prix_location_compteur', filter=Q(statut=True)), Value(0.0)),
             # Montant impayé = restants (partiellement payées) + factures complètement impayées
-            montant_total_impayees=Coalesce(
+            montant_total_impayees=(Coalesce(
                 Sum('restant_nouvel'),
                 Value(0.0)
             ) + Coalesce(
                 Sum('montant_total_ttc', filter=Q(statut=False)),
                 Value(0.0)
-            ),
+            )) - Coalesce(Sum('montantht__tarif__prix_location_compteur', filter=Q(statut=False)), Value(0.0)),
             volume_paye=Coalesce(
                 Sum('relevecompteur__conso', filter=Q(statut=True)),
                 Value(0)
@@ -359,7 +349,7 @@ def tableau_bord(request):
             }
 
         # Stocker les données par année-mois pour cette commune
-        cle_periode = f"{annee}-{mois:02d}"
+        cle_periode = f'{annee}-{mois:02d}'
         # Utiliser la dernière valeur de débit pour cette période
         communes_debit[commune_id]['donnees'][cle_periode] = {
             'valeur': float(item['debit']),
@@ -369,7 +359,7 @@ def tableau_bord(request):
 
     # Créer la structure finale des données pour le template
     periodes = sorted(list(set(
-        f"{item['date_creation__month']:02d}/{item['date_creation__year']}"
+        f'{item['date_creation__month']:02d}/{item['date_creation__year']}'
         for item in debit_par_commune
     )))
 
@@ -401,7 +391,7 @@ def tableau_bord(request):
 
     # Récupérer les données de marnage pour la semaine en cours
     marnage_semaine = []
-    
+
     # Récupérer les données brutes
     marnage_data = marnage_query.filter(
         date_creation__isnull=False
