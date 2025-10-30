@@ -9,7 +9,7 @@
                                name="datedeb"
                                id="datedeb"
                                class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
-                               value="{% now 'Y-m-d' %}"
+                               value="{% if datedeb %}{{ datedeb }}{% else %}{% now 'Y-m-d' %}{% endif %}"
                                required>
                         <label for="datedeb">Mois de début</label>
                     </div>
@@ -20,7 +20,7 @@
                                name="datefin"
                                id="datefin"
                                class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
-                               value="{% now 'Y-m-d' %}"
+                               value="{% if datefin %}{{ datefin }}{% else %}{% now 'Y-m-d' %}{% endif %}"
                                required>
                         <label for="datefin">Mois de fin</label>
                     </div>
@@ -56,6 +56,7 @@
                     <th>Commune</th>
                     <th>Date d'enregistrement</th>
                     <th>Date de modification</th>
+                    <th>Utilisateur</th>
                     {% if request.session.role_utilisateur == 'Administrateur' %}
                     <th class="text-center">Actions</th>
                     {% endif %}
@@ -69,6 +70,10 @@
                     <td>{{ debits.cp_commune.commune }}</td>
                     <td>{{ debits.date_creation|date:"d/m/Y" }}</td>
                     <td>{{ debits.date_modification|date:"d/m/Y" }}</td>
+                    <td>
+                        {{ debits.utilisateur.prenom_utilisateur }}
+                        <label class="badge bg-primary ">{{ debits.utilisateur.role.role }}</label>
+                    </td>
                     {% if request.session.role_utilisateur == 'Administrateur' %}
                     <td class="text-center">
                         <a href="{% url 'debit_mod' debits.pk %}" class="btn btn-sm btn-warning me-1" title="Modifier">

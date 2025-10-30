@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 from Acommune.models import Commune
+from Tenants.models import Utilisateur
 
 
 class DebitEau(models.Model):
@@ -12,6 +13,7 @@ class DebitEau(models.Model):
     date_creation = models.DateField(auto_now_add=True)
     date_modification = models.DateField(auto_now=True)
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE, blank=False, null=False)
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         self.date_modification = datetime.now()
@@ -24,6 +26,7 @@ class Marnage(models.Model):
     date_creation = models.CharField(max_length=16, null=True, blank=True)
     date_modification = models.DateField(auto_now=True)
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE, blank=False, null=False)
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         self.date_modification = datetime.now()

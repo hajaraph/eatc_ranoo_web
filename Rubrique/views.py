@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 from Acommune.models import Province
 from Login.views import role_requis
+from Rel_Compteur.utils import filter_by_user_role
 from Rubrique.models import DebitEau, Marnage
 from Tenants.middleware import  SchemaAwareView
 
@@ -15,12 +16,23 @@ class DebitList(SchemaAwareView):
         title = 'Rubrique | Débit'
         active = 'active'
         font = 'custom-font'
-        debit_liste = DebitEau.objects.all()
+
+        datedeb = request.GET.get('datedeb')
+        datefin = request.GET.get('datefin')
+
+        debit = DebitEau.objects.all().order_by('-id_debit', '-date_creation')
+        debit = filter_by_user_role(request, debit, 'utilisateur__cp_commune_id')
+
+        if datedeb and datefin:
+            debit  = debit.filter(date_creation__range=[datedeb, datefin])
+
         context = {
             'title_debit': title,
             'active_debit': active,
             'font_rubrique': font,
-            'debit': debit_liste
+            'datedeb': datedeb,
+            'datefin': datefin,
+            'debit': debit
         }
         return render(request, self.template_name, context)
 
@@ -141,12 +153,24 @@ class MarnageList(SchemaAwareView):
         title = 'Rubrique | Marnage'
         active = 'active'
         font = 'custom-font'
-        marnage_liste = Marnage.objects.all()
+
+        datedeb = request.GET.get('datedeb')
+        datefin = request.GET.get('datefin')
+
+        marnage_liste = Marnage.objects.all().order_by('-id_marnage')
+        marnage_liste = filter_by_user_role(request, marnage_liste, 'utilisateur__cp_commune_id')
+
+        if datedeb and datefin:
+            marnage_liste = marnage_liste.filter(date_creation__range=[datedeb, datefin])
+
+
         context = {
             'title_marnage': title,
             'active_marnage': active,
             'font_rubrique': font,
-            'marnage': marnage_liste
+            'datedeb': datedeb,
+            'datefin': datefin,
+            'marnage': marnage_liste,
         }
         return render(request, self.template_name, context)
 
