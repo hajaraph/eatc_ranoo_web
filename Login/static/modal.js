@@ -31,7 +31,7 @@ $(document).ready(function(){
 
             champ.val(numericValue);
     }
-    let champ = $('#paiement, #tva, #taux_taxe, #num_compteur, #nb_personne_menage')
+    let champ = $('#paiement, #tva, #taux_taxe, #num_compteur, #nb_personne_menage, #debit')
 
     champ.on('input',function() {
         traiterChamp($(this));

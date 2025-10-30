@@ -8,7 +8,7 @@ from Acommune.models import Commune
 
 class DebitEau(models.Model):
     id_debit = models.BigAutoField(primary_key=True)
-    debit = models.IntegerField(null=False, blank=False)
+    debit = models.FloatField(null=False, blank=False)
     date_creation = models.DateField(auto_now_add=True)
     date_modification = models.DateField(auto_now=True)
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE, blank=False, null=False)
