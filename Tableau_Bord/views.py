@@ -360,7 +360,7 @@ def tableau_bord(request):
 
     # Créer la structure finale des données pour le template
     periodes = sorted(list(set(
-        f'{item['date_creation__month']:02d}/{item['date_creation__year']}'
+        f"{item['date_creation__month']:02d}/{item['date_creation__year']}"
         for item in debit_par_commune
     )))
 
