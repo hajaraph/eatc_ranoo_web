@@ -148,7 +148,7 @@ def tableau_bord(request):
         )
 
     # Requête de base avec filtres appliqués AVANT le groupement
-    factures_par_type_base = Facture.objects.filter(date_facture__year=annee_actuelle)
+    factures_par_type_base = Facture.objects.filter(relevecompteur__date_releve__year=annee_actuelle)
 
     # Appliquer le filtre par rôle
     factures_par_type_base = filter_by_user_role(request, factures_par_type_base, 'num_contrat__cp_commune_id')
@@ -157,14 +157,14 @@ def tableau_bord(request):
     if region:
         factures_par_type_base = factures_par_type_base.filter(num_contrat__cp_commune__region=region)
     if date_deb and date_fin:
-        factures_par_type_base = factures_par_type_base.filter(date_facture__range=[date_deb, date_fin])
+        factures_par_type_base = factures_par_type_base.filter(relevecompteur__date_releve__range=[date_deb, date_fin])
 
     # Effectuer le groupement et l'agrégation
     factures_par_type_client = (
         factures_par_type_base
         .annotate(
-            mois=ExtractMonth('date_facture'),
-            annee=ExtractYear('date_facture'),
+            mois=ExtractMonth('relevecompteur__date_releve'),
+            annee=ExtractYear('relevecompteur__date_releve'),
             type_client=Coalesce('num_contrat__client__type_client__designation_client', Value('Non spécifié')),
         )
         .values('mois', 'annee', 'type_client')
@@ -350,7 +350,7 @@ def tableau_bord(request):
             }
 
         # Stocker les données par année-mois pour cette commune
-        cle_periode = f"{annee}-{mois:02d}"
+        cle_periode = f'{annee}-{mois:02d}'
         # Utiliser la dernière valeur de débit pour cette période
         communes_debit[commune_id]['donnees'][cle_periode] = {
             'valeur': float(item['debit']),
@@ -360,7 +360,7 @@ def tableau_bord(request):
 
     # Créer la structure finale des données pour le template
     periodes = sorted(list(set(
-        f"{item['date_creation__month']:02d}/{item['date_creation__year']}"
+        f'{item['date_creation__month']:02d}/{item['date_creation__year']}'
         for item in debit_par_commune
     )))
 
