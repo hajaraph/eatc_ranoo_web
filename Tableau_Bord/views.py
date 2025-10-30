@@ -146,6 +146,7 @@ def tableau_bord(request):
                 ]
             }
         )
+
     # Requête de base avec filtres appliqués AVANT le groupement
     factures_par_type_base = Facture.objects.filter(date_facture__year=annee_actuelle)
 
@@ -349,7 +350,7 @@ def tableau_bord(request):
             }
 
         # Stocker les données par année-mois pour cette commune
-        cle_periode = f'{annee}-{mois:02d}'
+        cle_periode = f"{annee}-{mois:02d}"
         # Utiliser la dernière valeur de débit pour cette période
         communes_debit[commune_id]['donnees'][cle_periode] = {
             'valeur': float(item['debit']),
@@ -359,7 +360,7 @@ def tableau_bord(request):
 
     # Créer la structure finale des données pour le template
     periodes = sorted(list(set(
-        f'{item['date_creation__month']:02d}/{item['date_creation__year']}'
+        f"{item['date_creation__month']:02d}/{item['date_creation__year']}"
         for item in debit_par_commune
     )))
 
