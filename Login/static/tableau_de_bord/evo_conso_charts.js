@@ -1,11 +1,5 @@
 // Fichier: D:/ProjetReleverCompteur/eatc_web/Login/static/tableau_de_bord/evo_conso_charts.js
 
-/**
- * Charge les données de consommation et initialise les deux graphiques associés :
- * - Récapitulatif de la consommation (Doughnut)
- * - Évolution de la consommation (Line)
- * @param {string} queryParams - Les paramètres de requête pour le filtrage.
- */
 async function loadEvoConsoCharts(queryParams) {
     const recapChartId = 'RecapConso';
     const evoChartId = 'EvoConso';
@@ -15,28 +9,20 @@ async function loadEvoConsoCharts(queryParams) {
 
     try {
         const response = await fetch(`/tableau_bord/api/evo-conso-commune/?${queryParams}`);
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`);
         const data = await response.json();
 
         if (!data || data.length === 0) {
-            showError(recapChartId, 'Aucune donnée de consommation disponible.');
-            showError(evoChartId, 'Aucune donnée de consommation disponible.');
+            // CORRECTION : Utiliser la nouvelle fonction pour l'absence de données
+            showNoDataMessage(recapChartId, 'Aucune donnée de consommation à afficher.');
+            showNoDataMessage(evoChartId, 'Aucune donnée de consommation à afficher.');
             return;
         }
 
-        // Préparer les données pour les deux graphiques
         const recapLabels = data.map(item => item.commune);
-        const recapData = data.map(item => {
-            // Somme de total_conso sur toutes les périodes pour cette commune
-            return item.data.reduce((sum, current) => sum + current.total_conso, 0);
-        });
+        const recapData = data.map(item => item.data.reduce((sum, current) => sum + current.total_conso, 0));
 
-        // Initialiser le graphique Doughnut (Récap)
         renderRecapChart(recapChartId, recapLabels, recapData);
-
-        // Initialiser le graphique Line (Évolution)
         renderEvoChart(evoChartId, data);
 
     } catch (error) {
@@ -49,12 +35,6 @@ async function loadEvoConsoCharts(queryParams) {
     }
 }
 
-/**
- * Rend le graphique Doughnut du récapitulatif de la consommation.
- * @param {string} elementId - ID de l'élément canvas.
- * @param {string[]} labels - Labels pour chaque segment.
- * @param {number[]} data - Données pour chaque segment.
- */
 function renderRecapChart(elementId, labels, data) {
     const total = data.reduce((a, b) => a + b, 0);
     const percentageValues = data.map(value => ((value / total) * 100).toFixed(1));
@@ -87,11 +67,6 @@ function renderRecapChart(elementId, labels, data) {
     });
 }
 
-/**
- * Rend le graphique en ligne de l'évolution de la consommation.
- * @param {string} elementId - ID de l'élément canvas.
- * @param {object[]} data - Données brutes de l'API.
- */
 function renderEvoChart(elementId, data) {
     const datasets = data.map((row, index) => ({
         label: row.commune,

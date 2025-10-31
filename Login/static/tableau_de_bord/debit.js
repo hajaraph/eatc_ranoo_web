@@ -1,22 +1,17 @@
 // Fichier: D:/ProjetReleverCompteur/eatc_web/Login/static/tableau_de_bord/debit.js
 
-/**
- * Charge et affiche le graphique de l'évolution du débit.
- * @param {string} queryParams - Les paramètres de requête pour le filtrage.
- */
 async function loadDebitParCommune(queryParams) {
     const chartId = 'debitChart';
     showLoading(chartId);
 
     try {
         const response = await fetch(`/tableau_bord/api/debit-par-commune/?${queryParams}`);
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`);
         const data = await response.json();
 
         if (!data || !data.communes || data.communes.length === 0) {
-            showError(chartId, 'Aucune donnée de débit disponible.');
+            // CORRECTION : Utiliser la nouvelle fonction pour l'absence de données
+            showNoDataMessage(chartId, 'Aucune donnée de débit à afficher.');
             return;
         }
 
@@ -30,11 +25,6 @@ async function loadDebitParCommune(queryParams) {
     }
 }
 
-/**
- * Rend le graphique en ligne de l'évolution du débit.
- * @param {string} elementId - ID de l'élément canvas.
- * @param {object} data - Données formatées de l'API.
- */
 function renderDebitChart(elementId, data) {
     const datasets = data.communes.map((commune, index) => ({
         label: commune.nom,

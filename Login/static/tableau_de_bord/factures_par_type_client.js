@@ -1,9 +1,5 @@
 // Fichier: D:/ProjetReleverCompteur/eatc_web/Login/static/tableau_de_bord/factures_par_type_client.js
 
-/**
- * Charge et affiche le graphique détaillé des factures par type de client.
- * @param {string} queryParams - Les paramètres de requête pour le filtrage.
- */
 async function loadFacturesParTypeClient(queryParams) {
     const chartId = 'facturesParTypeClient';
     showLoading(chartId);
@@ -14,8 +10,8 @@ async function loadFacturesParTypeClient(queryParams) {
         const data = await response.json();
 
         if (!data || data.length === 0) {
-            const container = document.getElementById(chartId).parentNode;
-            container.innerHTML = '<div class="alert alert-info text-center d-flex align-items-center justify-content-center" style="height:100px;"><i class="fas fa-info-circle me-2"></i>Aucune donnée de paiement disponible pour la période sélectionnée</div>';
+            // CORRECTION : Utiliser la nouvelle fonction pour l'absence de données
+            showNoDataMessage(chartId, 'Aucune donnée de paiement à afficher.');
             return;
         }
 
@@ -29,14 +25,9 @@ async function loadFacturesParTypeClient(queryParams) {
     }
 }
 
-/**
- * Rend le graphique en barres empilées pour les factures par type de client.
- * @param {string} elementId - ID de l'élément canvas.
- * @param {object[]} apiData - Données brutes de l'API.
- */
 function renderFacturesParTypeClientChart(elementId, apiData) {
     const facturesData = {
-        labels: apiData.map(f => `${f.type_client} - ${String(f.mois).padStart(2, '0')}/${f.annee}`),
+        labels: apiData.map(f => `${f.commune_nom} - ${f.type_client} - ${String(f.mois).padStart(2, '0')}/${f.annee}`),
         payees: apiData.map(f => f.payees || 0),
         impayees: apiData.map(f => f.impayees || 0),
         montantTotal: apiData.map(f => f.montant_total || 0),
@@ -73,8 +64,8 @@ function renderFacturesParTypeClientChart(elementId, apiData) {
                 x: {
                     stacked: true,
                     grid: { display: false },
-                    ticks: { maxRotation: 45, minRotation: 45, font: { size: 11 } },
-                    title: { display: true, text: 'Type de Branchement - Mois/Année', font: { weight: '600', size: 12 } }
+                    ticks: { maxRotation: 90, minRotation: 45, font: { size: 11 }, autoSkip: false },
+                    title: { display: true, text: 'Commune - Type de Branchement - Période', font: { weight: '600', size: 12 } }
                 },
                 y: {
                     stacked: true,
@@ -118,11 +109,11 @@ function renderFacturesParTypeClientChart(elementId, apiData) {
                             const volumeImpaye = facturesData.volumeImpaye[index];
                             const volumeTotal = volumePaye + volumeImpaye;
 
-                            if (context.datasetIndex === 0) { // Factures payées
+                            if (context.datasetIndex === 0) {
                                 const montantPayees = facturesData.montantTotalPayees[index];
                                 tooltipText.push(`💰 Montant factures payées: ${montantPayees.toLocaleString('fr-FR')} AR`);
                                 tooltipText.push(`💧 Volume payé: ${volumePaye.toLocaleString('fr-FR')} m³`);
-                            } else { // Factures impayées
+                            } else {
                                 const montantImpayees = facturesData.montantTotalImpayees[index];
                                 tooltipText.push(`💰 Montant factures impayées: ${montantImpayees.toLocaleString('fr-FR')} AR`);
                                 tooltipText.push(`💧 Volume impayé: ${volumeImpaye.toLocaleString('fr-FR')} m³`);

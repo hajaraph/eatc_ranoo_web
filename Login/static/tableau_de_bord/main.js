@@ -25,55 +25,91 @@ Chart.defaults.plugins.legend.labels.padding = 15;
 // Fonctions utilitaires
 // =================================================================
 
-/**
- * Affiche une animation de chargement sur un conteneur de graphique.
- * @param {string} elementId - L'ID de l'élément canvas du graphique.
- */
 function showLoading(elementId) {
-    const container = document.getElementById(elementId)?.parentNode;
+    const canvas = document.getElementById(elementId);
+    if (!canvas) return;
+    const container = canvas.parentNode;
     if (container) {
-        if (container.querySelector('.spinner-border')) return; // Évite les doublons
+        if (container.querySelector('.chart-overlay')) return;
         container.style.position = 'relative';
-        const spinner = document.createElement('div');
-        spinner.className = 'd-flex justify-content-center align-items-center';
-        spinner.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background-color:rgba(255,255,255,0.7); z-index:10;';
-        spinner.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
-        container.appendChild(spinner);
+        const overlay = document.createElement('div');
+        overlay.className = 'chart-overlay d-flex justify-content-center align-items-center';
+        overlay.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+        container.appendChild(overlay);
     }
 }
 
-/**
- * Masque l'animation de chargement.
- * @param {string} elementId - L'ID de l'élément canvas du graphique.
- */
 function hideLoading(elementId) {
-    const container = document.getElementById(elementId)?.parentNode;
-    const spinner = container?.querySelector('.d-flex.justify-content-center');
-    if (spinner) {
-        container.removeChild(spinner);
+    const canvas = document.getElementById(elementId);
+    if (!canvas) return;
+    const container = canvas.parentNode;
+    const overlay = container?.querySelector('.chart-overlay');
+    if (overlay) {
+        container.removeChild(overlay);
+    }
+}
+
+function showError(elementId, message) {
+    const canvas = document.getElementById(elementId);
+    if (!canvas) return;
+    const container = canvas.parentNode;
+    if (container) {
+        container.innerHTML = ''; 
+        container.style.position = 'relative';
+        container.style.display = 'flex';
+        container.style.justifyContent = 'center';
+        container.style.alignItems = 'center';
+        container.style.minHeight = '250px';
+
+        const errorContent = document.createElement('div');
+        errorContent.className = 'text-center text-muted';
+        errorContent.innerHTML = `
+            <div style="font-size: 2.5rem; color: ${dangerColor}; opacity: 0.6;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <p class="mt-2 mb-0" style="font-weight: 500;">Erreur de chargement</p>
+            <small>${message}</small>
+        `;
+        container.appendChild(errorContent);
     }
 }
 
 /**
- * Affiche un message d'erreur dans un conteneur de graphique.
+ * Affiche un message stylisé pour l'absence de données.
  * @param {string} elementId - L'ID de l'élément canvas du graphique.
- * @param {string} message - Le message d'erreur à afficher.
+ * @param {string} message - Le message à afficher.
  */
-function showError(elementId, message) {
-    const container = document.getElementById(elementId)?.parentNode;
+function showNoDataMessage(elementId, message) {
+    const canvas = document.getElementById(elementId);
+    if (!canvas) return;
+    const container = canvas.parentNode;
     if (container) {
-        container.innerHTML = `<div class="alert alert-danger text-center d-flex align-items-center justify-content-center" style="height:100%;"><i class="fas fa-exclamation-triangle me-2"></i>${message}</div>`;
+        container.innerHTML = '';
+        container.style.position = 'relative';
+        container.style.display = 'flex';
+        container.style.justifyContent = 'center';
+        container.style.alignItems = 'center';
+        container.style.minHeight = '250px';
+
+        const noDataContent = document.createElement('div');
+        noDataContent.className = 'text-center text-muted';
+        noDataContent.innerHTML = `
+            <div style="font-size: 2.5rem; opacity: 0.5;">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <p class="mt-2 mb-0" style="font-weight: 500;">Aucune donnée</p>
+            <small>${message}</small>
+        `;
+        container.appendChild(noDataContent);
     }
 }
 
 // Orchestrateur principal
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Récupérer les paramètres de l'URL pour les filtres
     const urlParams = new URLSearchParams(window.location.search);
     const queryParams = urlParams.toString();
 
-    // Lancer le chargement de toutes les données du tableau de bord
     loadKpiData(queryParams);
     loadEvoConsoCharts(queryParams);
     loadStatutFactures(queryParams);
@@ -83,13 +119,12 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDebitParCommune(queryParams);
     loadMarnageParCommune(queryParams);
 
-    // Animer les conteneurs de graphiques lorsqu'ils apparaissent à l'écran
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.style.opacity = '1';
                 entry.target.style.transform = 'translateY(0)';
-                observer.unobserve(entry.target); // Animer une seule fois
+                observer.unobserve(entry.target);
             }
         });
     }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });

@@ -1,22 +1,17 @@
 // Fichier: D:/ProjetReleverCompteur/eatc_web/Login/static/tableau_de_bord/marnage.js
 
-/**
- * Charge et affiche le graphique de l'évolution du marnage.
- * @param {string} queryParams - Les paramètres de requête pour le filtrage.
- */
 async function loadMarnageParCommune(queryParams) {
     const chartId = 'marnageChart';
     showLoading(chartId);
 
     try {
         const response = await fetch(`/tableau_bord/api/marnage-par-commune/?${queryParams}`);
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`);
         const data = await response.json();
 
         if (!data || !data.communes || data.communes.length === 0) {
-            showError(chartId, 'Aucune donnée de marnage disponible.');
+            // CORRECTION : Utiliser la nouvelle fonction pour l'absence de données
+            showNoDataMessage(chartId, 'Aucune donnée de marnage à afficher.');
             return;
         }
 
@@ -30,11 +25,6 @@ async function loadMarnageParCommune(queryParams) {
     }
 }
 
-/**
- * Rend le graphique en barres de l'évolution du marnage.
- * @param {string} elementId - ID de l'élément canvas.
- * @param {object} data - Données formatées de l'API.
- */
 function renderMarnageChart(elementId, data) {
     const allTimestamps = new Set();
     data.communes.forEach(commune => {

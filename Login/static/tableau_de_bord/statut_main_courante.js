@@ -1,22 +1,17 @@
 // Fichier: D:/ProjetReleverCompteur/eatc_web/Login/static/tableau_de_bord/statut_main_courante.js
 
-/**
- * Charge et affiche le graphique de l'état des mains courantes.
- * @param {string} queryParams - Les paramètres de requête pour le filtrage.
- */
 async function loadStatutMainCourante(queryParams) {
     const chartId = 'main';
     showLoading(chartId);
 
     try {
         const response = await fetch(`/tableau_bord/api/statut-main-courante/?${queryParams}`);
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`);
         const data = await response.json();
 
         if (!data || data.length === 0) {
-            showError(chartId, 'Aucune donnée de main courante disponible.');
+            // CORRECTION : Utiliser la nouvelle fonction pour l'absence de données
+            showNoDataMessage(chartId, 'Aucune donnée de main courante à afficher.');
             return;
         }
 
@@ -35,14 +30,6 @@ async function loadStatutMainCourante(queryParams) {
     }
 }
 
-/**
- * Rend le graphique en barres du statut des mains courantes.
- * @param {string} elementId - ID de l'élément canvas.
- * @param {string[]} labels - Labels pour l'axe X.
- * @param {number[]} nonTraiteData - Données pour les MC non traitées.
- * @param {number[]} realiseData - Données pour les MC réalisées.
- * @param {number[]} enCoursData - Données pour les MC en cours.
- */
 function renderStatutMainCouranteChart(elementId, labels, nonTraiteData, realiseData, enCoursData) {
     new Chart(document.getElementById(elementId).getContext('2d'), {
         type: 'bar',

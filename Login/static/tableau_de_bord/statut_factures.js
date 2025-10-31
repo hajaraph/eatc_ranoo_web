@@ -1,22 +1,17 @@
 // Fichier: D:/ProjetReleverCompteur/eatc_web/Login/static/tableau_de_bord/statut_factures.js
 
-/**
- * Charge et affiche le graphique de l'état des factures (payées/impayées).
- * @param {string} queryParams - Les paramètres de requête pour le filtrage.
- */
 async function loadStatutFactures(queryParams) {
     const chartId = 'paiement';
     showLoading(chartId);
 
     try {
         const response = await fetch(`/tableau_bord/api/statut-factures/?${queryParams}`);
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`);
         const data = await response.json();
 
         if (!data || data.length === 0) {
-            showError(chartId, 'Aucune donnée de facturation disponible.');
+            // CORRECTION : Utiliser la nouvelle fonction pour l'absence de données
+            showNoDataMessage(chartId, 'Aucune donnée de facturation à afficher.');
             return;
         }
 
@@ -34,13 +29,6 @@ async function loadStatutFactures(queryParams) {
     }
 }
 
-/**
- * Rend le graphique en barres du statut des factures.
- * @param {string} elementId - ID de l'élément canvas.
- * @param {string[]} labels - Labels pour l'axe X.
- * @param {number[]} payeesData - Données pour les factures payées.
- * @param {number[]} impayeesData - Données pour les factures impayées.
- */
 function renderStatutFacturesChart(elementId, labels, payeesData, impayeesData) {
     new Chart(document.getElementById(elementId).getContext('2d'), {
         type: 'bar',
