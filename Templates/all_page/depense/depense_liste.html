@@ -52,9 +52,9 @@
             </a>
         </div>
         <div class="mx-5">
-            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#export-client-excel">
-                <i class="fas fa-file-excel me-1"></i>
-                Exporter
+            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exportDepenseModal" id="openExportDepenseModalBtn">
+                <i class="fas fa-file-pdf me-1"></i>
+                Exporter en PDF
             </button>
         </div>
     </div>
@@ -90,49 +90,43 @@
     </div>
 </div>
 
-<div class="modal fade" id="export-client-excel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="exportDepenseModal" tabindex="-1" aria-labelledby="exportDepenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Exportation de la liste des Clients au format Excel</h5>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="exportDepenseModalLabel">Exporter les Dépenses en PDF</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="formNew">
-                    {% csrf_token %}
-                    <div class="container">
-                        <div class="row">
-                            <div class="col-md-6 col-sm-12 mt-3">
-                                <div class="form-floating">
-                                    <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
-                                        <option value="" selected hidden>Selectionnez une région</option>
-                                        {% for region in regions %}
-                                            <option value="{{ region.region }}">{{ region.region }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <label for="region">Région</label>
-                                </div>
+                <form id="exportDepenseForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-floating">
+                                <input type="month" 
+                                       name="datedeb" 
+                                       id="exportDepenseDatedeb" 
+                                       class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                                <label for="exportDepenseDatedeb">Mois de début</label>
                             </div>
-                            <div class="col-md-6 col-sm-12 mt-3">
-                                <div class="form-floating">
-                                    <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0">
-                                        <option value="" selected hidden></option>
-                                    </select>
-                                    <label for="commune">Commune</label>
-                                </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-floating">
+                                <input type="month" 
+                                       name="datefin" 
+                                       id="exportDepenseDatefin" 
+                                       class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                                <label for="exportDepenseDatefin">Mois de fin</label>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
-                    <i class="fas fa-xmark-circle"></i>
-                    Annuler
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Annuler
                 </button>
-                <button type="button" class="btn btn-success confirmer-export-client-excel" id="confirmer-export-client-excel">
-                    <i class="fas fa-check-circle"></i>
-                    Confirmer
+                <button type="button" class="btn btn-primary" id="confirmExportDepenseBtn">
+                    <i class="fas fa-file-export me-1"></i>Exporter
                 </button>
             </div>
         </div>

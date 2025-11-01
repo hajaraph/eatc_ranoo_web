@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 
 from Login.views import role_requis
-from Rel_Compteur.utils import get_default_month_range, filter_by_month_range, filter_by_user_role
+from Rel_Compteur.utils import get_default_month_range, filter_by_month_range, filter_by_user_role, get_month_name_fr, generate_pdf_export
 from Tenants.middleware import schema_use, SchemaAwareView
 from Tenants.models import Utilisateur
 from .models import Recette, TypeRecette
@@ -155,3 +155,17 @@ def supprimer_recette(request, pk):
     except Recette.DoesNotExist:
         messages.error(request, "La recette demandée n'existe pas.")
     return redirect('recette_list')
+
+@schema_use
+def export_recette(request):
+    return generate_pdf_export(
+        request=request,
+        queryset=Recette.objects.all().select_related('type_recette', 'facture').order_by('date_encaissement'),
+        date_field='date_encaissement',
+        total_field='montant',
+        template_path='all_page/recette/export_recette_pdf.html',
+        filename_prefix='Recettes',
+        title_key='periode_recette',
+        item_name='recettes',
+        filter_field='facture__num_contrat__cp_commune_id'
+    )

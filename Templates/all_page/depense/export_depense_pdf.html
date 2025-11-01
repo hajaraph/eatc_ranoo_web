@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <title>Export Dépenses</title>
+    <style>
+        body { font-family: sans-serif; font-size: 9pt; }
+        h1 { font-size: 14pt; }
+        p { font-size: 9pt; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 3px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .summary {
+            margin-top: 10px;
+            text-align: right;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+    <h1>Liste des Dépenses {{ periode_depense }}</h1>
+    <p>Date d'export: {{ date_export|date:"d/m/Y H:i" }}</p>
+    
+    <div class="summary">
+        <p><strong>Nombre de dépenses:</strong> {{ nombre_depenses|default:"0" }}</p>
+        <p><strong>Total des dépenses:</strong> {{ total_depenses|default:"0" }} Ar</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date Transaction</th>
+                <th>Libellé</th>
+                <th>Montant</th>
+                <th>Catégorie</th>
+                <th>N° Reçu</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction.date_transaction|date:"d/m/Y" }}</td>
+                <td>{{ transaction.libelle }}</td>
+                <td>{{ transaction.montant }} Ar</td>
+                <td>{{ transaction.categorie.libelle }}</td>
+                <td>{{ transaction.numero_recu|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

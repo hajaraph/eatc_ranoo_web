@@ -1,13 +1,15 @@
 from datetime import datetime, date, timedelta
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import DatabaseError
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Sum
 from django.http import HttpRequest, HttpResponse
 from typing import Optional, Tuple, Any, Union
 
 from django.utils import timezone
 from num2words import num2words
 from Facturation.models import Facture
+from django.template.loader import render_to_string
+from weasyprint import HTML
 
 # Type variable for queryset
 def filter_by_client_number(
@@ -236,3 +238,84 @@ def filter_by_user_role(request, queryset, filter_field) -> QuerySet:
         return queryset.filter(**{filter_field: cp_commune})
 
     return queryset
+
+def generate_pdf_export(
+    request: HttpRequest,
+    queryset: QuerySet,
+    date_field: str,
+    total_field: str,
+    template_path: str,
+    filename_prefix: str,
+    title_key: str,
+    item_name: str,
+    filter_field: str
+) -> HttpResponse:
+    """
+    Génère un export PDF générique pour les recettes et les dépenses.
+
+    Args:
+        request: L'objet HttpRequest.
+        queryset: Le QuerySet de base à exporter.
+        date_field: Le nom du champ de date dans le modèle (ex: 'date_encaissement').
+        total_field: Le nom du champ à sommer pour le total (ex: 'montant').
+        template_path: Le chemin vers le template HTML pour le PDF.
+        filename_prefix: Le préfixe du nom de fichier pour le PDF exporté (ex: 'Recettes').
+        title_key: La clé du contexte pour le titre (ex: 'periode_recette').
+        item_name: Le nom des éléments (ex: 'recettes' ou 'transactions').
+        filter_field: Le champ à utiliser pour le filtrage par rôle (ex: 'facture__num_contrat__cp_commune_id').
+
+    Returns:
+        HttpResponse: La réponse HTTP contenant le PDF.
+    """
+    mois_debut_str = request.GET.get('datedeb')
+    mois_fin_str = request.GET.get('datefin')
+
+    # Appliquer le filtre par rôle utilisateur
+    filtered_queryset = filter_by_user_role(request, queryset, filter_field)
+
+    # Utilisation de la fonction utilitaire pour filtrer par mois
+    filtered_queryset, mois_debut_obj, mois_fin_obj = filter_by_month_range(
+        queryset=filtered_queryset,
+        date_field=date_field,
+        date_start=mois_debut_str,
+        date_end=mois_fin_str,
+        default_month=datetime.now().month
+    )
+
+    # Calculer le total et le nombre d'éléments
+    total_sum = filtered_queryset.aggregate(total=Sum(total_field))['total'] or 0
+    item_count = filtered_queryset.count()
+
+    if mois_debut_str and mois_fin_str:
+        start_date = datetime.strptime(mois_debut_str, '%Y-%m')
+        end_date = datetime.strptime(mois_fin_str, '%Y-%m')
+
+        if start_date.year == end_date.year and start_date.month == end_date.month:
+            periode_str = f"du mois de {get_month_name_fr(start_date.month)} {start_date.year}"
+        elif start_date.year == end_date.year:
+            periode_str = f"des mois de {get_month_name_fr(start_date.month)} à {get_month_name_fr(end_date.month)} {start_date.year}"
+        else:
+            periode_str = f"des mois de {get_month_name_fr(start_date.month)} {start_date.year} à {get_month_name_fr(end_date.month)} {end_date.year}"
+    else:
+        current_month = datetime.now()
+        periode_str = f"du mois de {get_month_name_fr(current_month.month)} {current_month.year}"
+
+    context = {
+        item_name: filtered_queryset,
+        'date_export': datetime.now(),
+        f'total_{item_name}': total_sum,
+        f'nombre_{item_name}': item_count,
+        title_key: periode_str,
+    }
+
+    html_string = render_to_string(template_path, context)
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'filename="{filename_prefix}_{datetime.now().strftime("%Y-%m-%d")}.pdf"'
+    
+    HTML(
+        string=html_string,
+        base_url=request.build_absolute_uri('/')
+    ).write_pdf(response)
+    
+    return response

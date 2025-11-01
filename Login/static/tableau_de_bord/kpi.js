@@ -6,7 +6,10 @@
  */
 function formatNumberWithSpaces(number) {
     if (number === null || number === undefined) return '0';
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    const isNegative = number < 0;
+    const absNumber = Math.abs(number);
+    const formattedNumber = absNumber.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return isNegative ? '-' + formattedNumber : formattedNumber;
 }
 
 /**
@@ -17,7 +20,7 @@ async function loadKpiData(queryParams) {
     const kpiContainer = document.getElementById('kpi-container');
     if (!kpiContainer) return;
 
-    kpiContainer.querySelectorAll('.stats-value').forEach(el => {
+    kpiContainer.querySelectorAll('.stats-value, strong').forEach(el => {
         el.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">...</span></div>';
     });
 
@@ -28,22 +31,83 @@ async function loadKpiData(queryParams) {
         }
         const data = await response.json();
 
-        updateKpiElement('kpi-chiffres', data.chiffres, (val) => `${formatNumberWithSpaces(val)}`);
-        updateKpiElement('kpi-clients-actuelle', data.nb_client_actuelle);
-        updateKpiElement('kpi-clients-prec', data.nb_client_prec);
-        
-        const anneePrecEl = document.getElementById('kpi-annee-prec');
-        if(anneePrecEl) anneePrecEl.textContent = data.annee_contrat_prec;
+        // Carte 1: Résultat Net
+        updateKpiElement('kpi-resultat-net', data.resultat_net, val => `${formatNumberWithSpaces(val)} Ar`);
+        updateKpiElement('kpi-total-recettes', data.total_recettes, val => `${formatNumberWithSpaces(val)} Ar`);
+        updateKpiElement('kpi-total-depenses', data.total_depenses, val => `${formatNumberWithSpaces(val)} Ar`);
+        updateResultatNetCard(data.resultat_net);
 
-        const anneeActuelleEl = document.getElementById('kpi-annee-actuelle');
-        if(anneeActuelleEl) anneeActuelleEl.textContent = data.annee_contrat_actuelle || new Date().getFullYear();
+        // Carte 2: Chiffre d'Affaires
+        updateKpiElement('kpi-chiffres', data.chiffres, val => `${formatNumberWithSpaces(val)} Ar`);
+
+        // Carte 3: Évolution des Abonnés
+        updateKpiElement('kpi-clients-actuelle', data.nb_client_actuelle);
+        updateEvolutionAbonnesCard(data.nb_client_actuelle, data.nb_client_prec, data.annee_contrat_prec);
 
     } catch (error) {
         console.error('Erreur lors du chargement des KPIs:', error);
-        kpiContainer.querySelectorAll('.stats-value').forEach(el => {
+        kpiContainer.querySelectorAll('.stats-value, strong').forEach(el => {
             el.innerHTML = '<span class="text-sm text-danger">Erreur</span>';
         });
     }
+}
+
+/**
+ * Met à jour la couleur de la carte "Résultat Net" en fonction de sa valeur.
+ * @param {number} resultatNet - La valeur du résultat net.
+ */
+function updateResultatNetCard(resultatNet) {
+    const card = document.getElementById('resultat-net-card');
+    const icon = document.getElementById('resultat-net-icon');
+    if (!card || !icon) return;
+
+    card.classList.remove('success', 'danger', 'primary');
+    icon.classList.remove('success', 'danger', 'primary');
+
+    if (resultatNet > 0) {
+        card.classList.add('success');
+        icon.classList.add('success');
+    } else if (resultatNet < 0) {
+        card.classList.add('danger');
+        icon.classList.add('danger');
+    } else {
+        card.classList.add('primary');
+        icon.classList.add('primary');
+    }
+}
+
+/**
+ * Met à jour la carte d'évolution des abonnés.
+ * @param {number} nbActuel - Nombre d'abonnés actuels.
+ * @param {number} nbPrec - Nombre d'abonnés de l'année précédente.
+ * @param {string} anneePrec - L'année précédente.
+ */
+function updateEvolutionAbonnesCard(nbActuel, nbPrec, anneePrec) {
+    const card = document.getElementById('evolution-abonnes-card');
+    const icon = document.getElementById('evolution-abonnes-icon');
+    const evolutionText = document.getElementById('kpi-clients-evolution');
+    if (!card || !icon || !evolutionText) return;
+
+    const difference = nbActuel - nbPrec;
+    let evolutionString = `vs ${nbPrec} en ${anneePrec}`;
+    
+    card.classList.remove('success', 'danger', 'primary');
+    icon.classList.remove('success', 'danger', 'primary');
+
+    if (difference > 0) {
+        evolutionString = `+${difference} vs ${anneePrec}`;
+        card.classList.add('success');
+        icon.classList.add('success');
+    } else if (difference < 0) {
+        evolutionString = `${difference} vs ${anneePrec}`;
+        card.classList.add('danger');
+        icon.classList.add('danger');
+    } else {
+        evolutionString = `Aucune évolution vs ${anneePrec}`;
+        card.classList.add('primary');
+        icon.classList.add('primary');
+    }
+    evolutionText.textContent = evolutionString;
 }
 
 /**

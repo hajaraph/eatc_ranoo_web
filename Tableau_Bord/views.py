@@ -9,10 +9,12 @@ from django.utils import timezone
 
 from Clients.models import Contrat
 from Compteurs.models import ReleveCompteur
+from Depense.models import Transactions
 from Facturation.models import Paiement, Facture
 from Login.views import role_requis
 from Main_Courante.models import StatutMC
 from Acommune.models import Region, Commune
+from Recette.models import Recette
 from Rubrique.models import DebitEau, Marnage
 from Tenants.middleware import schema_use
 from Rel_Compteur.utils import filter_by_user_role
@@ -82,12 +84,23 @@ def api_kpi_globaux(request):
     contrats_actuels_query = _get_filtered_queryset(request, Contrat, 'cp_commune_id', 'cp_commune__region', 'date_debut')
     contrats_prec_query = _get_filtered_queryset(request, Contrat, 'cp_commune_id', 'cp_commune__region', 'date_debut', default_to_year=False).filter(date_debut__year=annee_precedente)
 
+    # --- Recettes et Dépenses ---
+    recettes_query = _get_filtered_queryset(request, Recette, 'facture__num_contrat__cp_commune_id', 'facture__num_contrat__cp_commune__region', 'date_encaissement')
+    depenses_query = _get_filtered_queryset(request, Transactions, 'utilisateur__cp_commune_id', 'utilisateur__cp_commune__region', 'date_transaction')
+
+    total_recettes = recettes_query.aggregate(total=Sum('montant'))['total'] or 0
+    total_depenses = depenses_query.aggregate(total=Sum('montant'))['total'] or 0
+    resultat_net = total_recettes - total_depenses
+
     data = {
         'chiffres': round(chiffres, 2),
         'nb_client_actuelle': contrats_actuels_query.count(),
         'annee_contrat_prec': annee_precedente,
         'nb_client_prec': contrats_prec_query.count(),
-        'annee_contrat_actuelle': annee_actuelle
+        'annee_contrat_actuelle': annee_actuelle,
+        'total_recettes': total_recettes,
+        'total_depenses': total_depenses,
+        'resultat_net': resultat_net,
     }
     return JsonResponse(data)
 
@@ -279,7 +292,7 @@ def api_marnage_par_commune(request):
         try:
             date_creation = datetime.fromisoformat(item['date_creation'])
             communes_marnage[commune_nom]['mesures'].append({
-                'timestamp': date_creation.strftime('%d/%m/%Y %H:%M'),
+                'timestamp': date_creation.strftime('%d/%m/%Y'),
                 'valeur': float(item['marnage']) if item['marnage'] is not None else 0.0
             })
         except (ValueError, TypeError):

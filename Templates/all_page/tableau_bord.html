@@ -20,17 +20,15 @@
             <div class="row flex-nowrap">
                 {% include 'navbar/navbar.html' %}
                 <div class="col p-0">
-                    <div class="page-header">
-                        <h1 class="page-title">Tableau de Bord</h1>
-                        <p class="page-subtitle">Aperçu des performances et statistiques en temps réel</p>
-                    </div>
-
-                    <div class="content-wrapper">
-                        <!-- Filters Section -->
+                    <div class="header-and-filter-wrapper">
+                        <div class="page-header">
+                            <h1 class="page-title">Tableau de Bord</h1>
+                            <p class="page-subtitle">Aperçu des performances et statistiques en temps réel</p>
+                        </div>
                         <div class="filter-section">
                             <form>
                                 <div class="row filter-row">
-                                    <div class="col-md-3 col-sm-6 mb-3">
+                                    <div class="col-md-auto mb-2">
                                         <div class="form-floating">
                                             <select name="region" id="region" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
                                                 <option value="" disabled selected hidden>Selectionné une région</option>
@@ -41,35 +39,36 @@
                                             <label for="region"><i class="fas fa-map-marker-alt me-2"></i>Région</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-3 col-sm-6 mb-3">
+                                    <div class="col-md-auto mb-2">
                                         <div class="form-floating">
                                             <input type="date" name="date_deb" id="date_deb" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ datedeb }}">
                                             <label for="date_deb"><i class="fas fa-calendar-alt me-2"></i>Période du</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-3 col-sm-6 mb-3">
+                                    <div class="col-md-auto mb-2">
                                         <div class="form-floating">
                                             <input type="date" name="date_fin" id="date_fin" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ datefin }}">
                                             <label for="date_fin"><i class="fas fa-calendar-alt me-2"></i>au</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-3 col-sm-6 mb-3">
-                                        <button class="btn btn-primary" type="submit">
+                                    <div class="col-md-auto mb-2 d-flex align-items-center">
+                                        <button class="btn btn-primary" type="submit" style="padding: 15px">
                                             <i class="fas fa-search"></i>
                                         </button>
                                     </div>
                                 </div>
                             </form>
                         </div>
+                    </div>
 
+                    <div class="content-wrapper">
                         <!-- Stats Cards -->
                         <div id="kpi-container" class="row mb-4">
-                            <div class="col-lg-4 col-md-6 mb-3">
+
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="stats-card warning">
                                     <div class="d-flex align-items-center">
-                                        <div class="stats-icon warning me-3">
-                                            <i class="fas fa-coins"></i>
-                                        </div>
+                                        <div class="stats-icon warning me-3"><i class="fas fa-coins"></i></div>
                                         <div class="flex-grow-1">
                                             <div class="stats-label">Chiffre d'affaires</div>
                                             <div id="kpi-chiffres" class="stats-value">0</div>
@@ -78,30 +77,39 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-4 col-md-6 mb-3">
-                                <div class="stats-card primary">
+
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div id="resultat-net-card" class="stats-card">
                                     <div class="d-flex align-items-center">
-                                        <div class="stats-icon primary me-3">
-                                            <i class="fas fa-users"></i>
-                                        </div>
+                                        <div id="resultat-net-icon" class="stats-icon me-3"><i class="fas fa-balance-scale"></i></div>
                                         <div class="flex-grow-1">
-                                            <div class="stats-label">Abonnés <span id="kpi-annee-prec">...</span></div>
-                                            <div id="kpi-clients-prec" class="stats-value">0</div>
-                                            <small class="text-muted">Année précédente</small>
+                                            <div class="stats-label">Résultat Net</div>
+                                            <div id="kpi-resultat-net" class="stats-value">0</div>
+                                            <small class="text-muted">
+                                                <span class="text-success me-2">
+                                                    Recette :
+                                                    <i class="fas fa-arrow-down"></i>
+                                                    <strong id="kpi-total-recettes">0</strong>
+                                                </span>
+                                                <span class="text-danger">
+                                                    Dépense :
+                                                    <i class="fas fa-arrow-up"></i>
+                                                    <strong id="kpi-total-depenses">0</strong>
+                                                </span>
+                                            </small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-4 col-md-6 mb-3">
-                                <div class="stats-card success">
+
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div id="evolution-abonnes-card" class="stats-card">
                                     <div class="d-flex align-items-center">
-                                        <div class="stats-icon success me-3">
-                                            <i class="fas fa-user-plus"></i>
-                                        </div>
+                                        <div id="evolution-abonnes-icon" class="stats-icon me-3"><i class="fas fa-users"></i></div>
                                         <div class="flex-grow-1">
-                                            <div class="stats-label">Abonnés <span id="kpi-annee-actuelle">...</span></div>
+                                            <div class="stats-label">Abonnés</div>
                                             <div id="kpi-clients-actuelle" class="stats-value">0</div>
-                                            <small class="text-muted">Année actuelle</small>
+                                            <small id="kpi-clients-evolution" class="text-muted">vs Année Précédente</small>
                                         </div>
                                     </div>
                                 </div>

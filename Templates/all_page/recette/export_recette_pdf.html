@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <title>Export Recettes</title>
+    <style>
+        body { font-family: sans-serif; font-size: 9pt; }
+        h1 { font-size: 14pt; }
+        p { font-size: 9pt; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 3px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .summary {
+            margin-top: 10px;
+            text-align: right;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+    <h1>Liste des Recettes {{ periode_recette }}</h1>
+    <p>Date d'export: {{ date_export|date:"d/m/Y H:i" }}</p>
+    
+    <div class="summary">
+        <p><strong>Nombre de recettes:</strong> {{ nombre_recettes }}</p>
+        <p><strong>Total des recettes:</strong> {{ total_recettes|default:"0" }} Ar</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date Encaissement</th>
+                <th>Type</th>
+                <th>Montant</th>
+                <th>Description</th>
+                <th>Facture</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for recette in recettes %}
+            <tr>
+                <td>{{ recette.date_encaissement|date:"d/m/Y" }}</td>
+                <td>{{ recette.type_recette.libelle }}</td>
+                <td>{{ recette.montant }} Ar</td>
+                <td>{{ recette.description }}</td>
+                <td>{{ recette.facture.num_facture|default_if_none:"" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

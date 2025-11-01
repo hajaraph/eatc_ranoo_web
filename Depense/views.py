@@ -5,7 +5,7 @@ from django.db.models import Sum
 from django.shortcuts import render, redirect
 
 from Depense.models import Transactions, Categories
-from Rel_Compteur.utils import filter_by_month_range, get_default_month_range, filter_by_user_role
+from Rel_Compteur.utils import filter_by_month_range, get_default_month_range, filter_by_user_role, generate_pdf_export
 from Tenants.middleware import schema_use, SchemaAwareView
 
 
@@ -131,3 +131,18 @@ def depense_suppression(request, pk):
         messages.error(request, f"Une erreur est survenue lors de la suppression : {str(e)}")
 
     return redirect('depense')
+
+
+@schema_use
+def export_depense(request):
+    return generate_pdf_export(
+        request=request,
+        queryset=Transactions.objects.all().select_related('categorie', 'utilisateur').order_by('date_transaction'),
+        date_field='date_transaction',
+        total_field='montant',
+        template_path='all_page/depense/export_depense_pdf.html',
+        filename_prefix='Depenses',
+        title_key='periode_depense',
+        item_name='transactions',
+        filter_field='utilisateur__cp_commune_id'
+    )
