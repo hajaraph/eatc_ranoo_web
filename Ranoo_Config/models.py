@@ -8,3 +8,6 @@ class ConfigBranchement(models.Model):
     type_client = models.ForeignKey(TypeClient, on_delete=models.CASCADE, related_name='config_branchement')
     tva_applique = models.BooleanField(default=False)
     taxe_applique = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['type_client__designation_client']
