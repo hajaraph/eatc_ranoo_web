@@ -21,56 +21,58 @@
 </head>
 <body>
     {% include 'navbar/navbar.html' %}
-    <div class="container-fluid">
-        <div class="row flex-nowrap">
-            <div class="col p-2">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-0">
-                        <div class="row">
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture' %}" class="btn btn-sm w-100 {{ active_etat }}">
-                                    Facturation
-                                </a>
-                            </div>
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture_paye' %}" class="btn btn-sm w-100 {{ active_facture_paye }}">
-                                    Payé
-                                </a>
-                            </div>
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture_impaye' %}" class="btn btn-sm w-100 {{ active_facture_impaye }}">
-                                    Impayé
-                                </a>
-                            </div>
-                             <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture_restant' %}" class="btn btn-sm w-100 {{ active_facture }}">
-                                    Restant
-                                </a>
-                            </div>
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'facture_avoir' %}" class="btn btn-sm w-100 {{ active_avoir }}">
-                                    Avoir
-                                </a>
+    <div class="main-content-area">
+        <div class="container-fluid">
+            <div class="row flex-nowrap">
+                <div class="col p-2">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header border-0">
+                            <div class="row">
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'facture' %}" class="btn btn-sm w-100 {{ active_etat }}">
+                                        Facturation
+                                    </a>
+                                </div>
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'facture_paye' %}" class="btn btn-sm w-100 {{ active_facture_paye }}">
+                                        Payé
+                                    </a>
+                                </div>
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'facture_impaye' %}" class="btn btn-sm w-100 {{ active_facture_impaye }}">
+                                        Impayé
+                                    </a>
+                                </div>
+                                 <div class="col-md-2 mt-4">
+                                    <a href="{% url 'facture_restant' %}" class="btn btn-sm w-100 {{ active_facture }}">
+                                        Restant
+                                    </a>
+                                </div>
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'facture_avoir' %}" class="btn btn-sm w-100 {{ active_avoir }}">
+                                        Avoir
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        {% include 'message.html' %}
-                        {% if title_etat %}
-                            {% include 'all_page/facturation/facture.html' %}
-                        {% elif title_facture %}
-                            {% include 'all_page/facturation/facture_restant.html' %}
-                        {% elif title_retard %}
-                            {% include 'all_page/facturation/facture_retard.html' %}
-                        {% elif title_avoir %}
-                            {% include 'all_page/facturation/facture_avoir.html' %}
-                        {% elif title_etat_detail %}
-                            {% include 'all_page/facturation/facture_detail.html' %}
-                        {% elif title_facture_paye %}
-                            {% include 'all_page/facturation/facture_paye.html' %}
-                        {% elif title_facture_impaye %}
-                            {% include 'all_page/facturation/facture_impaye.html' %}
-                        {% endif %}
+                        <div class="card-body">
+                            {% include 'message.html' %}
+                            {% if title_etat %}
+                                {% include 'all_page/facturation/facture.html' %}
+                            {% elif title_facture %}
+                                {% include 'all_page/facturation/facture_restant.html' %}
+                            {% elif title_retard %}
+                                {% include 'all_page/facturation/facture_retard.html' %}
+                            {% elif title_avoir %}
+                                {% include 'all_page/facturation/facture_avoir.html' %}
+                            {% elif title_etat_detail %}
+                                {% include 'all_page/facturation/facture_detail.html' %}
+                            {% elif title_facture_paye %}
+                                {% include 'all_page/facturation/facture_paye.html' %}
+                            {% elif title_facture_impaye %}
+                                {% include 'all_page/facturation/facture_impaye.html' %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>

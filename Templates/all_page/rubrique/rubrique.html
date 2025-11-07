@@ -21,39 +21,41 @@
 </head>
 <body>
     {% include 'navbar/navbar.html' %}
-    <div class="container-fluid">
-        <div class="row flex-nowrap">
-            <div class="col p-2">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-0">
-                        <div class="row">
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'debit' %}" class="btn btn-sm w-100 {{ active_debit }}">
-                                    Débit
-                                </a>
-                            </div>
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'marnage' %}" class="btn btn-sm w-100 {{ active_marnage }}">
-                                    Marnage
-                                </a>
+    <div class="main-content-area">
+        <div class="container-fluid">
+            <div class="row flex-nowrap">
+                <div class="col p-2">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header border-0">
+                            <div class="row">
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'debit' %}" class="btn btn-sm w-100 {{ active_debit }}">
+                                        Débit
+                                    </a>
+                                </div>
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'marnage' %}" class="btn btn-sm w-100 {{ active_marnage }}">
+                                        Marnage
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        {% include 'message.html' %}
-                        {% if title_debit %}
-                            {% include 'all_page/rubrique/debit.html' %}
-                        {% elif title_debit_new %}
-                            {% include 'all_page/rubrique/debit_new.html' %}
-                        {% elif title_debit_mod %}
-                            {% include 'all_page/rubrique/debit_mod.html' %}
-                        {% elif title_marnage %}
-                            {% include 'all_page/rubrique/marnage.html' %}
-                        {% elif title_marnage_new %}
-                            {% include 'all_page/rubrique/marnage_new.html' %}
-                        {% elif title_marnage_mod %}
-                            {% include 'all_page/rubrique/marnage_mod.html' %}
-                        {% endif %}
+                        <div class="card-body">
+                            {% include 'message.html' %}
+                            {% if title_debit %}
+                                {% include 'all_page/rubrique/debit.html' %}
+                            {% elif title_debit_new %}
+                                {% include 'all_page/rubrique/debit_new.html' %}
+                            {% elif title_debit_mod %}
+                                {% include 'all_page/rubrique/debit_mod.html' %}
+                            {% elif title_marnage %}
+                                {% include 'all_page/rubrique/marnage.html' %}
+                            {% elif title_marnage_new %}
+                                {% include 'all_page/rubrique/marnage_new.html' %}
+                            {% elif title_marnage_mod %}
+                                {% include 'all_page/rubrique/marnage_mod.html' %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>

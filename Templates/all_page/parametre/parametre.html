@@ -21,37 +21,39 @@
 </head>
 <body>
     {% include 'navbar/navbar.html' %}
-    <div class="container-fluid">
-        <div class="row flex-nowrap">
-            <div class="col p-2">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-0">
-                        <div class="row">
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'para_utilisateur' %}" class="btn btn-sm w-100 {{ active_utilisateur }}">
-                                    Mon Profile
-                                </a>
+    <div class="main-content-area">
+        <div class="container-fluid">
+            <div class="row flex-nowrap">
+                <div class="col p-2">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header border-0">
+                            <div class="row">
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'para_utilisateur' %}" class="btn btn-sm w-100 {{ active_utilisateur }}">
+                                        Mon Profile
+                                    </a>
+                                </div>
+                                {% if request.session.role_utilisateur == 'Administrateur' %}
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'historique' %}" class="btn btn-sm w-100 {{ active_historique }}">
+                                        Historique
+                                    </a>
+                                </div>
+                                {% endif %}
                             </div>
-                            {% if request.session.role_utilisateur == 'Administrateur' %}
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'historique' %}" class="btn btn-sm w-100 {{ active_historique }}">
-                                    Historique
-                                </a>
-                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% include 'message.html' %}
+                            {% if titre_utilisateur %}
+                                {% include 'all_page/parametre/parametre_profile.html' %}
+                            {% elif titre_historique %}
+                                {% include 'all_page/parametre/historique.html' %}
+                            {% elif titre_profile %}
+                                {% include 'all_page/parametre/profile_modifier.html' %}
+                            {% elif titre_motde_passe %}
+                                {% include 'all_page/parametre/parametre_changer_motde_passe.html' %}
                             {% endif %}
                         </div>
-                    </div>
-                    <div class="card-body">
-                        {% include 'message.html' %}
-                        {% if titre_utilisateur %}
-                            {% include 'all_page/parametre/parametre_profile.html' %}
-                        {% elif titre_historique %}
-                            {% include 'all_page/parametre/historique.html' %}
-                        {% elif titre_profile %}
-                            {% include 'all_page/parametre/profile_modifier.html' %}
-                        {% elif titre_motde_passe %}
-                            {% include 'all_page/parametre/parametre_changer_motde_passe.html' %}
-                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -21,39 +21,41 @@
 </head>
 <body>
     {% include 'navbar/navbar.html' %}
-    <div class="container-fluid">
-        <div class="row flex-nowrap">
-            <div class="col p-2">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-0">
-                        <div class="row">
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'config_utilisateur' %}" class="btn btn-sm w-100 {{ active_utilisateur }}{{ active_droit }}">
-                                    <i class="fas fa-users me-2"></i>Gestion des utilisateurs
-                                </a>
-                            </div>
-{#                            <div class="col-md-2 mt-4">#}
-{#                                <a href="{% url 'region' %}" class="btn btn-sm w-100 {{ active_region }}">#}
-{#                                    <i class="fas fa-map-marker-alt me-2"></i>Gestion des régions#}
-{#                                </a>#}
-{#                            </div>#}
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'branchement' %}" class="btn btn-sm w-100 {{ active_branchement }}">
-                                    <i class="fas fa-sitemap me-2"></i>Gestion des branchements
-                                </a>
-                            </div>
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'config_tarif' %}" class="btn btn-sm w-100 {{ active_config_constates }}">
-                                    <i class="fas fa-tags me-2"></i>Gestion des tarifs
-                                </a>
+    <div class="main-content-area">
+        <div class="container-fluid">
+            <div class="row flex-nowrap">
+                <div class="col p-2">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header border-0">
+                            <div class="row">
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'config_utilisateur' %}" class="btn btn-sm w-100 {{ active_utilisateur }}{{ active_droit }}">
+                                        <i class="fas fa-users me-2"></i>Gestion des utilisateurs
+                                    </a>
+                                </div>
+    {#                            <div class="col-md-2 mt-4">#}
+    {#                                <a href="{% url 'region' %}" class="btn btn-sm w-100 {{ active_region }}">#}
+    {#                                    <i class="fas fa-map-marker-alt me-2"></i>Gestion des régions#}
+    {#                                </a>#}
+    {#                            </div>#}
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'branchement' %}" class="btn btn-sm w-100 {{ active_branchement }}">
+                                        <i class="fas fa-sitemap me-2"></i>Gestion des branchements
+                                    </a>
+                                </div>
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'config_tarif' %}" class="btn btn-sm w-100 {{ active_config_constates }}">
+                                        <i class="fas fa-tags me-2"></i>Gestion des tarifs
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        {% include 'message.html' %}
-                        {% block content %}
+                        <div class="card-body">
+                            {% include 'message.html' %}
+                            {% block content %}
 
-                        {% endblock %}
+                            {% endblock %}
+                        </div>
                     </div>
                 </div>
             </div>

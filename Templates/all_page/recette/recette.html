@@ -21,26 +21,28 @@
 </head>
 <body>
     {% include 'navbar/navbar.html' %}
-    <div class="container-fluid">
-        <div class="row flex-nowrap">
-            <div class="col p-2">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-0">
-                        <div class="row">
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'recette_list' %}" class="btn btn-sm w-100 {{ active_recette }}">
-                                    Recette
-                                </a>
+    <div class="main-content-area">
+        <div class="container-fluid">
+            <div class="row flex-nowrap">
+                <div class="col p-2">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header border-0">
+                            <div class="row">
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'recette_list' %}" class="btn btn-sm w-100 {{ active_recette }}">
+                                        Recette
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        {% include 'message.html' %}
-                        {% if title_recette_list %}
-                            {% include 'all_page/recette/recette_liste.html' %}
-                        {% elif title_recette_new %}
-                            {% include 'all_page/recette/recette_new.html' %}
-                        {% endif %}
+                        <div class="card-body">
+                            {% include 'message.html' %}
+                            {% if title_recette_list %}
+                                {% include 'all_page/recette/recette_liste.html' %}
+                            {% elif title_recette_new %}
+                                {% include 'all_page/recette/recette_new.html' %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>

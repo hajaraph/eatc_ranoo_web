@@ -21,32 +21,34 @@
 </head>
 <body>
     {% include 'navbar/navbar.html' %}
-    <div class="container-fluid">
-        <div class="row flex-nowrap">
-            <div class="col p-2">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-0">
-                        <div class="row">
-                            <div class="col-md-2 mt-4">
-                                <a href="{% url 'main_liste_mc' %}" class="btn btn-sm w-100 {{ active }}">
-                                    Liste MC
-                                </a>
+    <div class="main-content-area">
+        <div class="container-fluid">
+            <div class="row flex-nowrap">
+                <div class="col p-2">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header border-0">
+                            <div class="row">
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'main_liste_mc' %}" class="btn btn-sm w-100 {{ active }}">
+                                        Liste MC
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        {% include 'message.html' %}
-                        {% if title_main %}
-                            {% include 'all_page/main_courante/main_liste_mc.html' %}
-                        {% elif title_main_liste_detail %}
-                            {% include 'all_page/main_courante/main_liste_mc_detail.html' %}
-                        {% elif title_main_liste_detail_photo %}
-                            {% include 'all_page/main_courante/main_liste_mc_detail.html' %}
-                        {% elif title_main_liste_detail_suivie %}
-                            {% include 'all_page/main_courante/main_liste_mc_detail.html' %}
-                        {% elif title_nouvelle_anomalie %}
-                            {% include 'all_page/main_courante/main_courante_new.html' %}
-                        {% endif %}
+                        <div class="card-body">
+                            {% include 'message.html' %}
+                            {% if title_main %}
+                                {% include 'all_page/main_courante/main_liste_mc.html' %}
+                            {% elif title_main_liste_detail %}
+                                {% include 'all_page/main_courante/main_liste_mc_detail.html' %}
+                            {% elif title_main_liste_detail_photo %}
+                                {% include 'all_page/main_courante/main_liste_mc_detail.html' %}
+                            {% elif title_main_liste_detail_suivie %}
+                                {% include 'all_page/main_courante/main_liste_mc_detail.html' %}
+                            {% elif title_nouvelle_anomalie %}
+                                {% include 'all_page/main_courante/main_courante_new.html' %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
