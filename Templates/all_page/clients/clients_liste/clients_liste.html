@@ -1,18 +1,21 @@
 <div class="card-body">
-    <div class="d-flex justify-content-between mb-5">
-        <div class="mx-5 col-md">
-            <a href="{% url 'client_new' %}" class="btn btn-warning">
+    <!-- Action Bar -->
+    <div class="row g-2 mb-4 align-items-center">
+        <div class="col-sm-6 col-lg-auto">
+            <a href="{% url 'client_new' %}" class="btn btn-warning w-100">
                 <i class="fas fa-plus me-1"></i>
-                Nouveau
+                <span>Nouveau</span>
             </a>
         </div>
-        <div class="mx-5">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#export-client">
+        <div class="col-sm-6 col-lg-auto ms-lg-auto">
+            <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#export-client">
                 <i class="fas fa-file-download me-1"></i>
-                Exporter
+                <span>Exporter</span>
             </button>
         </div>
     </div>
+
+    <!-- Data Table -->
     <div class="table-responsive mt-4 p-1">
         <table class="table" id="myTable">
             <thead>
@@ -30,24 +33,24 @@
             <tbody>
             {% for clients in client %}
                 <tr>
-                    <td>
+                    <td data-label="ID">
                         <a href="{% url 'client_detail' clients.pk %}" title="Détail" class="text-decoration-none">
                             {{ clients.pk }}
                         </a>
                     </td>
-                    <td>{{ clients.num_client|default:"-" }}</td>
-                    <td>{{ clients.nom_client }}</td>
-                    <td>{{ clients.prenom_client|default:"-" }}</td>
-                    <td>{{ clients.tel1_client|default:"-" }}</td>
-                    <td>{{ clients.contrats.last.num_contrat|default:"-" }}</td>
-                    <td>
+                    <td data-label="N° Client">{{ clients.num_client|default:"-" }}</td>
+                    <td data-label="Nom">{{ clients.nom_client }}</td>
+                    <td data-label="Prénom">{{ clients.prenom_client|default:"-" }}</td>
+                    <td data-label="Téléphone">{{ clients.tel1_client|default:"-" }}</td>
+                    <td data-label="N° contrat">{{ clients.contrats.last.num_contrat|default:"-" }}</td>
+                    <td data-label="Actif">
                         {% if clients.compte_actif %}
                             <i class="fas fa-check-circle text-success"></i>
                         {% else %}
                             <i class="fas fa-xmark-circle text-danger"></i>
                         {% endif %}
                     </td>
-                    <td>
+                    <td data-label="Action">
                         <a href="{% url 'client_detail' clients.pk %}" class="btn btn-primary btn-sm " title="Détail">
                             <i class="fas fa-info-circle"></i>
                         </a>
@@ -64,6 +67,7 @@
     </div>
 </div>
 
+<!-- Export Modal -->
 <div class="modal fade" id="export-client" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -96,14 +100,14 @@
                             </div>
                             <div class="col-md-4 col-sm-12 mt-4">
                                 <div class="form-floating">
-                                    <select name="region" id="region" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
+                                    <select name="region" id="region" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
                                     </select>
                                     <label for="region">Région</label>
                                 </div>
                             </div>
                             <div class="col-md-4 col-sm-12 mt-4">
                                 <div class="form-floating">
-                                    <select name="commune" id="commune" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
+                                    <select name="commune" id="commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
                                     </select>
                                     <label for="commune">Commune :</label>
                                 </div>

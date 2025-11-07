@@ -15,10 +15,13 @@
     <title>Tableau de Bord</title>
 </head>
 <body>
-    <div class="container-fluid p-0">
-        <div class="main-container">
+
+    {# The navbar is now included outside the main content flow #}
+    {% include 'navbar/navbar.html' %}
+
+    <div class="main-content-area">
+        <div class="container-fluid p-0">
             <div class="row flex-nowrap">
-                {% include 'navbar/navbar.html' %}
                 <div class="col p-0 d-flex flex-column" style="height: 100vh;">
                     <div class="header-and-filter-wrapper">
                         <div class="page-header">

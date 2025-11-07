@@ -51,39 +51,20 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex justify-content-between flex-wrap mt-5">
-            <div class="d-flex flex-column">
-                <label for="compte_actif">
-                    <input type="checkbox" name="compte_actif" id="compte_actif" value="True" class="form-check-label" checked>
-                    Compte actif
-                </label>
-                <small class="form-text text-muted mt-1">
-                    <em>Cochez cette option si le client est encore abonné. Décochez-la si le client a résilié son abonnement.</em>
-                </small>
-            </div>
-            <button class="btn btn-success mt-2 mt-md-0" type="submit">
-                <i class="fas fa-save me-1"></i>
-                Enregistrer
-            </button>
-        </div>
-        <div class="card mt-4">
+
+        <!-- Contact Section -->
+        <div class="card mt-5">
             <div class="card-header border-0">
-                <div class="row">
-                    <div class="col-12">
-                        <h5>Contact</h5>
-                    </div>
-                </div>
+                <h5>Contact</h5>
             </div>
-            <div class="card-body mx-4">
+            <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4 col-sm-12 mt-4">
+                    <div class="col-md-8 col-sm-12 mt-4">
                         <div class="form-floating">
-                            <input type="text" name="adresse_client" id="adresse_client" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" placeholder="">
+                            <input type="text" name="adresse_client" id="adresse_client" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" placeholder="" required>
                             <label for="adresse_client">Adresse*</label>
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <select name="province" id="province" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
@@ -99,36 +80,32 @@
                         <div class="form-floating">
                             <select name="region" id="region" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
                             </select>
-                            <label for="region">Région</label>
+                            <label for="region">Région*</label>
                         </div>
                     </div>
                     <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <select name="commune" id="commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
                             </select>
-                            <label for="commune">Commune :</label>
+                            <label for="commune">Commune*</label>
                         </div>
                     </div>
                     <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <select name="cp_commune" id="cp_commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" disabled>
                             </select>
-                            <label for="cp_commune">CP Commune :</label>
+                            <label for="cp_commune">CP Commune</label>
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <input type="text" name="pays_client" id="pays_client" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" value="Madagascar" placeholder="" required>
                             <label for="pays_client">Pays*</label>
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
-                            <input type="tel" name="tel1_client" id="tel1_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" minlength="10" maxlength="10" placeholder="">
+                            <input type="tel" name="tel1_client" id="tel1_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" minlength="10" maxlength="10" placeholder="" required>
                             <label for="tel1_client">Téléphone 1*</label>
                         </div>
                     </div>
@@ -138,8 +115,6 @@
                             <label for="tel2_client">Téléphone 2 <small class="text-muted">(facultatif)</small></label>
                         </div>
                     </div>
-                </div>
-                <div class="row">
                      <div class="col-md-4 col-sm-12 mt-4">
                         <div class="form-floating">
                             <input type="email" name="email_client" id="email_client" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
@@ -147,22 +122,36 @@
                         </div>
                     </div>
                 </div>
-                <div class="row mt-4" id="afficher">
-                    <label for="piece_client">Piece Client :</label>
-                    <div class="col-md-4 col-sm-12 mt-2">
-                        <div class="form-floating">
-                            <input type="file" name="piece_client" id="piece_client" class="form-control rounded-0 shadow-none border-start-0 border-top-0 border-end-0" accept="image/jpeg, image/png, application/pdf">
-                        </div>
+            </div>
+        </div>
+
+        <!-- Attachments Section -->
+        <div class="card mt-4">
+            <div class="card-header border-0">
+                <h5>Pièces jointes</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mt-2" id="afficher">
+                    <div class="col-md-6 col-sm-12 mt-2">
+                        <label for="piece_client">Fichier</label>
+                        <input type="file" name="piece_client" id="piece_client" class="form-control" accept="image/jpeg, image/png, application/pdf">
                     </div>
-                    <div class="col-md-4 col-sm-12 mt-2">
-                        <div class="form-floating">
-                            <input type="text" name="designation" id="designation" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" placeholder="">
-                            <label for="designation">Designation</label>
-                        </div>
+                    <div class="col-md-6 col-sm-12 mt-2">
+                        <label for="designation">Désignation</label>
+                        <input type="text" name="designation" id="designation" class="form-control" placeholder="Ex: CIN, Contrat, ...">
                     </div>
                 </div>
-                <div class="btn btn-sm btn-success mt-3" id="add"><i class="fas fa-plus"></i> Plus Document</div>
+                <div class="btn btn-sm btn-success mt-3" id="add"><i class="fas fa-plus"></i> Ajouter une autre pièce</div>
             </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex justify-content-end flex-wrap mt-5">
+            <a href="{% url 'client_liste' %}" class="btn btn-light me-2">Annuler</a>
+            <button class="btn btn-success" type="submit">
+                <i class="fas fa-save me-1"></i>
+                Enregistrer le client
+            </button>
         </div>
     </form>
 </div>

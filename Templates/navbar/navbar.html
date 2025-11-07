@@ -1,3 +1,4 @@
+{# The sidebar itself #}
 <div class="sidebar-modern">
     <div class="sidebar-content">
         <!-- User Profile Section -->
@@ -120,3 +121,24 @@
         </div>
     </div>
 </div>
+
+{# The hamburger button and its header #}
+<div class="mobile-header">
+    <button class="hamburger-btn" id="hamburger-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+</div>
+
+{# The JavaScript to make it work #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const body = document.body;
+
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener('click', function() {
+                body.classList.toggle('sidebar-open');
+            });
+        }
+    });
+</script>

@@ -59,10 +59,8 @@
 }
 
 /* Actions buttons section */
-.d-flex.justify-content-between {
-    margin-bottom: 2rem !important;
-    align-items: center !important;
-}
+/* This section is now handled by Bootstrap grid classes in HTML */
+
 /* DataTables Search avec taille augmentée */
 .dataTables_wrapper .dataTables_filter input {
     border: 2px solid #e5e7eb !important;
@@ -105,6 +103,73 @@
     background: #f8fafc !important;
 }
 
+/* Responsive Adjustments for client.css */
+@media (max-width: 768px) {
+    .card-header {
+        padding: 1rem !important; /* Reduce padding on mobile */
+    }
+
+    .card-header .btn {
+        padding: 10px 15px !important; /* Smaller buttons */
+        margin: 0 2px !important;
+        font-size: 0.875rem !important;
+    }
+
+    .card-body {
+        padding: 1rem !important; /* Reduce padding in card body */
+    }
+
+    .dataTables_wrapper .dataTables_filter input {
+        padding: 0.8rem 0.7rem !important; /* Smaller search input */
+        min-height: 40px !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* Table specific adjustments */
+    .table thead th, .table tbody td {
+        padding: 0.5rem !important; /* Smaller padding in table cells */
+        font-size: 0.8rem !important;
+    }
+
+    /* Hide less critical columns on very small screens if needed */
+    /* Example: Hiding 'Prénom' and 'N° contrat' on screens smaller than 576px */
+    @media (max-width: 576px) {
+        .table thead th:nth-child(4), /* Prénom */
+        .table tbody td:nth-child(4), 
+        .table thead th:nth-child(6), /* N° contrat */
+        .table tbody td:nth-child(6) {
+            display: none;
+        }
+    }
+
+    /* Form specific adjustments for clients_new.html */
+    .card-body.px-4 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .d-flex.justify-content-between.flex-wrap.mt-5 {
+        flex-direction: column; /* Stack items vertically */
+        align-items: stretch; /* Stretch buttons to full width */
+    }
+
+    .d-flex.justify-content-between.flex-wrap.mt-5 .btn {
+        width: 100% !important; /* Make buttons full width */
+        margin-top: 1rem !important; /* Add some space between stacked buttons */
+    }
+
+    .d-flex.justify-content-between.flex-wrap.mt-5 .d-flex.flex-column {
+        width: 100% !important;
+    }
+
+    .form-floating label {
+        font-size: 0.85rem !important;
+    }
+
+    .form-control, .form-select {
+        font-size: 0.9rem !important;
+    }
+}
 
 /* Animations du tableau de bord */
 @keyframes fadeInUp {
