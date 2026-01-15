@@ -25,7 +25,7 @@ urlpatterns = [
     path('exporte/relever/num_compteur=<str:num_compteur>', export_relever, name='export_relever'),
 
     # Compteurs Principaux
-    path('principal/liste', compteur_principale_liste, name='compteur_principale_liste'),
+    path('principal/liste', compteur_principale_liste, name='compteur_principale_list'),
     path('principal/nouveau', CompteurPrincipaleNew.as_view(), name='compteur_principale_new'),
     path('principal/detail=<str:pk>', CompteurPrincipaleDetail.as_view(), name='compteur_principale_detail'),
     path('principal/supprimer/<str:pk>', compteur_principale_supp, name='compteur_principale_supp'),

@@ -831,7 +831,7 @@ class CompteurPrincipaleNew(SchemaAwareView):
             enregistre_historique(message, request.session.get('id_utilisateur'))
 
             messages.success(request, f"Compteur principal créé avec succès !")
-            return redirect('compteur_principale_liste')
+            return redirect('compteur_principale_list')
 
         except Exception as e:
             messages.error(request, f"Erreur lors de la création : {e}")
@@ -873,7 +873,7 @@ class CompteurPrincipaleDetail(SchemaAwareView):
 
         except CompteurPrincipale.DoesNotExist:
             messages.error(request, "Ce compteur principal n'existe pas.")
-            return redirect('compteur_principale_liste')
+            return redirect('compteur_principale_list')
 
     @staticmethod
     @role_requis('Administrateur', 'Gestionnaire')
@@ -895,7 +895,7 @@ class CompteurPrincipaleDetail(SchemaAwareView):
 
         except CompteurPrincipale.DoesNotExist:
             messages.error(request, "Ce compteur principal n'existe pas.")
-            return redirect('compteur_principale_liste')
+            return redirect('compteur_principale_list')
 
 
 @role_requis('Administrateur', 'Gestionnaire')
@@ -915,7 +915,7 @@ def compteur_principale_supp(request, pk):
     except CompteurPrincipale.DoesNotExist:
         messages.error(request, "Ce compteur principal n'existe pas.")
 
-    return redirect('compteur_principale_liste')
+    return redirect('compteur_principale_list')
 
 
 # ========================== RELEVE COMPTEUR PRINCIPALE ==========================
@@ -945,7 +945,7 @@ class ReleveCompteurPrincipaleNew(SchemaAwareView):
 
         except CompteurPrincipale.DoesNotExist:
             messages.error(request, "Ce compteur principal n'existe pas.")
-            return redirect('compteur_principale_liste')
+            return redirect('compteur_principale_list')
 
     @staticmethod
     @role_requis('Administrateur', 'Gestionnaire')
@@ -999,7 +999,7 @@ class ReleveCompteurPrincipaleNew(SchemaAwareView):
 
         except CompteurPrincipale.DoesNotExist:
             messages.error(request, "Ce compteur principal n'existe pas.")
-            return redirect('compteur_principale_liste')
+            return redirect('compteur_principale_list')
         except Exception as e:
             messages.error(request, f"Erreur : {e}")
             return redirect('releve_cp_new', num_compteur)
@@ -1023,7 +1023,7 @@ def releve_cp_supp(request, pk):
 
     except ReleveCompteurPrincipale.DoesNotExist:
         messages.error(request, "Ce relevé n'existe pas.")
-        return redirect('compteur_principale_liste')
+        return redirect('compteur_principale_list')
 
 
 @role_requis('Administrateur', 'Gestionnaire')
@@ -1083,7 +1083,7 @@ def comparaison_consommation(request, pk):
 
     except CompteurPrincipale.DoesNotExist:
         messages.error(request, "Ce compteur principal n'existe pas.")
-        return redirect('compteur_principale_liste')
+        return redirect('compteur_principale_list')
 
 
 # ========================== ALERTES DE CONSOMMATION ==========================
@@ -1096,10 +1096,10 @@ def alerte_marquer_lu(request, pk):
         alerte = AlerteConsommation.objects.get(pk=pk)
         alerte.statut = 'LU'
         alerte.save()
-        return redirect(request.META.get('HTTP_REFERER', 'compteur_principale_liste'))
+        return redirect(request.META.get('HTTP_REFERER', 'compteur_principale_list'))
     except AlerteConsommation.DoesNotExist:
         messages.error(request, "Cette alerte n'existe pas.")
-        return redirect('compteur_principale_liste')
+        return redirect('compteur_principale_list')
 
 
 @role_requis('Administrateur', 'Gestionnaire')
@@ -1108,7 +1108,7 @@ def alerte_marquer_toutes_lues(request):
     """Marquer toutes les alertes comme lues"""
     AlerteConsommation.objects.filter(statut='NON_LU').update(statut='LU')
     messages.success(request, "Toutes les alertes ont été marquées comme lues.")
-    return redirect(request.META.get('HTTP_REFERER', 'compteur_principale_liste'))
+    return redirect(request.META.get('HTTP_REFERER', 'compteur_principale_list'))
 
 
 @role_requis('Administrateur', 'Gestionnaire')
@@ -1134,7 +1134,7 @@ def alerte_traiter(request, pk):
         
     except AlerteConsommation.DoesNotExist:
         messages.error(request, "Cette alerte n'existe pas.")
-        return redirect('compteur_principale_liste')
+        return redirect('compteur_principale_list')
 
 
 @role_requis('Administrateur', 'Gestionnaire')
