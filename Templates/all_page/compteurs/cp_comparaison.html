@@ -1,0 +1,157 @@
+<div class="card-body">
+    <h4 class="text-center my-4">Comparaison - {{ compteur_principal.num_compteur_principale }}</h4>
+    
+    <!-- Filtre par date -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <form method="get" class="d-flex">
+                <div class="form-floating me-2 flex-grow-1">
+                    <input type="date" name="date_filtre" id="date_filtre" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ date_filtre|default:'' }}">
+                    <label for="date_filtre">Filtrer par date</label>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i>
+                </button>
+                {% if date_filtre %}
+                <a href="{% url 'comparaison_consommation' compteur_principal.pk %}" class="btn btn-secondary ms-2">
+                    <i class="fas fa-times"></i>
+                </a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="col-md-8 text-end">
+            <a href="{% url 'compteur_principale_detail' compteur_principal.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+    
+    <!-- Résumé -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white text-center p-3">
+                <h6>Compteur Principal</h6>
+                <h3>{{ releve_principal.conso|default:0 }} m³</h3>
+                <small>
+                    {% if releve_principal %}
+                        {{ releve_principal.date_releve|date:'d/m/Y' }}
+                    {% else %}
+                        Aucun relevé
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white text-center p-3">
+                <h6>Total Sous-Compteurs</h6>
+                <h3>{{ total_sous_compteurs }} m³</h3>
+                <small>{{ sous_compteurs|length }} compteur(s)</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card {% if ecart > 0 %}bg-danger{% elif ecart < 0 %}bg-warning{% else %}bg-secondary{% endif %} text-white text-center p-3">
+                <h6>Écart</h6>
+                <h3>{% if ecart > 0 %}+{% endif %}{{ ecart }} m³</h3>
+                <small>
+                    {% if ecart > 0 %}
+                        <i class="fas fa-exclamation-triangle"></i> Perte détectée
+                    {% elif ecart < 0 %}
+                        Surplus détecté
+                    {% else %}
+                        Équilibré
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card {% if pourcentage_ecart > 10 %}bg-danger{% elif pourcentage_ecart > 5 %}bg-warning{% else %}bg-info{% endif %} text-white text-center p-3">
+                <h6>Pourcentage d'Écart</h6>
+                <h3>{{ pourcentage_ecart }}%</h3>
+                <small>
+                    {% if pourcentage_ecart > 10 %}
+                        <i class="fas fa-exclamation-circle"></i> Critique
+                    {% elif pourcentage_ecart > 5 %}
+                        <i class="fas fa-exclamation-triangle"></i> À surveiller
+                    {% else %}
+                        <i class="fas fa-check-circle"></i> Normal
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Détail par sous-compteur -->
+    <h5 class="mt-4 mb-3 border-bottom pb-2">Détail par Sous-Compteur</h5>
+    <div class="card p-4">
+        <div class="table-responsive p-1">
+            <table class="table" id="myTable">
+                <thead>
+                    <tr>
+                        <th>N° Compteur</th>
+                        <th>Date Relevé</th>
+                        <th>Volume</th>
+                        <th>Consommation</th>
+                        <th>% du Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in sous_compteurs %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'compteur_detail' item.compteur.pk %}" class="text-decoration-none">
+                                {{ item.compteur.num_compteur }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if item.releve %}
+                                {{ item.releve.date_releve|date:'d/m/Y' }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.releve %}
+                                {{ item.releve.volume }} m³
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ item.conso }} m³</span>
+                        </td>
+                        <td>
+                            {% if total_sous_compteurs > 0 %}
+                                {% widthratio item.conso total_sous_compteurs 100 as pourcentage %}
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ pourcentage }}%">
+                                        {{ pourcentage }}%
+                                    </div>
+                                </div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot class="table-dark">
+                    <tr>
+                        <th colspan="3">TOTAL</th>
+                        <th>{{ total_sous_compteurs }} m³</th>
+                        <th>100%</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Légende -->
+    <div class="alert alert-secondary mt-4">
+        <h6><i class="fas fa-info-circle me-2"></i>Interprétation de l'écart</h6>
+        <ul class="mb-0">
+            <li><strong>Écart positif :</strong> Le compteur principal indique plus que la somme des sous-compteurs. Cela peut indiquer des fuites ou des branchements non comptabilisés.</li>
+            <li><strong>Écart négatif :</strong> La somme des sous-compteurs dépasse le compteur principal. Vérifiez les relevés.</li>
+            <li><strong>Écart nul :</strong> Situation idéale, la distribution est correctement comptabilisée.</li>
+        </ul>
+    </div>
+</div>

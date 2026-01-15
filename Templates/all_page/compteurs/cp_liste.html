@@ -1,0 +1,93 @@
+<div class="card-body">
+    <div class="d-flex justify-content-between mb-5">
+        <div class="mx-5 col-md">
+            <a href="{% url 'compteur_principale_new' %}" class="btn btn-warning">
+                <i class="fas fa-plus me-1"></i>
+                Nouveau
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive mt-4 p-1">
+        <table class="table" id="myTable">
+            <thead>
+                <tr>
+                    <th>N° Compteur</th>
+                    <th>Marque</th>
+                    <th>Modèle</th>
+                    <th>Dernier Relevé</th>
+                    <th>Conso. Principal</th>
+                    <th>Conso. Sous-Compteurs</th>
+                    <th>Écart</th>
+                    <th>Nb Sous-Compteurs</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in compteurs_principaux %}
+                <tr>
+                    <td>
+                        <a href="{% url 'compteur_principale_detail' item.compteur.pk %}" title="Détail" class="text-decoration-none">
+                            {{ item.compteur.num_compteur_principale }}
+                        </a>
+                    </td>
+                    <td>{{ item.compteur.marque_compteur_principale|default:"-" }}</td>
+                    <td>{{ item.compteur.modele_compteur_principale|default:"-" }}</td>
+                    <td>
+                        {% if item.dernier_releve %}
+                            {{ item.dernier_releve.date_releve|date:'d/m/Y' }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.dernier_releve %}
+                            <strong>{{ item.dernier_releve.conso }} m³</strong>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ item.total_sous_compteurs }} m³</td>
+                    <td>
+                        {% if item.ecart is not None %}
+                            {% if item.ecart > 0 %}
+                                <span class="text-danger fw-bold">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>+{{ item.ecart }} m³
+                                </span>
+                            {% elif item.ecart < 0 %}
+                                <span class="text-success fw-bold">
+                                    <i class="fas fa-check-circle me-1"></i>{{ item.ecart }} m³
+                                </span>
+                            {% else %}
+                                <span class="text-secondary">
+                                    <i class="fas fa-equals me-1"></i>0 m³
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-info">{{ item.nb_sous_compteurs }}</span>
+                    </td>
+                    <td>
+                        <a href="{% url 'compteur_principale_detail' item.compteur.pk %}" class="btn btn-primary btn-sm" title="Détail">
+                            <i class="fas fa-info-circle"></i>
+                        </a>
+                        <a href="{% url 'releve_cp_new' item.compteur.pk %}" class="btn btn-success btn-sm" title="Nouveau Relevé">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                        <a href="{% url 'comparaison_consommation' item.compteur.pk %}" class="btn btn-info btn-sm" title="Comparaison">
+                            <i class="fas fa-chart-bar"></i>
+                        </a>
+                        {% if request.session.role_utilisateur == 'Administrateur' %}
+                            <a href="{% url 'compteur_principale_supp' item.compteur.pk %}" class="btn btn-danger btn-sm" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce Compteur Principal ?')">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

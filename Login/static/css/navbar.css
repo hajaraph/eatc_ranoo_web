@@ -7,7 +7,8 @@
 
 /* --- The main content area that holds the page --- */
 .main-content-area {
-    margin-left: 260px; /* Make space for the visible sidebar */
+    margin-left: 260px;
+    /* Make space for the visible sidebar */
     padding-top: 0;
     transition: margin-left 0.3s ease, padding-top 0.3s ease;
 }
@@ -22,8 +23,10 @@
 
     position: fixed;
     top: 0;
-    left: 0; /* Visible by default on desktop */
-    transform: translateX(0); /* Explicitly visible */
+    left: 0;
+    /* Visible by default on desktop */
+    transform: translateX(0);
+    /* Explicitly visible */
     z-index: 1000;
 
     transition: transform 0.3s ease;
@@ -31,7 +34,8 @@
 
 /* --- The mobile header with the hamburger button --- */
 .mobile-header {
-    display: none; /* Hidden on desktop */
+    display: none;
+    /* Hidden on desktop */
     position: fixed;
     top: 0;
     left: 0;
@@ -39,7 +43,7 @@
     height: 60px;
     background: #f8f9fa;
     padding: 0 1rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 1001;
     align-items: center;
 }
@@ -65,15 +69,18 @@
 
     /* --- Main content area --- */
     .main-content-area {
-        margin-left: 0; /* Content takes full width */
-        padding-top: 60px; /* Add space for the fixed mobile header */
+        margin-left: 0;
+        /* Content takes full width */
+        padding-top: 60px;
+        /* Add space for the fixed mobile header */
     }
 
     /* --- Sidebar --- */
     .sidebar-modern {
         /* Hide the sidebar off-screen */
         transform: translateX(-100%);
-        z-index: 1002; /* Ensure it appears above the content */
+        z-index: 1002;
+        /* Ensure it appears above the content */
     }
 
     /* JS will add .sidebar-open to the body on click */
@@ -84,7 +91,8 @@
 
     /* --- Mobile header --- */
     .mobile-header {
-        display: flex; /* Show the hamburger header */
+        display: flex;
+        /* Show the hamburger header */
     }
 }
 
@@ -143,6 +151,211 @@
     font-size: 0.75rem;
     color: #6c757d;
     margin-top: 0.25rem;
+}
+
+/* Notification Button */
+.notification-btn {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(25, 118, 210, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: auto;
+    transition: all 0.2s ease;
+}
+
+.notification-btn:hover {
+    background: rgba(25, 118, 210, 0.2);
+}
+
+.notification-btn i {
+    font-size: 18px;
+    color: #1976d2;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #dc3545;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+/* Notification Wrapper */
+.notification-wrapper {
+    position: relative;
+    margin-left: auto;
+}
+
+/* Notification Dropdown */
+.notification-dropdown {
+    position: absolute;
+    top: 50px;
+    right: -100px;
+    width: 320px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.notification-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.notification-header h6 {
+    margin: 0;
+    font-weight: 600;
+    color: #343a40;
+}
+
+.notification-header .notification-count {
+    background: #1976d2;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 20px;
+    border-bottom: 1px solid #f5f5f5;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+}
+
+.notification-item.unread {
+    background: rgba(25, 118, 210, 0.05);
+}
+
+.notification-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(25, 118, 210, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.notification-icon i {
+    color: #1976d2;
+    font-size: 14px;
+}
+
+.notification-icon.critical {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.notification-icon.critical i {
+    color: #dc3545;
+}
+
+a.notification-item {
+    text-decoration: none;
+}
+
+a.notification-item:hover .notification-text {
+    color: #1976d2;
+}
+
+.mark-all-read {
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.mark-all-read:hover {
+    color: #1976d2;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-text {
+    margin: 0;
+    font-size: 13px;
+    color: #343a40;
+    line-height: 1.4;
+}
+
+.notification-time {
+    color: #6c757d;
+    font-size: 11px;
+}
+
+.notification-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: #6c757d;
+}
+
+.notification-empty i {
+    font-size: 40px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+}
+
+.notification-empty p {
+    margin: 0;
+}
+
+.notification-footer {
+    padding: 12px 20px;
+    text-align: center;
+    border-top: 1px solid #eee;
+}
+
+.notification-footer a {
+    color: #1976d2;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.notification-footer a:hover {
+    text-decoration: underline;
 }
 
 .sidebar-nav {

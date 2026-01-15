@@ -10,6 +10,51 @@
                 <div class="user-name">{{ request.session.nom_utilisateur }} {{ request.session.prenom_utilisateur }}</div>
                 <div class="user-role">{{ request.session.role_utilisateur }}</div>
             </div>
+            <div class="notification-wrapper">
+                <div class="notification-btn" id="notification-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    {% if notifications_count and notifications_count > 0 %}
+                    <span class="notification-badge">{{ notifications_count }}</span>
+                    {% endif %}
+                </div>
+                <!-- Dropdown des notifications -->
+                <div class="notification-dropdown" id="notification-dropdown">
+                    <div class="notification-header">
+                        <h6>Alertes</h6>
+                        <span class="notification-count">{% if notifications_count %}{{ notifications_count }}{% else %}0{% endif %}</span>
+                    </div>
+                    <div class="notification-list">
+                        {% if notifications %}
+                            {% for notif in notifications %}
+                            <a href="{% url 'comparaison_consommation' notif.compteur %}" class="notification-item {% if not notif.lu %}unread{% endif %}">
+                                <div class="notification-icon {% if notif.type == 'ECART_CRITIQUE' %}critical{% endif %}">
+                                    <i class="fas fa-{{ notif.icone|default:'info-circle' }}"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <p class="notification-text">
+                                        <strong>{{ notif.compteur }}</strong><br>
+                                        Écart: {{ notif.ecart }} m³ ({{ notif.pourcentage }}%)
+                                    </p>
+                                    <small class="notification-time">{{ notif.date_creation|timesince }}</small>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="notification-empty">
+                                <i class="fas fa-check-circle"></i>
+                                <p>Aucune alerte</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="notification-footer">
+                        {% if notifications_count > 0 %}
+                        <a href="{% url 'alerte_marquer_toutes_lues' %}" class="mark-all-read">
+                            <i class="fas fa-check-double"></i> Tout marquer comme lu
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Navigation Menu -->
@@ -138,6 +183,24 @@
         if (hamburgerBtn) {
             hamburgerBtn.addEventListener('click', function() {
                 body.classList.toggle('sidebar-open');
+            });
+        }
+
+        // Notification dropdown toggle
+        const notificationBtn = document.getElementById('notification-btn');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+
+        if (notificationBtn && notificationDropdown) {
+            notificationBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                notificationDropdown.classList.toggle('show');
+            });
+
+            // Fermer le dropdown en cliquant ailleurs
+            document.addEventListener('click', function(e) {
+                if (!notificationDropdown.contains(e.target) && !notificationBtn.contains(e.target)) {
+                    notificationDropdown.classList.remove('show');
+                }
             });
         }
     });

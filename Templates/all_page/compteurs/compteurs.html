@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/tableau_bord.css' %}">
     <link rel="stylesheet" href="{% static 'css/style_general.css' %}">
-    <title>{{ title_liste }}{{ title_new }}{{ title_detail }}{{ title_releve }}{{ title_releve_new }}{{ title_releve_detail}} {{ releve.date_releve|date:'d/m/Y' }}</title>
+    <title>{{ title_liste }}{{ title_new }}{{ title_detail }}{{ title_releve }}{{ title_releve_new }}{{ title_releve_detail}}{{ title_cp_liste }}{{ title_cp_new }}{{ title_cp_detail }}{{ title_cp_releve_new }}{{ title_comparaison }} {{ releve.date_releve|date:'d/m/Y' }}</title>
     <style>
         .dataTables_filter input[type="search"] {
             height: 50px;
@@ -38,6 +38,11 @@
                                         Relevé
                                     </a>
                                 </div>
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'compteur_principale_liste' %}" class="btn btn-sm w-100 {{ active_cp_liste }}{{ active_cp_new }}{{ active_cp_detail }}{{ active_cp_releve }}">
+                                        Compteur Principal
+                                    </a>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body">
@@ -54,6 +59,16 @@
                                 {% include 'all_page/compteurs/releve_new.html' %}
                             {% elif title_releve_detail %}
                                 {% include 'all_page/compteurs/releve_detail.html' %}
+                            {% elif title_cp_liste %}
+                                {% include 'all_page/compteurs/cp_liste.html' %}
+                            {% elif title_cp_new %}
+                                {% include 'all_page/compteurs/cp_new.html' %}
+                            {% elif title_cp_detail %}
+                                {% include 'all_page/compteurs/cp_detail.html' %}
+                            {% elif title_cp_releve_new %}
+                                {% include 'all_page/compteurs/cp_releve_new.html' %}
+                            {% elif title_comparaison %}
+                                {% include 'all_page/compteurs/cp_comparaison.html' %}
                             {% endif %}
                         </div>
                     </div>

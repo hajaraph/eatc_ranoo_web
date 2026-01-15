@@ -1,0 +1,67 @@
+<div class="card-body px-md-4">
+    <h4 class="text-center mb-5">Nouveau Compteur Principal</h4>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="num_compteur_principale" id="num_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                    <label for="num_compteur_principale">Numéro*</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="marque_compteur_principale" id="marque_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                    <label for="marque_compteur_principale">Marque</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="modele_compteur_principale" id="modele_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                    <label for="modele_compteur_principale">Modèle</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="DN_compteur_principale" id="DN_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" maxlength="5" placeholder="">
+                    <label for="DN_compteur_principale">DN</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="origin_compteur_principale" id="origin_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="">
+                    <label for="origin_compteur_principale">Origine</label>
+                </div>
+            </div>
+        </div>
+        <h5 class="mt-5 mb-2 border-bottom">Volume de Départ</h5>
+        <div class="row">
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <input type="date" name="date_releve" id="date_releve" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required>
+                    <label for="date_releve">Date 1ère Consommation*</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <input type="number" name="volume" id="volume" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" required min="0">
+                    <label for="volume">Volume (m³)*</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="d-flex justify-content-end mt-5">
+                <a href="{% url 'compteur_principale_liste' %}" class="btn btn-secondary me-2">
+                    <i class="fas fa-times"></i>
+                    Annuler
+                </a>
+                <button class="btn btn-success" type="submit">
+                    <i class="fas fa-save"></i>
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

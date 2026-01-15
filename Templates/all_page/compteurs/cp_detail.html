@@ -1,0 +1,149 @@
+<div class="card-body">
+    <h4 class="text-center my-4">Compteur Principal</h4>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="num_compteur_principale" id="num_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ compteur_principal.num_compteur_principale }}" placeholder="" readonly>
+                    <label for="num_compteur_principale">N° Compteur</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="marque_compteur_principale" id="marque_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ compteur_principal.marque_compteur_principale|default:"" }}" placeholder="">
+                    <label for="marque_compteur_principale">Marque</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="modele_compteur_principale" id="modele_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ compteur_principal.modele_compteur_principale|default:"" }}" placeholder="">
+                    <label for="modele_compteur_principale">Modèle</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="DN_compteur_principale" id="DN_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ compteur_principal.DN_compteur_principale|default:"" }}" placeholder="">
+                    <label for="DN_compteur_principale">DN</label>
+                </div>
+            </div>
+            <div class="col-md-4 mt-4">
+                <div class="form-floating">
+                    <input type="text" name="origin_compteur_principale" id="origin_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" value="{{ compteur_principal.origin_compteur_principale|default:"" }}" placeholder="">
+                    <label for="origin_compteur_principale">Origine</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistiques -->
+        <div class="row mt-5">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white text-center p-3">
+                    <h6>Dernière Conso.</h6>
+                    <h3>{{ dernier_releve.conso|default:0 }} m³</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white text-center p-3">
+                    <h6>Total Sous-Compteurs</h6>
+                    <h3>{{ total_sous_compteurs }} m³</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card {% if ecart and ecart > 0 %}bg-danger{% else %}bg-secondary{% endif %} text-white text-center p-3">
+                    <h6>Écart</h6>
+                    <h3>{% if ecart is not None %}{{ ecart }}{% else %}0{% endif %} m³</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white text-center p-3">
+                    <h6>Sous-Compteurs</h6>
+                    <h3>{{ sous_compteurs.count }}</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-end mt-5">
+            <a href="{% url 'comparaison_consommation' compteur_principal.pk %}" class="btn btn-info mx-2">
+                <i class="fas fa-chart-bar"></i>
+                Comparaison
+            </a>
+            <a href="{% url 'releve_cp_new' compteur_principal.pk %}" class="btn btn-warning mx-2">
+                <i class="fas fa-plus"></i>
+                Nouveau Relevé
+            </a>
+            <button class="btn btn-success" type="submit" onclick="return confirm('Êtes-vous sûr de vouloir sauvegarder la modification ?')">
+                <i class="fas fa-save"></i>
+                Sauvegarder
+            </button>
+        </div>
+    </form>
+    
+    <!-- Sous-compteurs liés -->
+    {% if sous_compteurs %}
+    <h5 class="mt-5 mb-3 border-bottom pb-2">Sous-Compteurs Liés ({{ sous_compteurs.count }})</h5>
+    <div class="row">
+        {% for sc in sous_compteurs %}
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6>{{ sc.num_compteur }}</h6>
+                    <a href="{% url 'compteur_detail' sc.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> Voir
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Historique des relevés -->
+    <h5 class="mt-5 mb-3 border-bottom pb-2">Historique des Relevés</h5>
+    <div class="card p-4">
+        <div class="table-responsive p-1">
+            <table class="table" id="myTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date Relevé</th>
+                        <th>Volume</th>
+                        <th>Conso</th>
+                        <th>Utilisateur</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for relever in releves %}
+                    <tr>
+                        <td>{{ relever.pk }}</td>
+                        <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
+                        <td>{{ relever.volume }} m&#179;</td>
+                        <td>{{ relever.conso }} m&#179;</td>
+                        <td>
+                            {% if relever.utilisateur %}
+                                {{ relever.utilisateur.nom_utilisateur }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if forloop.first %}
+                            <a href="{% url 'releve_cp_supp' relever.pk %}" class="btn btn-sm btn-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce relevé ?')">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">Aucun relevé enregistré</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

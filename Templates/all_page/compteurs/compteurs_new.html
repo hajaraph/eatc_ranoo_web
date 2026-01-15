@@ -36,6 +36,19 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <select name="num_compteur_principale" id="num_compteur_principale" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" required>
+                        <option value="" selected hidden>-- Sélectionner un compteur principal --</option>
+                        {% for cp in compteurs_principaux %}
+                            <option value="{{ cp.pk }}">{{ cp.num_compteur_principale }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="num_compteur_principale">Compteur Principal*</label>
+                </div>
+            </div>
+        </div>
         <h5 class="mt-5 mb-2 border-bottom">Volume de Départ</h5>
         <div class="row">
             <div class="col-md-6 col-lg-4 mt-4">

@@ -13,7 +13,7 @@ from django.utils import timezone
 from weasyprint import HTML
 
 from Acommune.models import Province, Commune
-from Compteurs.models import Compteur, ReleveCompteur
+from Compteurs.models import Compteur, ReleveCompteur, CompteurPrincipale, ReleveCompteurPrincipale, AlerteConsommation
 from Clients.models import Contrat
 from Facturation.models import Facture
 from Facturation.views import facture_creation
@@ -74,10 +74,12 @@ class CompteurNew(SchemaAwareView):
         title = 'Compteurs | Nouveau'
         active = 'active'
         font = 'custom-font'
+        compteurs_principaux = CompteurPrincipale.objects.all()
         context = {
             'title_new': title,
             'active_li_co': active,
-            'font_compteur': font
+            'font_compteur': font,
+            'compteurs_principaux': compteurs_principaux
         }
         return render(request, self.template_name, context)
 
@@ -91,18 +93,28 @@ class CompteurNew(SchemaAwareView):
         origin_compteur = request.POST['origin_compteur']
         date_releve = request.POST['date_releve']
         volume = request.POST['volume']
+        num_compteur_principale = request.POST.get('num_compteur_principale', '')
 
         numero = Compteur.objects.filter(num_compteur=num_compteur)
         if numero.exists():
             messages.warning(request, f"Le compteur avec le numéro {num_compteur} est déjà enregistrer !")
             return redirect('compteur_new')
         else:
+            # Récupérer le compteur principal si sélectionné
+            cp = None
+            if num_compteur_principale:
+                try:
+                    cp = CompteurPrincipale.objects.get(pk=num_compteur_principale)
+                except CompteurPrincipale.DoesNotExist:
+                    pass
+            
             Compteur.objects.create(
                 num_compteur=num_compteur,
                 marque_compteur=marque_compteur,
                 modele_compteur=modele_compteur,
                 DN_compteur=dn_compteur,
-                origin_compteur=origin_compteur
+                origin_compteur=origin_compteur,
+                num_compteur_principale=cp
             )
             ReleveCompteur.objects.create(
                 date_releve=date_releve,
@@ -138,6 +150,8 @@ class CompteurDetail(SchemaAwareView):
             for r in releve:
                 r.image_exists = r.image_compteur and os.path.exists(r.image_compteur.path) if r.image_compteur else False
 
+            compteurs_principaux = CompteurPrincipale.objects.all()
+
             context = {
                 'title_detail': title,
                 'active_li_co': active,
@@ -146,7 +160,8 @@ class CompteurDetail(SchemaAwareView):
                 'releve': releve,
                 'contrat': contrat.get().num_contrat if contrat.exists() else None,
                 'client': contrat.get().client if contrat.exists() else None,
-                'client_active': contrat.get().client.compte_actif if contrat.exists() else None
+                'client_active': contrat.get().client.compte_actif if contrat.exists() else None,
+                'compteurs_principaux': compteurs_principaux
             }
             return render(request, self.template_name, context)
         except Exception as e:
@@ -161,11 +176,22 @@ class CompteurDetail(SchemaAwareView):
         modele_compteur = request.POST['modele_compteur']
         dn_compteur = request.POST['DN_compteur']
         origin_compteur = request.POST['origin_compteur']
+        num_compteur_principale = request.POST.get('num_compteur_principale', '')
 
         mod_compteur.marque_compteur = marque_compteur
         mod_compteur.modele_compteur = modele_compteur
         mod_compteur.DN_compteur = dn_compteur
         mod_compteur.origin_compteur = origin_compteur
+        
+        # Mettre à jour le compteur principal
+        if num_compteur_principale:
+            try:
+                mod_compteur.num_compteur_principale = CompteurPrincipale.objects.get(pk=num_compteur_principale)
+            except CompteurPrincipale.DoesNotExist:
+                mod_compteur.num_compteur_principale = None
+        else:
+            mod_compteur.num_compteur_principale = None
+        
         mod_compteur.save()
         # Historique
         message = f"Modification de compteur numéro {pk}"
@@ -230,11 +256,16 @@ class ReleveNew(SchemaAwareView):
             title = f'Compteur Numéro : {compteur.num_compteur} | Relevé | Nouveau'
             active = 'active'
             font = 'custom-font'
+
+            # Récupérer le dernier relevé
+            dernier_releve = compteur.relevecompteurs.order_by('-date_releve').first()
+
             context = {
                 'title_releve_new': title,
                 'active_releve_new': active,
                 'font_compteur': font,
                 'compteur': compteur,
+                'dernier_releve': dernier_releve
             }
             return render(request, self.template_name, context)
 
@@ -272,6 +303,17 @@ class ReleveNew(SchemaAwareView):
             # Créer un nouvel objet ReleveCompteur avec l'image mise à jour
             releve = relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
             facture_creation(date_releve, num_compteur, releve)
+            
+            # Vérifier l'alerte si lié à un compteur principal
+            try:
+                compteur = Compteur.objects.get(pk=num_compteur)
+                if compteur.num_compteur_principale:
+                    alerte = AlerteConsommation.creer_alerte_si_necessaire(compteur.num_compteur_principale)
+                    if alerte:
+                        messages.warning(request, f"Alerte créée sur le compteur principal : {alerte.message}")
+            except Exception as e:
+                # Ne pas bloquer le flux principal pour une erreur d'alerte
+                print(f"Erreur lors de la vérification d'alerte : {e}")
 
             # Historique
             message = f"Relever et Facture d'un compteur {num_compteur}"
@@ -675,3 +717,441 @@ def export_relever(request, num_compteur):
     message = f"Export de tout les compteurs"
     enregistre_historique(message, request.session.get('id_utilisateur'))
     return response
+
+
+# ========================== COMPTEUR PRINCIPALE ==========================
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def compteur_principale_liste(request):
+    """Liste tous les compteurs principaux avec l'écart de consommation"""
+    title = 'Compteurs Principaux | Liste'
+    active = 'active'
+    font = 'custom-font'
+
+    # Récupérer les paramètres de filtre
+    date_filtre = request.GET.get('date_filtre')
+
+    compteurs_principaux = CompteurPrincipale.objects.prefetch_related(
+        'compteurs', 'releves'
+    ).all()
+
+    # Préparer les données avec l'écart calculé
+    compteurs_data = []
+    for cp in compteurs_principaux:
+        dernier_releve = cp.releves.order_by('-date_releve').first()
+        
+        # Utiliser la date du dernier relevé pour le calcul du total sous-compteurs
+        if date_filtre:
+            date_calcul = date_filtre
+        elif dernier_releve:
+            date_calcul = dernier_releve.date_releve
+        else:
+            date_calcul = None
+        
+        # Calculer le total des sous-compteurs avec la même date
+        total_sous_compteurs = cp.get_total_conso_sous_compteurs(date_calcul) if date_calcul else 0
+        
+        # Calculer l'écart
+        conso_principal = dernier_releve.conso if dernier_releve and dernier_releve.conso else 0
+        ecart = conso_principal - total_sous_compteurs if conso_principal > 0 else None
+        
+        compteurs_data.append({
+            'compteur': cp,
+            'dernier_releve': dernier_releve,
+            'total_sous_compteurs': total_sous_compteurs,
+            'ecart': ecart,
+            'nb_sous_compteurs': cp.compteurs.count()
+        })
+
+    context = {
+        'title_cp_liste': title,
+        'active_cp_liste': active,
+        'font_compteur': font,
+        'compteurs_principaux': compteurs_data,
+        'date_filtre': date_filtre
+    }
+    return render(request, 'all_page/compteurs/compteurs.html', context)
+
+
+class CompteurPrincipaleNew(SchemaAwareView):
+    """Création d'un nouveau compteur principal"""
+    template_name = 'all_page/compteurs/compteurs.html'
+
+    @role_requis('Administrateur', 'Gestionnaire')
+    def get(self, request):
+        title = 'Compteurs Principaux | Nouveau'
+        active = 'active'
+        font = 'custom-font'
+        context = {
+            'title_cp_new': title,
+            'active_cp_new': active,
+            'font_compteur': font
+        }
+        return render(request, self.template_name, context)
+
+    @staticmethod
+    @role_requis('Administrateur', 'Gestionnaire')
+    def post(request):
+        num_compteur = request.POST.get('num_compteur_principale')
+        marque = request.POST.get('marque_compteur_principale', '')
+        modele = request.POST.get('modele_compteur_principale', '')
+        dn = request.POST.get('DN_compteur_principale', '')
+        origine = request.POST.get('origin_compteur_principale', '')
+        date_releve = request.POST.get('date_releve')
+        volume = request.POST.get('volume', 0)
+
+        # Vérifier si le compteur existe déjà
+        if CompteurPrincipale.objects.filter(pk=num_compteur).exists():
+            messages.warning(request, f"Le compteur principal {num_compteur} existe déjà !")
+            return redirect('compteur_principale_new')
+
+        try:
+            # Créer le compteur principal
+            cp = CompteurPrincipale.objects.create(
+                num_compteur_principale=num_compteur,
+                marque_compteur_principale=marque,
+                modele_compteur_principale=modele,
+                DN_compteur_principale=dn,
+                origin_compteur_principale=origine
+            )
+
+            # Créer le premier relevé (index initial)
+            if date_releve and volume:
+                ReleveCompteurPrincipale.objects.create(
+                    date_releve=date_releve,
+                    volume=int(volume),
+                    conso=0,  # Premier relevé, pas de consommation
+                    num_compteur_principale=cp,
+                    utilisateur_id=request.session.get('id_utilisateur')
+                )
+
+            # Historique
+            message = f"Création du compteur principal {num_compteur}"
+            enregistre_historique(message, request.session.get('id_utilisateur'))
+
+            messages.success(request, f"Compteur principal créé avec succès !")
+            return redirect('compteur_principale_liste')
+
+        except Exception as e:
+            messages.error(request, f"Erreur lors de la création : {e}")
+            return redirect('compteur_principale_new')
+
+
+class CompteurPrincipaleDetail(SchemaAwareView):
+    """Détail et modification d'un compteur principal"""
+    template_name = 'all_page/compteurs/compteurs.html'
+
+    @role_requis('Administrateur', 'Gestionnaire')
+    def get(self, request, pk):
+        try:
+            cp = CompteurPrincipale.objects.prefetch_related('compteurs', 'releves').get(pk=pk)
+            releves = cp.releves.order_by('-date_releve')
+            sous_compteurs = cp.compteurs.all()
+
+            # Calculer les données pour l'affichage
+            dernier_releve = releves.first()
+            ecart = cp.get_ecart_consommation()
+            total_sous_compteurs = cp.get_total_conso_sous_compteurs()
+
+            title = f'Compteur Principal | {cp.num_compteur_principale}'
+            active = 'active'
+            font = 'custom-font'
+
+            context = {
+                'title_cp_detail': title,
+                'active_cp_detail': active,
+                'font_compteur': font,
+                'compteur_principal': cp,
+                'releves': releves,
+                'sous_compteurs': sous_compteurs,
+                'dernier_releve': dernier_releve,
+                'ecart': ecart,
+                'total_sous_compteurs': total_sous_compteurs
+            }
+            return render(request, self.template_name, context)
+
+        except CompteurPrincipale.DoesNotExist:
+            messages.error(request, "Ce compteur principal n'existe pas.")
+            return redirect('compteur_principale_liste')
+
+    @staticmethod
+    @role_requis('Administrateur', 'Gestionnaire')
+    def post(request, pk):
+        try:
+            cp = CompteurPrincipale.objects.get(pk=pk)
+            cp.marque_compteur_principale = request.POST.get('marque_compteur_principale', '')
+            cp.modele_compteur_principale = request.POST.get('modele_compteur_principale', '')
+            cp.DN_compteur_principale = request.POST.get('DN_compteur_principale', '')
+            cp.origin_compteur_principale = request.POST.get('origin_compteur_principale', '')
+            cp.save()
+
+            # Historique
+            message = f"Modification du compteur principal {pk}"
+            enregistre_historique(message, request.session.get('id_utilisateur'))
+
+            messages.success(request, f"Compteur principal modifié avec succès !")
+            return redirect('compteur_principale_detail', pk)
+
+        except CompteurPrincipale.DoesNotExist:
+            messages.error(request, "Ce compteur principal n'existe pas.")
+            return redirect('compteur_principale_liste')
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def compteur_principale_supp(request, pk):
+    """Suppression d'un compteur principal"""
+    try:
+        cp = CompteurPrincipale.objects.get(pk=pk)
+        num = cp.num_compteur_principale
+        cp.delete()
+
+        # Historique
+        message = f"Suppression du compteur principal {num}"
+        enregistre_historique(message, request.session.get('id_utilisateur'))
+
+        messages.success(request, f"Compteur principal supprimé avec succès !")
+    except CompteurPrincipale.DoesNotExist:
+        messages.error(request, "Ce compteur principal n'existe pas.")
+
+    return redirect('compteur_principale_liste')
+
+
+# ========================== RELEVE COMPTEUR PRINCIPALE ==========================
+
+class ReleveCompteurPrincipaleNew(SchemaAwareView):
+    """Création d'un nouveau relevé pour un compteur principal"""
+    template_name = 'all_page/compteurs/compteurs.html'
+
+    @role_requis('Administrateur', 'Gestionnaire')
+    def get(self, request, num_compteur):
+        try:
+            cp = CompteurPrincipale.objects.get(pk=num_compteur)
+            dernier_releve = cp.releves.order_by('-date_releve').first()
+
+            title = f'Relevé | Compteur Principal {cp.num_compteur_principale}'
+            active = 'active'
+            font = 'custom-font'
+
+            context = {
+                'title_cp_releve_new': title,
+                'active_cp_releve': active,
+                'font_compteur': font,
+                'compteur_principal': cp,
+                'dernier_releve': dernier_releve
+            }
+            return render(request, self.template_name, context)
+
+        except CompteurPrincipale.DoesNotExist:
+            messages.error(request, "Ce compteur principal n'existe pas.")
+            return redirect('compteur_principale_liste')
+
+    @staticmethod
+    @role_requis('Administrateur', 'Gestionnaire')
+    def post(request, num_compteur):
+        try:
+            cp = CompteurPrincipale.objects.get(pk=num_compteur)
+            date_releve = request.POST.get('date_releve')
+            date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
+            volume = int(request.POST.get('volume', 0))
+            image = request.FILES.get('image_compteur')
+
+            # Récupérer le dernier relevé
+            dernier_releve = cp.releves.order_by('-date_releve').first()
+
+            if dernier_releve:
+                # Vérifier la date
+                if date_releve <= dernier_releve.date_releve:
+                    messages.error(request, "La date doit être postérieure au dernier relevé.")
+                    return redirect('releve_cp_new', num_compteur)
+
+                # Vérifier le volume
+                if volume < dernier_releve.volume:
+                    messages.error(request, "Le volume ne peut pas être inférieur au dernier relevé.")
+                    return redirect('releve_cp_new', num_compteur)
+
+                conso = volume - dernier_releve.volume
+            else:
+                conso = 0
+
+            # Créer le relevé
+            ReleveCompteurPrincipale.objects.create(
+                date_releve=date_releve,
+                volume=volume,
+                conso=conso,
+                image_compteur=image,
+                num_compteur_principale=cp,
+                utilisateur_id=request.session.get('id_utilisateur')
+            )
+
+            # Vérifier et créer une alerte si nécessaire (écart > 5%)
+            alerte = AlerteConsommation.creer_alerte_si_necessaire(cp, seuil_alerte=5, seuil_critique=10)
+            if alerte:
+                messages.warning(request, f"Alerte créée : {alerte.message}")
+
+            # Historique
+            message = f"Relevé du compteur principal {num_compteur} - Volume: {volume} m³"
+            enregistre_historique(message, request.session.get('id_utilisateur'))
+
+            messages.success(request, "Relevé enregistré avec succès !")
+            return redirect('compteur_principale_detail', num_compteur)
+
+        except CompteurPrincipale.DoesNotExist:
+            messages.error(request, "Ce compteur principal n'existe pas.")
+            return redirect('compteur_principale_liste')
+        except Exception as e:
+            messages.error(request, f"Erreur : {e}")
+            return redirect('releve_cp_new', num_compteur)
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def releve_cp_supp(request, pk):
+    """Suppression d'un relevé de compteur principal"""
+    try:
+        releve = ReleveCompteurPrincipale.objects.get(pk=pk)
+        num_compteur = releve.num_compteur_principale.pk
+        releve.delete()
+
+        # Historique
+        message = f"Suppression d'un relevé du compteur principal {num_compteur}"
+        enregistre_historique(message, request.session.get('id_utilisateur'))
+
+        messages.success(request, "Relevé supprimé avec succès !")
+        return redirect('compteur_principale_detail', num_compteur)
+
+    except ReleveCompteurPrincipale.DoesNotExist:
+        messages.error(request, "Ce relevé n'existe pas.")
+        return redirect('compteur_principale_liste')
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def comparaison_consommation(request, pk):
+    """Vue pour comparer la consommation du compteur principal avec ses sous-compteurs"""
+    try:
+        cp = CompteurPrincipale.objects.prefetch_related('compteurs__relevecompteurs').get(pk=pk)
+
+        date_filtre = request.GET.get('date_filtre')
+
+        # Données du compteur principal
+        releve_principal = cp.releves.filter(date_releve=date_filtre).first() if date_filtre else cp.releves.order_by('-date_releve').first()
+
+        # Données des sous-compteurs (exclure ceux sans contrat)
+        sous_compteurs_data = []
+        for compteur in cp.compteurs.all():
+            # Exclure les compteurs sans contrat
+            if not compteur.contrats.exists():
+                continue
+                
+            # Définir la date de référence pour la recherche
+            date_ref = date_filtre
+            if not date_ref and releve_principal:
+                date_ref = releve_principal.date_releve
+                
+            if date_ref:
+                releve = compteur.relevecompteurs.filter(date_releve__lte=date_ref).order_by('-date_releve').first()
+            else:
+                releve = compteur.relevecompteurs.order_by('-date_releve').first()
+
+            conso = releve.conso if releve and releve.conso else 0
+            sous_compteurs_data.append({
+                'compteur': compteur,
+                'releve': releve,
+                'conso': conso
+            })
+
+        total_sous_compteurs = sum(item['conso'] for item in sous_compteurs_data)
+        conso_principal = releve_principal.conso if releve_principal and releve_principal.conso else 0
+        ecart = conso_principal - total_sous_compteurs
+        pourcentage_ecart = (ecart / conso_principal * 100) if conso_principal > 0 else 0
+
+        title = f'Comparaison | {cp.num_compteur_principale}'
+        context = {
+            'title_comparaison': title,
+            'font_compteur': 'custom-font',
+            'compteur_principal': cp,
+            'releve_principal': releve_principal,
+            'sous_compteurs': sous_compteurs_data,
+            'total_sous_compteurs': total_sous_compteurs,
+            'ecart': ecart,
+            'pourcentage_ecart': round(pourcentage_ecart, 2),
+            'date_filtre': date_filtre
+        }
+        return render(request, 'all_page/compteurs/compteurs.html', context)
+
+    except CompteurPrincipale.DoesNotExist:
+        messages.error(request, "Ce compteur principal n'existe pas.")
+        return redirect('compteur_principale_liste')
+
+
+# ========================== ALERTES DE CONSOMMATION ==========================
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def alerte_marquer_lu(request, pk):
+    """Marquer une alerte comme lue"""
+    try:
+        alerte = AlerteConsommation.objects.get(pk=pk)
+        alerte.statut = 'LU'
+        alerte.save()
+        return redirect(request.META.get('HTTP_REFERER', 'compteur_principale_liste'))
+    except AlerteConsommation.DoesNotExist:
+        messages.error(request, "Cette alerte n'existe pas.")
+        return redirect('compteur_principale_liste')
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def alerte_marquer_toutes_lues(request):
+    """Marquer toutes les alertes comme lues"""
+    AlerteConsommation.objects.filter(statut='NON_LU').update(statut='LU')
+    messages.success(request, "Toutes les alertes ont été marquées comme lues.")
+    return redirect(request.META.get('HTTP_REFERER', 'compteur_principale_liste'))
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def alerte_traiter(request, pk):
+    """Marquer une alerte comme traitée avec un commentaire"""
+    try:
+        alerte = AlerteConsommation.objects.get(pk=pk)
+        
+        if request.method == 'POST':
+            commentaire = request.POST.get('commentaire', '')
+            alerte.statut = 'TRAITE'
+            alerte.commentaire = commentaire
+            alerte.utilisateur_traitement_id = request.session.get('id_utilisateur')
+            alerte.date_traitement = timezone.now()
+            alerte.save()
+            
+            messages.success(request, "Alerte traitée avec succès.")
+            return redirect('compteur_principale_detail', alerte.compteur_principal.pk)
+        
+        # Si GET, rediriger vers la page de comparaison
+        return redirect('comparaison_consommation', alerte.compteur_principal.pk)
+        
+    except AlerteConsommation.DoesNotExist:
+        messages.error(request, "Cette alerte n'existe pas.")
+        return redirect('compteur_principale_liste')
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def alertes_liste(request):
+    """Liste de toutes les alertes"""
+    alertes = AlerteConsommation.objects.select_related('compteur_principal').all()
+    
+    # Filtre par statut
+    statut_filtre = request.GET.get('statut')
+    if statut_filtre:
+        alertes = alertes.filter(statut=statut_filtre)
+    
+    context = {
+        'title_alertes': 'Alertes de Consommation',
+        'font_compteur': 'custom-font',
+        'alertes': alertes,
+        'statut_filtre': statut_filtre
+    }
+    return render(request, 'all_page/compteurs/alertes_liste.html', context)
