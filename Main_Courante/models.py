@@ -6,6 +6,7 @@ from Acommune.models import Commune
 from Clients.models import Client
 from Tenants.models import Utilisateur
 from Rel_Compteur.mixins import SyncMixin, SyncManager
+import uuid
 
 
 def upload_to_mc(instance, filename):
@@ -13,6 +14,9 @@ def upload_to_mc(instance, filename):
 
 
 class MainCourante(SyncMixin, models.Model):
+    # SURCHARGE TEMPORAIRE pour la migration : on autorise les doublons et le null
+    sync_id = models.UUIDField(default=uuid.uuid4, null=True)
+
     id_mc = models.BigAutoField(primary_key=True)
     date_mc = models.DateField(default=timezone.now, blank=False)
     type_anomalie = models.CharField(max_length=50, blank=False)
