@@ -5,13 +5,14 @@ from django.utils import timezone
 from Acommune.models import Commune
 from Clients.models import Client
 from Tenants.models import Utilisateur
+from Rel_Compteur.mixins import SyncMixin, SyncManager
 
 
 def upload_to_mc(instance, filename):
     return f'mc/{instance.main_courante.pk}/{filename}'
 
 
-class MainCourante(models.Model):
+class MainCourante(SyncMixin, models.Model):
     id_mc = models.BigAutoField(primary_key=True)
     date_mc = models.DateField(default=timezone.now, blank=False)
     type_anomalie = models.CharField(max_length=50, blank=False)
@@ -21,6 +22,9 @@ class MainCourante(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, null=True)
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE, null=True, blank=True)
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT, blank=False)
+
+    objects = SyncManager()
+    all_objects = models.Manager()
 
 
 class StatutMC(models.Model):

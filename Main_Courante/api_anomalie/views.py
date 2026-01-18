@@ -23,61 +23,100 @@ class DeclareMaincourate(APIView):
     def get(request):
         start_time = time.time()
         logger.info("Début GET DeclareMaincourate")
+        
+        from django.utils.dateparse import parse_datetime
+        from django.utils import timezone
+        from Rel_Compteur.api_utils import ApiResponse
+        from Main_Courante.models import MainCourante
 
-        # Récupérer les données directement (synchrone)
-        main_courantes = StatutMC.objects.exclude(realise=True).all()
+        # --- GESTION SYNC ---
+        modified_since_str = request.GET.get('modified_since')
+        include_sync_meta = request.GET.get('include_sync_meta', 'true').lower() == 'true'
+        
+        # On utilise all_objects pour accéder aussi aux supprimés (nécessaire pour Delta Sync)
+        queryset = MainCourante.all_objects.all().select_related('client', 'cp_commune', 'cp_commune__region', 'utilisateur').prefetch_related('photomcs', 'suiviemcs', 'statuts')
+
+        if modified_since_str:
+            modified_since = parse_datetime(modified_since_str)
+            if modified_since:
+                # Delta Sync : Tout ce qui a bougé (modif, création, suppression, changement statut)
+                queryset = queryset.filter(updated_at__gte=modified_since)
+                logger.info(f"Delta Sync Anomalies depuis {modified_since}")
+        else:
+            # Full Sync : Seulement les anomalies actives (non réalisées)
+            # On exclut les réalisées pour ne pas charger tout l'historique
+            # On exclut implicitement les supprimées car on veut l'état "actif" courant
+            # MAIS si on utilise MainCourante.all_objects, on a les supprimés.
+            # Donc on filtre is_deleted=False pour le Full Sync
+            queryset = queryset.filter(is_deleted=False).exclude(statuts__realise=True)
+            logger.info("Full Sync Anomalies (actives uniquement)")
+
         main_courante_list = []
-        commentaire = []
+        commentaire_global = []
 
-        for main_courante in main_courantes:
-            photomc = PhotoMC.objects.filter(main_courante_id=main_courante.main_courante_id)
-            suivie = SuivieMC.objects.filter(main_courante_id=main_courante.main_courante_id)
+        for mc in queryset:
+            # Récupération du statut (relation one-to-many mais logiquement one-to-one ici ?)
+            statut_obj = mc.statuts.first()
+            is_realise = statut_obj.realise if statut_obj else False
+            is_en_cours = statut_obj.en_cours if statut_obj else False
+            is_non_traite = statut_obj.non_traite if statut_obj else True
 
-            if suivie:
-                for suivi in suivie:
-                    commentaires = {
-                        'id': suivi.pk,
-                        'id_mc': suivi.main_courante_id,
-                        'id_suivie': suivi.pk,
-                        'date_suivie': suivi.date_suivie.strftime('%Y-%m-%d %H:%M'),
-                        'commentaire_suivie': suivi.commentaire_suivie
-                    }
-                    commentaire.append(commentaires)
+            # Traitement des suivis
+            for suivi in mc.suiviemcs.all():
+                commentaires = {
+                    'id': suivi.pk,
+                    'id_mc': suivi.main_courante_id,
+                    'id_suivie': suivi.pk,
+                    'date_suivie': suivi.date_suivie.strftime('%Y-%m-%d %H:%M'),
+                    'commentaire_suivie': suivi.commentaire_suivie
+                }
+                commentaire_global.append(commentaires)
 
-            # Initialiser les attributs photo_anomalie_1 à photo_anomalie_5 à None
+            # Traitement des photos
             photo_attributes = {f'photo_anomalie_{i}': "null" for i in range(1, 6)}
-
-            # Remplir les attributs avec les URLs des photos disponibles
-            for i, photo in enumerate(photomc[:5], start=1):
+            photos = list(mc.photomcs.all()[:5])
+            for i, photo in enumerate(photos, start=1):
                 if photo.photo_anomalie:
                     photo_attributes[f'photo_anomalie_{i}'] = photo.photo_anomalie.url
 
+            # Construction de l'objet info
+            # Note: status 0=non_traite, 1=en_cours, 2=realise
+            status_code = 0 
+            if is_realise: status_code = 2
+            elif is_en_cours: status_code = 1
+            
             main_courante_info = {
-                'id': int(main_courante.main_courante_id),
-                'id_mc': int(main_courante.main_courante_id),
-                'type_mc': str(main_courante.main_courante.type_anomalie),
-                'date_declaration': str(main_courante.main_courante.date_mc),
-                'longitude_mc': str(main_courante.main_courante.longitude_mc),
-                'latitude_mc': str(main_courante.main_courante.latitude_mc),
-                'description_mc': str(main_courante.main_courante.description_mc),
-                'client_declare': str(
-                    main_courante.main_courante.client.nom_client) if main_courante.main_courante.client_id else '',
-                'cp_commune': str(
-                    main_courante.main_courante.cp_commune_id) if main_courante.main_courante.cp_commune_id else '',
-                'commune': str(
-                    main_courante.main_courante.cp_commune.commune) if main_courante.main_courante.cp_commune_id else '',
-                'status': 0 if main_courante.non_traite else (1 if main_courante.en_cours else 2),
+                'id': int(mc.pk),
+                'id_mc': int(mc.pk),
+                'type_mc': str(mc.type_anomalie),
+                'date_declaration': str(mc.date_mc),
+                'longitude_mc': str(mc.longitude_mc) if mc.longitude_mc else '',
+                'latitude_mc': str(mc.latitude_mc) if mc.latitude_mc else '',
+                'description_mc': str(mc.description_mc),
+                'client_declare': str(mc.client.nom_client) if mc.client else '',
+                'cp_commune': str(mc.cp_commune_id) if mc.cp_commune_id else '',
+                'commune': str(mc.cp_commune.commune) if mc.cp_commune else '',
+                'status': status_code,
+                'is_deleted': mc.is_deleted, # <--- IMPORTANT: Le champ de suppression logique
                 **photo_attributes,
             }
             main_courante_list.append(main_courante_info)
 
-        response = JsonResponse({
-            'main_courante_list': main_courante_list,
-            'commentaire': commentaire,
-        })
+        logger.info(f"Fin GET DeclareMaincourate: {len(main_courante_list)} items")
 
-        logger.info(f"Fin GET DeclareMaincourate: {time.time() - start_time:.2f}s")
-        return response
+        if include_sync_meta:
+            return ApiResponse.sync_response(
+                data={
+                    'main_courante_list': main_courante_list,
+                    'commentaire': commentaire_global, # Legacy format support
+                },
+                server_time=timezone.now().isoformat()
+            )
+        else:
+            return JsonResponse({
+                'main_courante_list': main_courante_list,
+                'commentaire': commentaire_global,
+            })
 
     @staticmethod
     @schema_use_api
