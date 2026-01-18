@@ -126,7 +126,8 @@ class TaskMission:
                             'conso_dernier_releve': contrat.dernier_conso or 0,
                             'volume_dernier_releve': contrat.dernier_volume or 0,
                             'date_releve': contrat.dernier_releve_date if contrat.dernier_releve_date else '',
-                            'statut': statut
+                            'statut': statut,
+                            'is_deleted': getattr(contrat.num_compteur, 'is_deleted', False)
                         }
                         liste_contrats_info.append(contrat_info)
 
