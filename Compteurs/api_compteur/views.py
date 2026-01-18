@@ -7,6 +7,8 @@ from django.db import transaction
 from django.db.models import Count
 from django.db.models import Q
 from django.http import JsonResponse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -18,6 +20,7 @@ from rest_framework.views import APIView
 from Clients.models import Contrat
 from Parametre.views import enregistre_historique
 from Tenants.middleware import schema_use_api
+from Rel_Compteur.api_utils import ApiResponse
 
 from .serializer import MissionSerializer
 from Tasks.tasks import TaskMission, process_compteur_details, TaskFactureDetail
@@ -147,6 +150,16 @@ async def relever_client(request):
 
 
 class Missions(APIView):
+    """
+    API pour les missions de relevé.
+    
+    GET: Récupère la liste des compteurs à relever
+        Paramètres optionnels:
+        - modified_since: ISO datetime - Retourne uniquement les modifications après cette date (delta sync)
+        - include_sync_meta: bool - Inclure les métadonnées de synchronisation (défaut: true)
+    
+    POST: Enregistre un nouveau relevé
+    """
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
@@ -154,21 +167,111 @@ class Missions(APIView):
     @schema_use_api
     @async_to_sync
     async def get(request):
-        logger.info("Début get")
+        """
+        Récupère la liste des missions (compteurs à relever).
+        
+        Query params:
+        - modified_since: ISO datetime - Pour la synchronisation incrémentielle
+        - include_sync_meta: bool (défaut: true) - Inclure server_time et métadonnées
+        - limit: int (défaut: tous) - Nombre max de résultats
+        - offset: int (défaut: 0) - Décalage pour la pagination
+        - status: int (0 ou 2) - Filtrer par statut (0=non-relevé, 2=relevé)
+        """
+        logger.info("Début get /api/missions")
         start_time = time.time()
         cp_commune = request.user.cp_commune_id
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
-        logger.info(f"Fin get: {time.time() - start_time:.2f}s")
+        
+        # Paramètres de synchronisation
+        modified_since_str = request.GET.get('modified_since')
+        include_sync_meta = request.GET.get('include_sync_meta', 'true').lower() == 'true'
+        
+        # Paramètres de pagination
+        limit_str = request.GET.get('limit')
+        limit = int(limit_str) if limit_str else None
+        offset = int(request.GET.get('offset', 0))
+        
+        # Paramètre de filtrage par statut
+        status_str = request.GET.get('status')
+        status_filter = int(status_str) if status_str in ('0', '2') else None
+        
+        # Parser la date de modification si fournie
+        modified_since = None
+        if modified_since_str:
+            modified_since = parse_datetime(modified_since_str)
+            if not modified_since:
+                return ApiResponse.error(
+                    "Format de date invalide pour 'modified_since'. Utilisez ISO 8601.",
+                    code="INVALID_DATE"
+                )
 
         try:
-            result = await TaskMission.process_liste_mission(cp_commune, end_of_month)
+            # Appeler process_liste_mission avec les nouveaux paramètres
+            result = await TaskMission.process_liste_mission(
+                cp_commune, 
+                end_of_month,
+                limit=limit,
+                offset=offset,
+                status_filter=status_filter
+            )
+            
             if 'status' in result and result['status'] == 'error':
-                return Response({'erreur': result['message']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            return Response({'compteurs_liste': result['liste']}, status=status.HTTP_200_OK)
+                return ApiResponse.error(result['message'], code="SERVER_ERROR", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            missions_list = result['liste']
+            has_more = result.get('has_more', False)
+            total_count = result.get('total_count', len(missions_list))
+            
+            # Filtrer par date de modification si demandé (delta sync)
+            if modified_since:
+                @sync_to_async
+                def filter_by_modified_since():
+                    # Récupérer les IDs des compteurs modifiés depuis la date
+                    modified_compteurs = Compteur.all_objects.filter(
+                        contrats__cp_commune_id=cp_commune,
+                        updated_at__gte=modified_since
+                    ).values_list('num_compteur', flat=True)
+                    
+                    # Récupérer les IDs des relevés modifiés
+                    modified_releves_compteurs = ReleveCompteur.all_objects.filter(
+                        num_compteur__contrats__cp_commune_id=cp_commune,
+                        updated_at__gte=modified_since
+                    ).values_list('num_compteur', flat=True)
+                    
+                    # Combiner les deux sets
+                    all_modified = set(modified_compteurs) | set(modified_releves_compteurs)
+                    return list(all_modified)
+                
+                modified_ids = await filter_by_modified_since()
+                
+                # Filtrer la liste des missions
+                missions_list = [
+                    m for m in missions_list 
+                    if m.get('num_compteur') in modified_ids or m.get('compteur', {}).get('id') in modified_ids
+                ]
+            
+            logger.info(f"Fin get /api/missions: {time.time() - start_time:.2f}s, {len(missions_list)} missions")
+            
+            # Construire la réponse avec ou sans métadonnées de sync
+            if include_sync_meta:
+                return ApiResponse.sync_response(
+                    data={
+                        'compteurs_liste': missions_list,
+                        'total_count': total_count,
+                        'returned_count': len(missions_list),
+                        'offset': offset,
+                        'limit': limit,
+                    },
+                    server_time=timezone.now().isoformat(),
+                    has_more=has_more
+                )
+            else:
+                # Format de réponse original pour compatibilité
+                return Response({'compteurs_liste': missions_list}, status=status.HTTP_200_OK)
+                
         except Exception as e:
             logger.error(f"Erreur inattendue: {str(e)}", exc_info=True)
-            return Response({'erreur': f"Erreur du serveur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return ApiResponse.error(f"Erreur du serveur: {str(e)}", code="SERVER_ERROR", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
     @schema_use_api
@@ -212,10 +315,15 @@ class Missions(APIView):
                         mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
                                                                    image_compteur, dernier_releve)
                         facture_creation(date_releve, compteur.num_compteur, mod_releve)
-
-                        return JsonResponse({
-                            'enregistre': 'Mise à jour effectuée avec succès !'
-                        }, status=status.HTTP_201_CREATED)
+                        
+                        # Retourner avec les métadonnées de sync
+                        return {
+                            'success': True,
+                            'enregistre': 'Mise à jour effectuée avec succès !',
+                            'id_releve': mod_releve.id_releve,
+                            'sync_id': str(mod_releve.sync_id),
+                            'version': mod_releve.version,
+                        }
 
                     else:
                         if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
@@ -244,17 +352,34 @@ class Missions(APIView):
 
                     historique = f"Relever et Facture d'un compteur {compteur_id}"
                     enregistre_historique(historique, utilisateur)
+                    
+                    # Retourner avec les métadonnées de sync
+                    return {
+                        'success': True,
+                        'enregistre': True,
+                        'id_releve': releve.id_releve,
+                        'sync_id': str(releve.sync_id),
+                        'version': releve.version,
+                    }
 
-                    return JsonResponse({'enregistre': True}, status=status.HTTP_201_CREATED)
-
-            response = await process_post()
-            return response
+            result = await process_post()
+            
+            # Si c'est un dict de succès, retourner avec ApiResponse
+            if isinstance(result, dict) and result.get('success'):
+                return ApiResponse.created(data={
+                    'enregistre': result.get('enregistre'),
+                    'id_releve': result.get('id_releve'),
+                    'sync_id': result.get('sync_id'),
+                    'version': result.get('version'),
+                })
+            
+            # Sinon c'est une JsonResponse d'erreur
+            return result
         except ValueError as e:
-            return JsonResponse({'erreur': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return ApiResponse.error(str(e), code="VALIDATION_ERROR")
         except Exception as e:
             logger.error(f"Erreur inattendue dans post: {str(e)}", exc_info=True)
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return ApiResponse.error(f"Erreur du serveur: {str(e)}", code="SERVER_ERROR", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class FactureDetail(APIView):

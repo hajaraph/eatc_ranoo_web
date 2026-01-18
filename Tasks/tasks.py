@@ -18,9 +18,24 @@ from django.shortcuts import get_object_or_404
 
 class TaskMission:
     @staticmethod
-    async def process_liste_mission(cp_commune, end_of_month):
-        logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}")
-        cache_key = f"missions_liste_{cp_commune}_{end_of_month.strftime('%Y%m%d')}"
+    async def process_liste_mission(cp_commune, end_of_month, limit=None, offset=0, status_filter=None):
+        """
+        Récupère la liste des missions (compteurs à relever) pour une commune.
+        
+        Args:
+            cp_commune: ID de la commune
+            end_of_month: Fin du mois en cours
+            limit: Nombre max de résultats (None = tous)
+            offset: Décalage pour la pagination
+            status_filter: Filtrer par statut (0=non-relevé, 2=relevé)
+        
+        Returns:
+            dict avec 'liste', 'total_count', 'has_more'
+        """
+        logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}, limit={limit}, offset={offset}")
+        
+        # Clé de cache inclut les paramètres de pagination
+        cache_key = f"missions_liste_{cp_commune}_{end_of_month.strftime('%Y%m%d')}_{limit}_{offset}_{status_filter}"
 
         try:
             # Essayer de récupérer depuis le cache
@@ -32,34 +47,73 @@ class TaskMission:
             # Si pas dans le cache, calculer les données
             @sync_to_async
             def get_contrats():
+                from django.db.models import OuterRef, Subquery, Max as DjangoMax
+                
                 with transaction.atomic():
-                    contrats_commune = (
+                    # Sous-requête pour obtenir la dernière date de relevé
+                    dernier_releve_subquery = ReleveCompteur.objects.filter(
+                        num_compteur=OuterRef('num_compteur')
+                    ).order_by('-date_releve').values('date_releve')[:1]
+                    
+                    # Sous-requête pour obtenir le dernier volume
+                    dernier_volume_subquery = ReleveCompteur.objects.filter(
+                        num_compteur=OuterRef('num_compteur')
+                    ).order_by('-date_releve').values('volume')[:1]
+                    
+                    # Sous-requête pour obtenir le dernier ID de relevé
+                    dernier_releve_id_subquery = ReleveCompteur.objects.filter(
+                        num_compteur=OuterRef('num_compteur')
+                    ).order_by('-date_releve').values('id_releve')[:1]
+                    
+                    # Sous-requête pour obtenir la dernière consommation
+                    dernier_conso_subquery = ReleveCompteur.objects.filter(
+                        num_compteur=OuterRef('num_compteur')
+                    ).order_by('-date_releve').values('conso')[:1]
+                    
+                    # Requête principale optimisée avec sous-requêtes
+                    contrats_queryset = (
                         Contrat.objects
                         .filter(cp_commune_id=cp_commune)
                         .select_related('client', 'num_compteur')
-                        .prefetch_related('num_compteur__relevecompteurs')
                         .annotate(
-                            conso_dernier_releve=Sum('num_compteur__relevecompteurs__conso'),
+                            dernier_releve_date=Subquery(dernier_releve_subquery),
+                            dernier_volume=Subquery(dernier_volume_subquery),
+                            dernier_releve_id=Subquery(dernier_releve_id_subquery),
+                            dernier_conso=Subquery(dernier_conso_subquery),
                         )
                     )
+                    
+                    # Compter le total avant pagination
+                    total_count = contrats_queryset.count()
+                    
+                    # Appliquer la pagination
+                    if limit is not None:
+                        contrats_commune = list(contrats_queryset[offset:offset + limit])
+                        has_more = (offset + limit) < total_count
+                    else:
+                        contrats_commune = list(contrats_queryset)
+                        has_more = False
 
                     liste_contrats_info = []
                     for contrat in contrats_commune:
-                        dernier_releve = ReleveCompteur.objects.filter(num_compteur=contrat.num_compteur).aggregate(
-                            max_date=Max('date_releve')
-                        )
-                        date_releve = dernier_releve['max_date'] if dernier_releve['max_date'] else end_of_month
-
-                        # Vérifier si date_releve est un objet date avant de comparer
-                        statut = 0 if (date_releve and hasattr(date_releve, 'month') and date_releve.month != end_of_month.month) else 2
-
-                        dernier_releve_obj = contrat.num_compteur.relevecompteurs.order_by('id_releve').last()
+                        date_releve = contrat.dernier_releve_date if contrat.dernier_releve_date else None
+                        
+                        # Calculer le statut
+                        # 0 = non-relevé ce mois, 2 = relevé ce mois
+                        if date_releve and hasattr(date_releve, 'month') and date_releve.month == end_of_month.month:
+                            statut = 2  # Déjà relevé ce mois
+                        else:
+                            statut = 0  # Pas encore relevé ce mois
+                        
+                        # Filtrer par statut si demandé
+                        if status_filter is not None and statut != status_filter:
+                            continue
 
                         # S'assurer que l'ID est toujours un entier
                         releve_id = 0
-                        if dernier_releve_obj and dernier_releve_obj.pk:
+                        if contrat.dernier_releve_id:
                             try:
-                                releve_id = int(dernier_releve_obj.pk)
+                                releve_id = int(contrat.dernier_releve_id)
                             except (ValueError, TypeError):
                                 releve_id = 0
 
@@ -69,18 +123,27 @@ class TaskMission:
                             'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
                             'adresse_client': contrat.client.adresse_client,
                             'num_compteur': contrat.num_compteur_id,
-                            'conso_dernier_releve': contrat.conso_dernier_releve or 0,
-                            'volume_dernier_releve': dernier_releve_obj.volume if dernier_releve_obj else 0,
-                            'date_releve': dernier_releve_obj.date_releve if dernier_releve_obj else '',
+                            'conso_dernier_releve': contrat.dernier_conso or 0,
+                            'volume_dernier_releve': contrat.dernier_volume or 0,
+                            'date_releve': contrat.dernier_releve_date if contrat.dernier_releve_date else '',
                             'statut': statut
                         }
                         liste_contrats_info.append(contrat_info)
 
-                    # Trier la liste
+                    # Trier la liste par ID
                     liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
+                    
+                    # Si on a filtré par statut, recalculer has_more
+                    if status_filter is not None:
+                        has_more = False  # On ne peut pas savoir facilement avec le filtre
 
                     return {
                         'liste': liste_contrats_info,
+                        'total_count': total_count,
+                        'returned_count': len(liste_contrats_info),
+                        'has_more': has_more,
+                        'offset': offset,
+                        'limit': limit,
                     }
 
             result = await get_contrats()

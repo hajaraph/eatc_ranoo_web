@@ -1,6 +1,7 @@
 from django.db import models
 
 from Tenants.models import Utilisateur
+from Rel_Compteur.mixins import SyncMixin, SyncManager
 
 
 def upload_to_compteur(instance, filename):
@@ -70,16 +71,38 @@ class ReleveCompteurPrincipale(models.Model):
         return f"Relevé {self.num_compteur_principale} - {self.date_releve}"
 
 
-class Compteur(models.Model):
+class Compteur(SyncMixin, models.Model):
+    """
+    Modèle représentant un compteur d'eau.
+    
+    Hérite de SyncMixin pour les champs de synchronisation:
+    - sync_id: UUID unique pour l'identification cross-platform
+    - version: Numéro de version pour la détection de conflits
+    - created_at, updated_at: Horodatage de création/modification
+    - is_deleted, deleted_at: Support du soft delete
+    """
     num_compteur = models.CharField(max_length=255, primary_key=True, blank=False)
     marque_compteur = models.CharField(max_length=100, blank=True, null=True)
     modele_compteur = models.CharField(max_length=100, blank=True, null=True)
     DN_compteur = models.CharField(max_length=100, blank=True, null=True)
     origin_compteur = models.CharField(max_length=100, blank=True, null=True)
     num_compteur_principale = models.ForeignKey(CompteurPrincipale, blank=True, null=True, related_name='compteurs', on_delete=models.CASCADE)
+    
+    # Managers pour la synchronisation
+    objects = SyncManager()  # Exclut automatiquement les éléments supprimés
+    all_objects = models.Manager()  # Accès à tous les éléments, y compris supprimés
 
 
-class ReleveCompteur(models.Model):
+class ReleveCompteur(SyncMixin, models.Model):
+    """
+    Modèle représentant un relevé de compteur.
+    
+    Hérite de SyncMixin pour les champs de synchronisation:
+    - sync_id: UUID unique pour l'identification cross-platform
+    - version: Numéro de version pour la détection de conflits
+    - created_at, updated_at: Horodatage de création/modification
+    - is_deleted, deleted_at: Support du soft delete
+    """
     id_releve = models.BigAutoField(primary_key=True)
     date_releve = models.DateField(blank=True, null=True)
     volume = models.IntegerField(blank=True, null=True)
@@ -87,6 +110,10 @@ class ReleveCompteur(models.Model):
     image_compteur = models.ImageField(upload_to=upload_to_compteur, blank=True)
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT, blank=True, null=True)
     num_compteur = models.ForeignKey(Compteur, blank=False, related_name='relevecompteurs', on_delete=models.CASCADE)
+    
+    # Managers pour la synchronisation
+    objects = SyncManager()  # Exclut automatiquement les éléments supprimés
+    all_objects = models.Manager()  # Accès à tous les éléments, y compris supprimés
 
 
 class AlerteConsommation(models.Model):
