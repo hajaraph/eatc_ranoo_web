@@ -1,5 +1,7 @@
 from django.db import models
 from django.db.models.functions import Now
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from django.utils import timezone
 
 from Acommune.models import Commune
@@ -30,6 +32,11 @@ class MainCourante(SyncMixin, models.Model):
     objects = SyncManager()
     all_objects = models.Manager()
 
+    def touch(self):
+        """Met à jour updated_at pour signaler une modification (utile pour delta sync)."""
+        self.updated_at = timezone.now()
+        self.save(update_fields=['updated_at'])
+
 
 class StatutMC(models.Model):
     id_statut = models.BigAutoField(primary_key=True)
@@ -52,3 +59,36 @@ class SuivieMC(models.Model):
     commentaire_suivie = models.CharField(max_length=200, blank=False)
     main_courante = models.ForeignKey(MainCourante, on_delete=models.CASCADE, blank=False, related_name='suiviemcs')
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT)
+
+
+# === SIGNAUX POUR LE DELTA SYNC ===
+# Quand un statut, photo ou suivi change, on met à jour updated_at de MainCourante
+# pour que le delta sync détecte le changement.
+
+@receiver(post_save, sender=StatutMC)
+def update_main_courante_on_statut_change(sender, instance, **kwargs):
+    """Met à jour MainCourante.updated_at quand le statut change."""
+    if instance.main_courante_id:
+        MainCourante.all_objects.filter(pk=instance.main_courante_id).update(
+            updated_at=timezone.now()
+        )
+
+
+@receiver(post_save, sender=SuivieMC)
+def update_main_courante_on_suivie_change(sender, instance, **kwargs):
+    """Met à jour MainCourante.updated_at quand un suivi est ajouté/modifié."""
+    if instance.main_courante_id:
+        MainCourante.all_objects.filter(pk=instance.main_courante_id).update(
+            updated_at=timezone.now()
+        )
+
+
+@receiver(post_save, sender=PhotoMC)
+@receiver(post_delete, sender=PhotoMC)
+def update_main_courante_on_photo_change(sender, instance, **kwargs):
+    """Met à jour MainCourante.updated_at quand une photo est ajoutée/modifiée/supprimée."""
+    if instance.main_courante_id:
+        MainCourante.all_objects.filter(pk=instance.main_courante_id).update(
+            updated_at=timezone.now()
+        )
+
