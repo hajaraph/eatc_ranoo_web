@@ -132,12 +132,19 @@ class SyncMixin(models.Model):
         self.deleted_at = None
         self.save()
 
-    def hard_delete(self):
+    def delete(self, using=None, keep_parents=False):
+        """
+        Surcharge de la méthode delete standard pour effectuer un soft delete par défaut.
+        Cela garantit que les suppressions sont synchronisées vers les clients mobiles.
+        """
+        self.soft_delete()
+
+    def hard_delete(self, using=None, keep_parents=False):
         """
         Effectue une suppression physique (définitive) de l'enregistrement.
         Attention: Cette opération est irréversible!
         """
-        super().delete()
+        super().delete(using=using, keep_parents=keep_parents)
 
     def get_sync_data(self):
         """
