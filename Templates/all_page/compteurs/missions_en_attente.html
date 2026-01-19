@@ -364,7 +364,7 @@
                             {% if releves_data %}
                                 <div class="mission-grid">
                                     {% for item in releves_data %}
-                                    <div class="mission-card">
+                                    <div class="mission-card" id="card-{{ item.releve.id_releve }}">
                                         <!-- Card Header -->
                                         <div class="card-header-status">
                                             <div class="compteur-badge">
@@ -445,8 +445,8 @@
                                                 <i class="fas fa-times"></i> Rejeter
                                             </button>
                                             <a href="{% url 'confirmer_mission' item.releve.id_releve %}" 
-                                               class="btn-modern btn-modern-success"
-                                               onclick="return confirm('Confirmer ce relevé et générer la facture ?');">
+                                               class="btn-modern btn-modern-success btn-validate"
+                                               data-id="{{ item.releve.id_releve }}">
                                                 <i class="fas fa-check"></i> Valider
                                             </a>
                                         </div>
@@ -473,7 +473,7 @@
                                     <div class="modal fade" id="rejectModal{{ item.releve.id_releve }}" tabindex="-1">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <div class="modal-content">
-                                                <form method="post" action="{% url 'rejeter_mission' item.releve.id_releve %}">
+                                                <form method="post" action="{% url 'rejeter_mission' item.releve.id_releve %}" class="reject-form" data-id="{{ item.releve.id_releve }}">
                                                     {% csrf_token %}
                                                     <div class="modal-header bg-danger text-white border-0">
                                                         <h5 class="modal-title">
@@ -537,6 +537,146 @@
             const cards = document.querySelectorAll('.mission-card');
             cards.forEach((card, index) => {
                 card.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Fonction pour afficher les messages du template message.html
+            function showMessage(html) {
+                // Insérer le HTML dans le body
+                document.body.insertAdjacentHTML('beforeend', html);
+                
+                // Récupérer les nouvelles alertes insérées (les dernières)
+                const alerts = document.querySelectorAll('.modern-alert:not(.initialized)');
+                
+                alerts.forEach(alert => {
+                    alert.classList.add('initialized');
+                    
+                    // Initialiser l'auto-hide manuellement
+                    setTimeout(() => {
+                        alert.classList.add('auto-hide');
+                    }, 10);
+                    
+                    // Auto remove
+                    setTimeout(() => {
+                        if (alert.parentNode) alert.remove();
+                    }, 5000);
+                });
+            }
+
+            // Gestionnaire générique de réponse AJAX
+            function handleResponse(response, cardId) {
+                if (response.success) {
+                    const card = document.getElementById(`card-${cardId}`);
+                    if (card) {
+                        // Animation de suppression
+                        card.style.transform = 'scale(0.9) translateX(100px)';
+                        card.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            card.remove();
+                            
+                            // Mettre à jour le compteur
+                            const badge = document.querySelector('.badge-count');
+                            const navBadge = document.getElementById('missions-badge');
+                            
+                            if (badge) {
+                                let count = parseInt(badge.textContent) - 1;
+                                count = Math.max(0, count);
+                                badge.textContent = count;
+                                if (count <= 0) badge.style.display = 'none';
+                                
+                                // Update Navbar badge aussi si possible
+                                if(navBadge) {
+                                    navBadge.textContent = count;
+                                    if (count <= 0) document.getElementById('missions-nav-item').style.display = 'none';
+                                }
+                            }
+                            
+                            // Si plus de cartes, afficher l'état vide
+                            if (document.querySelectorAll('.mission-card').length === 0) {
+                                location.reload(); // Recharger pour voir l'empty state propre
+                            }
+                        }, 300);
+                    }
+                }
+                
+                if (response.message_html) {
+                    showMessage(response.message_html);
+                }
+            }
+
+            // Intercepter les clics sur Valider (AJAX)
+            document.querySelectorAll('.btn-validate').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (!confirm('Confirmer ce relevé et générer la facture ?')) return;
+
+                    const url = this.getAttribute('href');
+                    const cardId = this.dataset.id;
+                    const btnElement = this;
+                    
+                    // État de chargement
+                    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    btnElement.classList.add('disabled');
+
+                    fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => handleResponse(data, cardId))
+                    .catch(err => {
+                        console.error(err);
+                        btnElement.innerHTML = '<i class="fas fa-check"></i> Valider';
+                        btnElement.classList.remove('disabled');
+                        alert("Erreur lors de la communication avec le serveur.");
+                    });
+                });
+            });
+
+            // Intercepter la soumission des formulaires de rejet (AJAX)
+            document.querySelectorAll('.reject-form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const url = this.action;
+                    const formData = new FormData(this);
+                    
+                    // Récupérer le modal
+                    const modalEl = this.closest('.modal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    const cardId = this.dataset.id;
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    
+                    // État de chargement
+                    const originalBtnText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Traitement...';
+                    submitBtn.disabled = true;
+
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        modal.hide();
+                        handleResponse(data, cardId);
+                        
+                        // Reset form (au cas où)
+                        submitBtn.innerHTML = originalBtnText;
+                        submitBtn.disabled = false;
+                        this.reset();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        submitBtn.innerHTML = originalBtnText;
+                        submitBtn.disabled = false;
+                        alert("Erreur lors de la communication avec le serveur.");
+                    });
+                });
             });
         });
     </script>

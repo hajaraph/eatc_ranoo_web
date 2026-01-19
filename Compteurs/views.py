@@ -1250,10 +1250,21 @@ def confirmer_mission(request, pk):
         message = f"Confirmation du relevé {pk} pour le compteur {releve.num_compteur_id}"
         enregistre_historique(message, request.session.get('id_utilisateur'))
         
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message_html': render_to_string('message.html', request=request)
+            })
+            
         return redirect('missions_en_attente')
         
     except ReleveCompteur.DoesNotExist:
         messages.error(request, "Ce relevé n'existe pas.")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message_html': render_to_string('message.html', request=request)
+            })
         return redirect('missions_en_attente')
 
 
@@ -1283,6 +1294,14 @@ def rejeter_mission(request, pk):
             enregistre_historique(message, request.session.get('id_utilisateur'))
             
             messages.success(request, f"Relevé rejeté. L'agent devra refaire le relevé.")
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                from django.template.loader import render_to_string
+                return JsonResponse({
+                    'success': True,
+                    'message_html': render_to_string('message.html', request=request)
+                })
+                
             return redirect('missions_en_attente')
         
         # Si GET, rediriger vers la liste
