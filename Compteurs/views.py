@@ -1215,12 +1215,18 @@ def confirmer_mission(request, pk):
         releve.valideur_id = request.session.get('id_utilisateur')
         releve.save()
         
-        # Générer la facture
-        try:
-            facture_creation(releve.date_releve, releve.num_compteur_id, releve)
-            messages.success(request, f"Relevé confirmé et facture générée pour le compteur {releve.num_compteur_id}.")
-        except Exception as e:
-            messages.warning(request, f"Relevé confirmé mais erreur lors de la génération de facture: {e}")
+        # Vérifier si une facture existe déjà pour ce relevé
+        facture_existante = Facture.objects.filter(relevecompteur_id=releve.id_releve).exists()
+        
+        if facture_existante:
+            messages.success(request, f"Relevé confirmé pour le compteur {releve.num_compteur_id}. La facture existe déjà.")
+        else:
+            # Générer la facture seulement si elle n'existe pas
+            try:
+                facture_creation(releve.date_releve, releve.num_compteur_id, releve)
+                messages.success(request, f"Relevé confirmé et facture générée pour le compteur {releve.num_compteur_id}.")
+            except Exception as e:
+                messages.warning(request, f"Relevé confirmé mais erreur lors de la génération de facture: {e}")
         
         # Enregistrer dans l'historique
         message = f"Confirmation du relevé {pk} pour le compteur {releve.num_compteur_id}"

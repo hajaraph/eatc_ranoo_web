@@ -312,7 +312,8 @@ class Missions(APIView):
 
                         mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
                                                                    image_compteur, dernier_releve)
-                        facture_creation(date_releve, compteur.num_compteur, mod_releve)
+                        # La facture sera créée lors de la confirmation par le gestionnaire
+                        # facture_creation(date_releve, compteur.num_compteur, mod_releve)
                         
                         # Retourner avec les métadonnées de sync
                         return {
@@ -346,9 +347,10 @@ class Missions(APIView):
 
                         releve = relever(dernier_volume.num_compteur_id, date_releve,
                                          volume, conso, image_compteur, utilisateur)
-                        facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+                        # La facture sera créée lors de la confirmation par le gestionnaire
+                        # facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
 
-                    historique = f"Relever et Facture d'un compteur {compteur_id}"
+                    historique = f"Relevé du compteur {compteur_id} en attente de validation"
                     enregistre_historique(historique, utilisateur)
                     
                     # Retourner avec les métadonnées de sync
