@@ -515,6 +515,9 @@
                                     </div>
                                     <h3 class="fw-bold mb-3">Tout est à jour !</h3>
                                     <p class="text-muted mb-4">Aucune mission en attente de validation pour le moment. Bon travail !</p>
+                                    <a href="{% url 'facture' %}" class="btn btn-primary rounded-pill px-4">
+                                        <i class="fas fa-file-invoice-dollar me-2"></i>Voir les Factures
+                                    </a>
                                 </div>
                             {% endif %}
                         </div>
@@ -588,9 +591,25 @@
                                 }
                             }
                             
-                            // Si plus de cartes, afficher l'état vide
+                            // Si plus de cartes, rediriger vers les factures
                             if (document.querySelectorAll('.mission-card').length === 0) {
-                                location.reload(); // Recharger pour voir l'empty state propre
+                                // Afficher un message de succès avant la redirection
+                                const successMsg = `
+                                    <div class="modern-alert alert-success mt-5" style="top: 50%; left: 50%; transform: translate(-50%, -50%); position: fixed;">
+                                        <div class="alert-content">
+                                            <div class="alert-icon"><i class="fas fa-check-circle fa-2x"></i></div>
+                                            <div class="alert-message">
+                                                <h5>Terminé !</h5>
+                                                <p class="mb-0">Toutes les missions ont été traitées. Redirection vers les factures...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                document.body.insertAdjacentHTML('beforeend', successMsg);
+                                
+                                setTimeout(() => {
+                                    window.location.href = "{% url 'facture' %}";
+                                }, 2000);
                             }
                         }, 300);
                     }

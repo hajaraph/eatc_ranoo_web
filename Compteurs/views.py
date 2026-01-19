@@ -1186,9 +1186,14 @@ def missions_en_attente(request):
     font = 'custom-font'
     
     # Récupérer les relevés en attente de validation
-    releves_en_attente = ReleveCompteur.objects.filter(
-        statut_validation='EN_ATTENTE'
-    ).select_related(
+    qs = ReleveCompteur.objects.filter(statut_validation='EN_ATTENTE')
+    
+    # Si aucune mission en attente, redirection vers les factures
+    if not qs.exists():
+        messages.info(request, "Toutes les missions sont à jour !")
+        return redirect('facture')
+
+    releves_en_attente = qs.select_related(
         'num_compteur',
         'utilisateur'
     ).prefetch_related(
