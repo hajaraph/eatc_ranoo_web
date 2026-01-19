@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.db import models
 from django.db.models import OuterRef, Subquery
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string

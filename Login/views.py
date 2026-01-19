@@ -3,7 +3,7 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.hashers import check_password
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
 
@@ -16,6 +16,8 @@ def authentification_requis(view_func):
     def wrapper(request, *args, **kwargs):
         if not request.session.get('num_utilisateur'):
             messages.error(request, f"Veuillez vous connecté !")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({"error": "Authentification requise", "redirect": "/login"}, status=403)
             return redirect('authentification')
         return view_func(request, *args, **kwargs)
 
@@ -40,6 +42,8 @@ def role_requis(*roles):
             if user_role in roles:
                 return view_func(request_or_self, *args, **kwargs)
             else:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({"error": "Permission refusée"}, status=403)
                 return HttpResponseForbidden("Vous n'avez pas la permission nécessaire pour effectuer cette tâche !")
 
         return _wrapped_view
