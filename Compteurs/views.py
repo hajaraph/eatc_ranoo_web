@@ -1214,7 +1214,7 @@ def missions_en_attente(request):
     context = {
         'title_missions': title,
         'active_missions': active,
-        'font_compteur': font,
+        'font_missions': font,
         'releves_data': releves_data,
         'count': len(releves_data)
     }
