@@ -103,13 +103,47 @@ class ReleveCompteur(SyncMixin, models.Model):
     - created_at, updated_at: Horodatage de création/modification
     - is_deleted, deleted_at: Support du soft delete
     """
+    
+    # Choix pour le statut de validation
+    STATUT_VALIDATION_CHOICES = [
+        ('EN_ATTENTE', 'En attente de validation'),
+        ('CONFIRME', 'Confirmé'),
+        ('REJETE', 'Rejeté'),
+    ]
+    
     id_releve = models.BigAutoField(primary_key=True)
     date_releve = models.DateField(blank=True, null=True)
     volume = models.IntegerField(blank=True, null=True)
     conso = models.IntegerField(blank=True, null=True)
     image_compteur = models.ImageField(upload_to=upload_to_compteur, blank=True)
-    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT, blank=True, null=True)
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT, blank=True, null=True, related_name='releves_effectues', verbose_name='Agent')
     num_compteur = models.ForeignKey(Compteur, blank=False, related_name='relevecompteurs', on_delete=models.CASCADE)
+    
+    # Champs de validation
+    statut_validation = models.CharField(
+        max_length=15, 
+        choices=STATUT_VALIDATION_CHOICES, 
+        default='EN_ATTENTE',
+        verbose_name='Statut de validation'
+    )
+    date_validation = models.DateTimeField(
+        blank=True, 
+        null=True, 
+        verbose_name='Date de validation'
+    )
+    valideur = models.ForeignKey(
+        Utilisateur, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True, 
+        related_name='releves_valides',
+        verbose_name='Validé par'
+    )
+    motif_rejet = models.TextField(
+        blank=True, 
+        null=True, 
+        verbose_name='Motif du rejet'
+    )
     
     # Managers pour la synchronisation
     objects = SyncManager()  # Exclut automatiquement les éléments supprimés

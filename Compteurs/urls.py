@@ -7,7 +7,9 @@ from Compteurs.views import (
     compteur_principale_liste, CompteurPrincipaleNew, CompteurPrincipaleDetail,
     compteur_principale_supp, ReleveCompteurPrincipaleNew, releve_cp_supp, comparaison_consommation,
     # Alertes
-    alerte_marquer_lu, alerte_marquer_toutes_lues, alerte_traiter, alertes_liste
+    alerte_marquer_lu, alerte_marquer_toutes_lues, alerte_traiter, alertes_liste,
+    # Missions en attente de validation
+    missions_en_attente, confirmer_mission, rejeter_mission, compter_missions_en_attente
 )
 
 urlpatterns = [
@@ -42,4 +44,11 @@ urlpatterns = [
     path('alertes/marquer-lu/<int:pk>', alerte_marquer_lu, name='alerte_marquer_lu'),
     path('alertes/marquer-toutes-lues', alerte_marquer_toutes_lues, name='alerte_marquer_toutes_lues'),
     path('alertes/traiter/<int:pk>', alerte_traiter, name='alerte_traiter'),
+    
+    # Missions en attente de validation
+    path('missions/', missions_en_attente, name='missions_en_attente'),
+    path('missions/confirmer/<int:pk>', confirmer_mission, name='confirmer_mission'),
+    path('missions/rejeter/<int:pk>', rejeter_mission, name='rejeter_mission'),
+    path('missions/count', compter_missions_en_attente, name='compter_missions_en_attente'),
 ]
+

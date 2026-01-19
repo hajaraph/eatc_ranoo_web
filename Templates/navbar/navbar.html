@@ -134,6 +134,17 @@
                         <span class="nav-text">Mains Courantes</span>
                     </a>
                 </li>
+                {% if request.session.role_utilisateur == 'Administrateur' or request.session.role_utilisateur == 'Gestionnaire' %}
+                <li class="nav-item {{ font_missions }}" id="missions-nav-item" style="display: none;">
+                    <a href="{% url 'missions_en_attente' %}" class="nav-link" title="Missions en attente">
+                        <div class="nav-icon">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <span class="nav-text">Missions</span>
+                        <span class="badge bg-warning text-dark ms-auto" id="missions-badge">0</span>
+                    </a>
+                </li>
+                {% endif %}
                 <li class="nav-item {{ font_parametre }}">
                     <a href="{% url 'para_utilisateur' %}" class="nav-link" title="Paramètres">
                         <div class="nav-icon">
@@ -202,6 +213,27 @@
                     notificationDropdown.classList.remove('show');
                 }
             });
+        }
+
+        // Charger le nombre de missions en attente
+        const missionsNavItem = document.getElementById('missions-nav-item');
+        const missionsBadge = document.getElementById('missions-badge');
+        
+        if (missionsNavItem && missionsBadge) {
+            fetch('/compteurs/missions/count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        missionsNavItem.style.display = 'block';
+                        missionsBadge.textContent = data.count;
+                    } else {
+                        missionsNavItem.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.log('Erreur lors du chargement des missions:', error);
+                    missionsNavItem.style.display = 'none';
+                });
         }
     });
 </script>

@@ -1155,3 +1155,129 @@ def alertes_liste(request):
         'statut_filtre': statut_filtre
     }
     return render(request, 'all_page/compteurs/alertes_liste.html', context)
+
+
+# ========================== MISSIONS EN ATTENTE DE VALIDATION ==========================
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def missions_en_attente(request):
+    """Liste des relevés en attente de validation par les gestionnaires/admins"""
+    title = 'Missions | En attente de validation'
+    active = 'active'
+    font = 'custom-font'
+    
+    # Récupérer les relevés en attente de validation
+    releves_en_attente = ReleveCompteur.objects.filter(
+        statut_validation='EN_ATTENTE'
+    ).select_related(
+        'num_compteur',
+        'utilisateur'
+    ).prefetch_related(
+        'num_compteur__contrats__client'
+    ).order_by('-date_releve')
+    
+    # Ajouter les informations client pour chaque relevé
+    releves_data = []
+    for releve in releves_en_attente:
+        contrat = releve.num_compteur.contrats.first() if releve.num_compteur.contrats.exists() else None
+        releves_data.append({
+            'releve': releve,
+            'client': contrat.client if contrat else None,
+            'contrat': contrat,
+            'agent': releve.utilisateur
+        })
+    
+    context = {
+        'title_missions': title,
+        'active_missions': active,
+        'font_compteur': font,
+        'releves_data': releves_data,
+        'count': len(releves_data)
+    }
+    return render(request, 'all_page/compteurs/missions_en_attente.html', context)
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def confirmer_mission(request, pk):
+    """Confirme un relevé et génère la facture associée"""
+    try:
+        releve = ReleveCompteur.objects.get(pk=pk)
+        
+        if releve.statut_validation != 'EN_ATTENTE':
+            messages.warning(request, "Ce relevé a déjà été traité.")
+            return redirect('missions_en_attente')
+        
+        # Mettre à jour le statut
+        releve.statut_validation = 'CONFIRME'
+        releve.date_validation = timezone.now()
+        releve.valideur_id = request.session.get('id_utilisateur')
+        releve.save()
+        
+        # Générer la facture
+        try:
+            facture_creation(releve.date_releve, releve.num_compteur_id, releve)
+            messages.success(request, f"Relevé confirmé et facture générée pour le compteur {releve.num_compteur_id}.")
+        except Exception as e:
+            messages.warning(request, f"Relevé confirmé mais erreur lors de la génération de facture: {e}")
+        
+        # Enregistrer dans l'historique
+        message = f"Confirmation du relevé {pk} pour le compteur {releve.num_compteur_id}"
+        enregistre_historique(message, request.session.get('id_utilisateur'))
+        
+        return redirect('missions_en_attente')
+        
+    except ReleveCompteur.DoesNotExist:
+        messages.error(request, "Ce relevé n'existe pas.")
+        return redirect('missions_en_attente')
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def rejeter_mission(request, pk):
+    """Rejette un relevé avec un motif - l'agent devra refaire le relevé"""
+    try:
+        releve = ReleveCompteur.objects.get(pk=pk)
+        
+        if releve.statut_validation != 'EN_ATTENTE':
+            messages.warning(request, "Ce relevé a déjà été traité.")
+            return redirect('missions_en_attente')
+        
+        if request.method == 'POST':
+            motif = request.POST.get('motif_rejet', '')
+            
+            # Mettre à jour le statut
+            releve.statut_validation = 'REJETE'
+            releve.date_validation = timezone.now()
+            releve.valideur_id = request.session.get('id_utilisateur')
+            releve.motif_rejet = motif
+            releve.save()
+            
+            # Enregistrer dans l'historique
+            message = f"Rejet du relevé {pk} pour le compteur {releve.num_compteur_id}. Motif: {motif}"
+            enregistre_historique(message, request.session.get('id_utilisateur'))
+            
+            messages.success(request, f"Relevé rejeté. L'agent devra refaire le relevé.")
+            return redirect('missions_en_attente')
+        
+        # Si GET, rediriger vers la liste
+        return redirect('missions_en_attente')
+        
+    except ReleveCompteur.DoesNotExist:
+        messages.error(request, "Ce relevé n'existe pas.")
+        return redirect('missions_en_attente')
+
+
+def compter_missions_en_attente(request):
+    """API endpoint pour compter les missions en attente (pour la navbar)"""
+    from django.http import JsonResponse
+    
+    # Vérifier si l'utilisateur a le bon rôle
+    role = request.session.get('role')
+    if role not in ['Administrateur', 'Gestionnaire']:
+        return JsonResponse({'count': 0})
+    
+    count = ReleveCompteur.objects.filter(statut_validation='EN_ATTENTE').count()
+    return JsonResponse({'count': count})
+
