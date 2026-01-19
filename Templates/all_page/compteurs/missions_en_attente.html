@@ -132,6 +132,11 @@
             max-height: 80vh;
             border-radius: 12px;
         }
+        /* Fix scroll */
+        .content-wrapper {
+            overflow-y: auto;
+            padding-bottom: 40px;
+        }
     </style>
 </head>
 <body>
@@ -140,8 +145,8 @@
     <div class="main-content-area">
         <div class="container-fluid p-0">
             <div class="row flex-nowrap">
-                <div class="col p-0 d-flex flex-column" style="height: 100vh;">
-                    <div class="content-wrapper flex-grow-1 p-4">
+                <div class="col p-0 d-flex flex-column" style="height: 100vh; overflow: hidden;">
+                    <div class="content-wrapper flex-grow-1 p-4" style="overflow-y: auto;">
                         <div class="page-header">
                             <h1 class="page-title">
                                 <i class="fas fa-clipboard-check me-3"></i>
