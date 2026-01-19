@@ -1269,15 +1269,17 @@ def rejeter_mission(request, pk):
         return redirect('missions_en_attente')
 
 
+@schema_use
 def compter_missions_en_attente(request):
     """API endpoint pour compter les missions en attente (pour la navbar)"""
     from django.http import JsonResponse
     
     # Vérifier si l'utilisateur a le bon rôle
-    role = request.session.get('role')
+    role = request.session.get('role_utilisateur')
     if role not in ['Administrateur', 'Gestionnaire']:
         return JsonResponse({'count': 0})
     
     count = ReleveCompteur.objects.filter(statut_validation='EN_ATTENTE').count()
     return JsonResponse({'count': count})
+
 
