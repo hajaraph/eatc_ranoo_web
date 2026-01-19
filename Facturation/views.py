@@ -161,7 +161,12 @@ def facture_supprimer(request, num_facture):
         if releve:
             if releve.image_compteur:
                 releve.image_compteur.delete()
-            releve.delete()
+            # Utiliser hard_delete car delete() fait un soft delete par défaut (SyncMixin)
+            # Puisque la facture est supprimée physiquement, on supprime aussi le relevé physiquement
+            if hasattr(releve, 'hard_delete'):
+                releve.hard_delete()
+            else:
+                releve.delete()
             
         # Historique
         message = f"Suppression de la facture {num_facture} et du relevé associé par l'administrateur"
