@@ -10,133 +10,316 @@
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/style_general.css' %}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <title>{{ title_missions }}</title>
     <style>
-        .mission-card {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            margin-bottom: 20px;
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
+        :root {
+            --primary-color: #3b82f6;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --surface-color: #ffffff;
+            --bg-color: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border-radius: 16px;
         }
-        .mission-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
         }
-        .mission-header {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+
+        .page-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .badge-count {
+            background: var(--primary-color);
             color: white;
+            font-size: 0.9rem;
+            padding: 0.35em 0.8em;
+            border-radius: 999px;
+            margin-left: 12px;
+            vertical-align: middle;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Mission Card Modern Design */
+        .mission-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+            padding-bottom: 40px;
+        }
+
+        .mission-card {
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(229, 231, 235, 0.5);
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .mission-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .card-header-status {
             padding: 16px 20px;
+            background: white;
+            border-bottom: 1px solid #f3f4f6;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .mission-body {
+
+        .compteur-badge {
+            background: #eff6ff;
+            color: var(--primary-color);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-badge {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-content {
             padding: 20px;
+            flex-grow: 1;
         }
-        .mission-image {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
+
+        /* Image Styling */
+        .image-container {
+            position: relative;
+            height: 200px;
             border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background-color: #f3f4f6;
             cursor: pointer;
-            transition: transform 0.2s;
+            group: 'hover';
         }
-        .mission-image:hover {
-            transform: scale(1.05);
+
+        .mission-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
         }
-        .mission-info {
-            flex: 1;
-            padding-left: 20px;
-        }
-        .info-row {
+
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
             display: flex;
-            margin-bottom: 8px;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
-        .info-label {
-            font-weight: 600;
-            color: #64748b;
-            width: 120px;
+
+        .image-container:hover .image-overlay {
+            opacity: 1;
         }
-        .info-value {
-            color: #1e293b;
+
+        .image-container:hover .mission-image {
+            transform: scale(1.1);
         }
-        .action-buttons {
-            display: flex;
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-top: 16px;
-        }
-        .btn-confirm {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            border: none;
-            color: white;
-            padding: 10px 24px;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .btn-confirm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-            color: white;
-        }
-        .btn-reject {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            border: none;
-            color: white;
-            padding: 10px 24px;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .btn-reject:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-            color: white;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #64748b;
-        }
-        .empty-state i {
-            font-size: 64px;
-            color: #cbd5e1;
             margin-bottom: 20px;
         }
-        .badge-count {
-            background: #fbbf24;
-            color: #1e293b;
+
+        .stat-item {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.125rem;
             font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 20px;
+            color: var(--text-primary);
         }
-        .page-header {
-            margin-bottom: 30px;
+
+        .stat-value.highlight {
+            color: var(--primary-color);
         }
-        .page-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 8px;
+
+        /* Info List */
+        .info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .page-subtitle {
-            color: #64748b;
-            font-size: 16px;
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
-        /* Modal pour image */
-        .modal-image {
-            max-width: 100%;
-            max-height: 80vh;
-            border-radius: 12px;
+
+        .info-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-size: 0.8rem;
+            flex-shrink: 0;
         }
-        /* Fix scroll */
+
+        .info-text strong {
+            color: var(--text-primary);
+            display: block;
+        }
+
+        /* Actions Footer */
+        .card-actions {
+            padding: 16px 20px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-modern {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-modern-success {
+            background: var(--success-color);
+            color: white;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-modern-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+            color: white;
+        }
+
+        .btn-modern-danger {
+            background: white;
+            color: var(--danger-color);
+            border: 1px solid #fecaca;
+        }
+
+        .btn-modern-danger:hover {
+            background: #fef2f2;
+            border-color: var(--danger-color);
+            color: #dc2626;
+        }
+
+        /* Utils */
         .content-wrapper {
             overflow-y: auto;
-            padding-bottom: 40px;
+            padding-bottom: 60px;
         }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            max-width: 500px;
+            margin: 40px auto;
+        }
+
+        .empty-icon-wrapper {
+            width: 120px;
+            height: 120px;
+            background: #eff6ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+
+        .empty-icon-wrapper i {
+            font-size: 48px;
+            color: var(--primary-color);
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border: none;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #f3f4f6;
+            padding: 20px 24px;
+        }
+        
     </style>
 </head>
 <body>
@@ -147,164 +330,197 @@
             <div class="row flex-nowrap">
                 <div class="col p-0 d-flex flex-column" style="height: 100vh; overflow: hidden;">
                     <div class="content-wrapper flex-grow-1 p-4" style="overflow-y: auto;">
-                        <div class="page-header">
-                            <h1 class="page-title">
-                                <i class="fas fa-clipboard-check me-3"></i>
-                                Missions en attente
-                                <span class="badge-count ms-2">{{ count }}</span>
-                            </h1>
-                            <p class="page-subtitle">Validez ou rejetez les relevés effectués par les agents terrain</p>
-                        </div>
-
-                        {% if messages %}
-                        {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                        {% endfor %}
-                        {% endif %}
-
-                        {% if releves_data %}
-                            {% for item in releves_data %}
-                            <div class="mission-card">
-                                <div class="mission-header">
-                                    <div>
-                                        <i class="fas fa-tachometer-alt me-2"></i>
-                                        Compteur #{{ item.releve.num_compteur_id }}
-                                    </div>
-                                    <div>
-                                        <i class="fas fa-calendar me-1"></i>
-                                        {{ item.releve.date_releve|date:"d/m/Y" }}
-                                    </div>
+                        
+                        <!-- Header Section -->
+                        <div class="container-xl">
+                            <div class="page-header d-flex justify-content-between align-items-end">
+                                <div>
+                                    <h1 class="page-title">
+                                        Missions en Attente
+                                        {% if count > 0 %}
+                                            <span class="badge-count">{{ count }}</span>
+                                        {% endif %}
+                                    </h1>
+                                    <p class="text-secondary mb-0 mt-2">
+                                        Validez les relevés envoyés par les agents terrain pour facturation.
+                                    </p>
                                 </div>
-                                <div class="mission-body d-flex">
-                                    {% if item.releve.image_compteur %}
-                                    <img src="{{ item.releve.image_compteur.url }}" 
-                                         alt="Photo compteur" 
-                                         class="mission-image"
-                                         data-bs-toggle="modal" 
-                                         data-bs-target="#imageModal{{ item.releve.id_releve }}">
-                                    {% else %}
-                                    <div class="mission-image d-flex align-items-center justify-content-center bg-light">
-                                        <i class="fas fa-image fa-3x text-muted"></i>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    <div class="mission-info">
-                                        <div class="info-row">
-                                            <span class="info-label"><i class="fas fa-user me-2"></i>Client</span>
-                                            <span class="info-value">
-                                                {% if item.client %}
-                                                    {{ item.client.nom_client }} {{ item.client.prenom_client|default:"" }}
-                                                {% else %}
-                                                    <span class="text-muted">Non assigné</span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        <div class="info-row">
-                                            <span class="info-label"><i class="fas fa-map-marker-alt me-2"></i>Adresse</span>
-                                            <span class="info-value">
-                                                {% if item.contrat %}
-                                                    {{ item.contrat.adresse_contrat|default:"Non spécifiée" }}
-                                                {% else %}
-                                                    <span class="text-muted">Non spécifiée</span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        <div class="info-row">
-                                            <span class="info-label"><i class="fas fa-tint me-2"></i>Volume</span>
-                                            <span class="info-value fw-bold text-primary">{{ item.releve.volume|default:0 }} m³</span>
-                                        </div>
-                                        <div class="info-row">
-                                            <span class="info-label"><i class="fas fa-chart-line me-2"></i>Conso</span>
-                                            <span class="info-value fw-bold">{{ item.releve.conso|default:0 }} m³</span>
-                                        </div>
-                                        <div class="info-row">
-                                            <span class="info-label"><i class="fas fa-user-tie me-2"></i>Agent</span>
-                                            <span class="info-value">
-                                                {% if item.agent %}
-                                                    {{ item.agent.nom_utilisateur }} {{ item.agent.prenom_utilisateur|default:"" }}
-                                                {% else %}
-                                                    <span class="text-muted">Non spécifié</span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        
-                                        <div class="action-buttons">
-                                            <a href="{% url 'confirmer_mission' item.releve.id_releve %}" 
-                                               class="btn btn-confirm"
-                                               onclick="return confirm('Confirmer ce relevé et générer la facture ?');">
-                                                <i class="fas fa-check me-2"></i>Confirmer
-                                            </a>
-                                            <button type="button" 
-                                                    class="btn btn-reject"
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#rejectModal{{ item.releve.id_releve }}">
-                                                <i class="fas fa-times me-2"></i>Rejeter
-                                            </button>
-                                        </div>
-                                    </div>
+                                <div class="text-end text-muted">
+                                    <small><i class="fas fa-clock me-2"></i>Dernière synchro: {% now "H:i" %}</small>
                                 </div>
                             </div>
 
-                            <!-- Modal Image -->
-                            <div class="modal fade" id="imageModal{{ item.releve.id_releve }}" tabindex="-1">
-                                <div class="modal-dialog modal-lg modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Photo du compteur #{{ item.releve.num_compteur_id }}</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body text-center">
-                                            {% if item.releve.image_compteur %}
-                                            <img src="{{ item.releve.image_compteur.url }}" alt="Photo compteur" class="modal-image">
-                                            {% endif %}
-                                        </div>
-                                    </div>
+                            {% if messages %}
+                            <div class="mb-4">
+                                {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 12px;">
+                                    <i class="fas fa-info-circle me-2"></i> {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                                 </div>
+                                {% endfor %}
                             </div>
+                            {% endif %}
 
-                            <!-- Modal Rejet -->
-                            <div class="modal fade" id="rejectModal{{ item.releve.id_releve }}" tabindex="-1">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <form method="post" action="{% url 'rejeter_mission' item.releve.id_releve %}">
-                                            {% csrf_token %}
-                                            <div class="modal-header bg-danger text-white">
-                                                <h5 class="modal-title">
-                                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                                    Rejeter le relevé
-                                                </h5>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            {% if releves_data %}
+                                <div class="mission-grid">
+                                    {% for item in releves_data %}
+                                    <div class="mission-card">
+                                        <!-- Card Header -->
+                                        <div class="card-header-status">
+                                            <div class="compteur-badge">
+                                                <i class="fas fa-tachometer-alt"></i>
+                                                {{ item.releve.num_compteur_id }}
                                             </div>
-                                            <div class="modal-body">
-                                                <p>Vous êtes sur le point de rejeter le relevé du compteur <strong>#{{ item.releve.num_compteur_id }}</strong>.</p>
-                                                <p class="text-muted">L'agent devra effectuer un nouveau relevé.</p>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold">Motif du rejet</label>
-                                                    <textarea name="motif_rejet" class="form-control" rows="3" 
-                                                              placeholder="Indiquez la raison du rejet..." required></textarea>
+                                            <div class="date-badge">
+                                                <i class="far fa-calendar-alt"></i>
+                                                {{ item.releve.date_releve|date:"d M Y" }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Card Content -->
+                                        <div class="card-content">
+                                            <!-- Image with Overlay -->
+                                            <div class="image-container" data-bs-toggle="modal" data-bs-target="#imageModal{{ item.releve.id_releve }}">
+                                                {% if item.releve.image_compteur %}
+                                                    <img src="{{ item.releve.image_compteur.url }}" alt="Photo compteur" class="mission-image">
+                                                    <div class="image-overlay">
+                                                        <span class="badge bg-white text-dark rounded-pill px-3 py-2">
+                                                            <i class="fas fa-search-plus me-2"></i>Agrandir
+                                                        </span>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="d-flex align-items-center justify-content-center h-100 bg-light text-secondary">
+                                                        <div class="text-center">
+                                                            <i class="fas fa-image fa-2x mb-2"></i>
+                                                            <p class="small m-0">Pas de photo</p>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+
+                                            <!-- Key Stats -->
+                                            <div class="stats-grid">
+                                                <div class="stat-item">
+                                                    <div class="stat-label">Nouvel Index</div>
+                                                    <div class="stat-value highlight">{{ item.releve.volume|default:0 }} <small>m³</small></div>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <div class="stat-label">Conso.</div>
+                                                    <div class="stat-value">{{ item.releve.conso|default:0 }} <small>m³</small></div>
                                                 </div>
                                             </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                <button type="submit" class="btn btn-danger">
-                                                    <i class="fas fa-times me-2"></i>Confirmer le rejet
-                                                </button>
+
+                                            <!-- Details List -->
+                                            <div class="info-list">
+                                                <div class="info-item">
+                                                    <div class="info-icon"><i class="fas fa-user"></i></div>
+                                                    <div class="info-text">
+                                                        <span class="d-block text-xs text-muted">Client</span>
+                                                        <strong>{{ item.client.nom_client|default:"Inconnu" }} {{ item.client.prenom_client|default:"" }}</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="info-item">
+                                                    <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                                                    <div class="info-text">
+                                                        <span class="d-block text-xs text-muted">Adresse</span>
+                                                        <span class="text-dark">{{ item.contrat.adresse_contrat|default:"Non spécifiée" }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="info-item">
+                                                    <div class="info-icon"><i class="fas fa-user-tie"></i></div>
+                                                    <div class="info-text">
+                                                        <span class="d-block text-xs text-muted">Relevé par</span>
+                                                        <span class="text-dark">{{ item.agent.nom_utilisateur }}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </form>
+                                        </div>
+
+                                        <!-- Card Actions -->
+                                        <div class="card-actions">
+                                            <button type="button" 
+                                                    class="btn-modern btn-modern-danger"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#rejectModal{{ item.releve.id_releve }}">
+                                                <i class="fas fa-times"></i> Rejeter
+                                            </button>
+                                            <a href="{% url 'confirmer_mission' item.releve.id_releve %}" 
+                                               class="btn-modern btn-modern-success"
+                                               onclick="return confirm('Confirmer ce relevé et générer la facture ?');">
+                                                <i class="fas fa-check"></i> Valider
+                                            </a>
+                                        </div>
                                     </div>
+
+                                    <!-- Modal Image -->
+                                    <div class="modal fade" id="imageModal{{ item.releve.id_releve }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title fw-bold">Preuve Photo #{{ item.releve.num_compteur_id }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body p-0 text-center bg-dark">
+                                                    {% if item.releve.image_compteur %}
+                                                    <img src="{{ item.releve.image_compteur.url }}" class="img-fluid" style="max-height: 85vh;">
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal Rejet -->
+                                    <div class="modal fade" id="rejectModal{{ item.releve.id_releve }}" tabindex="-1">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <form method="post" action="{% url 'rejeter_mission' item.releve.id_releve %}">
+                                                    {% csrf_token %}
+                                                    <div class="modal-header bg-danger text-white border-0">
+                                                        <h5 class="modal-title">
+                                                            <i class="fas fa-exclamation-circle me-2"></i>Rejeter le relevé
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4">
+                                                        <div class="text-center mb-4">
+                                                            <div class="avatar-lg bg-danger-subtle text-danger rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
+                                                                <i class="fas fa-times fa-2x"></i>
+                                                            </div>
+                                                            <h5>Êtes-vous sûr ?</h5>
+                                                            <p class="text-muted">Si vous rejetez ce relevé, l'agent <strong>{{ item.agent.nom_utilisateur }}</strong> recevra une notification pour refaire la mission.</p>
+                                                        </div>
+                                                        
+                                                        <div class="mb-3 text-start">
+                                                            <label class="form-label fw-bold text-dark">Raison du rejet <span class="text-danger">*</span></label>
+                                                            <textarea name="motif_rejet" class="form-control bg-light border-0" rows="3" 
+                                                                      placeholder="Ex: Photo floue, chiffres illisibles..." required style="resize: none;"></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer border-0 bg-light">
+                                                        <button type="button" class="btn btn-link text-secondary text-decoration-none" data-bs-dismiss="modal">Annuler</button>
+                                                        <button type="submit" class="btn btn-danger px-4 rounded-pill">
+                                                            Confirmer le Rejet
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
                                 </div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="empty-state">
-                                <i class="fas fa-clipboard-check"></i>
-                                <h3>Aucune mission en attente</h3>
-                                <p>Toutes les missions ont été validées ou il n'y a pas de nouveaux relevés.</p>
-                            </div>
-                        {% endif %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <div class="empty-icon-wrapper">
+                                        <i class="fas fa-check-double"></i>
+                                    </div>
+                                    <h3 class="fw-bold mb-3">Tout est à jour !</h3>
+                                    <p class="text-muted mb-4">Aucune mission en attente de validation pour le moment. Bon travail !</p>
+                                    <a href="{% url 'carte' %}" class="btn btn-outline-primary rounded-pill px-4">
+                                        <i class="fas fa-map me-2"></i>Voir la carte
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -314,5 +530,15 @@
     <script src="{% static 'datatable/jquery/jquery-3.7.0.min.js' %}"></script>
     <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'fontawesome/js/all.min.js' %}"></script>
+    
+    <script>
+        // Animation d'apparition progressive
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.mission-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
 </body>
 </html>
