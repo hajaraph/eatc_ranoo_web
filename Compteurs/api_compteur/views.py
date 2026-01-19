@@ -74,15 +74,14 @@ async def calculer_nombre_relever_effectuer(cp_commune_id):
         ).count()
 
         nombre_total_facture_impayer = nombre_facture - nombre_total_facture_payer
-        nombre_total_facture_payer = nombre_facture - nombre_total_facture_impayer
 
-        # Soustraire le nombre de relevés effectués du nombre total de compteurs
-        nombre_total_compteur -= nombre_relever_effectuer
-        nombre_relever_effectuer -= nombre_relever_effectuer  # Note : Cette ligne semble étrange, voir ci-dessous
+        # Calculer le nombre de compteurs restants à relever
+        nombre_restant_a_relever = nombre_total_compteur - nombre_relever_effectuer
 
         return (
             nombre_total_compteur,
             nombre_relever_effectuer,
+            nombre_restant_a_relever,
             nombre_total_facture_impayer,
             nombre_total_facture_payer
         )
@@ -112,9 +111,13 @@ async def accueil(request):
     total_anomalie = non_traite + en_cours
 
     # Appeler la fonction asynchrone pour les compteurs et factures
-    nombre_total_compteur, nombre_relever_effectuer, nombre_total_facture_impayer, nombre_total_facture_payer = (
-        await calculer_nombre_relever_effectuer(cp_commune_id)
-    )
+    (
+        nombre_total_compteur,
+        nombre_relever_effectuer,
+        nombre_restant_a_relever,
+        nombre_total_facture_impayer,
+        nombre_total_facture_payer
+    ) = await calculer_nombre_relever_effectuer(cp_commune_id)
 
     response_data = {
         'non_traite': non_traite,
@@ -123,6 +126,7 @@ async def accueil(request):
         'totale_anomalie': total_anomalie,
         'nombre_total_compteur': nombre_total_compteur,
         'nombre_relever_effectuer': nombre_relever_effectuer,
+        'nombre_restant_a_relever': nombre_restant_a_relever,
         'nombre_total_facture_impayer': nombre_total_facture_impayer,
         'nombre_total_facture_payer': nombre_total_facture_payer
     }
