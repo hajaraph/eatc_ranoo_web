@@ -45,23 +45,17 @@ async def calculer_nombre_relever_effectuer(cp_commune_id):
     # Encapsuler les opérations synchrones à la base de données
     @sync_to_async
     def get_counts():
-        # Calcul du nombre total de compteurs
-        nombre_total_compteur = Compteur.objects.filter(contrats__cp_commune_id=cp_commune_id).count()
+        # Nombre total de compteurs dans cette commune (via les contrats)
+        nombre_total_compteur = Contrat.objects.filter(
+            cp_commune_id=cp_commune_id
+        ).count()
 
-        # Filtrer les contrats avec des relevés dans le mois actuel
-        contrat_data = (
-            Contrat.objects
-            .filter(cp_commune_id=cp_commune_id)
-            .annotate(releve_count=Count(
-                'num_compteur__relevecompteurs',
-                filter=Q(num_compteur__relevecompteurs__date_releve__month=end_of_month.month)))
-            .distinct()
-        )
-
-        contrat_list = list(contrat_data)
-
-        # Calculer le nombre_relever_effectuer
-        nombre_relever_effectuer = sum(1 for contrat in contrat_list if contrat.releve_count > 0)
+        # Compter les compteurs qui ont au moins un relevé ce mois-ci
+        nombre_relever_effectuer = ReleveCompteur.objects.filter(
+            num_compteur__contrats__cp_commune_id=cp_commune_id,
+            date_releve__month=end_of_month.month,
+            date_releve__year=end_of_month.year
+        ).values('num_compteur').distinct().count()
 
         # Calcul des factures
         nombre_facture = Facture.objects.filter(
