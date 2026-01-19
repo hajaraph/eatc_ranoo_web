@@ -300,9 +300,18 @@ class ReleveNew(SchemaAwareView):
             else:
                 conso = volume
 
-            # Créer un nouvel objet ReleveCompteur avec l'image mise à jour
-            releve = relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateur)
-            facture_creation(date_releve, num_compteur, releve)
+            # Si Admin ou Gestionnaire, le relevé est directement validé
+            role_utilisateur = request.session.get('role_utilisateur')
+            if role_utilisateur in ['Administrateur', 'Gestionnaire']:
+                releve = relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateur,
+                                statut_validation='CONFIRME', valideur_id=utilisateur)
+                # Créer la facture immédiatement
+                facture_creation(date_releve, num_compteur, releve)
+            else:
+                # Pour les Releveurs, le relevé est en attente de validation
+                releve = relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateur,
+                                statut_validation='EN_ATTENTE')
+                # Pas de facture - sera créée lors de la confirmation
             
             # Vérifier l'alerte si lié à un compteur principal
             try:
@@ -327,15 +336,21 @@ class ReleveNew(SchemaAwareView):
             return redirect('releve_new', num_compteur)
 
 
-def relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateur):
-    return ReleveCompteur.objects.create(
+def relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateur, 
+            statut_validation='EN_ATTENTE', valideur_id=None):
+
+    releve = ReleveCompteur.objects.create(
         num_compteur_id=num_compteur,
         date_releve=date_releve,
         volume=volume,
         conso=conso,
         image_compteur=image_compteur,
-        utilisateur_id=utilisateur
+        utilisateur_id=utilisateur,
+        statut_validation=statut_validation,
+        valideur_id=valideur_id,
+        date_validation=timezone.now() if statut_validation == 'CONFIRME' else None
     )
+    return releve
 
 
 class ReleveMod(SchemaAwareView):
