@@ -121,6 +121,9 @@ class CompteurNew(SchemaAwareView):
                 volume=volume,
                 conso=0,
                 num_compteur_id=num_compteur,
+                statut_validation='CONFIRME',
+                valideur_id=request.session.get('id_utilisateur'),
+                date_validation=timezone.now(),
                 utilisateur_id=request.session.get('id_utilisateur')
             )
             # Historique
