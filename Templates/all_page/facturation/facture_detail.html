@@ -227,14 +227,14 @@
                         <p class="text-center text-secondary"><strong>{{ factures.montant_total_ttc }} Ar</strong></p>
                     </div>
                 </div>
-                {% if not factures.statut or factures.restant_nouvel %}
-                    <div class="d-flex justify-content-end mt-4 mx-1">
-                        <div class="mb-2">
+                <div class="d-flex justify-content-end mt-4 mx-1">
+                    <div class="mb-2">
+                        {% if not factures.statut or factures.restant_nouvel %}
                             <a href="" class="btn btn-warning">
                                 <i class="fas fa-arrows-rotate"></i>
                                 Relancer
                             </a>
-                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' factures.num_facture %}')" class="btn btn-success mx-4 px-4">
+                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' factures.num_facture %}')" class="btn btn-success mx-2 px-4">
                                 <i class="fas fa-file-pdf"></i>
                                  PDF
                             </div>
@@ -246,9 +246,18 @@
                                     Paiement
                                 {% endif %}
                             </button>
-                        </div>
+                        {% endif %}
+
+                        {% if request.session.role_utilisateur == 'Administrateur' %}
+                            <a href="{% url 'facture_supprimer' factures.num_facture %}" 
+                               class="btn btn-danger ms-2"
+                               onclick="return confirm('ATTENTION : Vous êtes sur le point de supprimer la facture {{ factures.num_facture }} et son relevé associé. \n\nCette action supprimera également tous les paiements liés.\n\nÊtes-vous sûr de vouloir continuer ?');">
+                                <i class="fas fa-trash-alt me-2"></i>
+                                Supprimer
+                            </a>
+                        {% endif %}
                     </div>
-                {% endif %}
+                </div>
             </div>
         </div>
     </div>

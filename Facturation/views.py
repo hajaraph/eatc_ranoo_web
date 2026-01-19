@@ -143,6 +143,38 @@ def facture(request):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
+@role_requis('Administrateur')
+@schema_use
+def facture_supprimer(request, num_facture):
+    """
+    Supprime une facture et le relevé associé (Option C).
+    Uniquement pour les Administrateurs.
+    """
+    try:
+        facture = get_object_or_404(Facture, num_facture=num_facture)
+        releve = facture.relevecompteur
+        
+        # Suppression de la facture (cascade sur MontantHT, Paiements, etc.)
+        facture.delete()
+        
+        # Suppression du relevé (cascade sur l'image)
+        if releve:
+            if releve.image_compteur:
+                releve.image_compteur.delete()
+            releve.delete()
+            
+        # Historique
+        message = f"Suppression de la facture {num_facture} et du relevé associé par l'administrateur"
+        enregistre_historique(message, request.session.get('id_utilisateur'))
+        
+        messages.success(request, f"Facture {num_facture} et relevé supprimés avec succès.")
+        return redirect('facture')
+        
+    except Exception as e:
+        messages.error(request, f"Erreur lors de la suppression : {str(e)}")
+        return redirect('facture_etat_detail', num_facture=num_facture)
+
+
 @schema_use
 def facture_etat_detail(request, num_facture):
     title = 'Facturation | Etat Facture | Détail'
