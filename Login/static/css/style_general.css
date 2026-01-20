@@ -27,7 +27,7 @@
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    
+
     /* Variables pour les cartes de statistiques */
     --stat-card-padding: 1.5rem;
     --stat-card-gap: 1rem;
@@ -60,6 +60,7 @@
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -71,6 +72,7 @@
         opacity: 0;
         transform: translateX(-30px);
     }
+
     to {
         opacity: 1;
         transform: translateX(0);
@@ -82,6 +84,7 @@
         opacity: 0;
         transform: scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -118,40 +121,53 @@
 }
 
 /* Style amélioré des badges */
+/* Style amélioré des badges - Moderne & Pill-shaped */
 .badge {
-    padding: 0.35em 0.6em;
-    font-weight: 500;
-    font-size: 0.75rem;
-    border-radius: 0.35rem;
-    letter-spacing: 1px;
-    line-height: 1.2;
-    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5em 1em;
+    font-weight: 600;
+    font-size: 0.7rem;
+    border-radius: 50rem;
+    /* Pill shape */
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    line-height: 1;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Styles spécifiques pour les badges de statut */
 .badge.bg-warning {
-    background: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-light) 100%);
-    color: #333 !important;
+    background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(251, 140, 0, 0.2);
 }
 
 .badge.bg-success {
-    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
     color: white !important;
+    box-shadow: 0 4px 10px rgba(67, 160, 71, 0.2);
 }
 
 .badge.bg-danger {
-    background: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-light) 100%);
+    background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
     color: white !important;
+    box-shadow: 0 4px 10px rgba(229, 57, 53, 0.2);
 }
 
 .badge.bg-primary {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
     color: white !important;
+    box-shadow: 0 4px 10px rgba(30, 136, 229, 0.2);
 }
 
 .badge:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    filter: brightness(1.05);
 }
 
 .row.flex-nowrap {
@@ -214,7 +230,7 @@
     .card-header {
         padding: 1.5rem !important;
     }
-    
+
     .card-header .btn {
         padding: 8px 12px !important;
         margin: 4px !important;
@@ -265,7 +281,8 @@
     outline: none;
     border-color: #4A90E2;
     background: white;
-    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1); /* couleur focus login.css */
+    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+    /* couleur focus login.css */
     transform: translateY(-2px);
 }
 
@@ -313,7 +330,8 @@
     outline: none;
     border-color: #4A90E2;
     background: white;
-    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1); /* couleur focus login.css */
+    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+    /* couleur focus login.css */
     transform: translateY(-2px);
 }
 
@@ -345,8 +363,8 @@
     margin-bottom: 1.5rem;
 }
 
-.form-floating-general > .form-control-general,
-.form-floating-general > .form-select-general {
+.form-floating-general>.form-control-general,
+.form-floating-general>.form-select-general {
     height: 3.5rem;
     line-height: 1.25;
     background: #f8f9fa;
@@ -356,7 +374,7 @@
     padding: 1.2rem 1rem 0.5rem 1rem;
 }
 
-.form-floating-general > label {
+.form-floating-general>label {
     position: absolute;
     top: 1rem;
     left: 1rem;
@@ -369,10 +387,10 @@
     transition: 0.2s ease all;
 }
 
-.form-floating-general > .form-control-general:focus ~ label,
-.form-floating-general > .form-control-general:not(:placeholder-shown) ~ label,
-.form-floating-general > .form-select-general:focus ~ label,
-.form-floating-general > .form-select-general:not([value=""]) ~ label {
+.form-floating-general>.form-control-general:focus~label,
+.form-floating-general>.form-control-general:not(:placeholder-shown)~label,
+.form-floating-general>.form-select-general:focus~label,
+.form-floating-general>.form-select-general:not([value=""])~label {
     top: 0.3rem;
     left: 1rem;
     font-size: 13px;
@@ -382,7 +400,7 @@
     padding: 0 4px;
 }
 
-.form-floating-general > .form-control-general::placeholder {
+.form-floating-general>.form-control-general::placeholder {
     color: transparent;
 }
 
@@ -392,17 +410,32 @@
     animation-fill-mode: both;
 }
 
-.form-group-general:nth-child(1) { animation-delay: 0.1s; }
-.form-group-general:nth-child(2) { animation-delay: 0.15s; }
-.form-group-general:nth-child(3) { animation-delay: 0.2s; }
-.form-group-general:nth-child(4) { animation-delay: 0.25s; }
-.form-group-general:nth-child(5) { animation-delay: 0.3s; }
+.form-group-general:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.form-group-general:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.form-group-general:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.form-group-general:nth-child(4) {
+    animation-delay: 0.25s;
+}
+
+.form-group-general:nth-child(5) {
+    animation-delay: 0.3s;
+}
 
 @keyframes fadeInUp {
     from {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -472,12 +505,15 @@
 .table .btn-danger,
 .table .btn-warning,
 .table .btn-secondary {
-    background: transparent !important; /* Fond transparent pour style outline */
-    color: var(--primary-color) !important; /* Couleur du texte avec nouvelle palette */
-    border: 2px solid var(--primary-color) !important; /* Bordure colorée avec nouvelle palette */
+    background: transparent !important;
+    /* Fond transparent pour style outline */
+    color: var(--primary-color) !important;
+    /* Couleur du texte avec nouvelle palette */
+    border: 2px solid var(--primary-color) !important;
+    /* Bordure colorée avec nouvelle palette */
     border-radius: 8px !important;
     box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08) !important;
-    transition: transform 0.18s cubic-bezier(.4,2,.6,1), box-shadow 0.18s cubic-bezier(.4,2,.6,1), background-color 0.18s, color 0.18s;
+    transition: transform 0.18s cubic-bezier(.4, 2, .6, 1), box-shadow 0.18s cubic-bezier(.4, 2, .6, 1), background-color 0.18s, color 0.18s;
     font-weight: 500;
     letter-spacing: 0.01em;
 }
@@ -494,8 +530,10 @@
 .table .btn-danger:hover,
 .table .btn-warning:hover,
 .table .btn-secondary:hover {
-    background: rgba(25, 118, 210, 0.3) !important; /* Fond semi-transparent à 30% */
-    color: var(--primary-color) !important; /* Garde la couleur du texte */
+    background: rgba(25, 118, 210, 0.3) !important;
+    /* Fond semi-transparent à 30% */
+    color: var(--primary-color) !important;
+    /* Garde la couleur du texte */
     border-color: var(--primary-color) !important;
     transform: translateY(-3px) scale(1.04);
     box-shadow: 0 6px 18px rgba(25, 118, 210, 0.18) !important;
@@ -505,7 +543,8 @@
 .table .btn:active {
     transform: translateY(1px) scale(0.98);
     box-shadow: 0 1px 2px rgba(25, 118, 210, 0.10) !important;
-    background: rgba(25, 118, 210, 0.2) !important; /* Fond encore plus transparent au clic */
+    background: rgba(25, 118, 210, 0.2) !important;
+    /* Fond encore plus transparent au clic */
 }
 
 /* Variantes pour les différents types de boutons avec nouvelles couleurs de palette */
@@ -517,7 +556,8 @@
 
 .btn-success:hover,
 .table .btn-success:hover {
-    background: rgba(46, 125, 50, 0.3) !important; /* Vert semi-transparent */
+    background: rgba(46, 125, 50, 0.3) !important;
+    /* Vert semi-transparent */
     color: var(--success-color) !important;
     border-color: var(--success-color) !important;
 }
@@ -530,7 +570,8 @@
 
 .btn-danger:hover,
 .table .btn-danger:hover {
-    background: rgba(211, 47, 47, 0.3) !important; /* Rouge semi-transparent */
+    background: rgba(211, 47, 47, 0.3) !important;
+    /* Rouge semi-transparent */
     color: var(--danger-color) !important;
     border-color: var(--danger-color) !important;
 }
@@ -543,7 +584,8 @@
 
 .btn-warning:hover,
 .table .btn-warning:hover {
-    background: rgba(237, 108, 2, 0.3) !important; /* Orange semi-transparent */
+    background: rgba(237, 108, 2, 0.3) !important;
+    /* Orange semi-transparent */
     color: var(--warning-color) !important;
     border-color: var(--warning-color) !important;
 }
@@ -556,7 +598,8 @@
 
 .btn-secondary:hover,
 .table .btn-secondary:hover {
-    background: rgba(156, 39, 176, 0.3) !important; /* Violet semi-transparent */
+    background: rgba(156, 39, 176, 0.3) !important;
+    /* Violet semi-transparent */
     color: var(--secondary-color) !important;
     border-color: var(--secondary-color) !important;
 }
@@ -703,11 +746,25 @@
 }
 
 /* Animations échelonnées */
-.stat-card:nth-child(1) { animation-delay: 0.1s; }
-.stat-card:nth-child(2) { animation-delay: 0.2s; }
-.stat-card:nth-child(3) { animation-delay: 0.3s; }
-.stat-card:nth-child(4) { animation-delay: 0.4s; }
-.stat-card:nth-child(5) { animation-delay: 0.5s; }
+.stat-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.stat-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.stat-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.stat-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.stat-card:nth-child(5) {
+    animation-delay: 0.5s;
+}
 
 /* Responsive Design */
 @media (max-width: 1200px) {

@@ -136,11 +136,11 @@
                         </td>
                         <td>
                             {% if relever.statut_validation == 'EN_ATTENTE' %}
-                                <span class="bg-warning">En attente</span>
+                                <span class="badge bg-warning">En attente</span>
                             {% elif relever.statut_validation == 'CONFIRME' %}
-                                <span class="bg-success">Validé</span>
+                                <span class="badge bg-success">Validé</span>
                             {% else %}
-                                <span class="bg-danger">Rejeté</span>
+                                <span class="badge bg-danger">Rejeté</span>
                             {% endif %}
                         </td>
                         <td>
