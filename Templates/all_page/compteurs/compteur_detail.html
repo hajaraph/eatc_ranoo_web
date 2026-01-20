@@ -103,9 +103,9 @@
                         <th>Volume</th>
                         <th>Conso</th>
                         <th>Relevé le</th>
-                        <th>Utilisateur</th>
-                        <th>Photo</th>
                         <th>Statut</th>
+                        <th>Photo</th>
+                        <th>Utilisateur</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -118,8 +118,13 @@
                         <td>{{ relever.conso }} m&#179;</td>
                         <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
                         <td>
-                            {{ relever.utilisateur.nom_utilisateur }}
-                            <span class="badge bg-primary">{{ relever.utilisateur.role.role }}</span>
+                            {% if relever.statut_validation == 'EN_ATTENTE' %}
+                                <span class="badge bg-warning">En attente</span>
+                            {% elif relever.statut_validation == 'CONFIRME' %}
+                                <span class="badge bg-success">Validé</span>
+                            {% else %}
+                                <span class="badge bg-danger">Rejeté</span>
+                            {% endif %}
                         </td>
                         <td class="text-center">
                             {% if relever.image_compteur %}
@@ -139,22 +144,19 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if relever.statut_validation == 'EN_ATTENTE' %}
-                                <span class="badge bg-warning">En attente</span>
-                            {% elif relever.statut_validation == 'CONFIRME' %}
-                                <span class="badge bg-success">Validé</span>
-                            {% else %}
-                                <span class="badge bg-danger">Rejeté</span>
-                            {% endif %}
+                            {{ relever.utilisateur.nom_utilisateur }}
+                            <span class="badge bg-primary">{{ relever.utilisateur.role.role }}</span>
                         </td>
                         {% if client_active and forloop.last %}
                         <td>
                             <a href="{% url 'releve_mod' relever.pk %}" class="btn btn-sm btn-warning" title="Modifier">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="{% url 'del_releve' relever.pk %}" class="btn btn-sm btn-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer le Relevé du {{ relever.date_releve|date:'d/m/Y' }} ?')">
-                                <i class="fas fa-trash-alt"></i>
-                            </a>
+                            {% if request.session.role_utilisateur == 'Administrateur'%}
+                                <a href="{% url 'del_releve' relever.pk %}" class="btn btn-sm btn-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer le Relevé du {{ relever.date_releve|date:'d/m/Y' }} ?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            {% endif %}
                         </td>
                         {% else %}
                         <td></td>
