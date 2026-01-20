@@ -105,6 +105,7 @@
                         <th>Relevé le</th>
                         <th>Utilisateur</th>
                         <th>Photo</th>
+                        <th>Statut</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -135,6 +136,15 @@
                                 <span class="text-warning" title="Image introuvable sur le serveur">
                                     <i class="fas fa-exclamation-triangle"></i>
                                 </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if relever.statut_releve == 'EN_ATTENTE' %}
+                                <span class="badge bg-warning">En attente</span>
+                            {% elif relever.statut_releve == 'CONFIRME' %}
+                                <span class="badge bg-success">Validé</span>
+                            {% else %}
+                                <span class="badge bg-danger">Rejeté</span>
                             {% endif %}
                         </td>
                         {% if client_active and forloop.last %}
