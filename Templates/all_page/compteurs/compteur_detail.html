@@ -139,9 +139,9 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if relever.statut_releve == 'EN_ATTENTE' %}
+                            {% if relever.statut_validation == 'EN_ATTENTE' %}
                                 <span class="badge bg-warning">En attente</span>
-                            {% elif relever.statut_releve == 'CONFIRME' %}
+                            {% elif relever.statut_validation == 'CONFIRME' %}
                                 <span class="badge bg-success">Validé</span>
                             {% else %}
                                 <span class="badge bg-danger">Rejeté</span>
