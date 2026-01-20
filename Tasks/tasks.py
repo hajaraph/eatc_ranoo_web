@@ -50,30 +50,25 @@ class TaskMission:
                 from django.db.models import OuterRef, Subquery, Max as DjangoMax
                 
                 with transaction.atomic():
-                    # Sous-requête pour obtenir la dernière date de relevé
+                    # Sous-requête pour obtenir la dernière date de relevé (hors rejetés)
                     dernier_releve_subquery = ReleveCompteur.objects.filter(
                         num_compteur=OuterRef('num_compteur')
-                    ).order_by('-date_releve').values('date_releve')[:1]
+                    ).exclude(statut_validation='REJETE').order_by('-date_releve').values('date_releve')[:1]
                     
-                    # Sous-requête pour obtenir le dernier volume
+                    # Sous-requête pour obtenir le dernier volume (hors rejetés)
                     dernier_volume_subquery = ReleveCompteur.objects.filter(
                         num_compteur=OuterRef('num_compteur')
-                    ).order_by('-date_releve').values('volume')[:1]
+                    ).exclude(statut_validation='REJETE').order_by('-date_releve').values('volume')[:1]
                     
-                    # Sous-requête pour obtenir le dernier ID de relevé
+                    # Sous-requête pour obtenir le dernier ID de relevé (hors rejetés)
                     dernier_releve_id_subquery = ReleveCompteur.objects.filter(
                         num_compteur=OuterRef('num_compteur')
-                    ).order_by('-date_releve').values('id_releve')[:1]
+                    ).exclude(statut_validation='REJETE').order_by('-date_releve').values('id_releve')[:1]
                     
-                    # Sous-requête pour obtenir la dernière consommation
+                    # Sous-requête pour obtenir la dernière consommation (hors rejetés)
                     dernier_conso_subquery = ReleveCompteur.objects.filter(
                         num_compteur=OuterRef('num_compteur')
-                    ).order_by('-date_releve').values('conso')[:1]
-
-                    # Sous-requête pour obtenir le statut de validation du dernier relevé
-                    dernier_statut_validation_subquery = ReleveCompteur.objects.filter(
-                        num_compteur=OuterRef('num_compteur')
-                    ).order_by('-date_releve').values('statut_validation')[:1]
+                    ).exclude(statut_validation='REJETE').order_by('-date_releve').values('conso')[:1]
                     
                     # Requête principale optimisée avec sous-requêtes
                     contrats_queryset = (
@@ -85,7 +80,6 @@ class TaskMission:
                             dernier_volume=Subquery(dernier_volume_subquery),
                             dernier_releve_id=Subquery(dernier_releve_id_subquery),
                             dernier_conso=Subquery(dernier_conso_subquery),
-                            dernier_statut_validation=Subquery(dernier_statut_validation_subquery),
                         )
                     )
                     
@@ -107,11 +101,7 @@ class TaskMission:
                         # Calculer le statut
                         # 0 = non-relevé ce mois, 2 = relevé ce mois
                         if date_releve and hasattr(date_releve, 'month') and date_releve.month == end_of_month.month:
-                            # Si le dernier relevé a été rejeté, on le considère comme à faire (statut 0)
-                            if contrat.dernier_statut_validation == 'REJETE':
-                                statut = 0
-                            else:
-                                statut = 2  # Déjà relevé ce mois
+                            statut = 2  # Déjà relevé ce mois
                         else:
                             statut = 0  # Pas encore relevé ce mois
                         
@@ -195,10 +185,10 @@ class TaskMission:
                     volume = validated_data.get('volume')
                     image_compteur = validated_data.get('image_compteur')
 
-                    if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
+                    if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
                         return {'status': 'error', 'message': "La date de relevé existe déjà dans la base de données"}
 
-                    dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
+                    dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
 
                     if dernier_volume:
                         if date_releve <= dernier_volume.date_releve:

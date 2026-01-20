@@ -325,11 +325,11 @@ class Missions(APIView):
                         }
 
                     else:
-                        if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exists():
+                        if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
                             return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
                                                 status=status.HTTP_400_BAD_REQUEST)
 
-                        dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).latest('date_releve')
+                        dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
 
                         if dernier_volume:
                             if date_releve <= dernier_volume.date_releve:
