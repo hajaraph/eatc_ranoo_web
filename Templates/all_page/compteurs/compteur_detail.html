@@ -103,8 +103,8 @@
                         <th>Volume</th>
                         <th>Conso</th>
                         <th>Relevé le</th>
-                        <th>Statut</th>
                         <th>Photo</th>
+                        <th>Statut</th>
                         <th>Utilisateur</th>
                         <th>Action</th>
                     </tr>
@@ -117,15 +117,6 @@
                         <td>{{ relever.volume }} m&#179;</td>
                         <td>{{ relever.conso }} m&#179;</td>
                         <td>{{ relever.date_releve|date:"d/m/Y" }}</td>
-                        <td>
-                            {% if relever.statut_validation == 'EN_ATTENTE' %}
-                                <span class="badge bg-warning">En attente</span>
-                            {% elif relever.statut_validation == 'CONFIRME' %}
-                                <span class="badge bg-success">Validé</span>
-                            {% else %}
-                                <span class="badge bg-danger">Rejeté</span>
-                            {% endif %}
-                        </td>
                         <td class="text-center">
                             {% if relever.image_compteur %}
                                 {% if relever.image_exists %}
@@ -141,6 +132,15 @@
                                 <span class="text-warning" title="Image introuvable sur le serveur">
                                     <i class="fas fa-exclamation-triangle"></i>
                                 </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if relever.statut_validation == 'EN_ATTENTE' %}
+                                <span class="bg-warning">En attente</span>
+                            {% elif relever.statut_validation == 'CONFIRME' %}
+                                <span class="bg-success">Validé</span>
+                            {% else %}
+                                <span class="bg-danger">Rejeté</span>
                             {% endif %}
                         </td>
                         <td>
