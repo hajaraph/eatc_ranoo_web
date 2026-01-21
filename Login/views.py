@@ -72,9 +72,20 @@ class Authentification(View):
 
         try:
             utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
+            
+            # Bloquer l'accès aux SuperAdmin / Staff sur cette interface
+            if utilisateur.is_superuser or utilisateur.is_staff:
+                messages.warning(request, "Les administrateurs doivent utiliser l'interface d'administration (/admin).")
+                return redirect('authentification')
+
             if check_password(motpasse_utilisateur, utilisateur.password):
                 if utilisateur.statut:
-                    initial = Initial.objects.get(utilisateur_cree=utilisateur.pk)
+                    try:
+                        initial = Initial.objects.get(utilisateur_cree=utilisateur.pk)
+                        creator_name = f"{initial.utilisateur_createur.nom_utilisateur} {initial.utilisateur_createur.prenom_utilisateur}"
+                    except Initial.DoesNotExist:
+                        creator_name = "Système / Admin"
+
                     request.session['id_utilisateur'] = utilisateur.id_utilisateur
                     request.session['nom_utilisateur'] = utilisateur.nom_utilisateur
                     request.session['prenom_utilisateur'] = utilisateur.prenom_utilisateur
@@ -82,9 +93,7 @@ class Authentification(View):
                     request.session['role_utilisateur'] = utilisateur.role.role
                     request.session['photo_utilisateur'] = utilisateur.photo_utilisateur.url \
                         if utilisateur.photo_utilisateur else None
-                    request.session['initial_utilisateur'] = (initial.utilisateur_createur.nom_utilisateur +
-                                                              ' ' +
-                                                              initial.utilisateur_createur.prenom_utilisateur)
+                    request.session['initial_utilisateur'] = creator_name
 
                     request.session['entreprise'] = utilisateur.entreprise_id
                     if sauvegarder:
