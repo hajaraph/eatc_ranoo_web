@@ -64,51 +64,6 @@ def authentification(request):
 
 
 @api_view(['GET'])
-def get_users(request):
-    users = Utilisateur.objects.filter(role_id=3)
-    serializer = UtilisateurSerializerWithLastToken(users, many=True)
-    
-    return JsonResponse(serializer.data, safe=False)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@schema_use_api
-def donne_tout(request):
-    utilisateurs = Utilisateur.objects.filter(role_id=3)
-    utilisateur_liste = [
-        {
-            'id_utilisateur': utilisateur.id_utilisateur,
-            'nom_utilisateur': utilisateur.nom_utilisateur,
-            'prenom_utilisateur': utilisateur.prenom_utilisateur,
-            'num_utilisateurs': utilisateur.num_utilisateur,
-            'cp_commune': utilisateur.cp_commune_id
-        }
-        for utilisateur in utilisateurs
-    ]
-
-    main_courantes = StatutMC.objects.all()
-    main_courante_liste = [
-        {
-            'id_main_courante': main_courante.main_courante.id_mc,
-            'date_declaration': main_courante.main_courante.date_mc,
-            'type_anomalie': main_courante.main_courante.type_anomalie
-        }
-        for main_courante in main_courantes
-    ]
-
-    mission = Missions.get(request)
-
-    return JsonResponse(
-        {
-            'utilisateur_liste': utilisateur_liste,
-            'main_courante_liste': main_courante_liste,
-            'mission': mission
-        }
-    )
-
-
-@api_view(['GET'])
 def check_server(request):
     """
     Vue pour vérifier la disponibilité du serveur.
