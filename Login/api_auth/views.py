@@ -1,17 +1,11 @@
 from django.contrib.auth.hashers import check_password
-from django.http import JsonResponse
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 
-from Compteurs.api_compteur.views import Missions
-from Login.api_auth.serializer import UtilisateurSerializerWithLastToken
-from Tenants.middleware import schema_use_api
 from Tenants.models import Utilisateur
-from Main_Courante.models import StatutMC
 
 
 @api_view(['POST'])
