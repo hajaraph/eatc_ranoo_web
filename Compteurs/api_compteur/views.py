@@ -205,12 +205,14 @@ class Missions(APIView):
 
         try:
             # Appeler process_liste_mission avec les nouveaux paramètres
+            # Si on fait une synchro incrémentielle (modified_since présent), on bypass le cache pour avoir les données fraîches
             result = await TaskMission.process_liste_mission(
                 cp_commune, 
                 end_of_month,
                 limit=limit,
                 offset=offset,
-                status_filter=status_filter
+                status_filter=status_filter,
+                bypass_cache=bool(modified_since)
             )
             
             if 'status' in result and result['status'] == 'error':

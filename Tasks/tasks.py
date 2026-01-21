@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404
 
 class TaskMission:
     @staticmethod
-    async def process_liste_mission(cp_commune, end_of_month, limit=None, offset=0, status_filter=None):
+    async def process_liste_mission(cp_commune, end_of_month, limit=None, offset=0, status_filter=None, bypass_cache=False):
         """
         Récupère la liste des missions (compteurs à relever) pour une commune.
         
@@ -28,21 +28,23 @@ class TaskMission:
             limit: Nombre max de résultats (None = tous)
             offset: Décalage pour la pagination
             status_filter: Filtrer par statut (0=non-relevé, 2=relevé)
+            bypass_cache: Si True, force le recalcul sans utiliser le cache
         
         Returns:
             dict avec 'liste', 'total_count', 'has_more'
         """
-        logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}, limit={limit}, offset={offset}")
+        logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}, limit={limit}, offset={offset}, bypass_cache={bypass_cache}")
         
         # Clé de cache inclut les paramètres de pagination
         cache_key = f"missions_liste_{cp_commune}_{end_of_month.strftime('%Y%m%d')}_{limit}_{offset}_{status_filter}"
 
         try:
-            # Essayer de récupérer depuis le cache
-            cached_result = cache.get(cache_key)
-            if cached_result:
-                logger.info("Données récupérées depuis le cache")
-                return cached_result
+            # Essayer de récupérer depuis le cache si on ne le bypass pas
+            if not bypass_cache:
+                cached_result = cache.get(cache_key)
+                if cached_result:
+                    logger.info("Données récupérées depuis le cache")
+                    return cached_result
 
             # Si pas dans le cache, calculer les données
             @sync_to_async
