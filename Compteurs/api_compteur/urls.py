@@ -1,6 +1,5 @@
 from django.urls import path
 
-from Login.api_auth.views import donne_tout
 from .views import Missions, accueil, FactureDetail, relever_client
 from .sync_views import (
     sync_status,
@@ -11,8 +10,6 @@ from .sync_views import (
 )
 
 urlpatterns = [
-    # Endpoints existants
-    path('donnee', donne_tout),
     path('accueil', accueil),
     path('missions', Missions.as_view()),
     path('releverClient', relever_client),
