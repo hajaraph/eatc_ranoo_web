@@ -28,7 +28,12 @@ def authentification(request):
     try:
         utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
         if check_password(motpasse_utilisateur, utilisateur.password):
-            if utilisateur.role.role == "Releveur":
+            # 1. Vérifier si le compte est actif
+            if not utilisateur.statut:
+                raise AuthenticationFailed("Votre compte est désactivé !")
+
+            # 2. Vérifier si c'est un Releveur (avec sécurité si role est None)
+            if utilisateur.role and utilisateur.role.role == "Releveur":
                 refresh_token = RefreshToken.for_user(utilisateur)
                 access_token = refresh_token.access_token
 
@@ -50,7 +55,8 @@ def authentification(request):
                     }
                 }, status=status.HTTP_200_OK)
             else:
-                raise AuthenticationFailed("Veuillez vous connecter dans l'application web !")
+                # Message générique ou spécifique selon besoin. Ici on dit juste que c'est pour l'app web.
+                raise AuthenticationFailed("Accès réservé aux Releveurs. Veuillez utiliser l'application web.")
         else:
             raise AuthenticationFailed('Mot de passe incorrect !')
     except Utilisateur.DoesNotExist:
