@@ -72,6 +72,16 @@ class TaskMission:
                         num_compteur=OuterRef('num_compteur')
                     ).exclude(statut_validation='REJETE').order_by('-date_releve').values('conso')[:1]
                     
+                    # Sous-requête pour obtenir le statut de validation du dernier relevé
+                    dernier_statut_validation_subquery = ReleveCompteur.objects.filter(
+                        num_compteur=OuterRef('num_compteur')
+                    ).order_by('-date_releve').values('statut_validation')[:1]
+
+                    # Sous-requête pour obtenir la date de dernière modification (y compris supprimés) pour la sync
+                    dernier_updated_at_subquery = ReleveCompteur.all_objects.filter(
+                        num_compteur=OuterRef('num_compteur')
+                    ).order_by('-updated_at').values('updated_at')[:1]
+                    
                     # Requête principale optimisée avec sous-requêtes
                     contrats_queryset = (
                         Contrat.objects
@@ -82,6 +92,8 @@ class TaskMission:
                             dernier_volume=Subquery(dernier_volume_subquery),
                             dernier_releve_id=Subquery(dernier_releve_id_subquery),
                             dernier_conso=Subquery(dernier_conso_subquery),
+                            dernier_statut_validation=Subquery(dernier_statut_validation_subquery),
+                            dernier_updated_at=Subquery(dernier_updated_at_subquery),
                         )
                     )
                     
