@@ -77,10 +77,15 @@ class TaskMission:
                         num_compteur=OuterRef('num_compteur')
                     ).order_by('-created_at').values('statut_validation')[:1]
 
-                    # Sous-requête pour obtenir le motif de rejet
+                    # Sous-requête pour obtenir le motif de rejet du dernier relevé (y compris rejeté)
                     dernier_motif_rejet_subquery = ReleveCompteur.objects.filter(
                         num_compteur=OuterRef('num_compteur')
                     ).order_by('-created_at').values('motif_rejet')[:1]
+
+                    # Sous-requête pour savoir si le dernier relevé créé est supprimé (soft deleted)
+                    dernier_is_deleted_subquery = ReleveCompteur.all_objects.filter(
+                        num_compteur=OuterRef('num_compteur')
+                    ).order_by('-created_at').values('is_deleted')[:1]
 
                     # Sous-requête pour obtenir la date de dernière modification (y compris supprimés) pour la sync
                     dernier_updated_at_subquery = ReleveCompteur.all_objects.filter(
@@ -99,6 +104,7 @@ class TaskMission:
                             dernier_conso=Subquery(dernier_conso_subquery),
                             dernier_statut_validation=Subquery(dernier_statut_validation_subquery),
                             dernier_motif_rejet=Subquery(dernier_motif_rejet_subquery),
+                            dernier_is_deleted=Subquery(dernier_is_deleted_subquery),
                             dernier_updated_at=Subquery(dernier_updated_at_subquery),
                         )
                     )
@@ -157,6 +163,7 @@ class TaskMission:
                             'statut': statut,
                             'statut_validation': contrat.dernier_statut_validation,
                             'motif_rejet': contrat.dernier_motif_rejet,
+                            'last_is_deleted': contrat.dernier_is_deleted,
                             'is_deleted': getattr(contrat.num_compteur, 'is_deleted', False),
                             'updated_at': final_updated_at.isoformat() if final_updated_at else None
                         }
