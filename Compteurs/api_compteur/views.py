@@ -230,27 +230,29 @@ class Missions(APIView):
                     modified_compteurs = Compteur.all_objects.filter(
                         contrats__cp_commune_id=cp_commune,
                         updated_at__gte=modified_since
-                    ).values_list('num_compteur', flat=True)
+                    ).values_list('pk', flat=True)  # pk est num_compteur (str)
                     
-                    # Récupérer les IDs des relevés modifiés
+                    # Récupérer les IDs des relevés modifiés - Utiliser num_compteur_id pour éviter jointure
                     modified_releves_compteurs = ReleveCompteur.all_objects.filter(
                         num_compteur__contrats__cp_commune_id=cp_commune,
                         updated_at__gte=modified_since
-                    ).values_list('num_compteur', flat=True)
+                    ).values_list('num_compteur_id', flat=True)
                     
-                    # Combiner les deux sets
-                    all_modified = set(modified_compteurs) | set(modified_releves_compteurs)
+                    # Combiner les deux sets et s'assurer que ce sont des strings
+                    all_modified = set(str(x) for x in modified_compteurs) | set(str(x) for x in modified_releves_compteurs)
                     return list(all_modified)
                 
                 modified_ids = await filter_by_modified_since()
+                logger.info(f"Sync: {len(modified_ids)} compteurs modifiés trouvés depuis {modified_since}")
                 
                 # Filtrer la liste des missions
+                # On compare toujours en string pour éviter les problèmes de type
                 missions_list = [
                     m for m in missions_list 
-                    if m.get('num_compteur') in modified_ids or m.get('compteur', {}).get('id') in modified_ids
+                    if str(m.get('num_compteur', '')) in modified_ids
                 ]
             
-            logger.info(f"Fin get /api/missions: {time.time() - start_time:.2f}s, {len(missions_list)} missions")
+            logger.info(f"Fin get /api/missions: {time.time() - start_time:.2f}s, {len(missions_list)} missions renvoyées")
             
             # Construire la réponse avec ou sans métadonnées de sync
             if include_sync_meta:
