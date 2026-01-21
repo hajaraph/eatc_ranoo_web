@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/tableau_bord.css' %}">
     <link rel="stylesheet" href="{% static 'css/style_general.css' %}">
-    <title>{{ titre_ranoo_utilisateur }}{{ titre_new_tarif }}{{ titre_departement }}{{ titre_mod_tarif }}{{ titre_region }}{{ titre_mod_utilisateur }}{{ titre_creation_utilisateur }}{{ titre_config_tarif }} {{ titre_branchement }} {{ titre_new_branchement }}{{ titre_branchement_mod }}</title>
+    <title>{{ titre_ranoo_utilisateur }}{{ titre_new_tarif }}{{ titre_mod_tarif }}{{ titre_mod_utilisateur }}{{ titre_creation_utilisateur }}{{ titre_config_tarif }} {{ titre_branchement }} {{ titre_new_branchement }}{{ titre_branchement_mod }}</title>
     <style>
         .dataTables_filter input[type="search"] {
             height: 50px;
@@ -33,11 +33,6 @@
                                         <i class="fas fa-users me-2"></i>Gestion des utilisateurs
                                     </a>
                                 </div>
-    {#                            <div class="col-md-2 mt-4">#}
-    {#                                <a href="{% url 'region' %}" class="btn btn-sm w-100 {{ active_region }}">#}
-    {#                                    <i class="fas fa-map-marker-alt me-2"></i>Gestion des régions#}
-    {#                                </a>#}
-    {#                            </div>#}
                                 <div class="col-md-2 mt-4">
                                     <a href="{% url 'branchement' %}" class="btn btn-sm w-100 {{ active_branchement }}">
                                         <i class="fas fa-sitemap me-2"></i>Gestion des branchements

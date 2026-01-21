@@ -22,6 +22,8 @@ Parametre/__pycache__/
 Ranoo_Config/__pycache__/
 Tableau_Bord/__pycache__/
 Tenants/__pycache__/
+Tenants/management/__pycache__/
+Tenants/management/commands/__pycache__/
 Depense/__pycache__/
 Recette/__pycache__/
 .venv
