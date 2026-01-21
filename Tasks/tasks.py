@@ -119,6 +119,14 @@ class TaskMission:
                             except (ValueError, TypeError):
                                 releve_id = 0
 
+                        # Calcul du updated_at global (Max entre compteur et dernier mouvement de relevé)
+                        compteur_updated_at = contrat.num_compteur.updated_at
+                        releve_updated_at = contrat.dernier_updated_at
+                        
+                        final_updated_at = compteur_updated_at
+                        if releve_updated_at and releve_updated_at > compteur_updated_at:
+                            final_updated_at = releve_updated_at
+
                         contrat_info = {
                             'id': releve_id,
                             'nom_client': contrat.client.nom_client,
@@ -129,7 +137,8 @@ class TaskMission:
                             'volume_dernier_releve': contrat.dernier_volume or 0,
                             'date_releve': contrat.dernier_releve_date if contrat.dernier_releve_date else '',
                             'statut': statut,
-                            'is_deleted': getattr(contrat.num_compteur, 'is_deleted', False)
+                            'is_deleted': getattr(contrat.num_compteur, 'is_deleted', False),
+                            'updated_at': final_updated_at.isoformat() if final_updated_at else None
                         }
                         liste_contrats_info.append(contrat_info)
 
