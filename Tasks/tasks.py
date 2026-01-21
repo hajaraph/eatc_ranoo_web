@@ -75,12 +75,12 @@ class TaskMission:
                     # Sous-requête pour obtenir le statut de validation du dernier relevé (y compris rejeté)
                     dernier_statut_validation_subquery = ReleveCompteur.objects.filter(
                         num_compteur=OuterRef('num_compteur')
-                    ).order_by('-date_releve').values('statut_validation')[:1]
+                    ).order_by('-created_at').values('statut_validation')[:1]
 
                     # Sous-requête pour obtenir le motif de rejet
                     dernier_motif_rejet_subquery = ReleveCompteur.objects.filter(
                         num_compteur=OuterRef('num_compteur')
-                    ).order_by('-date_releve').values('motif_rejet')[:1]
+                    ).order_by('-created_at').values('motif_rejet')[:1]
 
                     # Sous-requête pour obtenir la date de dernière modification (y compris supprimés) pour la sync
                     dernier_updated_at_subquery = ReleveCompteur.all_objects.filter(
