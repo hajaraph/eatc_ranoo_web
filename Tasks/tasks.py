@@ -72,10 +72,15 @@ class TaskMission:
                         num_compteur=OuterRef('num_compteur')
                     ).exclude(statut_validation='REJETE').order_by('-date_releve').values('conso')[:1]
                     
-                    # Sous-requête pour obtenir le statut de validation du dernier relevé
+                    # Sous-requête pour obtenir le statut de validation du dernier relevé (y compris rejeté)
                     dernier_statut_validation_subquery = ReleveCompteur.objects.filter(
                         num_compteur=OuterRef('num_compteur')
                     ).order_by('-date_releve').values('statut_validation')[:1]
+
+                    # Sous-requête pour obtenir le motif de rejet
+                    dernier_motif_rejet_subquery = ReleveCompteur.objects.filter(
+                        num_compteur=OuterRef('num_compteur')
+                    ).order_by('-date_releve').values('motif_rejet')[:1]
 
                     # Sous-requête pour obtenir la date de dernière modification (y compris supprimés) pour la sync
                     dernier_updated_at_subquery = ReleveCompteur.all_objects.filter(
@@ -93,6 +98,7 @@ class TaskMission:
                             dernier_releve_id=Subquery(dernier_releve_id_subquery),
                             dernier_conso=Subquery(dernier_conso_subquery),
                             dernier_statut_validation=Subquery(dernier_statut_validation_subquery),
+                            dernier_motif_rejet=Subquery(dernier_motif_rejet_subquery),
                             dernier_updated_at=Subquery(dernier_updated_at_subquery),
                         )
                     )
@@ -149,6 +155,8 @@ class TaskMission:
                             'volume_dernier_releve': contrat.dernier_volume or 0,
                             'date_releve': contrat.dernier_releve_date if contrat.dernier_releve_date else '',
                             'statut': statut,
+                            'statut_validation': contrat.dernier_statut_validation,
+                            'motif_rejet': contrat.dernier_motif_rejet,
                             'is_deleted': getattr(contrat.num_compteur, 'is_deleted', False),
                             'updated_at': final_updated_at.isoformat() if final_updated_at else None
                         }
