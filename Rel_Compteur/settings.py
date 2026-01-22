@@ -1,15 +1,16 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from decouple import config, Csv
 
 from django.contrib import messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-iy)pk3bxm664w4$_vxm)$0$9&!grq0h%f*8!^sshd(f53uo25b'
+SECRET_KEY = config('SECRET_KEY')
 
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 # Applications partagées entre tous les tenants (public schema)
 SHARED_APPS = (
@@ -69,12 +70,8 @@ MIDDLEWARE = [
 ]
 
 
-ALLOWED_HOSTS = [
-    'app.eatc.me',
-    'www.app.eatc.me',
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='app.eatc.me,www.app.eatc.me,localhost,127.0.0.1', cast=Csv())
+
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -132,13 +129,11 @@ DATABASE_ROUTERS = [
 DATABASES = {
     'default': {
         'ENGINE': 'django_tenants.postgresql_backend',
-        'NAME': 'rel_compteur',
-        # 'USER': 'postgres',
-        # 'PASSWORD': '12121212',
-        'USER': 'eatcrano',
-        'PASSWORD': 'eatc301',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default=5432, cast=int),
     }
 }
 
@@ -202,7 +197,7 @@ APPEND_SLASH = True
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
