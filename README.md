@@ -138,6 +138,35 @@ cd ranoo_web
 pip install -r requirements.txt
 ```
 
+## Configuration
+
+Ce projet utilise des variables d'environnement pour la configuration sensible.
+Créez un fichier `.env` à la racine du projet (au même niveau que `manage.py`) avec le contenu suivant :
+
+```env
+SECRET_KEY=votre_cle_secrete_ici
+DEBUG=True
+DB_NAME=rel_compteur
+DB_USER=xxxxx
+DB_PASSWORD=xxxxxx
+DB_HOST=localhost
+DB_PORT=5432
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+## Initialisation
+
+Pour initialiser le projet (création du locataire Public, du domaine et du Super Admin), utilisez la commande suivante :
+
+```bash
+python manage.py init_public
+```
+
+Cette commande va créer :
+- Le locataire "Public".
+- Le domaine `localhost` (ou celui spécifié).
+- Un super utilisateur par défaut (`admin` / `admin`).
+
 ## Utilisation
 
 Pour démarrer le serveur de développement, utilisez la commande suivante :
