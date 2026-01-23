@@ -1,7 +1,8 @@
 from django.contrib.auth.hashers import check_password
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 
@@ -9,6 +10,7 @@ from Tenants.models import Utilisateur
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def authentification(request):
     num_utilisateur = request.data.get('num_utilisateur')
     motpasse_utilisateur = request.data.get('password')
@@ -58,6 +60,7 @@ def authentification(request):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def check_server(request):
     """
     Vue pour vérifier la disponibilité du serveur.
