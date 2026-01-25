@@ -10,7 +10,7 @@ def upload_to_client(instance, filename):
 
 class TypeClient(models.Model):
     id_type_client = models.BigAutoField(primary_key=True)
-    designation_client = models.CharField(max_length=20, blank=False)
+    designation_client = models.CharField(max_length=100, blank=False)
 
     class Meta:
         ordering = ['designation_client']

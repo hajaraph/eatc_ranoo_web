@@ -1,6 +1,6 @@
-$(document).ready(function() {
+$(document).ready(function () {
     // Écouteur d'événement sur le changement de la sélection du numéro de client début
-    $('#num_client_deb').on('change', function() {
+    $('#num_client_deb').on('change', function () {
         const numClientDeb = $(this).val();
         const $numClientFin = $('#num_client_fin');
 
@@ -9,11 +9,15 @@ $(document).ready(function() {
 
         if (numClientDeb) {
             // Faire un appel AJAX pour récupérer les numéros de client >= à celui sélectionné
+            // Récupérer la commune si présente (pour le modal d'export)
+            const communeId = $('#commune').val();
+
             $.ajax({
                 url: `/clients/liste/num_client_deb=${numClientDeb}`,
                 method: 'GET',
                 dataType: 'json',
-                success: function(data) {
+                data: communeId ? { 'commune_id': communeId } : {},
+                success: function (data) {
                     // Ajouter l'option vide par défaut
                     $numClientFin.append($('<option>', {
                         value: '',
@@ -22,15 +26,21 @@ $(document).ready(function() {
 
                     // Ajouter chaque numéro de client dans la liste déroulante
                     if (data.clients && data.clients.length > 0) {
-                        $.each(data.clients, function(index, client) {
+                        $.each(data.clients, function (index, client) {
                             $numClientFin.append($('<option>', {
                                 value: client.client__num_client,
                                 text: client.client__num_client
                             }));
                         });
+
+                        // Sélectionner le dernier automatiquement (Super pratique !)
+                        const lastClient = data.clients[data.clients.length - 1];
+                        if (lastClient) {
+                            $numClientFin.val(lastClient.client__num_client);
+                        }
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     console.error('Erreur lors du chargement des numéros de client:', error);
                 }
             });

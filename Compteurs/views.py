@@ -465,7 +465,7 @@ def export_fiche_releve(request):
         contrats_query = contrats_query.filter(cp_commune_id=commune_id)
 
     # Exécuter la requête
-    contrats = contrats_query.all()
+    contrats = contrats_query.all().order_by('client__num_client')
 
     # Préparer les données pour le template
     aujourdhui = date.today()
@@ -484,15 +484,20 @@ def export_fiche_releve(request):
             date_releve__month=aujourdhui.month
         ).order_by('-date_releve').first()
 
-        # Récupérer le relevé du mois précédent
-        releve_precedent = compteur.relevecompteurs.filter(
-            date_releve__year=mois_precedent.year,
-            date_releve__month=mois_precedent.month
+        # Récupérer le DERNIER relevé connu (hors mois actuel) pour avoir l'index de référence correct
+        # Cela gère le cas où il n'y a pas eu de relevé le mois précédent
+        releve_precedent = compteur.relevecompteurs.exclude(
+            date_releve__year=aujourdhui.year,
+            date_releve__month=aujourdhui.month
         ).order_by('-date_releve').first()
 
-        # Si pas de relevé ce mois-ci, on prend le plus récent
+        # INFO : releve_actuel peut être None si pas encore fait
+        # releve_precedent est le dernier index "sûr" connu du système
+
+        # Si pas de relevé ce mois-ci, on prend le plus récent (si on veut afficher qqchose pour actuel)
         if not releve_actuel:
-            releve_actuel = compteur.relevecompteurs.order_by('-date_releve').first()
+            # Ici on laisse releve_actuel à None pour signifier "Pas de relevé ce mois"
+            pass
 
         # Calculer la consommation
         conso = 0
@@ -506,6 +511,7 @@ def export_fiche_releve(request):
             'nom_client': f"{contrat.client.nom_client} {contrat.client.prenom_client or ''}".strip(),
             'adresse': contrat.adresse_contrat,
             'ancien_releve': releve_precedent.volume if releve_precedent else 0,
+            'date_ancien_releve': releve_precedent.date_releve if releve_precedent else None,
             'conso': conso,
             'type_client': contrat.client.type_client.designation_client if contrat.client and contrat.client.type_client else '',
             'date_releve': releve_actuel.date_releve if releve_actuel else 'N/A'

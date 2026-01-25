@@ -32,15 +32,16 @@
             font-size: 10px;
         }
         /* Largeurs des colonnes optimisées pour A4 paysage */
-        th:first-child, td:first-child { width: 4%; }  /* N° */
-        th:nth-child(2), td:nth-child(2) { width: 25%; text-align: left; padding-left: 2px; }  /* Nom client */
-        th:nth-child(3), td:nth-child(3) { width: 20%; text-align: left; padding-left: 2px; }  /* Adresse */
-        th:nth-child(5), td:nth-child(5) { width: 5%; }  /* Date */
-        th:nth-child(6), td:nth-child(6) { width: 5%; }  /* Ancien Index */
-        th:nth-child(7), td:nth-child(7) { width: 5%; }  /* Nouvel Index */
-        th:nth-child(8), td:nth-child(8) { width: 5%; }  /* Conso */
-        th:nth-child(9), td:nth-child(9) { width: 8%; }  /* Signature */
-        th:last-child, td:last-child { width: 7%; }  /* Type Client */
+        /* Largeurs des colonnes optimisées pour A4 paysage (Total 96% pour marge de sécurité) */
+        th:nth-child(1), td:nth-child(1) { width: 4%; }   /* N° */
+        th:nth-child(2), td:nth-child(2) { width: 19%; text-align: left; padding-left: 2px; }  /* Nom client */
+        th:nth-child(3), td:nth-child(3) { width: 17%; text-align: left; padding-left: 2px; }  /* Adresse */
+        th:nth-child(4), td:nth-child(4) { width: 8%; }   /* Date De Relevé */
+        th:nth-child(5), td:nth-child(5) { width: 8%; }  /* Ancien Index (avec Date) */
+        th:nth-child(6), td:nth-child(6) { width: 8%; }   /* Nouvel Index */
+        th:nth-child(7), td:nth-child(7) { width: 8%; }   /* Conso */
+        th:nth-child(8), td:nth-child(8) { width: 10%; }  /* Signature */
+        th:nth-child(9), td:nth-child(9) { width: 10%; }  /* Type Client */
         th {
             background-color: #f2f2f2;
             font-weight: bold;
@@ -86,7 +87,12 @@
                 <td style="text-align: left">{{ compteur.nom_client|default:'' }}</td>
                 <td style="text-align: left">{{ compteur.adresse|default:'' }}</td>
                 <td></td>
-                <td>{{ compteur.ancien_releve|default:'0' }}</td>
+                <td>
+                    {{ compteur.ancien_releve|default:'0' }}
+                    {% if compteur.date_ancien_releve %}
+                        <br><span style="font-size: 8px; font-style: italic;">({{ compteur.date_ancien_releve|date:"d/m/Y" }})</span>
+                    {% endif %}
+                </td>
                 <td></td>
                 <td></td>
                 <td>

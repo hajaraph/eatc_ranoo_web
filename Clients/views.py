@@ -612,9 +612,16 @@ def export_clients_pdf(request):
 
 @schema_use
 def liste_num_client_lte(request, num_client_deb) -> JsonResponse:
-    clients = Contrat.objects.filter(
+    commune_id = request.GET.get('commune_id')
+
+    queryset = Contrat.objects.filter(
         client__num_client__gte=num_client_deb
     ).order_by('client__num_client')
+
+    if commune_id:
+        queryset = queryset.filter(cp_commune_id=commune_id)
+        
+    clients = queryset
 
     # Créer une liste des numéros de clients uniques
     clients_list = [
@@ -625,6 +632,31 @@ def liste_num_client_lte(request, num_client_deb) -> JsonResponse:
 
     ]
 
+    return JsonResponse({
+        'clients': clients_list
+    })
+
+
+@schema_use
+def get_clients_by_commune(request) -> JsonResponse:
+    commune_id = request.GET.get('commune_id')
+    
+    if not commune_id:
+        return JsonResponse({'clients': []})
+        
+    # Filtrer les clients par commune
+    clients = Client.objects.filter(
+        cp_commune_id=commune_id
+    ).order_by('num_client')
+    
+    # Créer la liste des résultats
+    clients_list = [
+        {
+            'num_client': client.num_client,
+        }
+        for client in clients
+    ]
+    
     return JsonResponse({
         'clients': clients_list
     })
