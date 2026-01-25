@@ -221,23 +221,11 @@ class CategorieNew(SchemaAwareView):
         id_category = request.POST.get('id_category', '').strip()
         nom_categorie = request.POST.get('nom_categorie', '').strip()
 
-        errors = []
-        if not id_category:
-            errors.append("Le code catégorie est requis.")
-        if not nom_categorie:
-            errors.append("Le nom de la catégorie est requis.")
-
         if Categories.objects.filter(id_category=id_category).exists():
-             errors.append("Ce code catégorie existe déjà.")
+             messages.error(request, "Ce code catégorie existe déjà.")
         
         if Categories.objects.filter(nom_categorie=nom_categorie).exists():
-             errors.append("Ce nom de catégorie existe déjà.")
-
-        if errors:
-            for error in errors:
-                messages.error(request, error)
-            context = self.get_context_data()
-            return render(request, self.template_name, context)
+             messages.error(request, "Ce nom de catégorie existe déjà.")
 
         try:
             category = Categories(
