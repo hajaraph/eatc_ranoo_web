@@ -182,3 +182,88 @@ def calculate_depense_total(request):
         'count': count,
         'formatted_total': f"{total:,.2f}".replace(",", " ").replace(".", ",") + " Ar"
     })
+
+
+@schema_use
+def categorie_liste(request):
+    title_categorie_list = "Dépense | Liste Catégorie"
+    active_categorie = "active"
+    font_depense = "custom-font"
+
+    categories = Categories.objects.all().order_by('id_category')
+
+    context = {
+        'title_categorie_list': title_categorie_list,
+        'active_categorie': active_categorie,
+        'font_depense': font_depense,
+        'categories': categories
+    }
+    return render(request, 'all_page/depense/depense.html', context)
+
+
+class CategorieNew(SchemaAwareView):
+    template_name = 'all_page/depense/depense.html'
+
+    @staticmethod
+    def get_context_data(**kwargs) -> dict:
+        context = {
+            'title_categorie_new': "Dépense | Nouvelle Catégorie",
+            'active_categorie': "active",
+            'font_depense': 'custom-font',
+        }
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        id_category = request.POST.get('id_category', '').strip()
+        nom_categorie = request.POST.get('nom_categorie', '').strip()
+
+        errors = []
+        if not id_category:
+            errors.append("Le code catégorie est requis.")
+        if not nom_categorie:
+            errors.append("Le nom de la catégorie est requis.")
+
+        if Categories.objects.filter(id_category=id_category).exists():
+             errors.append("Ce code catégorie existe déjà.")
+        
+        if Categories.objects.filter(nom_categorie=nom_categorie).exists():
+             errors.append("Ce nom de catégorie existe déjà.")
+
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            context = self.get_context_data()
+            return render(request, self.template_name, context)
+
+        try:
+            category = Categories(
+                id_category=id_category,
+                nom_categorie=nom_categorie
+            )
+            category.save()
+            messages.success(request, "La catégorie a été créée avec succès.")
+            return redirect('categorie_liste')
+
+        except Exception as e:
+            messages.error(request, f"Erreur lors de la création : {str(e)}")
+            context = self.get_context_data()
+            return render(request, self.template_name, context)
+
+
+@schema_use
+def categorie_suppression(request, pk):
+    try:
+        category = Categories.objects.get(pk=pk)
+        category.delete()
+        messages.success(request, "La catégorie a été supprimée avec succès.")
+    except Categories.DoesNotExist:
+        messages.error(request, "La catégorie n'existe pas.")
+    except Exception as e:
+        # Probablement une ProtectedError si utilisée dans des transactions
+        messages.error(request, f"Impossible de supprimer cette catégorie car elle est utilisée : {str(e)}")
+
+    return redirect('categorie_liste')
