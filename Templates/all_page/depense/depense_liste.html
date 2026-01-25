@@ -52,6 +52,10 @@
             </a>
         </div>
         <div class="mx-5">
+            <button type="button" class="btn btn-info text-white me-2" data-bs-toggle="modal" data-bs-target="#calculatorModal">
+                <i class="fas fa-calculator me-1"></i>
+                Calculateur
+            </button>
             <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exportDepenseModal" id="openExportDepenseModalBtn">
                 <i class="fas fa-file-pdf me-1"></i>
                 Exporter en PDF
@@ -127,6 +131,58 @@
                 </button>
                 <button type="button" class="btn btn-primary" id="confirmExportDepenseBtn">
                     <i class="fas fa-file-export me-1"></i>Exporter
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Calculateur -->
+<div class="modal fade" id="calculatorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-calculator me-2"></i>Calculateur de Dépenses</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="calculatorForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="date" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" id="calcDateDeb" required>
+                                <label>Date Début</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="date" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" id="calcDateFin" required>
+                                <label>Date Fin</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="form-floating">
+                            <select class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" id="calcCategorie" required>
+                                <option value="" selected disabled>Choisir une catégorie...</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id_category }}">{{ cat.id_category }} - {{ cat.nom_categorie }}</option>
+                                {% endfor %}
+                            </select>
+                            <label>Catégorie</label>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info d-none text-center" id="calcResultArea">
+                        <h3 class="mb-0" id="calcResultValue">0 Ar</h3>
+                        <small id="calcResultCount">0 transactions</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" id="btnLaunchCalc">
+                    <i class="fas fa-equals me-1"></i> Calculer
                 </button>
             </div>
         </div>

@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.contrib import messages
 from django.db.models import Sum
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 
 from Depense.models import Transactions, Categories
@@ -51,7 +52,8 @@ def depense(request):
         'total_depenses_mois': total_depenses_mois,
         'nombre_transactions': nombre_transactions,
         'datedeb': datedeb,  # Pour préremplir les champs de date dans le formulaire
-        'datefin': datefin   # Pour préremplir les champs de date dans le formulaire
+        'datefin': datefin,   # Pour préremplir les champs de date dans le formulaire
+        'categories': Categories.objects.all().order_by('nom_categorie') # Pour le calculateur
     }
     return render(request, 'all_page/depense/depense.html', context)
 
@@ -144,5 +146,39 @@ def export_depense(request):
         filename_prefix='Depenses',
         title_key='periode_depense',
         item_name='transactions',
-        filter_field='utilisateur__cp_commune_id'
     )
+
+
+@schema_use
+def calculate_depense_total(request):
+    """
+    Pour calculer le total des dépenses selon critères (Date, Catégorie)
+    """
+    date_debut = request.GET.get('date_debut')
+    date_fin = request.GET.get('date_fin')
+    categorie_id = request.GET.get('categorie_id')
+
+    queryset = Transactions.objects.all()
+
+    # Filtrer par rôle (Commune)
+    queryset = filter_by_user_role(request, queryset, 'utilisateur__cp_commune_id')
+
+    # Filtrer par date
+    if date_debut:
+        queryset = queryset.filter(date_transaction__gte=date_debut)
+    if date_fin:
+        queryset = queryset.filter(date_transaction__lte=date_fin)
+
+    # Filtrer par catégorie
+    if categorie_id:
+        queryset = queryset.filter(categorie_id=categorie_id)
+
+    # Calculer le total
+    total = queryset.aggregate(Sum('montant'))['montant__sum'] or 0
+    count = queryset.count()
+
+    return JsonResponse({
+        'total': total,
+        'count': count,
+        'formatted_total': f"{total:,.2f}".replace(",", " ").replace(".", ",") + " Ar"
+    })
