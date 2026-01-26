@@ -66,6 +66,22 @@ class Utilisateur(AbstractUser):
     def is_active(self, value):
          self.statut = value
 
+    @property
+    def first_name(self):
+        return self.nom_utilisateur
+
+    @first_name.setter
+    def first_name(self, value):
+        self.nom_utilisateur = value
+
+    @property
+    def last_name(self):
+        return self.prenom_utilisateur
+
+    @last_name.setter
+    def last_name(self, value):
+        self.prenom_utilisateur = value
+
     def get_full_name(self):
         return f"{self.nom_utilisateur} {self.prenom_utilisateur}".strip()
 
@@ -88,16 +104,13 @@ class Utilisateur(AbstractUser):
                 username = f"{original_username}{counter}"
                 counter += 1
             self.username = username
-            logger.info(f"Generation username: {self.username}")
 
         is_new_user = self.pk is None
         if is_new_user:
-            logger.info("Paramètre de mot de passe pour nouvel utilisateur")
             self.set_password(self.password)
         else:
             original = Utilisateur.objects.get(pk=self.pk)
             if self.password != original.password:
-                logger.info("Mise à jour du mot de passe utilisateur")
                 self.set_password(self.password)
 
         super().save(*args, **kwargs)
@@ -107,7 +120,6 @@ class Utilisateur(AbstractUser):
                 utilisateur_createur=utilisateur_createur,
                 utilisateur_cree=self
             )
-            logger.info(f"Initial créé pour {self.num_utilisateur} par {utilisateur_createur}")
 
 
 class Initial(models.Model):

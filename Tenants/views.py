@@ -3,7 +3,7 @@ import subprocess
 from datetime import datetime
 from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
-from django.http import StreamingHttpResponse, HttpResponseForbidden
+from django.http import StreamingHttpResponse, HttpResponseForbidden, JsonResponse
 from django.utils.translation import gettext as _
 
 def is_superuser(user):
@@ -44,27 +44,43 @@ def export_database(request):
     ]
 
     def file_iterator(chunk_size=8192):
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env=env
-        )
-        
-        while True:
-            chunk = process.stdout.read(chunk_size)
-            if not chunk:
-                break
-            yield chunk
+        try:
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=env
+            )
             
-        process.stdout.close()
-        return_code = process.wait()
-        
-        if return_code != 0:
-            # Note: In a streaming response, we can't easily change the status code 
-            # once headers are sent, but strict logging is essential.
-            error_output = process.stderr.read()
-            print(f"Export Error: {error_output}")
+            while True:
+                chunk = process.stdout.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+                
+            process.stdout.close()
+            return_code = process.wait()
+            
+            if return_code != 0:
+                error_output = process.stderr.read().decode('utf-8')
+                print(f"Export Error (pg_dump): {error_output}")
+                # In a real scenario, we might want to inject an error into the stream or log it.
+                # Since headers are sent, we can only break.
+                
+        except FileNotFoundError:
+            print("Error: pg_dump not found in PATH.")
+            yield b"Error: pg_dump not found. Please install PostgreSQL tools."
+        except Exception as e:
+            print(f"Unexpected Error during export: {e}")
+            yield f"Error: {e}".encode('utf-8')
+
+    try:
+        # Test if pg_dump exists before starting stream (optional but safer)
+        subprocess.run(['pg_dump', '--version'], capture_output=True, check=True)
+    except FileNotFoundError:
+        return JsonResponse({'error': 'pg_dump introuvable sur le serveur.'}, status=500)
+    except Exception as e:
+        return JsonResponse({'error': f'Erreur verification pg_dump: {str(e)}'}, status=500)
 
     response = StreamingHttpResponse(file_iterator(), content_type='application/octet-stream')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
