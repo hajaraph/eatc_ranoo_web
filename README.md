@@ -177,6 +177,26 @@ python manage.py runserver
 
 Accédez à l'application via `http://127.0.0.1:8000/`.
 
+## Utilisation avec Docker
+
+Pour une installation simplifiée avec Docker :
+
+1.  Assurez-vous que Docker et Docker Compose sont installés.
+2.  Construisez et démarrez les conteneurs :
+
+```bash
+docker-compose up -d --build
+```
+
+3.  Une fois les conteneurs lancés, initialisez l'application (à faire uniquement la première fois) :
+
+```bash
+docker-compose exec web python manage.py init_public
+```
+
+4.  Accédez à l'application via `http://localhost:8000/`.
+
+
 ## Contributions
 
 Les contributions sont les bienvenues ! Pour contribuer :

@@ -3,7 +3,7 @@ from django.db.models import Count, Q
 from django.shortcuts import render, redirect
 from django.utils import timezone
 
-from Acommune.models import Region
+from Acommune.models import Province
 from Clients.models import Client
 from Main_Courante.models import MainCourante, StatutMC, SuivieMC
 from Parametre.views import exporter_en_excel, enregistre_historique
@@ -101,14 +101,14 @@ class MainCouranteNew(SchemaAwareView):
         title = 'Main Courante | Nouvelle Anomalie'
         active = 'active'
         font = 'custom-font'
-        region = Region.objects.order_by('region').all()
+        province = Province.objects.order_by('province').all()
         client = Client.objects.all()
 
         context = {
             'title_nouvelle_anomalie': title,
             'active': active,
             'font_main': font,
-            'regions': region,
+            'provinces': province,
             'client': client
         }
         return render(request, self.template_name, context)

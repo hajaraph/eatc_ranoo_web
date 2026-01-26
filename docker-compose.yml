@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=eatc_db
+      - POSTGRES_USER=eatc_user
+      - POSTGRES_PASSWORD=eatc_password
+    restart: always
+
+  web:
+    build: .
+    command: gunicorn Rel_Compteur.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_NAME=eatc_db
+      - DB_USER=eatc_user
+      - DB_PASSWORD=eatc_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      # Assurez-vous de définir SECRET_KEY et DEBUG dans votre fichier .env ou ici
+    depends_on:
+      - db
+    restart: always
+
+volumes:
+  postgres_data:

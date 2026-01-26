@@ -10,7 +10,6 @@ urlpatterns = [
     path('lance?=?<int:pk>', lance_mc, name='lance_mc'),
     path('supprimer/mc?=?<int:pk>', supprimer_mc, name='supprimer_mc'),
     path('valide/mc?=?<int:pk>', valide_mc, name='valide_mc'),
-    path('nouvelle/mc', MainCouranteNew.as_view(), name='main_courante_new'),
     path('suivie/mc?<int:pk>?', suivie, name='suivie'),
     path('suivie/supprimer?<int:pk>?', supp_suivie, name='supp_suivie'),
     path('excel', export_mc_excel, name='export_mc_excel'),
