@@ -20,7 +20,7 @@ def main_liste_mc(request):
     datefin = request.GET.get('datefin')
 
     # Définir le queryset de base en fonction du rôle de l'utilisateur
-    base_mc_queryset = MainCourante.objects.select_related('cp_commune').all()
+    base_mc_queryset = MainCourante.objects.all()
     user_role = request.session.get('role_utilisateur')
     user_commune_id = request.session.get('cp_commune')
 
