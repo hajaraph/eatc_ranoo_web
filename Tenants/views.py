@@ -18,6 +18,12 @@ def export_database(request):
     if not request.user.is_superuser:
         return HttpResponseForbidden(_("Vous n'avez pas la permission d'effectuer cette action."))
 
+    # Step 1: Check if format is selected, otherwise render selection page
+    export_format = request.GET.get('format')
+    if not export_format:
+        from django.shortcuts import render
+        return render(request, 'admin/db_export_options.html')
+
     db_settings = settings.DATABASES['default']
     db_name = db_settings['NAME']
     db_user = db_settings['USER']
@@ -26,22 +32,45 @@ def export_database(request):
     db_port = db_settings['PORT']
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"backup_global_{timestamp}.dump"
+    
+    # Configure extension and flags based on format
+    if export_format == 'sql':
+        filename = f"backup_global_{timestamp}.sql"
+        format_flag = '-Fp' # Plain text
+    else:
+        filename = f"backup_global_{timestamp}.dump"
+        format_flag = '-Fc' # Custom (compressed)
 
     # Prepare environment with password
     env = os.environ.copy()
     env['PGPASSWORD'] = str(db_password)
 
+    # Try to find pg_dump path
+    pg_dump_path = 'pg_dump'
+    possible_paths = [
+        r"C:\Program Files\PostgreSQL\16\bin\pg_dump.exe",
+        r"C:\Program Files\PostgreSQL\15\bin\pg_dump.exe",
+        r"C:\Program Files\PostgreSQL\14\bin\pg_dump.exe",
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            pg_dump_path = path
+            break
+
     # Command to dump to stdout
     cmd = [
-        'pg_dump',
+        pg_dump_path,
         '-h', str(db_host),
         '-p', str(db_port),
         '-U', str(db_user),
-        '-F', 'c',  # Custom format (compressed)
-        '-b',       # Include large objects
+        format_flag,
+        '-b',       # Include large objects (if supported by format)
         str(db_name)
     ]
+    
+    # -b is implied for -Fc, but explicit for custom. For plain text (-Fp), -b is ignored/valid.
+    # Actually, -b is for selecting large objects in dump. 
+    # Let's keep it simple.
 
     def file_iterator(chunk_size=8192):
         try:
@@ -76,9 +105,9 @@ def export_database(request):
 
     try:
         # Test if pg_dump exists before starting stream (optional but safer)
-        subprocess.run(['pg_dump', '--version'], capture_output=True, check=True)
+        subprocess.run([pg_dump_path, '--version'], capture_output=True, check=True)
     except FileNotFoundError:
-        return JsonResponse({'error': 'pg_dump introuvable sur le serveur.'}, status=500)
+        return JsonResponse({'error': f'{pg_dump_path} introuvable sur le serveur.'}, status=500)
     except Exception as e:
         return JsonResponse({'error': f'Erreur verification pg_dump: {str(e)}'}, status=500)
 

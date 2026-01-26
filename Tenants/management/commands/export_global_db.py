@@ -22,8 +22,20 @@ class Command(BaseCommand):
         env = os.environ.copy()
         env['PGPASSWORD'] = str(db_password)
 
+        # Try to find pg_dump path
+        pg_dump_path = 'pg_dump'
+        possible_paths = [
+            r"C:\Program Files\PostgreSQL\16\bin\pg_dump.exe",
+            r"C:\Program Files\PostgreSQL\15\bin\pg_dump.exe",
+            r"C:\Program Files\PostgreSQL\14\bin\pg_dump.exe",
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                pg_dump_path = path
+                break
+
         cmd = [
-            'pg_dump',
+            pg_dump_path,
             '-h', str(db_host),
             '-p', str(db_port),
             '-U', str(db_user),

@@ -1,0 +1,30 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div class="module">
+    <h2>Choix du format de sauvegarde</h2>
+    <p>Veuillez sélectionner le format de fichier pour l'export de la base de données :</p>
+
+    <div style="display: flex; gap: 20px; margin-top: 20px;">
+        <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
+            <h3>Format Compressé (.dump)</h3>
+            <p style="color: #666; font-size: 0.9em;">Recommandé pour les backups complets. Plus rapide et plus léger.</p>
+            <a href="?format=dump" class="button button-primary" style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 10px;">
+                Télécharger (.dump)
+            </a>
+        </div>
+
+        <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
+            <h3>Format SQL (.sql)</h3>
+            <p style="color: #666; font-size: 0.9em;">Lisible par un humain. Utile pour le débogage ou l'import manuel partiel.</p>
+            <a href="?format=sql" class="button" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 10px;">
+                Télécharger (.sql)
+            </a>
+        </div>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <a href="{% url 'admin:index' %}" class="button" style="padding: 10px;">Retour au tableau de bord</a>
+    </div>
+</div>
+{% endblock %}
