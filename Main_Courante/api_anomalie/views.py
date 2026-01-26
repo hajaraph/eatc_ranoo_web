@@ -29,13 +29,8 @@ class DeclareMaincourate(APIView):
     def get(request):
         """
         Récupère la liste des anomalies.
-        
-        Paramètres GET:
-            - modified_since: (optionnel) ISO datetime pour delta sync
-            - include_sync_meta: (optionnel, défaut=true) inclure les métadonnées de sync
         """
         start_time = time.time()
-        logger.info("Début GET DeclareMaincourate")
         
         try:
             modified_since_str = request.GET.get('modified_since')
@@ -51,12 +46,15 @@ class DeclareMaincourate(APIView):
                 modified_since = parse_datetime(modified_since_str)
                 if modified_since:
                     queryset = queryset.filter(updated_at__gte=modified_since)
-                    logger.info(f"Delta Sync Anomalies depuis {modified_since}")
             else:
                 # Full Sync : anomalies actives uniquement
                 queryset = queryset.filter(
                     Q(is_deleted=False) | Q(is_deleted__isnull=True)
                 ).exclude(statuts__realise=True)
+
+            # Filtre par commune (API utilisée par les Releveurs)
+            if request.user.cp_commune:
+                queryset = queryset.filter(cp_commune_id=request.user.cp_commune_id)
 
             main_courante_list = []
             commentaire_global = []
@@ -145,6 +143,11 @@ class DeclareMaincourate(APIView):
             @sync_to_async
             def save_main_courante():
                 with transaction.atomic():
+                    cp_commune = data.get('cp_commune')
+                    # Automatiser la commune (API utilisée par les Releveurs)
+                    if request.user.cp_commune:
+                        cp_commune = request.user.cp_commune_id
+
                     maincourante_data = {
                         'date_mc': date_declaration,
                         'type_anomalie': type_anomalie,
@@ -152,7 +155,7 @@ class DeclareMaincourate(APIView):
                         'latitude_mc': data.get('latitude_mc'),
                         'description_mc': data.get('description_mc'),
                         'client': data.get('client_declare'),
-                        'cp_commune': data.get('cp_commune'),
+                        'cp_commune': cp_commune,
                         'utilisateur': request.user.id_utilisateur
                     }
                     serializer = MainCouranteSerializer(data=maincourante_data)
@@ -200,7 +203,6 @@ class DeclareMaincourate(APIView):
 async def suivie_mc(request):
     """Ajoute un suivi/commentaire à une anomalie."""
     start_time = time.time()
-    logger.info("Début POST suivie_mc")
 
     statut = request.data.get('statut')
     id_mc = request.data.get('id_mc')
@@ -235,10 +237,8 @@ async def suivie_mc(request):
         result = await save_suivie()
         
         if 'error' in result:
-            logger.error(f"Erreur suivie_mc: {result['error']}")
             return JsonResponse({'message': result['error']}, status=400)
 
-        logger.info(f"POST suivie_mc OK en {time.time() - start_time:.2f}s")
         return JsonResponse({'message': f'Commentaire MC ({id_mc}) enregistré avec succès'})
 
     except Exception as e:

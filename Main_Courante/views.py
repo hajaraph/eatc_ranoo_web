@@ -19,19 +19,27 @@ def main_liste_mc(request):
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
 
-    statistiques = StatutMC.objects.aggregate(
-        count_non_traite=Count('pk', filter=Q(non_traite=True)),
-        count_realise=Count('pk', filter=Q(realise=True)),
-        count_en_cours=Count('pk', filter=Q(en_cours=True)),
+    # Définir le queryset de base en fonction du rôle de l'utilisateur
+    base_mc_queryset = MainCourante.objects.select_related('cp_commune').all()
+    user_role = request.session.get('role_utilisateur')
+    user_commune_id = request.session.get('cp_commune')
+
+    if user_role in ['Releveur', 'Gestionnaire'] and user_commune_id:
+        base_mc_queryset = base_mc_queryset.filter(cp_commune_id=user_commune_id)
+
+    # Calculer les statistiques sur le queryset filtré
+    statistiques = base_mc_queryset.aggregate(
+        count_non_traite=Count('pk', filter=Q(statuts__non_traite=True)),
+        count_realise=Count('pk', filter=Q(statuts__realise=True)),
+        count_en_cours=Count('pk', filter=Q(statuts__en_cours=True)),
     )
-    # Récupère les valeurs des compteurs
     non_traite = statistiques['count_non_traite']
     realise = statistiques['count_realise']
     en_cours = statistiques['count_en_cours']
 
-    # Utilisation de la fonction utilitaire pour filtrer par plage de dates
+    # Utiliser la fonction utilitaire pour filtrer par plage de dates
     main_courante, datedeb, datefin = filter_by_month_range(
-        queryset=MainCourante.objects.all(),
+        queryset=base_mc_queryset,
         date_field='date_mc',
         date_start=datedeb,
         date_end=datefin,
