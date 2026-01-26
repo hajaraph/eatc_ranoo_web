@@ -13,6 +13,7 @@ urlpatterns = [
     path('facture/', include('Facturation.urls')),
     path('main_courante/', include('Main_Courante.urls')),
     path('parametre/', include('Parametre.urls')),
+    path('tenants/', include('Tenants.urls')),
     path('ranoo_config/', include([
         path('', include('Ranoo_Config.urls')),
         path('', include('Acommune.urls')),

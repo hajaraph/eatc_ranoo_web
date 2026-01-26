@@ -16,5 +16,5 @@ urlpatterns = [
     path('branchement/nouveau', BranchementConfig.as_view(), name='branchement_nouveau'),
     path('branchement/modifier/<int:pk>', BranchementMod.as_view(), name='branchement_mod'),
     path('branchement/supprimer/<int:pk>', branchement_supp, name='branchement_supp'),
-    path('branchement/liste', get_branchement_list)
+    path('branchement/liste', get_branchement_list),
 ]

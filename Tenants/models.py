@@ -53,10 +53,27 @@ class Utilisateur(AbstractUser):
     last_token = models.CharField(max_length=255, blank=True, null=True)
 
     username = models.CharField(max_length=100, blank=True, null=True, unique=True, verbose_name='Pseudo')
-    first_name = 'nom_utilisateur'
-    last_name = 'prenom_utilisateur'
-    is_active = 'statut'
+    # first_name et last_name sont des champs de AbstractUser, on ne doit pas les écraser avec des strings
+    # On les laisse vides ou on ne les utilise pas.
+    
     DATE_JOINED_FIELD = 'cree_le'
+
+    @property
+    def is_active(self):
+         return self.statut
+         
+    @is_active.setter
+    def is_active(self, value):
+         self.statut = value
+
+    def get_full_name(self):
+        return f"{self.nom_utilisateur} {self.prenom_utilisateur}".strip()
+
+    def get_short_name(self):
+        return self.prenom_utilisateur
+
+    def __str__(self):
+        return self.username or self.num_utilisateur
 
     def save(self, *args, **kwargs):
         logger.info(f"Commencement sauvegarde utilisateur: {self.num_utilisateur}")
