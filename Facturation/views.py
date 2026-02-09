@@ -448,6 +448,9 @@ def facture_creation(date_facture, num_compteur, releve):
             "taxes_appliquees": taxes_appliquees
         }
 
+        # S'assurer qu'il n'y a pas déjà une facture pour ce relevé (évite les doublons)
+        Facture.objects.filter(relevecompteur_id=releve.pk).delete()
+
         factures = Facture.objects.create(**facture_data)
 
         # Calcul des montants avec ou sans TVA

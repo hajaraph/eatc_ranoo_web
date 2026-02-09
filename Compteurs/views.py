@@ -376,15 +376,19 @@ class ReleveMod(SchemaAwareView):
         return render(request, self.template_name, context)
 
     @staticmethod
-    def mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur, dernier_releve):
-        mod_releve = compteur.relevecompteurs.get(pk=id_releve)
+    def mod_relever_facture(id_releve, date_releve, volume, image_compteur, dernier_releve):
+        mod_releve = ReleveCompteur.objects.get(pk=id_releve)
         conso = volume - dernier_releve.volume
         mod_releve.date_releve = date_releve
         mod_releve.volume = volume
         mod_releve.conso = conso
-        mod_releve.image_compteur = image_compteur
+        if image_compteur:
+            mod_releve.image_compteur = image_compteur
         mod_releve.save()
-        Facture.objects.get(relevecompteur_id=id_releve).delete()
+        
+        # La suppression de l'ancienne facture est maintenant gérée par facture_creation
+        # mais on peut garder une sécurité ici au cas où
+        Facture.objects.filter(relevecompteur_id=id_releve).delete()
 
         return mod_releve
 
@@ -395,36 +399,49 @@ class ReleveMod(SchemaAwareView):
         date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
         volume = int(request.POST['volume'])
         image_compteur = request.FILES.get('image_compteur')
-        compteur = Compteur.objects.get(relevecompteurs__id_releve=pk)
+        releve_a_mod = ReleveCompteur.objects.get(pk=pk)
+        compteur = releve_a_mod.num_compteur
 
-        releves = list(compteur.relevecompteurs.order_by('-id_releve'))
-        if len(releves) < 2:
-            # Cas où c'est le premier relevé
-            releve = compteur.relevecompteurs.get(pk=pk)
-            releve.date_releve = date_releve
-            releve.volume = volume
-            releve.conso = 0
-            if image_compteur:  # Ne mettre à jour l'image que si une nouvelle est fournie
-                releve.image_compteur = image_compteur
-            releve.save()
+        # Trouver le relevé chronologiquement précédent pour calculer la consommation
+        dernier_releve = compteur.relevecompteurs.filter(
+            date_releve__lt=releve_a_mod.date_releve
+        ).order_by('-date_releve').first()
+
+        if not dernier_releve:
+            # Cas du premier relevé
+            releve_a_mod.date_releve = date_releve
+            releve_a_mod.volume = volume
+            releve_a_mod.conso = 0  # Ou volume si c'est le cas
+            if image_compteur:
+                releve_a_mod.image_compteur = image_compteur
+            releve_a_mod.save()
+            
+            # Mise à jour de la facture si Admin
+            if request.session.get('role_utilisateur') in ['Administrateur', 'Gestionnaire']:
+                facture_creation(date_releve, compteur.pk, releve_a_mod)
+                
             messages.success(request, "Relevé enregistré avec succès !")
             return redirect('compteur_detail', compteur.pk)
 
-        # Si on a au moins 2 relevés, on prend le deuxième le plus récent
-        dernier_releve = releves[1]
-        if date_releve < dernier_releve.date_releve:
+        # Validation par rapport au relevé précédent
+        if date_releve <= dernier_releve.date_releve:
             messages.error(request, f"Veuillez fournir une date valide pour le relevé !")
             return redirect('releve_mod', pk)
-        else:
-            if volume < dernier_releve.volume:
-                messages.warning(request, f"Vous ne pouvez pas enregistrer un relevé inferieure à la dernière !")
-                return redirect('releve_mod', pk)
-            else:
-                mod_releve = ReleveMod.mod_relever_facture(pk, compteur, date_releve,
-                                                           volume, image_compteur, dernier_releve)
-                facture_creation(date_releve, compteur.pk, mod_releve)
-                messages.success(request, f"Relevé enregistré avec succès !")
-                return redirect('compteur_detail', compteur.pk)
+        
+        if volume < dernier_releve.volume:
+            messages.warning(request, f"Vous ne pouvez pas enregistrer un relevé inférieur au précédent !")
+            return redirect('releve_mod', pk)
+        
+        # Mise à jour via la méthode statique
+        mod_releve = ReleveMod.mod_relever_facture(pk, date_releve,
+                                                   volume, image_compteur, dernier_releve)
+        
+        # Recréation de la facture si Admin
+        if request.session.get('role_utilisateur') in ['Administrateur', 'Gestionnaire']:
+            facture_creation(date_releve, compteur.pk, mod_releve)
+            
+        messages.success(request, f"Relevé enregistré avec succès !")
+        return redirect('compteur_detail', compteur.pk)
 
 
 @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
