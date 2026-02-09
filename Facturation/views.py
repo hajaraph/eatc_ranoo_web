@@ -472,8 +472,8 @@ def facture_context_pdf(request, factures):
         typeclient = factures.num_contrat.client.type_client_id
         num_compteur = factures.num_contrat.num_compteur_id
         compteur = Compteur.objects.get(pk=num_compteur)
-        reveler_precedant = get_object_or_404(compteur.relevecompteurs, date_releve=factures.date_facture_precedant)
-        relever_actuel = get_object_or_404(compteur.relevecompteurs, date_releve=factures.date_facture)
+        reveler_precedant = compteur.relevecompteurs.filter(date_releve=factures.date_facture_precedant).first()
+        relever_actuel = factures.relevecompteur
 
         # Plus simple : utiliser directement la date de la facture pour le mois
         # Mais en reculant d'un mois pour chaque date
