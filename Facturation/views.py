@@ -70,6 +70,7 @@ def facture(request):
 
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
+    commune_filtre = request.GET.get('commune')  # cp_commune
 
     # Filtrage par date si spécifié
     if datedeb and datefin:
@@ -82,6 +83,10 @@ def facture(request):
 
     # Application du filtre par rôle après le filtrage par date
     factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
+
+    # Filtrage par commune (cp_commune)
+    if commune_filtre:
+        factures = factures.filter(num_contrat__cp_commune_id=commune_filtre)
 
     # Total des montants impayés du mois courant
     total_impaye_mois = factures.filter(
@@ -120,6 +125,7 @@ def facture(request):
                 continue
 
     pronvince = Province.objects.order_by('province').all()
+
     # Trier d'abord par date (décroissant) puis par numéro de compteur (croissant)
     factures = sorted(
         factures,
