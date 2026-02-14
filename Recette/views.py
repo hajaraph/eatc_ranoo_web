@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models import Sum
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.db.models import Q
 
 from Login.views import role_requis
 from Rel_Compteur.utils import get_default_month_range, filter_by_month_range, filter_by_user_role, get_month_name_fr, generate_pdf_export
@@ -19,41 +20,57 @@ def recette(request):
     active_recette = "active"
     font_recette = "custom-font"
 
-    # Récupération des paramètres de date (format YYYY-MM)
+    # Récupération des paramètres
     mois_debut = request.GET.get('datedeb')
     mois_fin = request.GET.get('datefin')
     commune_filtre = request.GET.get('cp_commune')  # cp_commune
 
-    # Récupérer et filtrer les recettes
-    recettes_qs = Recette.objects.all().select_related('type_recette', 'facture').order_by('date_encaissement')
+    # Récupérer les recettes avec relations
+    recettes_qs = Recette.objects.all().select_related(
+        'type_recette', 
+        'facture', 
+        'facture__num_contrat', 
+        'cree_par'
+    ).order_by('date_encaissement')
 
-    # Appliquer le filtre par rôle utilisateur
-    recettes_qs = filter_by_user_role(request, recettes_qs, 'facture__num_contrat__cp_commune_id')
+    # 1. Filtrage par rôle utilisateur (Sécurité/Multi-commune)
+    role_user = request.session.get('role_utilisateur')
+    if role_user in ['Releveur', 'Gestionnaire']:
+        cp_commune_session = request.session.get('cp_commune')
+        if cp_commune_session:
+            # Pour ces rôles, on ne voit que les recettes de leur commune
+            # Soit via la facture, soit via le créateur si pas de facture
+            recettes_qs = recettes_qs.filter(
+                Q(facture__num_contrat__cp_commune_id=cp_commune_session) |
+                Q(facture__isnull=True, cree_par__cp_commune_id=cp_commune_session)
+            )
 
-    # Filtrage par commune (cp_commune)
+    # 2. Filtrage explicite par commune demandé via le formulaire
     if commune_filtre:
-        recettes_qs = recettes_qs.filter(facture__num_contrat__cp_commune_id=commune_filtre)
+        recettes_qs = recettes_qs.filter(
+            Q(facture__num_contrat__cp_commune_id=commune_filtre) |
+            Q(facture__isnull=True, cree_par__cp_commune_id=commune_filtre)
+        )
 
-    # Utilisation de la fonction utilitaire
-    recettes_filtrees, mois_debut, mois_fin = filter_by_month_range(
+    # 3. Filtrage par date (Mois)
+    recettes_filtrees, date_start, date_end = filter_by_month_range(
         queryset=recettes_qs,
         date_field='date_encaissement',
         date_start=mois_debut,
         date_end=mois_fin,
-        default_month=timezone.now().month  # Optionnel: mois par défaut
+        default_month=timezone.now().month
     )
 
-    # Si les dates sont None (cas où le mois par défaut est utilisé)
-    if mois_debut is None or mois_fin is None:
-        date_debut, date_fin = get_default_month_range()
-        mois_debut = date_debut.strftime('%Y-%m')
-        mois_fin = date_fin.strftime('%Y-%m')
-    
-    # Conserver les valeurs pour le formulaire
-    datedeb = mois_debut
-    datefin = mois_fin
+    # Gestion des valeurs d'affichage pour les dates
+    if date_start is None or date_end is None:
+        def_start, def_end = get_default_month_range()
+        datedeb_display = def_start.strftime('%Y-%m')
+        datefin_display = def_end.strftime('%Y-%m')
+    else:
+        datedeb_display = date_start
+        datefin_display = date_end
 
-    # Calculer le total des recettes et le nombre de recettes
+    # Calculer les totaux
     total_recettes_mois = recettes_filtrees.aggregate(total=Sum('montant'))['total'] or 0
     nombre_recettes = recettes_filtrees.count()
 
@@ -61,8 +78,8 @@ def recette(request):
         'title_recette_list': title_recette_list,
         'active_recette': active_recette,
         'font_recette': font_recette,
-        'datedeb': datedeb,  # Mois de début format YYYY-MM
-        'datefin': datefin,  # Mois de fin format YYYY-MM
+        'datedeb': datedeb_display,
+        'datefin': datefin_display,
         'mois_actuel': timezone.now(),
         'total_recettes_mois': total_recettes_mois,
         'nombre_recettes': nombre_recettes,
