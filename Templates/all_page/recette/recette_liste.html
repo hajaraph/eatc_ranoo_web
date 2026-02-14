@@ -1,33 +1,66 @@
 <div class="card-body">
     <div class="mb-4">
-        <form>
+        <form id="formFiltre">
             {% csrf_token %}
-            <div class="row align-items-end">
-                <div class="col-md-3 mb-2 mb-md-0">
+            <div class="row">
+                <div class="col-md-2 mb-2 mb-md-0">
                     <div class="form-floating">
-                        <input type="month" 
-                               name="datedeb" 
-                               id="datedeb" 
-                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
-                               value="{{ datedeb|default:'' }}"
-                               required>
-                        <label for="datedeb">Mois de début</label>
+                        <input type="month" name="datedeb" id="datedeb"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            value="{{ datedeb|default:'' }}" required>
+                        <label for="datedeb">Période du </label>
                     </div>
                 </div>
-                <div class="col-md-3 mb-2 mb-md-0">
+                <div class="col-md-2 mb-2 mb-md-0">
                     <div class="form-floating">
-                        <input type="month" 
-                               name="datefin" 
-                               id="datefin" 
-                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
-                               value="{{ datefin|default:'' }}" 
-                               required>
-                        <label for="datefin">Mois de fin</label>
+                        <input type="month" name="datefin" id="datefin"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            value="{{ datefin|default:'' }}" required>
+                        <label for="datefin">au </label>
                     </div>
                 </div>
-                <div class="col-md-2 col-sm-6 d-flex align-items-center">
-                    <button class="btn btn-primary" type="submit" style="height: 50px;">
-                        <i class="fas fa-search pe-1 ps-1"></i>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <select name="province" id="province"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                            <option value="">Toutes</option>
+                            {% for province in provinces %}
+                            <option value="{{ province.province }}">{{ province.province }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="province">Province</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <select name="region" id="region"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                            <option value="">Toutes</option>
+                        </select>
+                        <label for="region">Région</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <select name="commune" id="commune"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                            <option value="">Toutes</option>
+                        </select>
+                        <label for="commune">Commune</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0" hidden>
+                    <div class="form-floating">
+                        <select name="cp_commune" id="cp_commune"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            disabled>
+                        </select>
+                        <label for="cp_commune">CP Commune</label>
+                    </div>
+                </div>
+                <div class="col-md-1 col-sm-6 col-6 d-flex align-items-center justify-content-center">
+                    <button class="btn btn-primary" type="submit" style="width: 50px; height: 50px;">
+                        <i class="fas fa-search"></i>
                     </button>
                 </div>
             </div>
@@ -61,7 +94,8 @@
             </a>
         </div>
         <div class="mx-5" id="exportOptions">
-            <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exportRecetteModal" id="openExportRecetteModalBtn">
+            <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exportRecetteModal"
+                id="openExportRecetteModalBtn">
                 <i class="fas fa-file-pdf me-1"></i>
                 Exporter en PDF
             </button>
@@ -84,7 +118,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% for trans in recettes %}
+                {% for trans in recettes %}
                 <tr>
                     <td>{{ trans.pk }}</td>
                     <td>{{ trans.reference|default:'-' }}</td>
@@ -98,19 +132,21 @@
                     </td>
                     {% if request.session.role_utilisateur == 'Administrateur' %}
                     <td>
-                        <a href="{% url 'recette_suppression' trans.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce recette {{ trans.reference }} ?');">
+                        <a href="{% url 'recette_suppression' trans.pk %}" class="btn btn-sm btn-danger"
+                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce recette {{ trans.reference }} ?');">
                             <i class="fas fa-trash"></i>
                         </a>
                     </td>
                     {% endif %}
                 </tr>
-            {% endfor %}
+                {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
-<div class="modal fade" id="exportRecetteModal" tabindex="-1" aria-labelledby="exportRecetteModalLabel" aria-hidden="true">
+<div class="modal fade" id="exportRecetteModal" tabindex="-1" aria-labelledby="exportRecetteModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -122,19 +158,15 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <div class="form-floating">
-                                <input type="month"
-                                       name="datedeb"
-                                       id="exportDatedeb"
-                                       class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                                <input type="month" name="datedeb" id="exportDatedeb"
+                                    class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
                                 <label for="exportDatedeb">Mois de début</label>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <div class="form-floating">
-                                <input type="month"
-                                       name="datefin"
-                                       id="exportDatefin"
-                                       class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                                <input type="month" name="datefin" id="exportDatefin"
+                                    class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
                                 <label for="exportDatefin">Mois de fin</label>
                             </div>
                         </div>

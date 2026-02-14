@@ -7,6 +7,7 @@ from django.contrib import messages
 
 from Login.views import role_requis
 from Rel_Compteur.utils import get_default_month_range, filter_by_month_range, filter_by_user_role, get_month_name_fr, generate_pdf_export
+from Acommune.models import Province
 from Tenants.middleware import schema_use, SchemaAwareView
 from Tenants.models import Utilisateur
 from .models import Recette, TypeRecette
@@ -21,12 +22,17 @@ def recette(request):
     # Récupération des paramètres de date (format YYYY-MM)
     mois_debut = request.GET.get('datedeb')
     mois_fin = request.GET.get('datefin')
+    commune_filtre = request.GET.get('cp_commune')  # cp_commune
 
     # Récupérer et filtrer les recettes
     recettes_qs = Recette.objects.all().select_related('type_recette', 'facture').order_by('date_encaissement')
 
     # Appliquer le filtre par rôle utilisateur
     recettes_qs = filter_by_user_role(request, recettes_qs, 'facture__num_contrat__cp_commune_id')
+
+    # Filtrage par commune (cp_commune)
+    if commune_filtre:
+        recettes_qs = recettes_qs.filter(facture__num_contrat__cp_commune_id=commune_filtre)
 
     # Utilisation de la fonction utilitaire
     recettes_filtrees, mois_debut, mois_fin = filter_by_month_range(
@@ -61,6 +67,7 @@ def recette(request):
         'total_recettes_mois': total_recettes_mois,
         'nombre_recettes': nombre_recettes,
         'recettes': recettes_filtrees,
+        'provinces': Province.objects.order_by('province').all(),
     }
 
     return render(request, 'all_page/recette/recette.html', context)

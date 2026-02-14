@@ -5,6 +5,7 @@ from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 
+from Acommune.models import Province
 from Depense.models import Transactions, Categories
 from Rel_Compteur.utils import filter_by_month_range, get_default_month_range, filter_by_user_role, generate_pdf_export
 from Tenants.middleware import schema_use, SchemaAwareView
@@ -16,8 +17,9 @@ def depense(request):
     active_depense = "active"
     font_depense = "custom-font"
 
-    datedeb = request.GET.get('datedeb')
-    datefin = request.GET.get('datefin')
+    datedeb_query = request.GET.get('datedeb')
+    datefin_query = request.GET.get('datefin')
+    commune_filtre = request.GET.get('cp_commune')  # cp_commune
 
     now = datetime.now()
     mois_actuel = now.month
@@ -28,16 +30,21 @@ def depense(request):
     # Appliquer le filtre par rôle utilisateur
     transactions_qs = filter_by_user_role(request, transactions_qs, 'utilisateur__cp_commune_id')
 
-    transactions_mois, _, _ = filter_by_month_range(
+    # Filtrage par commune (cp_commune)
+    if commune_filtre:
+        transactions_qs = transactions_qs.filter(utilisateur__cp_commune_id=commune_filtre)
+
+    transactions_mois, date_start, date_end = filter_by_month_range(
         queryset=transactions_qs,
         date_field='date_transaction',
-        date_start=datedeb,
-        date_end=datefin,
+        date_start=datedeb_query,
+        date_end=datefin_query,
         default_month=mois_actuel
     )
-    datedeb, datefin = get_default_month_range()
-    datedeb = datedeb.strftime('%Y-%m')
-    datefin = datefin.strftime('%Y-%m')
+    
+    # Formater les dates pour le formulaire
+    datedeb_form = date_start.strftime('%Y-%m')
+    datefin_form = date_end.strftime('%Y-%m')
 
     # Calculer le total des dépenses et le nombre de transactions
     total_depenses_mois = transactions_mois.aggregate(Sum('montant'))['montant__sum'] or 0
@@ -51,9 +58,10 @@ def depense(request):
         'mois_actuel': now,
         'total_depenses_mois': total_depenses_mois,
         'nombre_transactions': nombre_transactions,
-        'datedeb': datedeb,  # Pour préremplir les champs de date dans le formulaire
-        'datefin': datefin,   # Pour préremplir les champs de date dans le formulaire
-        'categories': Categories.objects.all().order_by('nom_categorie') # Pour le calculateur
+        'datedeb': datedeb_form,
+        'datefin': datefin_form,
+        'categories': Categories.objects.all().order_by('nom_categorie'), # Pour le calculateur
+        'provinces': Province.objects.order_by('province').all(),
     }
     return render(request, 'all_page/depense/depense.html', context)
 
