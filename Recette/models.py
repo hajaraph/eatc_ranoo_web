@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models.functions import Now
 from django.core.validators import MinValueValidator
 
+from Acommune.models import Commune
 from Facturation.models import Facture
 from Tenants.models import Utilisateur
 
@@ -25,6 +26,7 @@ class Recette(models.Model):
     date_encaissement = models.DateField(db_default=Now())
     description = models.TextField(blank=True)
     facture = models.ForeignKey(Facture, on_delete=models.SET_NULL, null=True, blank=True)
+    cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE, blank=True, null=True, verbose_name='Commune')
     cree_par = models.ForeignKey(Utilisateur, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,6 +37,7 @@ class Recette(models.Model):
             models.Index(fields=['date_encaissement']),
             models.Index(fields=['type_recette']),
             models.Index(fields=['facture']),
+            models.Index(fields=['cp_commune']),
         ]
 
     def __str__(self):
@@ -68,6 +71,11 @@ class Recette(models.Model):
     def save(self, *args, **kwargs):
         if not self.reference:
             self.reference = self.generate_reference()
+
+        # Remplissage automatique de la commune Uniquement à partir de la facture
+        if not self.cp_commune:
+            if self.facture and self.facture.num_contrat:
+                self.cp_commune = self.facture.num_contrat.cp_commune
 
         # Vérification supplémentaire du montant
         if self.montant <= 0:

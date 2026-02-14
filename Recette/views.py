@@ -23,34 +23,22 @@ def recette(request):
     # Récupération des paramètres
     mois_debut = request.GET.get('datedeb')
     mois_fin = request.GET.get('datefin')
-    commune_filtre = request.GET.get('cp_commune')  # cp_commune
+    commune_filtre = request.GET.get('commune')  # cp_commune
 
     # Récupérer les recettes avec relations
     recettes_qs = Recette.objects.all().select_related(
         'type_recette', 
         'facture', 
-        'facture__num_contrat', 
-        'cree_par'
+        'cree_par',
+        'cp_commune'
     ).order_by('date_encaissement')
 
-    # 1. Filtrage par rôle utilisateur (Sécurité/Multi-commune)
-    role_user = request.session.get('role_utilisateur')
-    if role_user in ['Releveur', 'Gestionnaire']:
-        cp_commune_session = request.session.get('cp_commune')
-        if cp_commune_session:
-            # Pour ces rôles, on ne voit que les recettes de leur commune
-            # Soit via la facture, soit via le créateur si pas de facture
-            recettes_qs = recettes_qs.filter(
-                Q(facture__num_contrat__cp_commune_id=cp_commune_session) |
-                Q(facture__isnull=True, cree_par__cp_commune_id=cp_commune_session)
-            )
+    # 1. Filtrage par rôle utilisateur
+    recettes_qs = filter_by_user_role(request, recettes_qs, 'cp_commune_id')
 
-    # 2. Filtrage explicite par commune demandé via le formulaire
+    # 2. Filtrage explicite par commune
     if commune_filtre:
-        recettes_qs = recettes_qs.filter(
-            Q(facture__num_contrat__cp_commune_id=commune_filtre) |
-            Q(facture__isnull=True, cree_par__cp_commune_id=commune_filtre)
-        )
+        recettes_qs = recettes_qs.filter(cp_commune_id=commune_filtre)
 
     # 3. Filtrage par date (Mois)
     recettes_filtrees, date_start, date_end = filter_by_month_range(
@@ -99,7 +87,8 @@ class RecetteCreateView(SchemaAwareView):
             'title_recette_new': "Recette | Nouvelle Recette",
             'active_recette': 'active',
             'font_recette': 'custom-font',
-            'types_recette': TypeRecette.objects.all().order_by('libelle')
+            'types_recette': TypeRecette.objects.all().order_by('libelle'),
+            'provinces': Province.objects.order_by('province').all(),
         }
         return context
 
@@ -113,6 +102,15 @@ class RecetteCreateView(SchemaAwareView):
             type_recette = request.POST.get('type_recette')
             montant_str = request.POST.get('montant')
             description = request.POST.get('description', '').strip()
+            cp_commune_id = request.POST.get('commune') # l'id de la commune venant du select name="commune"
+            
+            # Fallback auto pour les non-admins si pas rempli
+            if not cp_commune_id:
+                user_id = request.session.get('id_utilisateur')
+                if user_id:
+                    user = Utilisateur.objects.get(pk=user_id)
+                    if user.role and user.role.role != 'Administrateur':
+                        cp_commune_id = user.cp_commune_id
 
             # Basic validations
             if not date_encaissement_str or not type_recette or not montant_str:
@@ -130,6 +128,7 @@ class RecetteCreateView(SchemaAwareView):
                 date_encaissement=date_encaissement,
                 description=description,
                 cree_par_id=request.session.get('id_utilisateur'),
+                cp_commune_id=cp_commune_id,
             )
             messages.success(request, "Recette créée avec succès.")
             return redirect('recette_list')

@@ -19,7 +19,7 @@ def depense(request):
 
     datedeb_query = request.GET.get('datedeb')
     datefin_query = request.GET.get('datefin')
-    commune_filtre = request.GET.get('cp_commune')  # cp_commune
+    commune_filtre = request.GET.get('commune')  # cp_commune
 
     now = datetime.now()
     mois_actuel = now.month
@@ -28,11 +28,11 @@ def depense(request):
     transactions_qs = Transactions.objects.all().order_by('date_transaction')
 
     # Appliquer le filtre par rôle utilisateur
-    transactions_qs = filter_by_user_role(request, transactions_qs, 'utilisateur__cp_commune_id')
+    transactions_qs = filter_by_user_role(request, transactions_qs, 'cp_commune_id')
 
     # Filtrage par commune (cp_commune)
     if commune_filtre:
-        transactions_qs = transactions_qs.filter(utilisateur__cp_commune_id=commune_filtre)
+        transactions_qs = transactions_qs.filter(cp_commune_id=commune_filtre)
 
     transactions_mois, date_start, date_end = filter_by_month_range(
         queryset=transactions_qs,
@@ -74,7 +74,8 @@ class DepenseNew(SchemaAwareView):
             'title_depense_new': "Dépense | Nouvelle Dépense",
             'active_depense': "active",
             'font_depense': 'custom-font',
-            'categories': Categories.objects.all().order_by('pk')
+            'categories': Categories.objects.all().order_by('pk'),
+            'provinces': Province.objects.order_by('province').all(),
         }
         return context
 
@@ -89,6 +90,15 @@ class DepenseNew(SchemaAwareView):
         montant = request.POST.get('montant')
         categorie_id = request.POST.get('categorie')
         numero_recu = request.POST.get('numero_recu', '').strip() or None
+        cp_commune_id = request.POST.get('commune')
+        
+        # Fallback auto pour les non-admins si pas rempli
+        if not cp_commune_id:
+            user_id = request.session.get('id_utilisateur')
+            if user_id:
+                user = Utilisateur.objects.filter(pk=user_id).first()
+                if user and user.role and user.role.role != 'Administrateur':
+                    cp_commune_id = user.cp_commune_id
 
         # Basic validation
         errors = []
@@ -115,7 +125,8 @@ class DepenseNew(SchemaAwareView):
                 montant=montant,
                 categorie_id=categorie_id,
                 numero_recu=numero_recu,
-                utilisateur_id=request.session.get('id_utilisateur')
+                utilisateur_id=request.session.get('id_utilisateur'),
+                cp_commune_id=cp_commune_id
             )
             transaction.save()
 
