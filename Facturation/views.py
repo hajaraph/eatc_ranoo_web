@@ -21,7 +21,7 @@ from Compteurs.models import ReleveCompteur, Compteur
 from Facturation.models import Facture, MontantHT, Tarif, Avoir, Paiement, Restant, MontantTTC, Taxe
 from Login.views import role_requis
 from Parametre.views import exporter_en_excel, enregistre_historique
-from Acommune.models import Province
+from Acommune.models import Commune
 from Ranoo_Config.models import ConfigBranchement
 from Rel_Compteur.utils import get_previous_month, get_month_range, get_default_month_range, filter_by_user_role, \
     filter_by_client_number
@@ -124,7 +124,6 @@ def facture(request):
                 messages.error(request, f"Erreur lors du traitement des taxes pour la facture {facture_items.num_facture}: {str(e)}")
                 continue
 
-    pronvince = Province.objects.order_by('province').all()
 
     # Trier d'abord par date (décroissant) puis par numéro de compteur (croissant)
     factures = sorted(
@@ -140,7 +139,8 @@ def facture(request):
         'total_impaye_mois': total_impaye_mois,
         'total_paye_mois': total_paye_mois,
         'total_taxes_par_type': total_taxes_par_type,
-        'provinces': pronvince,
+        'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
+        'commune_selectionnee': commune_filtre,
         'datedeb': debut_mois.strftime('%Y-%m'),
         'datefin': fin_mois.strftime('%Y-%m'),
         'client': Contrat.objects.all().order_by('client__num_client'),
