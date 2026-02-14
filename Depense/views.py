@@ -164,6 +164,7 @@ def export_depense(request):
         filename_prefix='Depenses',
         title_key='periode_depense',
         item_name='transactions',
+        filter_field='cp_commune_id'
     )
 
 
@@ -179,7 +180,7 @@ def calculate_depense_total(request):
     queryset = Transactions.objects.all()
 
     # Filtrer par rôle (Commune)
-    queryset = filter_by_user_role(request, queryset, 'utilisateur__cp_commune_id')
+    queryset = filter_by_user_role(request, queryset, 'cp_commune_id')
 
     # Filtrer par date
     if date_debut:

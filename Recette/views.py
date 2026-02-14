@@ -102,7 +102,7 @@ class RecetteCreateView(SchemaAwareView):
             type_recette = request.POST.get('type_recette')
             montant_str = request.POST.get('montant')
             description = request.POST.get('description', '').strip()
-            cp_commune_id = request.POST.get('commune') # l'id de la commune venant du select name="commune"
+            cp_commune_id = request.POST.get('commune') # l'id de la commune venant du select name="cp_commune"
             
             # Fallback auto pour les non-admins si pas rempli
             if not cp_commune_id:
