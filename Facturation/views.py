@@ -225,7 +225,11 @@ def facture_paye(request):
     active = 'active'
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
+    commune_filtre = request.GET.get('commune')
     paye = date_range(request, Facture, datedeb, datefin, 'date_facture', 'paye')
+    paye = filter_by_user_role(request, paye, 'num_contrat__cp_commune_id')
+    if commune_filtre:
+        paye = paye.filter(num_contrat__cp_commune_id=commune_filtre)
 
     context = {
         'title_facture_paye': title,
@@ -233,7 +237,9 @@ def facture_paye(request):
         'font_facture': font,
         'payes': paye,
         'datedeb': datedeb if datedeb else '',
-        'datefin': datefin if datefin else ''
+        'datefin': datefin if datefin else '',
+        'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
+        'commune_selectionnee': commune_filtre,
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -245,14 +251,21 @@ def facture_impaye(request):
     active = 'active'
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
+    commune_filtre = request.GET.get('commune')
     impaye = date_range(request, Facture, datedeb, datefin, 'date_facture', 'impaye')
+    impaye = filter_by_user_role(request, impaye, 'num_contrat__cp_commune_id')
+    if commune_filtre:
+        impaye = impaye.filter(num_contrat__cp_commune_id=commune_filtre)
+
     context = {
         'title_facture_impaye': title,
         'active_facture_impaye': active,
         'font_facture': font,
         'impayes': impaye,
         'datedeb': datedeb,
-        'datefin': datefin
+        'datefin': datefin,
+        'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
+        'commune_selectionnee': commune_filtre,
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 

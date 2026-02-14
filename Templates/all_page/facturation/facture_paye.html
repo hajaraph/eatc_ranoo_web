@@ -4,18 +4,37 @@
             <div class="row">
                 <div class="col-md-3 mb-2 mb-md-0">
                     <div class="form-floating">
-                        <input type="date" name="datedeb" id="datedeb" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" value="{{ datedeb }}" required>
+                        <input type="date" name="datedeb" id="datedeb"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            placeholder="" value="{{ datedeb }}" required>
                         <label for="datedeb">Période du </label>
                     </div>
                 </div>
                 <div class="col-md-3 mb-2 mb-md-0">
                     <div class="form-floating">
-                        <input type="date" name="datefin" id="datefin" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" value="{{ datefin }}" required>
+                        <input type="date" name="datefin" id="datefin"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            placeholder="" value="{{ datefin }}" required>
                         <label for="datefin">au </label>
                     </div>
                 </div>
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <select name="commune" id="commune_filtre"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                            <option value="">Toutes les communes</option>
+                            {% for c in communes_actives %}
+                            <option value="{{ c.cp_commune }}" {% if
+                                c.cp_commune|stringformat:"s"==commune_selectionnee|stringformat:"s" %}selected{% endif
+                                %}>
+                                {{ c.commune }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <label for="commune_filtre">Commune</label>
+                    </div>
+                </div>
                 <div class="col-md-1 col-sm-6 col-6 d-flex align-items-center justify-content-center">
-                    <div class="mb-2"></div>
                     <button class="btn btn-primary" type="submit" style="width: 50px; height: 50px;">
                         <i class="fas fa-search"></i>
                     </button>
@@ -58,11 +77,11 @@
                     <td>{{ paye.num_contrat.num_compteur_id }}</td>
                     <td>
                         {% if paye.statut %}
-                            {% if paye.restant_nouvel %}
-                                <span class="badge bg-warning text-dark">Montant Restant ({{ paye.restant_nouvel }} Ar)</span>
-                            {% else %}
-                            	<span class="badge bg-success">Payé</span>
-                            {% endif %}
+                        {% if paye.restant_nouvel %}
+                        <span class="badge bg-warning text-dark">Montant Restant ({{ paye.restant_nouvel }} Ar)</span>
+                        {% else %}
+                        <span class="badge bg-success">Payé</span>
+                        {% endif %}
                         {% endif %}
                     </td>
                     <td>{{ paye.date_facture|date:"d/m/Y" }}</td>
@@ -73,10 +92,11 @@
                     </td>
                     <td>
                         {% if not facture.statut %}
-                            <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' paye.num_facture %}')" class="btn btn-success btn-sm px-4">
-                                <i class="fas fa-file-pdf"></i>
-                                 PDF
-                            </div>
+                        <div onclick="openUrlInNewTab('{% url 'facture_genere_pdf' paye.num_facture %}')"
+                            class="btn btn-success btn-sm px-4">
+                            <i class="fas fa-file-pdf"></i>
+                            PDF
+                        </div>
                         {% endif %}
                     </td>
                 </tr>
