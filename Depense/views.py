@@ -41,10 +41,9 @@ def depense(request):
         date_end=datefin_query,
         default_month=mois_actuel
     )
-    
-    # Formater les dates pour le formulaire
-    datedeb_form = date_start.strftime('%Y-%m')
-    datefin_form = date_end.strftime('%Y-%m')
+    datedeb, datefin = get_default_month_range()
+    datedeb = datedeb.strftime('%Y-%m')
+    datefin = datefin.strftime('%Y-%m')
 
     # Calculer le total des dépenses et le nombre de transactions
     total_depenses_mois = transactions_mois.aggregate(Sum('montant'))['montant__sum'] or 0
@@ -58,8 +57,8 @@ def depense(request):
         'mois_actuel': now,
         'total_depenses_mois': total_depenses_mois,
         'nombre_transactions': nombre_transactions,
-        'datedeb': datedeb_form,
-        'datefin': datefin_form,
+        'datedeb': datedeb,  # Pour préremplir les champs de date dans le formulaire
+        'datefin': datefin,   # Pour préremplir les champs de date dans le formulaire
         'categories': Categories.objects.all().order_by('nom_categorie'), # Pour le calculateur
         'provinces': Province.objects.order_by('province').all(),
     }
