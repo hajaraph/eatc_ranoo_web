@@ -8,7 +8,7 @@ from django.db.models import Q
 
 from Login.views import role_requis
 from Rel_Compteur.utils import get_default_month_range, filter_by_month_range, filter_by_user_role, get_month_name_fr, generate_pdf_export
-from Acommune.models import Province
+from Acommune.models import Commune
 from Tenants.middleware import schema_use, SchemaAwareView
 from Tenants.models import Utilisateur
 from .models import Recette, TypeRecette
@@ -72,7 +72,7 @@ def recette(request):
         'total_recettes_mois': total_recettes_mois,
         'nombre_recettes': nombre_recettes,
         'recettes': recettes_filtrees,
-        'provinces': Province.objects.order_by('province').all(),
+        'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
     }
 
     return render(request, 'all_page/recette/recette.html', context)
@@ -88,7 +88,7 @@ class RecetteCreateView(SchemaAwareView):
             'active_recette': 'active',
             'font_recette': 'custom-font',
             'types_recette': TypeRecette.objects.all().order_by('libelle'),
-            'provinces': Province.objects.order_by('province').all(),
+            'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
         }
         return context
 

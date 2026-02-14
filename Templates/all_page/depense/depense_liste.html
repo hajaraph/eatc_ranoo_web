@@ -19,34 +19,16 @@
                         <label for="datefin">au </label>
                     </div>
                 </div>
-                <div class="col-md-2 mb-2 mb-md-0">
+                <div class="col-md-3 mb-2 mb-md-0">
                     <div class="form-floating">
-                        <select name="province" id="province"
+                        <select name="commune" id="commune_filtre"
                             class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
-                            <option value="">Toutes</option>
-                            {% for province in provinces %}
-                            <option value="{{ province.province }}">{{ province.province }}</option>
+                            <option value="">Toutes les communes</option>
+                            {% for c in communes_actives %}
+                            <option value="{{ c.cp_commune }}">{{ c.commune }}</option>
                             {% endfor %}
                         </select>
-                        <label for="province">Province</label>
-                    </div>
-                </div>
-                <div class="col-md-2 mb-2 mb-md-0">
-                    <div class="form-floating">
-                        <select name="region" id="region"
-                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
-                            <option value="">Toutes</option>
-                        </select>
-                        <label for="region">Région</label>
-                    </div>
-                </div>
-                <div class="col-md-2 mb-2 mb-md-0">
-                    <div class="form-floating">
-                        <select name="commune" id="commune"
-                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
-                            <option value="">Toutes</option>
-                        </select>
-                        <label for="commune">Commune</label>
+                        <label for="commune_filtre">Filtrer par Commune</label>
                     </div>
                 </div>
                 <div class="col-md-1 col-sm-6 col-6 d-flex align-items-center justify-content-center">

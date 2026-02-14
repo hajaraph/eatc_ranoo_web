@@ -4,8 +4,7 @@ from django.contrib import messages
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
-
-from Acommune.models import Province
+from Acommune.models import Commune
 from Depense.models import Transactions, Categories
 from Rel_Compteur.utils import filter_by_month_range, get_default_month_range, filter_by_user_role, generate_pdf_export
 from Tenants.middleware import schema_use, SchemaAwareView
@@ -60,7 +59,7 @@ def depense(request):
         'datedeb': datedeb,  # Pour préremplir les champs de date dans le formulaire
         'datefin': datefin,   # Pour préremplir les champs de date dans le formulaire
         'categories': Categories.objects.all().order_by('nom_categorie'), # Pour le calculateur
-        'provinces': Province.objects.order_by('province').all(),
+        'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
     }
     return render(request, 'all_page/depense/depense.html', context)
 
@@ -75,7 +74,7 @@ class DepenseNew(SchemaAwareView):
             'active_depense': "active",
             'font_depense': 'custom-font',
             'categories': Categories.objects.all().order_by('pk'),
-            'provinces': Province.objects.order_by('province').all(),
+            'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
         }
         return context
 
