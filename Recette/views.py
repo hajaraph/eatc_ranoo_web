@@ -73,6 +73,7 @@ def recette(request):
         'nombre_recettes': nombre_recettes,
         'recettes': recettes_filtrees,
         'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
+        'commune_selectionnee': commune_filtre,
     }
 
     return render(request, 'all_page/recette/recette.html', context)
@@ -81,14 +82,14 @@ def recette(request):
 class RecetteCreateView(SchemaAwareView):
     template_name = 'all_page/recette/recette.html'
 
-    @staticmethod
-    def get_context_data(**kwargs) -> dict:
+    def get_context_data(self, **kwargs) -> dict:
         context = {
             'title_recette_new': "Recette | Nouvelle Recette",
             'active_recette': 'active',
             'font_recette': 'custom-font',
             'types_recette': TypeRecette.objects.all().order_by('libelle'),
             'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
+            'commune_selectionnee': self.request.GET.get('commune'),
         }
         return context
 

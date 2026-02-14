@@ -7,97 +7,67 @@
             <div class="row mb-4">
                 <div class="col-md-4">
                     <div class="form-floating">
-                        <input type="date" 
-                               name="date_encaissement" 
-                               id="date_encaissement" 
-                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
-                               value="{% now 'Y-m-d' %}" 
-                               required>
+                        <input type="date" name="date_encaissement" id="date_encaissement"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            value="{% now 'Y-m-d' %}" required>
                         <label for="date_encaissement">Date d'encaissement</label>
                     </div>
                 </div>
             </div>
 
-            <!-- Localisation (Province, Région, Commune) -->
+            <!-- Localisation (Commune Directe) -->
             <div class="row mb-4">
-                <div class="col-md-4 col-sm-12 mt-4">
+                <div class="col-md-6 col-sm-12">
                     <div class="form-floating">
-                        <select name="province" id="province" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
-                            <option value="" selected hidden>Selectionné une province</option>
-                            {% for province in provinces %}
-                                <option value="{{ province.province }}">{{ province.province }}</option>
+                        <select name="cp_commune" id="cp_commune_select"
+                            class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0"
+                            required>
+                            <option value="" selected hidden>Sélectionnez la commune</option>
+                            {% for c in communes_actives %}
+                            <option value="{{ c.cp_commune }}">{{ c.commune }}</option>
                             {% endfor %}
                         </select>
-                        <label for="province">Province*</label>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-12 mt-4">
-                    <div class="form-floating">
-                        <select name="region" id="region" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
-                        </select>
-                        <label for="region">Région</label>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-12 mt-4">
-                    <div class="form-floating">
-                        <select name="commune" id="commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
-                        </select>
-                        <label for="commune">Commune :</label>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-12 mt-4">
-                    <div class="form-floating">
-                        <select name="cp_commune" id="cp_commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" disabled>
-                        </select>
-                        <label for="cp_commune">CP Commune :</label>
+                        <label for="cp_commune_select">Commune*</label>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Type de recette -->
             <div class="row mb-4">
                 <div class="col-md-6">
                     <div class="form-floating">
-                        <input type="text"
-                               name="type_recette"
-                               id="type_recette"
-                               class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0"
-                               list="types_recette_list"
-                               placeholder=""
-                               required
-                               autocomplete="on">
+                        <input type="text" name="type_recette" id="type_recette"
+                            class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0"
+                            list="types_recette_list" placeholder="" required autocomplete="on">
                         <datalist id="types_recette_list">
                             {% for tr in types_recette %}
-                                <option value="{{ tr.libelle }}" data-id="{{ tr.id_type_recette }}">
-                            {% endfor %}
+                            <option value="{{ tr.libelle }}" data-id="{{ tr.id_type_recette }}">
+                                {% endfor %}
                         </datalist>
                         <label for="type_recette" class="form-label">Type de recette</label>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Description -->
             <div class="row mb-4">
                 <div class="col-md-8">
                     <div class="form-floating">
-                        <textarea name="description" id="description" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" placeholder="" style="height: 100px"></textarea>
+                        <textarea name="description" id="description"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            placeholder="" style="height: 100px"></textarea>
                         <label for="description">Description (optionnel)</label>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Montant -->
             <div class="row mb-4">
                 <div class="col-md-4">
                     <div class="form-floating">
-                        <input type="number" 
-                               name="montant" 
-                               id="montant" 
-                               class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
-                               step="0.01" 
-                               min="0.01" 
-                               placeholder="0.00" 
-                               required>
+                        <input type="number" name="montant" id="montant"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            step="0.01" min="0.01" placeholder="0.00" required>
                         <label for="montant">Montant (Ar)</label>
                     </div>
                 </div>

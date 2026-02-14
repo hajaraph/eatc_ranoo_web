@@ -60,6 +60,7 @@ def depense(request):
         'datefin': datefin,   # Pour préremplir les champs de date dans le formulaire
         'categories': Categories.objects.all().order_by('nom_categorie'), # Pour le calculateur
         'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
+        'commune_selectionnee': commune_filtre,
     }
     return render(request, 'all_page/depense/depense.html', context)
 
