@@ -1,33 +1,43 @@
-version: '3.8'
+networks:
+  webapp_preprod:
+  traefik_preprod:
+    external: true
 
 services:
   db:
     image: postgres:16
+    container_name: eatc-db-preprod
+    env_file: .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=eatc_db
-      - POSTGRES_USER=eatc_user
-      - POSTGRES_PASSWORD=eatc_password
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     restart: always
+    networks:
+      - webapp_preprod
 
   web:
     build: .
+    container_name: eatc-web-preprod
     command: gunicorn Rel_Compteur.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    env_file: .env
     volumes:
       - .:/app
-    ports:
-      - "8000:8000"
-    environment:
-      - DB_NAME=eatc_db
-      - DB_USER=eatc_user
-      - DB_PASSWORD=eatc_password
-      - DB_HOST=db
-      - DB_PORT=5432
-      # Assurez-vous de définir SECRET_KEY et DEBUG dans votre fichier .env ou ici
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.eatc.rule=Host(`app.eatc.me`)
+      - traefik.http.routers.eatc.entrypoints=websecure
+      - traefik.http.routers.eatc.tls.certresolver=myresolver
+      - traefik.http.services.eatc.loadbalancer.server.port=8000
+      - traefik.docker.network=traefik_preprod
     depends_on:
       - db
     restart: always
+    networks:
+      - webapp_preprod
+      - traefik_preprod
 
 volumes:
   postgres_data:
