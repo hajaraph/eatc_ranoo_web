@@ -11,15 +11,30 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Installer les dépendances système nécessaires
-# libpq-dev est nécessaire pour psycopg2 (PostgreSQL)
-# gcc est nécessaire pour compiler certains paquets Python
-# pkg-config et libcairo2-dev sont nécessaires pour pycairo
+# libpq-dev : psycopg2 (PostgreSQL)
+# gcc, g++ : compilation de paquets Python natifs
+# pkg-config, libcairo2-dev : pycairo, rlPyCairo
+# libjpeg-dev, zlib1g-dev, libfreetype6-dev : Pillow, freetype-py
+# libpango1.0-dev, libgdk-pixbuf2.0-dev, libffi-dev : weasyprint
+# libxml2-dev, libxslt1-dev : lxml
+# libssl-dev : cryptography
+# netcat-traditional : healthcheck dans docker-entrypoint.sh
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
+    g++ \
     netcat-traditional \
     pkg-config \
     libcairo2-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    libfreetype6-dev \
+    libpango1.0-dev \
+    libgdk-pixbuf2.0-dev \
+    libffi-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copier le fichier des dépendances
