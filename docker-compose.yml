@@ -6,7 +6,7 @@ networks:
 services:
   db:
     image: postgres:16
-    container_name: eatc-db-preprod
+    container_name: eatc-db
     env_file: .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -20,7 +20,7 @@ services:
 
   web:
     build: .
-    container_name: eatc-web-preprod
+    container_name: eatc-web
     command: gunicorn Rel_Compteur.wsgi:application --bind 0.0.0.0:8000 --workers 3
     env_file: .env
     volumes:
