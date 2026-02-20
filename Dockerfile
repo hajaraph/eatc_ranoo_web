@@ -13,10 +13,13 @@ WORKDIR /app
 # Installer les dépendances système nécessaires
 # libpq-dev est nécessaire pour psycopg2 (PostgreSQL)
 # gcc est nécessaire pour compiler certains paquets Python
+# pkg-config et libcairo2-dev sont nécessaires pour pycairo
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
     netcat-traditional \
+    pkg-config \
+    libcairo2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copier le fichier des dépendances
