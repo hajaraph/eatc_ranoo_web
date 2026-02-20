@@ -15,7 +15,7 @@ fi
 python manage.py migrate
 
 # Collecter les fichiers statiques (optionnel, décommentez si nécessaire)
-# python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput
 
 # Démarrer l'application
 # Note: La commande "command" dans docker-compose remplacera "$@" s'il est utilisé à la fin,
