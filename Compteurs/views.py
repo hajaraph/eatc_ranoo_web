@@ -95,43 +95,44 @@ class CompteurNew(SchemaAwareView):
         volume = request.POST['volume']
         num_compteur_principale = request.POST.get('num_compteur_principale', '')
 
+        # Vérifier si un compteur avec ce numéro existe déjà
         numero = Compteur.objects.filter(num_compteur=num_compteur)
         if numero.exists():
-            messages.warning(request, f"Le compteur avec le numéro {num_compteur} est déjà enregistrer !")
+            messages.warning(request, f"Le compteur avec le numéro {num_compteur} est déjà enregistré !")
             return redirect('compteur_new')
-        else:
-            # Récupérer le compteur principal si sélectionné
-            cp = None
-            if num_compteur_principale:
-                try:
-                    cp = CompteurPrincipale.objects.get(pk=num_compteur_principale)
-                except CompteurPrincipale.DoesNotExist:
-                    pass
-            
-            Compteur.objects.create(
-                num_compteur=num_compteur,
-                marque_compteur=marque_compteur,
-                modele_compteur=modele_compteur,
-                DN_compteur=dn_compteur,
-                origin_compteur=origin_compteur,
-                num_compteur_principale=cp
-            )
-            ReleveCompteur.objects.create(
-                date_releve=date_releve,
-                volume=volume,
-                conso=0,
-                num_compteur_id=num_compteur,
-                statut_validation='CONFIRME',
-                valideur_id=request.session.get('id_utilisateur'),
-                date_validation=timezone.now(),
-                utilisateur_id=request.session.get('id_utilisateur')
-            )
-            # Historique
-            message = f"Creation d'un compteur numéro {num_compteur}"
-            enregistre_historique(message, request.session.get('id_utilisateur'))
 
-            messages.success(request, f"Compteur enregistrer avec succès !")
-            return redirect('compteur_list')
+        # Récupérer le compteur principal si sélectionné
+        cp = None
+        if num_compteur_principale:
+            try:
+                cp = CompteurPrincipale.objects.get(pk=num_compteur_principale)
+            except CompteurPrincipale.DoesNotExist:
+                pass
+        
+        Compteur.objects.create(
+            num_compteur=num_compteur,
+            marque_compteur=marque_compteur,
+            modele_compteur=modele_compteur,
+            DN_compteur=dn_compteur,
+            origin_compteur=origin_compteur,
+            num_compteur_principale=cp
+        )
+        ReleveCompteur.objects.create(
+            date_releve=date_releve,
+            volume=volume,
+            conso=0,
+            num_compteur_id=num_compteur,
+            statut_validation='CONFIRME',
+            valideur_id=request.session.get('id_utilisateur'),
+            date_validation=timezone.now(),
+            utilisateur_id=request.session.get('id_utilisateur')
+        )
+        # Historique
+        message = f"Creation d'un compteur numéro {num_compteur}"
+        enregistre_historique(message, request.session.get('id_utilisateur'))
+
+        messages.success(request, f"Compteur enregistré avec succès !")
+        return redirect('compteur_list')
 
 
 class CompteurDetail(SchemaAwareView):
@@ -208,7 +209,15 @@ class CompteurDetail(SchemaAwareView):
 @schema_use
 def compteur_supp(request, pk):
     compteur = Compteur.objects.get(pk=pk)
-    compteur.delete()
+
+    # Vérifier si le compteur est lié à un contrat
+    if compteur.contrats.exists():
+        messages.error(request, f"Impossible de supprimer le compteur {pk} car il est lié à un contrat !")
+        return redirect('compteur_list')
+
+    # Hard delete du compteur (CASCADE supprime automatiquement les relevés liés)
+    compteur.hard_delete()
+
     # Historique
     message = f"Suppression de compteur numéro {pk}"
     enregistre_historique(message, request.session.get('id_utilisateur'))
