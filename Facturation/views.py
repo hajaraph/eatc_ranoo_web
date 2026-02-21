@@ -218,24 +218,26 @@ def facture_etat_detail(request, num_facture):
     return render(request, 'all_page/facturation/facturation.html', context)
 
 
-@schema_use
-def facture_paye(request):
-    title = 'Facturation | Payé'
+def _facture_status_view(request, is_paid):
+    status_str = 'paye' if is_paid else 'impaye'
+    title = f'Facturation | {status_str.capitalize()}'
     font = 'custom-font'
     active = 'active'
+
     datedeb = request.GET.get('datedeb')
     datefin = request.GET.get('datefin')
     commune_filtre = request.GET.get('commune')
-    paye = date_range(request, Facture, datedeb, datefin, 'date_facture', 'paye')
-    paye = filter_by_user_role(request, paye, 'num_contrat__cp_commune_id')
+
+    factures = date_range(request, Facture, datedeb, datefin, 'date_facture', status_str)
+    factures = filter_by_user_role(request, factures, 'num_contrat__cp_commune_id')
     if commune_filtre:
-        paye = paye.filter(num_contrat__cp_commune_id=commune_filtre)
+        factures = factures.filter(num_contrat__cp_commune_id=commune_filtre)
 
     context = {
-        'title_facture_paye': title,
-        'active_facture_paye': active,
+        f'title_facture_{status_str}': title,
+        f'active_facture_{status_str}': active,
         'font_facture': font,
-        'payes': paye,
+        f'{status_str}s': factures,  # 'payes' or 'impayes'
         'datedeb': datedeb if datedeb else '',
         'datefin': datefin if datefin else '',
         'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
@@ -245,29 +247,13 @@ def facture_paye(request):
 
 
 @schema_use
-def facture_impaye(request):
-    title = 'Facturation | Impayé'
-    font = 'custom-font'
-    active = 'active'
-    datedeb = request.GET.get('datedeb')
-    datefin = request.GET.get('datefin')
-    commune_filtre = request.GET.get('commune')
-    impaye = date_range(request, Facture, datedeb, datefin, 'date_facture', 'impaye')
-    impaye = filter_by_user_role(request, impaye, 'num_contrat__cp_commune_id')
-    if commune_filtre:
-        impaye = impaye.filter(num_contrat__cp_commune_id=commune_filtre)
+def facture_paye(request):
+    return _facture_status_view(request, is_paid=True)
 
-    context = {
-        'title_facture_impaye': title,
-        'active_facture_impaye': active,
-        'font_facture': font,
-        'impayes': impaye,
-        'datedeb': datedeb,
-        'datefin': datefin,
-        'communes_actives': Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune'),
-        'commune_selectionnee': commune_filtre,
-    }
-    return render(request, 'all_page/facturation/facturation.html', context)
+
+@schema_use
+def facture_impaye(request):
+    return _facture_status_view(request, is_paid=False)
 
 
 @schema_use
