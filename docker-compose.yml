@@ -29,6 +29,8 @@ services:
     container_name: eatc-web
     command: gunicorn Rel_Compteur.wsgi:application --bind 0.0.0.0:8000 --workers 3
     env_file: .env
+    volumes:
+      - ./static/media:/app/static/media
     labels:
       - traefik.enable=true
       - traefik.http.routers.eatc.rule=Host(`app.eatc.me`)
