@@ -112,16 +112,11 @@
                         <tr class="border-bottom">
                             <td class="text-left">Consommation</td>
                             <td class="text-right">
-                                {% if typeclient == 1 %}
-                                    {{ montant.montant_ht.tarif.prix_m3_bs }}
-                                {% elif typeclient == 2 %}
-                                    {{ montant.montant_ht.tarif.prix_m3_bp }}
-                                {% elif typeclient == 3 %}
-                                    {{ montant.montant_ht.tarif.prix_m3_k }}
+                                {% if prix_unitaire %}
+                                    {{ prix_unitaire }} Ar
                                 {% else %}
                                     Prix inconnu
                                 {% endif %}
-                                Ar
                             </td>
                             <td class="text-right">{{ montant.montant_ht.total_conso_ht }} Ar</td>
                             <td class="text-right">

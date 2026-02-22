@@ -204,6 +204,15 @@ def facture_etat_detail(request, num_facture):
     total_paiements = paiements.aggregate(total=models.Sum('montant_payer'))['total'] or 0
     dernier_paiement = paiements.order_by('-date_paiement').first() if paiements.exists() else None
 
+    # Récupérer le prix unitaire depuis le JSONField prix_m3
+    prix_unitaire = None
+    tarif = montant.montant_ht.tarif
+    if tarif and tarif.prix_m3:
+        prix_unitaire = next(
+            (item['prix'] for item in tarif.prix_m3 if item['id'] == typeclient),
+            None
+        )
+
     context = {
         'title_etat_detail': title,
         'active_etat': active,
@@ -214,6 +223,7 @@ def facture_etat_detail(request, num_facture):
         'paiements': paiements,
         'montant': montant,
         'typeclient': typeclient,
+        'prix_unitaire': prix_unitaire,
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
