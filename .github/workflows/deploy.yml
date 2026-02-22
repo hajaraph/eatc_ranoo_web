@@ -1,33 +1,65 @@
-name: Deploy
+name: EATC CI et CD
 
-# Trigger the workflow on push and
-# pull request events on the master branch
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
-# Authenticate to the the server via ssh
-# and run our deployment script
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKER_HOST_REGISTRY_NAS }}/eatc-web
+
 jobs:
-  deploy:
+  construction-image:
+    name: Construction et envoi de l'image
     runs-on: ubuntu-latest
+    environment: production
     steps:
-      - uses: actions/checkout@v3 
-      
-      - name: Display SSH Connection Details
-        run: |
-          echo "Host: ${{ secrets.HOST }}"
-          echo "Username: ${{ secrets.USERNAME }}"
-          echo "Port: ${{ secrets.PORT }}"
-          echo "Key: ${{ secrets.SSHKEY }}"
+      - name: Recuperation du code source
+        uses: actions/checkout@v4
 
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@master
+      - name: Configuration de Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Connexion au registre Docker prive
+        run: |
+          echo "${{ secrets.DOCKER_KEY_REGISTRY_NAS }}" | docker login https://${{ secrets.DOCKER_HOST_REGISTRY_NAS }} -u ${{ secrets.DOCKER_USER_REGISTRY }} --password-stdin
+
+      - name: Construction et envoi de l'image
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -t ${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.IMAGE_NAME }}:latest
+
+  deploiement:
+    name: Recuperation et deploiement
+    needs: construction-image
+    if: success()
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploiement sur le serveur
+        uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          port: ${{ secrets.PORT }}
-          key: ${{ secrets.SSHKEY }}   
-          script: "cd eatc_ranoo && ./.scripts/deploy.sh" 
+          host: ${{ secrets.NAS_HOST }}
+          username: ${{ secrets.NAS_USER }}
+          key: ${{ secrets.NAS_PRIVACY_KEY }}
+          script: |
+            echo "=== DEMARRAGE DU DEPLOIEMENT EATC ==="
+
+            cd eatc_ranoo
+            git pull origin main --no-rebase
+
+            echo "Recuperation de la nouvelle image..."
+            docker compose pull
+
+            echo "Redemarrage des conteneurs..."
+            docker compose down --remove-orphans
+            docker compose up -d --wait
+
+            echo "Verification des conteneurs..."
+            docker compose ps
+
+            echo "=== DEPLOIEMENT EATC TERMINE AVEC SUCCES ==="
