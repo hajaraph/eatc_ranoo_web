@@ -45,7 +45,7 @@ jobs:
         with:
           host: ${{ secrets.NAS_HOST }}
           username: ${{ secrets.NAS_USER }}
-          key: ${{ secrets.NAS_PRIVACY_KEY }}
+          password: ${{ secrets.NAS_PRIVACY_KEY }}
           script: |
             echo "=== DEMARRAGE DU DEPLOIEMENT EATC ==="
 
