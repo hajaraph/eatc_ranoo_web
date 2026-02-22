@@ -26,7 +26,6 @@ urlpatterns = [
         path('', include('Compteurs.api_compteur.urls')),
         path('', include('Main_Courante.api_anomalie.urls')),
     ])),
-    path('__reload__', include('django_browser_reload.urls'))
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
