@@ -24,10 +24,11 @@ services:
       start_period: 10s
     networks:
       - webapp_preprod
+      
   web:
     image: ${DOCKER_HOST_REGISTRY_NAS}/eatc-web:latest
     container_name: eatc-web
-    command: gunicorn Rel_Compteur.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    command: gunicorn Rel_Compteur.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
     env_file: .env
     volumes:
       - ./static/media:/app/static/media
@@ -45,6 +46,7 @@ services:
     networks:
       - webapp_preprod
       - traefik_preprod
+
   db-backup:
     image: postgres:16
     container_name: eatc-db-backup
@@ -69,6 +71,36 @@ services:
       done"
     depends_on:
       db:
+        condition: service_healthy
+    restart: always
+    networks:
+      - webapp_preprod
+
+  redis:
+    image: redis:7-alpine
+    container_name: eatc-redis
+    volumes:
+      - /volume1/Docker/eatc/redis_data:/data
+    restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - webapp_preprod
+
+  celery-worker:
+    image: ${DOCKER_HOST_REGISTRY_NAS}/eatc-web:latest
+    container_name: eatc-celery-worker
+    command: celery -A Tasks worker --loglevel=info --concurrency=2
+    env_file: .env
+    volumes:
+      - ./static/media:/app/static/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: always
     networks:

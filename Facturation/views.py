@@ -10,7 +10,7 @@ from django.template.loader import get_template
 from django.utils import timezone
 import json
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from xhtml2pdf import pisa
@@ -532,6 +532,52 @@ def facture_context_pdf(request, factures):
         return HttpResponse(f"An error occurred: {e}", content_type='text/plain')
 
 
+def facture_context_pdf_no_request(factures):
+    """Version de facture_context_pdf qui ne dépend pas de request (pour Celery)."""
+    try:
+        montant = MontantHT.objects.get(facture=factures.pk)
+        typeclient = factures.num_contrat.client.type_client_id
+        num_compteur = factures.num_contrat.num_compteur_id
+        compteur = Compteur.objects.get(pk=num_compteur)
+        reveler_precedant = compteur.relevecompteurs.filter(date_releve=factures.date_facture_precedant).first()
+        relever_actuel = factures.relevecompteur
+
+        date_facture_precedant = factures.date_facture_precedant
+        date_facture_actuel = factures.date_facture
+
+        date_facture_actuel = get_previous_month(date_facture_actuel)
+        date_facture_precedant = get_previous_month(date_facture_precedant)
+
+        from Rel_Compteur.utils import montant_en_lettres
+        lettre = montant_en_lettres(factures.montant_total_ttc)
+
+        qr_code = generate_qr_code(None, factures.num_facture)
+        paiement_exist = Paiement.objects.filter(facture_id=factures.pk).exists()
+
+        context = {
+            'instance': factures,
+            'montant': montant,
+            'typeclient': typeclient,
+            'lettre': lettre,
+            'reveler_precedant': reveler_precedant,
+            'relever_actuel': relever_actuel,
+            'date_facture_precedant': date_facture_precedant,
+            'date_facture_actuel': date_facture_actuel,
+            'montant_ht_total': round(montant.total_conso_ht, 0),
+            'paiement_exist': paiement_exist,
+            'qr_code': qr_code
+        }
+        return context
+
+    except MontantHT.DoesNotExist:
+        return HttpResponse(f"MontantHT n'exist pas pour le facture {factures.num_facture}", content_type='text/plain')
+    except ReleveCompteur.DoesNotExist:
+        return HttpResponse(f"ReleveCompteur n'exist pas pour le numéro de compteur "
+                            f"{factures.num_contrat.num_compteur_id}", content_type='text/plain')
+    except Exception as e:
+        return HttpResponse(f"An error occurred: {e}", content_type='text/plain')
+
+
 def is_eatc_schema(request) -> bool:
     id_entreprise = request.session.get('entreprise')
     entreprise = Entreprise.objects.get(pk=id_entreprise)
@@ -670,9 +716,12 @@ def render_html_to_pdf(template_src, context_dict):
     html = template.render(context_dict)
     return html
 
-
 @schema_use
 def generate_multiple_pages_pdf(request):
+    """
+    Vue qui lance la génération PDF en tâche de fond via Celery.
+    Retourne un task_id pour le suivi de la progression.
+    """
     try:
         # Récupération des paramètres de requête
         date_deb = request.GET.get('date_deb')
@@ -681,21 +730,14 @@ def generate_multiple_pages_pdf(request):
         num_client_deb = request.GET.get('num_client_deb')
         num_client_fin = request.GET.get('num_client_fin')
 
-        # Si aucune date n'est fournie, utiliser le mois actuel pour les factures impayées
+        # Si aucune date n'est fournie, utiliser le mois actuel
         if not date_deb and not date_fin:
             date_deb, date_fin = get_default_month_range()
 
-        # Configuration des paramètres de performance
-        batch_size = 4  # Taille des lots alignée sur le nombre de factures par page
-
-        # Préparation de la requête de base avec select_related et prefetch_related
+        # Préparation de la requête
         factures = Facture.objects.filter(statut=False).select_related(
             'num_contrat',
             'num_contrat__client',
-            'relevecompteur'
-        ).prefetch_related(
-            'montantht_set',
-            'montantht_set__montantttc'  # Relation OneToOneField vers MontantTTC
         ).order_by("num_contrat_id__adresse_contrat")
 
         factures = filter_by_client_number(
@@ -705,7 +747,7 @@ def generate_multiple_pages_pdf(request):
             num_client_fin=num_client_fin
         )
 
-        # Filtrage initial
+        # Filtrage par date
         if date_deb and date_fin:
             date_deb, _ = get_month_range(date_deb)
             _, date_fin = get_month_range(date_fin)
@@ -719,133 +761,80 @@ def generate_multiple_pages_pdf(request):
         # Appliquer le filtre de commune
         factures = factures.filter(num_contrat__cp_commune=commune)
 
-        # Vérification des résultats
-        factures = list(factures)  # Force l'évaluation de la requête
-        if not factures:
+        # Récupérer les IDs des factures (sérialisable pour Celery)
+        facture_ids = list(factures.values_list('pk', flat=True))
+
+        if not facture_ids:
             messages.warning(request, "Aucune facture trouvée pour les critères sélectionnés")
             return redirect('facture')
 
-        # Initialisation des variables
-        html_sections = []
-        eatc = is_eatc_schema(request)
-        template_name = 'all_page/facturation/facture/{}'.format(
-            'templatepdf.html' if eatc else 'templatenoeatc.html'
-        )
-        template = get_template(template_name)
+        # Récupérer le nom du schéma et l'entreprise
+        entreprise_id = request.session.get('entreprise')
+        entreprise = Entreprise.objects.get(pk=entreprise_id)
+        schema_name = entreprise.schema_name
 
-        # Import de la fonction utilitaire
-        from Rel_Compteur.utils import prepare_facture_context
+        # Lancer la tâche Celery
+        from Facturation.tasks import generate_pdf_task
+        task = generate_pdf_task.delay(facture_ids, entreprise_id, schema_name)
 
-        # Traitement par lots
-        for i in range(0, len(factures), batch_size):
-            batch = factures[i:i + batch_size]
-            temp_group = []
-
-            for fact in batch:
-                try:
-                    # Utilisation de la fonction utilitaire pour préparer le contexte
-                    context, error_response = prepare_facture_context(request, fact)
-                    if error_response:
-                        return error_response
-
-                    # Rendu du template
-                    html = template.render(context)
-                    temp_group.append(html)
-
-                    # Nettoyage de la mémoire
-                    del context
-
-                except Exception as e:
-                    logger.error(
-                        f"Erreur lors du traitement de la facture {getattr(fact, 'num_facture', 'inconnu')}: {str(e)}")
-                    continue
-
-            # Gestion uniforme des groupes de 4 pour tous les cas
-            if temp_group:
-                for j in range(0, len(temp_group), 4):
-                    group = temp_group[j:j + 4]
-                    html_sections.append(''.join(group))
-
-            # Nettoyage de la mémoire après chaque lot
-            del temp_group
-            gc.collect()
-
-        # Vérification des sections générées
-        if not html_sections:
-            messages.error(request, "Aucun contenu généré pour les factures sélectionnées")
-            return redirect('facture')
-
-        # Génération du PDF final avec gestion de la mémoire
-        try:
-            # Configuration de pisa
-            pdf_options = {
-                'quiet': True,
-                'encoding': 'UTF-8',
-                'page-size': 'A4',
-                'margin-top': '0.75in',
-                'margin-right': '0.75in',
-                'margin-bottom': '0.75in',
-                'margin-left': '0.75in',
-                'load_file': False,
-                'raise_exception': True,
-                'default_font': 'Helvetica'
-            }
-
-            # Préparation du contenu HTML
-            # Échapper les accolades dans le CSS en les doublant
-            html_content = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>@page {{ size: A4; margin: 1cm; }}</style>
-            </head>
-            <body>
-                {0}
-            </body>
-            </html>
-            """.format('<div style="page-break-after: always;"></div>'.join(html_sections))
-
-            # Génération du PDF
-            result = BytesIO()
-            pdf = pisa.pisaDocument(
-                BytesIO(html_content.encode('utf-8')),
-                result,
-                **pdf_options
-            )
-
-            if pdf.err:
-                error_msg = ', '.join(str(err) for err in pdf.log if err.severity > 40)
-                raise ValueError(f"Erreur Pisa: {error_msg}")
-
-            if not result.getvalue():
-                raise ValueError("Le PDF généré est vide")
-
-            # Préparation de la réponse
-            filename = f"Factures_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            response = HttpResponse(
-                result.getvalue(),
-                content_type='application/pdf'
-            )
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-            # Nettoyage final
-            del html_sections
-            del html_content
-            result.close()
-            gc.collect()
-
-            return response
-
-        except Exception as e:
-            logger.error(f"Erreur lors de la génération du PDF: {str(e)}", exc_info=True)
-            messages.error(request, "Une erreur est survenue lors de la génération du PDF final")
-            return redirect('facture')
+        # Retourner le task_id en JSON pour le suivi côté frontend
+        return JsonResponse({
+            'task_id': task.id,
+            'total_factures': len(facture_ids),
+            'message': 'Génération en cours...'
+        })
 
     except Exception as e:
-        logger.error(f"Erreur critique dans generate_multiple_pages_pdf: {str(e)}", exc_info=True)
-        messages.error(request, "Une erreur est survenue lors du traitement de votre demande")
+        logger.error(f"Erreur dans generate_multiple_pages_pdf: {str(e)}", exc_info=True)
+        messages.error(request, "Une erreur est survenue lors du lancement de la génération")
         return redirect('facture')
+
+
+@schema_use
+def check_pdf_task_status(request, task_id):
+    """Vérifie le statut d'une tâche Celery de génération PDF."""
+    from celery.result import AsyncResult
+    task = AsyncResult(task_id)
+
+    response_data = {
+        'task_id': task_id,
+        'status': task.status,
+    }
+
+    if task.status == 'PROGRESS':
+        response_data['progress'] = task.info
+    elif task.status == 'SUCCESS':
+        result = task.result
+        response_data['result'] = result
+    elif task.status == 'FAILURE':
+        response_data['error'] = str(task.result)
+
+    return JsonResponse(response_data)
+
+
+@schema_use
+def download_generated_pdf(request, filename):
+    """Endpoint pour télécharger un PDF généré par Celery."""
+    import os
+    from django.conf import settings
+
+    filepath = os.path.join(settings.MEDIA_ROOT, 'temp_pdf', filename)
+
+    if not os.path.exists(filepath):
+        messages.error(request, "Le fichier PDF n'existe plus. Veuillez relancer la génération.")
+        return redirect('facture')
+
+    with open(filepath, 'rb') as f:
+        response = HttpResponse(f.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # Supprimer le fichier après téléchargement
+    try:
+        os.remove(filepath)
+    except OSError:
+        pass
+
+    return response
 
 
 def paiement(id_releve, montant_payer, utilisateur):

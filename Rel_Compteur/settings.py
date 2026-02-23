@@ -28,6 +28,7 @@ SHARED_APPS = (
     'corsheaders',
     'Acommune',
     'Login',
+    'django_celery_results',
 )
 
 # Applications spécifiques aux tenants
@@ -223,13 +224,14 @@ SIMPLE_JWT = {
 }
 
 # Configurations de Celery
-# CELERY_BROKER_URL = 'redis://localhost:6379'
-# CELERY_RESULT_BACKEND = 'django-db'
-#
-# CELERY_ACCEPT_CONTENT = ['json']
-# CELERY_TASK_SERIALIZER = 'json'
-# CELERY_RESULT_SERIALIZER = 'json'
-# CELERY_TIMEZONE = 'UTC'
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Indian/Antananarivo'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 600  # 10 minutes max par tâche
 AUTH_USER_MODEL = "Tenants.Utilisateur"
 
 LOGGING = {
