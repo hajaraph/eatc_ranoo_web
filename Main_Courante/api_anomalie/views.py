@@ -54,14 +54,19 @@ class DeclareMaincourate(APIView):
 
             # Filtre par commune (API utilisée par les Releveurs)
             if request.user.cp_commune:
-                queryset = queryset.filter(cp_commune_id=request.user.cp_commune_id)
+                # Inclut les anciennes anomalies qui n'avaient pas de commune rattachée
+                queryset = queryset.filter(
+                    Q(cp_commune_id=request.user.cp_commune_id) | Q(cp_commune__isnull=True)
+                )
 
             main_courante_list = []
             commentaire_global = []
 
             for mc in queryset:
-                # Statut
-                statut_obj = mc.statuts.first()
+                # Statut (On utilise list(mc.statuts.all()) pour exploiter le prefetch_related et éviter les requêtes N+1)
+                statuts_list = list(mc.statuts.all())
+                statut_obj = statuts_list[0] if statuts_list else None
+                
                 is_realise = statut_obj.realise if statut_obj else False
                 is_en_cours = statut_obj.en_cours if statut_obj else False
                 
