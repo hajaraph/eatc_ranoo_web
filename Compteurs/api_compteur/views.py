@@ -204,15 +204,16 @@ class Missions(APIView):
                 )
 
         try:
-            # Appeler process_liste_mission avec les nouveaux paramètres
-            # Si on fait une synchro incrémentielle (modified_since présent), on bypass le cache pour avoir les données fraîches
+            # OPTIMISATION DELTA-SYNC : On délègue tout le filtre à PostgreSQL
+            # en lui passant modified_since. Le résultat ne contiendra QUE les éléments modifiés.
             result = await TaskMission.process_liste_mission(
                 cp_commune, 
                 end_of_month,
                 limit=limit,
                 offset=offset,
                 status_filter=status_filter,
-                bypass_cache=bool(modified_since)
+                bypass_cache=bool(modified_since),
+                modified_since=modified_since
             )
             
             if 'status' in result and result['status'] == 'error':
@@ -222,37 +223,7 @@ class Missions(APIView):
             has_more = result.get('has_more', False)
             total_count = result.get('total_count', len(missions_list))
             
-            # Filtrer par date de modification si demandé (delta sync)
-            if modified_since:
-                @sync_to_async
-                def filter_by_modified_since():
-                    # Récupérer les IDs des compteurs modifiés depuis la date
-                    modified_compteurs = Compteur.all_objects.filter(
-                        contrats__cp_commune_id=cp_commune,
-                        updated_at__gte=modified_since
-                    ).values_list('pk', flat=True)  # pk est num_compteur (str)
-                    
-                    # Récupérer les IDs des relevés modifiés - Utiliser num_compteur_id pour éviter jointure
-                    modified_releves_compteurs = ReleveCompteur.all_objects.filter(
-                        num_compteur__contrats__cp_commune_id=cp_commune,
-                        updated_at__gte=modified_since
-                    ).values_list('num_compteur_id', flat=True)
-                    
-                    # Combiner les deux sets et s'assurer que ce sont des strings
-                    all_modified = set(str(x) for x in modified_compteurs) | set(str(x) for x in modified_releves_compteurs)
-                    return list(all_modified)
-                
-                modified_ids = await filter_by_modified_since()
-                logger.info(f"Sync: {len(modified_ids)} compteurs modifiés trouvés depuis {modified_since}")
-                
-                # Filtrer la liste des missions
-                # On compare toujours en string pour éviter les problèmes de type
-                missions_list = [
-                    m for m in missions_list 
-                    if str(m.get('num_compteur', '')) in modified_ids
-                ]
-            
-            logger.info(f"Fin get /api/missions: {time.time() - start_time:.2f}s, {len(missions_list)} missions renvoyées")
+            logger.info(f"Fin get /api/missions (Delta Sync Optimisé SQL): {time.time() - start_time:.2f}s, {len(missions_list)} missions renvoyées")
             
             # Construire la réponse avec ou sans métadonnées de sync
             if include_sync_meta:

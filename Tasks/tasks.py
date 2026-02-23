@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404
 
 class TaskMission:
     @staticmethod
-    async def process_liste_mission(cp_commune, end_of_month, limit=None, offset=0, status_filter=None, bypass_cache=False):
+    async def process_liste_mission(cp_commune, end_of_month, limit=None, offset=0, status_filter=None, bypass_cache=False, modified_since=None):
         """
         Récupère la liste des missions (compteurs à relever) pour une commune.
         
@@ -29,18 +29,20 @@ class TaskMission:
             offset: Décalage pour la pagination
             status_filter: Filtrer par statut (0=non-relevé, 2=relevé)
             bypass_cache: Si True, force le recalcul sans utiliser le cache
+            modified_since: Date de dernière synchronisation (Delta Sync)
         
         Returns:
             dict avec 'liste', 'total_count', 'has_more'
         """
-        logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}, limit={limit}, offset={offset}, bypass_cache={bypass_cache}")
+        logger.info(f"Début process_liste_mission pour cp_commune={cp_commune}, limit={limit}, offset={offset}, bypass_cache={bypass_cache}, modified_since={modified_since}")
         
-        # Clé de cache inclut les paramètres de pagination
-        cache_key = f"missions_liste_{cp_commune}_{end_of_month.strftime('%Y%m%d')}_{limit}_{offset}_{status_filter}"
+        # Clé de cache inclut les paramètres de pagination et de date
+        date_str = modified_since.timestamp() if modified_since else '0'
+        cache_key = f"missions_liste_{cp_commune}_{end_of_month.strftime('%Y%m%d')}_{limit}_{offset}_{status_filter}_{date_str}"
 
         try:
             # Essayer de récupérer depuis le cache si on ne le bypass pas
-            if not bypass_cache:
+            if not bypass_cache and not modified_since:
                 cached_result = cache.get(cache_key)
                 if cached_result:
                     logger.info("Données récupérées depuis le cache")
@@ -49,7 +51,7 @@ class TaskMission:
             # Si pas dans le cache, calculer les données
             @sync_to_async
             def get_contrats():
-                from django.db.models import OuterRef, Subquery, Max as DjangoMax
+                from django.db.models import OuterRef, Subquery, Max as DjangoMax, Q
                 
                 with transaction.atomic():
                     # Sous-requête pour obtenir la dernière date de relevé (hors rejetés)
@@ -108,6 +110,14 @@ class TaskMission:
                             dernier_updated_at=Subquery(dernier_updated_at_subquery),
                         )
                     )
+                    
+                    # === OPTIMISATION MAJEURE DU DELTA SYNC ===
+                    if modified_since:
+                        # Demander uniquement les lignes modifiées à PostgreSQL
+                        contrats_queryset = contrats_queryset.filter(
+                            Q(num_compteur__updated_at__gte=modified_since) |
+                            Q(dernier_updated_at__gte=modified_since)
+                        )
                     
                     # Compter le total avant pagination
                     total_count = contrats_queryset.count()
@@ -187,12 +197,13 @@ class TaskMission:
 
             result = await get_contrats()
 
-            # Mettre en cache avec un timeout de 5 minutes
-            try:
-                cache.set(cache_key, result, timeout=300)  # 5 minutes
-                logger.info(f"Données mises en cache avec la clé: {cache_key}")
-            except Exception as cache_error:
-                logger.warning(f"Impossible de mettre en cache les résultats: {str(cache_error)}")
+            # Mettre en cache avec un timeout de 5 minutes (Seulement si ce n'est pas un delta_sync)
+            if not bypass_cache and not modified_since:
+                try:
+                    cache.set(cache_key, result, timeout=300)  # 5 minutes
+                    logger.info(f"Données mises en cache avec la clé: {cache_key}")
+                except Exception as cache_error:
+                    logger.warning(f"Impossible de mettre en cache les résultats: {str(cache_error)}")
 
             return result
 
