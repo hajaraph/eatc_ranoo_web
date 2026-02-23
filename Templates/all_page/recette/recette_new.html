@@ -15,11 +15,12 @@
                 </div>
             </div>
 
-            <!-- Localisation (Commune Directe) -->
+            <!-- Localisation (Commune Directe) - Visible uniquement pour les Administrateurs -->
+            {% if request.session.role_utilisateur == 'Administrateur' %}
             <div class="row mb-4">
                 <div class="col-md-6 col-sm-12">
                     <div class="form-floating">
-                        <select name="cp_commune" id="cp_commune_select"
+                        <select name="commune" id="cp_commune_select"
                             class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0"
                             required>
                             <option value="" selected hidden>Sélectionnez la commune</option>
@@ -31,6 +32,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Type de recette -->
             <div class="row mb-4">

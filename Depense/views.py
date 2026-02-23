@@ -92,13 +92,9 @@ class DepenseNew(SchemaAwareView):
         numero_recu = request.POST.get('numero_recu', '').strip() or None
         cp_commune_id = request.POST.get('commune')
         
-        # Fallback auto pour les non-admins si pas rempli
+        # Fallback auto pour les non-admins : utiliser la commune de la session
         if not cp_commune_id:
-            user_id = request.session.get('id_utilisateur')
-            if user_id:
-                user = Utilisateur.objects.filter(pk=user_id).first()
-                if user and user.role and user.role.role != 'Administrateur':
-                    cp_commune_id = user.cp_commune_id
+            cp_commune_id = request.session.get('cp_commune')
 
         # Basic validation
         errors = []
@@ -106,7 +102,10 @@ class DepenseNew(SchemaAwareView):
             errors.append("La date de la transaction est requise.")
         if not libelle:
             errors.append("Le libellé est requis.")
-        if not montant or float(montant) <= 0:
+        try:
+            if not montant or float(montant) <= 0:
+                errors.append("Un montant valide est requis.")
+        except (ValueError, TypeError):
             errors.append("Un montant valide est requis.")
         if not categorie_id:
             errors.append("Une catégorie doit être sélectionnée.")

@@ -68,9 +68,6 @@ def export_database(request):
         str(db_name)
     ]
     
-    # -b is implied for -Fc, but explicit for custom. For plain text (-Fp), -b is ignored/valid.
-    # Actually, -b is for selecting large objects in dump. 
-    # Let's keep it simple.
 
     def file_iterator(chunk_size=8192):
         try:

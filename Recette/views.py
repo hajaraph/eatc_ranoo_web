@@ -105,13 +105,9 @@ class RecetteCreateView(SchemaAwareView):
             description = request.POST.get('description', '').strip()
             cp_commune_id = request.POST.get('commune') # l'id de la commune venant du select name="cp_commune"
             
-            # Fallback auto pour les non-admins si pas rempli
+            # Fallback auto pour les non-admins : utiliser la commune de la session
             if not cp_commune_id:
-                user_id = request.session.get('id_utilisateur')
-                if user_id:
-                    user = Utilisateur.objects.get(pk=user_id)
-                    if user.role and user.role.role != 'Administrateur':
-                        cp_commune_id = user.cp_commune_id
+                cp_commune_id = request.session.get('cp_commune')
 
             # Basic validations
             if not date_encaissement_str or not type_recette or not montant_str:
