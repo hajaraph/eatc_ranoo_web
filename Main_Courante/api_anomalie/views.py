@@ -3,20 +3,17 @@ import logging
 
 from django.db import transaction
 from django.db.models import Q
-from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import permissions
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
-from asgiref.sync import async_to_sync, sync_to_async
 
 from Main_Courante.api_anomalie.serializer import MainCouranteSerializer, PhotosSerializer, SuivieSerializer
 from Main_Courante.models import MainCourante, StatutMC
 from Tenants.middleware import schema_use_api
-
-logger = logging.getLogger(__name__)
+from Rel_Compteur.api_utils import ApiResponse
 
 
 class DeclareMaincourate(APIView):
@@ -105,9 +102,6 @@ class DeclareMaincourate(APIView):
                     **photo_attributes,
                 })
 
-            duration = time.time() - start_time
-            logger.info(f"GET DeclareMaincourate: {len(main_courante_list)} items en {duration:.2f}s")
-
             # Réponse
             response_data = {
                 'main_courante_list': main_courante_list,
@@ -115,137 +109,109 @@ class DeclareMaincourate(APIView):
             }
 
             if include_sync_meta:
-                return JsonResponse({
-                    'success': True,
-                    'data': response_data,
-                    'sync': {'server_time': timezone.now().isoformat()}
-                })
+                return ApiResponse.sync_response(
+                    data=response_data,
+                    server_time=timezone.now().isoformat()
+                )
             else:
-                return JsonResponse(response_data)
+                return ApiResponse.success(data=response_data)
                 
         except Exception as e:
-            logger.error(f"Erreur GET DeclareMaincourate: {str(e)}", exc_info=True)
-            return JsonResponse({'error': str(e)}, status=500)
+            return ApiResponse.server_error(f"Erreur serveur: {str(e)}")
 
     @staticmethod
     @schema_use_api
-    @async_to_sync
-    async def post(request):
+    def post(request):
         """Crée une nouvelle anomalie."""
-        start_time = time.time()
-        logger.info("Début POST DeclareMaincourate")
-
         data = request.data
         date_declaration = data.get('date_declaration')
         type_anomalie = data.get('type_mc')
         
         if not date_declaration or not type_anomalie:
-            return JsonResponse({
-                'erreur': "Les champs 'date_declaration' et 'type_mc' sont requis"
-            }, status=400)
+            return ApiResponse.error(
+                "Les champs 'date_declaration' et 'type_mc' sont requis", 
+                code="MISSING_PARAM"
+            )
 
         try:
-            @sync_to_async
-            def save_main_courante():
-                with transaction.atomic():
-                    cp_commune = data.get('cp_commune')
-                    # Automatiser la commune (API utilisée par les Releveurs)
-                    if request.user.cp_commune:
-                        cp_commune = request.user.cp_commune_id
+            with transaction.atomic():
+                cp_commune = data.get('cp_commune')
+                # Automatiser la commune (API utilisée par les Releveurs)
+                if request.user.cp_commune:
+                    cp_commune = request.user.cp_commune_id
 
-                    maincourante_data = {
-                        'date_mc': date_declaration,
-                        'type_anomalie': type_anomalie,
-                        'longitude_mc': data.get('longitude_mc'),
-                        'latitude_mc': data.get('latitude_mc'),
-                        'description_mc': data.get('description_mc'),
-                        'client': data.get('client_declare'),
-                        'cp_commune': cp_commune,
-                        'utilisateur': request.user.id_utilisateur
-                    }
-                    serializer = MainCouranteSerializer(data=maincourante_data)
+                maincourante_data = {
+                    'date_mc': date_declaration,
+                    'type_anomalie': type_anomalie,
+                    'longitude_mc': data.get('longitude_mc'),
+                    'latitude_mc': data.get('latitude_mc'),
+                    'description_mc': data.get('description_mc'),
+                    'client': data.get('client_declare'),
+                    'cp_commune': cp_commune,
+                    'utilisateur': request.user.id_utilisateur
+                }
+                serializer = MainCouranteSerializer(data=maincourante_data)
 
-                    if not serializer.is_valid():
-                        return {'error': serializer.errors}
+                if not serializer.is_valid():
+                    return ApiResponse.error("Erreur de validation", code="VALIDATION_ERROR", details=serializer.errors)
 
-                    main_courante = serializer.save()
+                main_courante = serializer.save()
 
-                    # Photos
-                    for i in range(1, 6):
-                        photo_data = data.get(f'photo_anomalie_{i}')
-                        if photo_data:
-                            photo_serializer = PhotosSerializer(data={
-                                'photo_anomalie': photo_data,
-                                'main_courante': main_courante.pk
-                            })
-                            if not photo_serializer.is_valid():
-                                return {'error': photo_serializer.errors}
-                            photo_serializer.save()
+                # Photos
+                for i in range(1, 6):
+                    photo_data = data.get(f'photo_anomalie_{i}')
+                    if photo_data:
+                        photo_serializer = PhotosSerializer(data={
+                            'photo_anomalie': photo_data,
+                            'main_courante': main_courante.pk
+                        })
+                        if not photo_serializer.is_valid():
+                            return ApiResponse.error("Erreur de validation photo", code="VALIDATION_ERROR", details=photo_serializer.errors)
+                        photo_serializer.save()
 
-                    StatutMC.objects.create(
-                        main_courante_id=main_courante.pk,
-                        date_status=date_declaration
-                    )
-                    return {'success': True, 'id': main_courante.pk}
-
-            result = await save_main_courante()
-            
-            if 'error' in result:
-                logger.error(f"Erreur validation: {result['error']}")
-                return JsonResponse({'message': result['error']}, status=400)
-
-            logger.info(f"POST DeclareMaincourate OK en {time.time() - start_time:.2f}s")
-            return JsonResponse({'message': 'Données enregistrées avec succès', 'id': result['id']})
+                StatutMC.objects.create(
+                    main_courante_id=main_courante.pk,
+                    date_status=date_declaration
+                )
+                return ApiResponse.created(data={'id': main_courante.pk}, message="Données enregistrées avec succès")
 
         except Exception as e:
-            logger.error(f"Erreur POST DeclareMaincourate: {str(e)}", exc_info=True)
-            return JsonResponse({'erreur': f"Erreur serveur: {str(e)}"}, status=500)
+            return ApiResponse.server_error(f"Erreur serveur: {str(e)}")
 
 
 @api_view(['POST'])
 @schema_use_api
-@async_to_sync
-async def suivie_mc(request):
+@permission_classes([permissions.IsAuthenticated])
+def suivie_mc(request):
     """Ajoute un suivi/commentaire à une anomalie."""
-    start_time = time.time()
-
     statut = request.data.get('statut')
     id_mc = request.data.get('id_mc')
     date_suivie = request.data.get('date_suivie')
     commentaire_suivie = request.data.get('commentaire_suivie')
 
     if not all([statut, id_mc, date_suivie]):
-        return JsonResponse({
-            'erreur': "Les champs 'statut', 'id_mc' et 'date_suivie' sont requis"
-        }, status=400)
+        return ApiResponse.error(
+            "Les champs 'statut', 'id_mc' et 'date_suivie' sont requis", 
+            code="MISSING_PARAM"
+        )
 
     try:
-        @sync_to_async
-        def save_suivie():
-            with transaction.atomic():
-                if int(statut) != 1:
-                    return {'error': "Statut non valide !"}
-                    
-                serializer = SuivieSerializer(data={
-                    'date_suivie': date_suivie,
-                    'commentaire_suivie': commentaire_suivie,
-                    'main_courante': id_mc,
-                    'utilisateur': request.user.id_utilisateur
-                })
+        with transaction.atomic():
+            if int(statut) != 1:
+                return ApiResponse.error("Statut non valide !", code="INVALID_PARAM")
+                
+            serializer = SuivieSerializer(data={
+                'date_suivie': date_suivie,
+                'commentaire_suivie': commentaire_suivie,
+                'main_courante': id_mc,
+                'utilisateur': request.user.id_utilisateur
+            })
 
-                if not serializer.is_valid():
-                    return {'error': serializer.errors}
+            if not serializer.is_valid():
+                return ApiResponse.error("Erreur de validation", code="VALIDATION_ERROR", details=serializer.errors)
 
-                serializer.save()
-                return {'success': True}
-
-        result = await save_suivie()
-        
-        if 'error' in result:
-            return JsonResponse({'message': result['error']}, status=400)
-
-        return JsonResponse({'message': f'Commentaire MC ({id_mc}) enregistré avec succès'})
+            serializer.save()
+            return ApiResponse.success(message=f'Commentaire MC ({id_mc}) enregistré avec succès')
 
     except Exception as e:
-        logger.error(f"Erreur suivie_mc: {str(e)}", exc_info=True)
-        return JsonResponse({'erreur': f"Erreur serveur: {str(e)}"}, status=500)
+        return ApiResponse.server_error(f"Erreur serveur: {str(e)}")

@@ -33,8 +33,8 @@ from pandas.tseries.offsets import MonthEnd
 from ..views import relever, ReleveMod
 
 
-async def calculer_nombre_relever_effectuer(cp_commune_id):
-    # Calcul de la fin du mois actuel avec pandas (synchrone, pas besoin de @sync_to_async)
+def calculer_nombre_relever_effectuer(cp_commune_id):
+    # Calcul de la fin du mois actuel avec pandas
     end_of_month = (
         pd.to_datetime('now')
         .to_period('M')
@@ -42,76 +42,64 @@ async def calculer_nombre_relever_effectuer(cp_commune_id):
         + MonthEnd(0)
     )
 
-    # Encapsuler les opérations synchrones à la base de données
-    @sync_to_async
-    def get_counts():
-        # Nombre total de compteurs dans cette commune (via les contrats)
-        nombre_total_compteur = Contrat.objects.filter(
-            cp_commune_id=cp_commune_id
-        ).count()
+    # Nombre total de compteurs dans cette commune (via les contrats)
+    nombre_total_compteur = Contrat.objects.filter(
+        cp_commune_id=cp_commune_id
+    ).count()
 
-        # Compter les compteurs qui ont au moins un relevé ce mois-ci
-        nombre_relever_effectuer = ReleveCompteur.objects.filter(
-            num_compteur__contrats__cp_commune_id=cp_commune_id,
-            date_releve__month=end_of_month.month,
-            date_releve__year=end_of_month.year
-        ).values('num_compteur').distinct().count()
+    # Compter les compteurs qui ont au moins un relevé ce mois-ci
+    nombre_relever_effectuer = ReleveCompteur.objects.filter(
+        num_compteur__contrats__cp_commune_id=cp_commune_id,
+        date_releve__month=end_of_month.month,
+        date_releve__year=end_of_month.year
+    ).values('num_compteur').distinct().count()
 
-        # Calcul des factures
-        nombre_facture = Facture.objects.filter(
-            relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id
-        ).count()
+    # Calcul des factures
+    nombre_facture = Facture.objects.filter(
+        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id
+    ).count()
 
-        nombre_total_facture_payer = Facture.objects.filter(
-            relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
-            statut=True
-        ).count()
+    nombre_total_facture_payer = Facture.objects.filter(
+        relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
+        statut=True
+    ).count()
 
-        nombre_total_facture_impayer = nombre_facture - nombre_total_facture_payer
+    nombre_total_facture_impayer = nombre_facture - nombre_total_facture_payer
 
-        # Calculer le nombre de compteurs restants à relever
-        nombre_restant_a_relever = nombre_total_compteur - nombre_relever_effectuer
+    # Calculer le nombre de compteurs restants à relever
+    nombre_restant_a_relever = nombre_total_compteur - nombre_relever_effectuer
 
-        return (
-            nombre_total_compteur,
-            nombre_relever_effectuer,
-            nombre_restant_a_relever,
-            nombre_total_facture_impayer,
-            nombre_total_facture_payer
-        )
-
-    # Attendre les résultats des appels synchrones
-    return await get_counts()
+    return (
+        nombre_total_compteur,
+        nombre_relever_effectuer,
+        nombre_restant_a_relever,
+        nombre_total_facture_impayer,
+        nombre_total_facture_payer
+    )
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @schema_use_api
-@async_to_sync
-async def accueil(request):
+def accueil(request):
 
     cp_commune_id = request.user.cp_commune_id
 
-    # Encapsuler les appels synchrones à la base de données
-    @sync_to_async
-    def get_anomalie_counts():
-        non_traites = MainCourante.objects.filter(statuts__non_traite=True).count()
-        realises = MainCourante.objects.filter(statuts__realise=True).count()
-        en_courss = MainCourante.objects.filter(statuts__en_cours=True).count()
-        return non_traites, realises, en_courss
-
-    # Attendre les comptes d'anomalies
-    non_traite, realise, en_cours = await get_anomalie_counts()
+    # Comptes d'anomalies
+    non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
+    realise = MainCourante.objects.filter(statuts__realise=True).count()
+    en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
+    
     total_anomalie = non_traite + en_cours
 
-    # Appeler la fonction asynchrone pour les compteurs et factures
+    # Appeler la fonction pour les compteurs et factures
     (
         nombre_total_compteur,
         nombre_relever_effectuer,
         nombre_restant_a_relever,
         nombre_total_facture_impayer,
         nombre_total_facture_payer
-    ) = await calculer_nombre_relever_effectuer(cp_commune_id)
+    ) = calculer_nombre_relever_effectuer(cp_commune_id)
 
     response_data = {
         'non_traite': non_traite,
@@ -125,46 +113,37 @@ async def accueil(request):
         'nombre_total_facture_payer': nombre_total_facture_payer
     }
 
-    return JsonResponse(response_data)
+    return ApiResponse.success(data=response_data)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @schema_use_api
-@async_to_sync()
-async def relever_client(request):
+def relever_client(request):
     compteur_id = request.GET.get('num_compteur')
 
     if not compteur_id:
-        return JsonResponse({'erreur': "Le paramètre 'num_compteur' est requis"}, status=400)
+        return ApiResponse.error("Le paramètre 'num_compteur' est requis", code="MISSING_PARAM")
 
     try:
-        resultat = await process_compteur_details(compteur_id)
-        return JsonResponse(resultat, status=200)
+        resultat = process_compteur_details(compteur_id)
+        return ApiResponse.success(data=resultat)
     except ValueError as e:
-        return JsonResponse({'erreur': str(e)}, status=400)
+        return ApiResponse.error(str(e), code="VALIDATION_ERROR")
     except Exception as e:
-        return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
+        return ApiResponse.server_error(f"Erreur du serveur: {str(e)}")
 
 
 class Missions(APIView):
     """
     API pour les missions de relevé.
-    
-    GET: Récupère la liste des compteurs à relever
-        Paramètres optionnels:
-        - modified_since: ISO datetime - Retourne uniquement les modifications après cette date (delta sync)
-        - include_sync_meta: bool - Inclure les métadonnées de synchronisation (défaut: true)
-    
-    POST: Enregistre un nouveau relevé
     """
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
     @staticmethod
     @schema_use_api
-    @async_to_sync
-    async def get(request):
+    def get(request):
         """
         Récupère la liste des missions (compteurs à relever).
         
@@ -175,8 +154,6 @@ class Missions(APIView):
         - offset: int (défaut: 0) - Décalage pour la pagination
         - status: int (0 ou 2) - Filtrer par statut (0=non-relevé, 2=relevé)
         """
-        logger.info("Début get /api/missions")
-        start_time = time.time()
         cp_commune = request.user.cp_commune_id
         end_of_month = pd.to_datetime('now').to_period('M').to_timestamp() + MonthEnd(0)
         
@@ -206,7 +183,7 @@ class Missions(APIView):
         try:
             # OPTIMISATION DELTA-SYNC : On délègue tout le filtre à PostgreSQL
             # en lui passant modified_since. Le résultat ne contiendra QUE les éléments modifiés.
-            result = await TaskMission.process_liste_mission(
+            result = TaskMission.process_liste_mission(
                 cp_commune, 
                 end_of_month,
                 limit=limit,
@@ -223,8 +200,6 @@ class Missions(APIView):
             has_more = result.get('has_more', False)
             total_count = result.get('total_count', len(missions_list))
             
-            logger.info(f"Fin get /api/missions (Delta Sync Optimisé SQL): {time.time() - start_time:.2f}s, {len(missions_list)} missions renvoyées")
-            
             # Construire la réponse avec ou sans métadonnées de sync
             if include_sync_meta:
                 return ApiResponse.sync_response(
@@ -240,96 +215,78 @@ class Missions(APIView):
                 )
             else:
                 # Format de réponse original pour compatibilité
-                return Response({'compteurs_liste': missions_list}, status=status.HTTP_200_OK)
+                return ApiResponse.success(data={'compteurs_liste': missions_list})
                 
         except Exception as e:
-            logger.error(f"Erreur inattendue: {str(e)}", exc_info=True)
             return ApiResponse.error(f"Erreur du serveur: {str(e)}", code="SERVER_ERROR", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @staticmethod
     @schema_use_api
-    @async_to_sync
-    async def post(request):
-        logger.info("Début de la requête POST /api/missions")
-
-        # Accès à request.user dans un contexte synchrone grâce à @async_to_sync
+    def post(request):
         utilisateur = request.user.id_utilisateur
-        serializer = await sync_to_async(MissionSerializer)(instance=None, data=request.data)
+        serializer = MissionSerializer(instance=None, data=request.data)
 
-        is_valid = await sync_to_async(serializer.is_valid)(raise_exception=False)
-        if not is_valid:
-            errors = await sync_to_async(lambda: serializer.errors)()
-            return JsonResponse({'erreur': errors}, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid(raise_exception=False):
+            return ApiResponse.error("Erreur de validation", code="VALIDATION_ERROR", details=serializer.errors)
 
         try:
-            @sync_to_async
-            def process_post():
-                with transaction.atomic():
-                    validated_data = serializer.validated_data
-                    id_releve = validated_data.get('releve_id')
-                    compteur_id = validated_data.get('num_compteur')
-                    date_releve = validated_data.get('date_releve')
-                    volume = validated_data.get('volume')
-                    image_compteur = request.FILES.get('image_compteur')
+            with transaction.atomic():
+                validated_data = serializer.validated_data
+                id_releve = validated_data.get('releve_id')
+                compteur_id = validated_data.get('num_compteur')
+                date_releve = validated_data.get('date_releve')
+                volume = validated_data.get('volume')
+                image_compteur = request.FILES.get('image_compteur')
 
-                    if id_releve is not None:
-                        compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
-                        dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
+                if id_releve is not None:
+                    compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
+                    dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
 
-                        if dernier_releve.volume >= volume:
-                            return JsonResponse({
-                                'erreur': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"
-                            }, status=status.HTTP_400_BAD_REQUEST)
+                    if dernier_releve.volume >= volume:
+                        return ApiResponse.error("Assurez-vous d'envoyer les chiffres correctement et réessayez !", code="INVALID_VOLUME")
 
-                        if date_releve <= dernier_releve.date_releve:
-                            return JsonResponse({'erreur': "Veuillez fournir une date valide"},
-                                                status=status.HTTP_400_BAD_REQUEST)
+                    if date_releve <= dernier_releve.date_releve:
+                        return ApiResponse.error("Veuillez fournir une date valide", code="INVALID_DATE")
 
-                        mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
-                                                                   image_compteur, dernier_releve)
-                        # La facture sera créée lors de la confirmation par le gestionnaire
-                        # facture_creation(date_releve, compteur.num_compteur, mod_releve)
-                        
-                        # Retourner avec les métadonnées de sync
-                        return {
-                            'success': True,
-                            'enregistre': 'Mise à jour effectuée avec succès !',
-                            'id_releve': mod_releve.id_releve,
-                            'sync_id': str(mod_releve.sync_id),
-                            'version': mod_releve.version,
-                        }
+                    mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
+                                                               image_compteur, dernier_releve)
+                    # La facture sera créée lors de la confirmation par le gestionnaire
+                    
+                    # Retourner avec les métadonnées de sync
+                    result = {
+                        'success': True,
+                        'enregistre': 'Mise à jour effectuée avec succès !',
+                        'id_releve': mod_releve.id_releve,
+                        'sync_id': str(mod_releve.sync_id),
+                        'version': mod_releve.version,
+                    }
 
+                else:
+                    if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
+                        return ApiResponse.error("La date de relevé existe déjà dans la base de données", code="DUPLICATE_DATE")
+
+                    dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
+
+                    if dernier_volume:
+                        if date_releve <= dernier_volume.date_releve:
+                            return ApiResponse.error("Veuillez fournir une date valide", code="INVALID_DATE")
+
+                        if dernier_volume.volume > volume:
+                            return ApiResponse.error("Assurez-vous de saisir les chiffres correctement et réessayez !", code="INVALID_VOLUME")
+
+                        conso = volume - dernier_volume.volume
                     else:
-                        if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
-                            return JsonResponse({'erreur': "La date de relevé existe déjà dans la base de données"},
-                                                status=status.HTTP_400_BAD_REQUEST)
+                        conso = volume
 
-                        dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
-
-                        if dernier_volume:
-                            if date_releve <= dernier_volume.date_releve:
-                                return JsonResponse({'erreur': "Veuillez fournir une date valide"},
-                                                    status=status.HTTP_400_BAD_REQUEST)
-
-                            if dernier_volume.volume > volume:
-                                return JsonResponse({
-                                    'erreur': "Assurez-vous de saisir les chiffres correctement et réessayez !"
-                                }, status=status.HTTP_400_BAD_REQUEST)
-
-                            conso = volume - dernier_volume.volume
-                        else:
-                            conso = volume
-
-                        releve = relever(dernier_volume.num_compteur_id, date_releve,
-                                         volume, conso, image_compteur, utilisateur)
-                        # La facture sera créée lors de la confirmation par le gestionnaire
-                        # facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+                    releve = relever(dernier_volume.num_compteur_id, date_releve,
+                                     volume, conso, image_compteur, utilisateur)
+                    # La facture sera créée lors de la confirmation par le gestionnaire
 
                     historique = f"Relevé du compteur {compteur_id} en attente de validation"
                     enregistre_historique(historique, utilisateur)
                     
                     # Retourner avec les métadonnées de sync
-                    return {
+                    result = {
                         'success': True,
                         'enregistre': True,
                         'id_releve': releve.id_releve,
@@ -337,8 +294,6 @@ class Missions(APIView):
                         'version': releve.version,
                     }
 
-            result = await process_post()
-            
             # Si c'est un dict de succès, retourner avec ApiResponse
             if isinstance(result, dict) and result.get('success'):
                 return ApiResponse.created(data={
@@ -348,12 +303,10 @@ class Missions(APIView):
                     'version': result.get('version'),
                 })
             
-            # Sinon c'est une JsonResponse d'erreur
             return result
         except ValueError as e:
             return ApiResponse.error(str(e), code="VALIDATION_ERROR")
         except Exception as e:
-            logger.error(f"Erreur inattendue dans post: {str(e)}", exc_info=True)
             return ApiResponse.error(f"Erreur du serveur: {str(e)}", code="SERVER_ERROR", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -363,62 +316,48 @@ class FactureDetail(APIView):
 
     @staticmethod
     @schema_use_api
-    @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
-    async def get(request):
+    def get(request):
         id_releve = request.GET.get('id_releve')
         if not id_releve:
-            logger.error("Paramètre 'id_releve' manquant dans la requête GET")
-            return JsonResponse({'erreur': "Le paramètre 'id_releve' est requis"}, status=400)
+            return ApiResponse.error("Le paramètre 'id_releve' est requis", code="MISSING_PARAM")
 
         try:
-            logger.info(f"Début GET pour id_releve={id_releve}")
-            resultat = await TaskFactureDetail.process_facture_list(id_releve)
-            logger.info(f"Fin GET pour id_releve={id_releve}")
+            resultat = TaskFactureDetail.process_facture_list(id_releve)
 
             if resultat.get('status') == 'error':
-                return JsonResponse({'erreur': resultat['message']}, status=400)
-            return JsonResponse({'facture': resultat}, status=200)
+                return ApiResponse.error(resultat['message'], code="PROCESSING_ERROR")
+            return ApiResponse.success(data={'facture': resultat})
 
         except ValueError as e:
-            logger.error(f"Erreur de valeur dans GET: {str(e)}")
-            return JsonResponse({'erreur': str(e)}, status=400)
+            return ApiResponse.error(str(e), code="VALIDATION_ERROR")
         except Exception as e:
-            logger.error(f"Erreur inattendue dans GET: {str(e)}", exc_info=True)
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
+            return ApiResponse.server_error(f"Erreur du serveur: {str(e)}")
 
     @staticmethod
     @schema_use_api
-    @async_to_sync  # Ajouté pour adapter la vue asynchrone à DRF
-    async def post(request):
+    def post(request):
         id_releve = request.data.get('relevecompteur_id')
-        logger.info(id_releve)
         try:
             montant_payer = float(request.data.get('paiement'))
         except (TypeError, ValueError):
-            logger.error("Paramètre 'paiement' invalide ou manquant dans la requête POST")
-            return JsonResponse({'erreur': "Le paramètre 'paiement' doit être un nombre valide"}, status=400)
+            return ApiResponse.error("Le paramètre 'paiement' doit être un nombre valide", code="INVALID_PARAM")
 
         utilisateur = request.user.id_utilisateur
 
         if not id_releve:
-            logger.error("Paramètre 'relevecompteur_id' manquant dans la requête POST")
-            return JsonResponse({'erreur': "Le paramètre 'relevecompteur_id' est requis"}, status=400)
+            return ApiResponse.error("Le paramètre 'relevecompteur_id' est requis", code="MISSING_PARAM")
 
         try:
-            logger.info(f"Début POST pour id_releve={id_releve}")
-            resultat = await TaskFactureDetail.process_facture_paiement(id_releve, montant_payer, utilisateur)
-            logger.info(f"Fin POST pour id_releve={id_releve}")
+            resultat = TaskFactureDetail.process_facture_paiement(id_releve, montant_payer, utilisateur)
 
             if resultat.get('status') == 'error':
-                return JsonResponse({'erreur': resultat['message']}, status=400)
-            return JsonResponse(resultat, status=200)
+                return ApiResponse.error(resultat['message'], code="PROCESSING_ERROR")
+            return ApiResponse.success(data=resultat)
 
         except ValueError as e:
-            logger.error(f"Erreur de valeur dans POST: {str(e)}")
-            return JsonResponse({'erreur': str(e)}, status=400)
+            return ApiResponse.error(str(e), code="VALIDATION_ERROR")
         except Exception as e:
-            logger.error(f"Erreur inattendue dans POST: {str(e)}", exc_info=True)
-            return JsonResponse({'erreur': f"Erreur du serveur: {str(e)}"}, status=500)
+            return ApiResponse.server_error(f"Erreur du serveur: {str(e)}")
 
 
 def get_missions_details(toutes_missions):

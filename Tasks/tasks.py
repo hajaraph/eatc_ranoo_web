@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404
 
 class TaskMission:
     @staticmethod
-    async def process_liste_mission(cp_commune, end_of_month, limit=None, offset=0, status_filter=None, bypass_cache=False, modified_since=None):
+    def process_liste_mission(cp_commune, end_of_month, limit=None, offset=0, status_filter=None, bypass_cache=False, modified_since=None):
         """
         Récupère la liste des missions (compteurs à relever) pour une commune.
         
@@ -49,153 +49,149 @@ class TaskMission:
                     return cached_result
 
             # Si pas dans le cache, calculer les données
-            @sync_to_async
-            def get_contrats():
-                from django.db.models import OuterRef, Subquery, Max as DjangoMax, Q
+            from django.db.models import OuterRef, Subquery, Max as DjangoMax, Q
+            
+            with transaction.atomic():
+                # Sous-requête pour obtenir la dernière date de relevé (hors rejetés)
+                dernier_releve_subquery = ReleveCompteur.objects.filter(
+                    num_compteur=OuterRef('num_compteur')
+                ).exclude(statut_validation='REJETE').order_by('-date_releve').values('date_releve')[:1]
+                    
+                # Sous-requête pour obtenir le dernier volume (hors rejetés)
+                dernier_volume_subquery = ReleveCompteur.objects.filter(
+                    num_compteur=OuterRef('num_compteur')
+                ).exclude(statut_validation='REJETE').order_by('-date_releve').values('volume')[:1]
                 
-                with transaction.atomic():
-                    # Sous-requête pour obtenir la dernière date de relevé (hors rejetés)
-                    dernier_releve_subquery = ReleveCompteur.objects.filter(
-                        num_compteur=OuterRef('num_compteur')
-                    ).exclude(statut_validation='REJETE').order_by('-date_releve').values('date_releve')[:1]
-                    
-                    # Sous-requête pour obtenir le dernier volume (hors rejetés)
-                    dernier_volume_subquery = ReleveCompteur.objects.filter(
-                        num_compteur=OuterRef('num_compteur')
-                    ).exclude(statut_validation='REJETE').order_by('-date_releve').values('volume')[:1]
-                    
-                    # Sous-requête pour obtenir le dernier ID de relevé (hors rejetés)
-                    dernier_releve_id_subquery = ReleveCompteur.objects.filter(
-                        num_compteur=OuterRef('num_compteur')
-                    ).exclude(statut_validation='REJETE').order_by('-date_releve').values('id_releve')[:1]
-                    
-                    # Sous-requête pour obtenir la dernière consommation (hors rejetés)
-                    dernier_conso_subquery = ReleveCompteur.objects.filter(
-                        num_compteur=OuterRef('num_compteur')
-                    ).exclude(statut_validation='REJETE').order_by('-date_releve').values('conso')[:1]
-                    
-                    # Sous-requête pour obtenir le statut de validation du dernier relevé (y compris rejeté)
-                    dernier_statut_validation_subquery = ReleveCompteur.objects.filter(
-                        num_compteur=OuterRef('num_compteur')
-                    ).order_by('-created_at').values('statut_validation')[:1]
+                # Sous-requête pour obtenir le dernier ID de relevé (hors rejetés)
+                dernier_releve_id_subquery = ReleveCompteur.objects.filter(
+                    num_compteur=OuterRef('num_compteur')
+                ).exclude(statut_validation='REJETE').order_by('-date_releve').values('id_releve')[:1]
+                
+                # Sous-requête pour obtenir la dernière consommation (hors rejetés)
+                dernier_conso_subquery = ReleveCompteur.objects.filter(
+                    num_compteur=OuterRef('num_compteur')
+                ).exclude(statut_validation='REJETE').order_by('-date_releve').values('conso')[:1]
+                
+                # Sous-requête pour obtenir le statut de validation du dernier relevé (y compris rejeté)
+                dernier_statut_validation_subquery = ReleveCompteur.objects.filter(
+                    num_compteur=OuterRef('num_compteur')
+                ).order_by('-created_at').values('statut_validation')[:1]
 
-                    # Sous-requête pour obtenir le motif de rejet du dernier relevé (y compris rejeté)
-                    dernier_motif_rejet_subquery = ReleveCompteur.objects.filter(
-                        num_compteur=OuterRef('num_compteur')
-                    ).order_by('-created_at').values('motif_rejet')[:1]
+                # Sous-requête pour obtenir le motif de rejet du dernier relevé (y compris rejeté)
+                dernier_motif_rejet_subquery = ReleveCompteur.objects.filter(
+                    num_compteur=OuterRef('num_compteur')
+                ).order_by('-created_at').values('motif_rejet')[:1]
 
-                    # Sous-requête pour savoir si le dernier relevé créé est supprimé (soft deleted)
-                    dernier_is_deleted_subquery = ReleveCompteur.all_objects.filter(
-                        num_compteur=OuterRef('num_compteur')
-                    ).order_by('-created_at').values('is_deleted')[:1]
+                # Sous-requête pour savoir si le dernier relevé créé est supprimé (soft deleted)
+                dernier_is_deleted_subquery = ReleveCompteur.all_objects.filter(
+                    num_compteur=OuterRef('num_compteur')
+                ).order_by('-created_at').values('is_deleted')[:1]
 
-                    # Sous-requête pour obtenir la date de dernière modification (y compris supprimés) pour la sync
-                    dernier_updated_at_subquery = ReleveCompteur.all_objects.filter(
-                        num_compteur=OuterRef('num_compteur')
-                    ).order_by('-updated_at').values('updated_at')[:1]
-                    
-                    # Requête principale optimisée avec sous-requêtes
-                    contrats_queryset = (
-                        Contrat.objects
-                        .filter(cp_commune_id=cp_commune)
-                        .select_related('client', 'num_compteur')
-                        .annotate(
-                            dernier_releve_date=Subquery(dernier_releve_subquery),
-                            dernier_volume=Subquery(dernier_volume_subquery),
-                            dernier_releve_id=Subquery(dernier_releve_id_subquery),
-                            dernier_conso=Subquery(dernier_conso_subquery),
-                            dernier_statut_validation=Subquery(dernier_statut_validation_subquery),
-                            dernier_motif_rejet=Subquery(dernier_motif_rejet_subquery),
-                            dernier_is_deleted=Subquery(dernier_is_deleted_subquery),
-                            dernier_updated_at=Subquery(dernier_updated_at_subquery),
-                        )
+                # Sous-requête pour obtenir la date de dernière modification (y compris supprimés) pour la sync
+                dernier_updated_at_subquery = ReleveCompteur.all_objects.filter(
+                    num_compteur=OuterRef('num_compteur')
+                ).order_by('-updated_at').values('updated_at')[:1]
+                
+                # Requête principale optimisée avec sous-requêtes
+                contrats_queryset = (
+                    Contrat.objects
+                    .filter(cp_commune_id=cp_commune)
+                    .select_related('client', 'num_compteur')
+                    .annotate(
+                        dernier_releve_date=Subquery(dernier_releve_subquery),
+                        dernier_volume=Subquery(dernier_volume_subquery),
+                        dernier_releve_id=Subquery(dernier_releve_id_subquery),
+                        dernier_conso=Subquery(dernier_conso_subquery),
+                        dernier_statut_validation=Subquery(dernier_statut_validation_subquery),
+                        dernier_motif_rejet=Subquery(dernier_motif_rejet_subquery),
+                        dernier_is_deleted=Subquery(dernier_is_deleted_subquery),
+                        dernier_updated_at=Subquery(dernier_updated_at_subquery),
                     )
+                )
+                
+                # === OPTIMISATION MAJEURE DU DELTA SYNC ===
+                if modified_since:
+                    # Demander uniquement les lignes modifiées à PostgreSQL
+                    contrats_queryset = contrats_queryset.filter(
+                        Q(num_compteur__updated_at__gte=modified_since) |
+                        Q(dernier_updated_at__gte=modified_since)
+                    )
+                
+                # Compter le total avant pagination
+                total_count = contrats_queryset.count()
+                
+                # Appliquer la pagination
+                if limit is not None:
+                    contrats_commune = list(contrats_queryset[offset:offset + limit])
+                    has_more = (offset + limit) < total_count
+                else:
+                    contrats_commune = list(contrats_queryset)
+                    has_more = False
+
+                liste_contrats_info = []
+                for contrat in contrats_commune:
+                    date_releve = contrat.dernier_releve_date if contrat.dernier_releve_date else None
                     
-                    # === OPTIMISATION MAJEURE DU DELTA SYNC ===
-                    if modified_since:
-                        # Demander uniquement les lignes modifiées à PostgreSQL
-                        contrats_queryset = contrats_queryset.filter(
-                            Q(num_compteur__updated_at__gte=modified_since) |
-                            Q(dernier_updated_at__gte=modified_since)
-                        )
-                    
-                    # Compter le total avant pagination
-                    total_count = contrats_queryset.count()
-                    
-                    # Appliquer la pagination
-                    if limit is not None:
-                        contrats_commune = list(contrats_queryset[offset:offset + limit])
-                        has_more = (offset + limit) < total_count
+                    # Calculer le statut
+                    # 0 = non-relevé ce mois, 2 = relevé ce mois
+                    if date_releve and hasattr(date_releve, 'month') and date_releve.month == end_of_month.month:
+                        statut = 2  # Déjà relevé ce mois
                     else:
-                        contrats_commune = list(contrats_queryset)
-                        has_more = False
-
-                    liste_contrats_info = []
-                    for contrat in contrats_commune:
-                        date_releve = contrat.dernier_releve_date if contrat.dernier_releve_date else None
-                        
-                        # Calculer le statut
-                        # 0 = non-relevé ce mois, 2 = relevé ce mois
-                        if date_releve and hasattr(date_releve, 'month') and date_releve.month == end_of_month.month:
-                            statut = 2  # Déjà relevé ce mois
-                        else:
-                            statut = 0  # Pas encore relevé ce mois
-                        
-                        # Filtrer par statut si demandé
-                        if status_filter is not None and statut != status_filter:
-                            continue
-
-                        # S'assurer que l'ID est toujours un entier
-                        releve_id = 0
-                        if contrat.dernier_releve_id:
-                            try:
-                                releve_id = int(contrat.dernier_releve_id)
-                            except (ValueError, TypeError):
-                                releve_id = 0
-
-                        # Calcul du updated_at global (Max entre compteur et dernier mouvement de relevé)
-                        compteur_updated_at = contrat.num_compteur.updated_at
-                        releve_updated_at = contrat.dernier_updated_at
-                        
-                        final_updated_at = compteur_updated_at
-                        if releve_updated_at and releve_updated_at > compteur_updated_at:
-                            final_updated_at = releve_updated_at
-
-                        contrat_info = {
-                            'id': releve_id,
-                            'nom_client': contrat.client.nom_client,
-                            'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
-                            'adresse_client': contrat.client.adresse_client,
-                            'num_compteur': contrat.num_compteur_id,
-                            'conso_dernier_releve': contrat.dernier_conso or 0,
-                            'volume_dernier_releve': contrat.dernier_volume or 0,
-                            'date_releve': contrat.dernier_releve_date if contrat.dernier_releve_date else '',
-                            'statut': statut,
-                            'statut_validation': contrat.dernier_statut_validation,
-                            'motif_rejet': contrat.dernier_motif_rejet,
-                            'last_is_deleted': contrat.dernier_is_deleted,
-                            'is_deleted': getattr(contrat.num_compteur, 'is_deleted', False),
-                            'updated_at': final_updated_at.isoformat() if final_updated_at else None
-                        }
-                        liste_contrats_info.append(contrat_info)
-
-                    # Trier la liste par ID
-                    liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
+                        statut = 0  # Pas encore relevé ce mois
                     
-                    # Si on a filtré par statut, recalculer has_more
-                    if status_filter is not None:
-                        has_more = False  # On ne peut pas savoir facilement avec le filtre
+                    # Filtrer par statut si demandé
+                    if status_filter is not None and statut != status_filter:
+                        continue
 
-                    return {
-                        'liste': liste_contrats_info,
-                        'total_count': total_count,
-                        'returned_count': len(liste_contrats_info),
-                        'has_more': has_more,
-                        'offset': offset,
-                        'limit': limit,
+                    # S'assurer que l'ID est toujours un entier
+                    releve_id = 0
+                    if contrat.dernier_releve_id:
+                        try:
+                            releve_id = int(contrat.dernier_releve_id)
+                        except (ValueError, TypeError):
+                            releve_id = 0
+
+                    # Calcul du updated_at global (Max entre compteur et dernier mouvement de relevé)
+                    compteur_updated_at = contrat.num_compteur.updated_at
+                    releve_updated_at = contrat.dernier_updated_at
+                    
+                    final_updated_at = compteur_updated_at
+                    if releve_updated_at and releve_updated_at > compteur_updated_at:
+                        final_updated_at = releve_updated_at
+
+                    contrat_info = {
+                        'id': releve_id,
+                        'nom_client': contrat.client.nom_client,
+                        'prenom_client': contrat.client.prenom_client if contrat.client.prenom_client else '',
+                        'adresse_client': contrat.client.adresse_client,
+                        'num_compteur': contrat.num_compteur_id,
+                        'conso_dernier_releve': contrat.dernier_conso or 0,
+                        'volume_dernier_releve': contrat.dernier_volume or 0,
+                        'date_releve': contrat.dernier_releve_date if contrat.dernier_releve_date else '',
+                        'statut': statut,
+                        'statut_validation': contrat.dernier_statut_validation,
+                        'motif_rejet': contrat.dernier_motif_rejet,
+                        'last_is_deleted': contrat.dernier_is_deleted,
+                        'is_deleted': getattr(contrat.num_compteur, 'is_deleted', False),
+                        'updated_at': final_updated_at.isoformat() if final_updated_at else None
                     }
+                    liste_contrats_info.append(contrat_info)
 
-            result = await get_contrats()
+                # Trier la liste par ID
+                liste_contrats_info = sorted(liste_contrats_info, key=lambda x: x['id'])
+                
+                # Si on a filtré par statut, recalculer has_more
+                if status_filter is not None:
+                    has_more = False  # On ne peut pas savoir facilement avec le filtre
+
+            result = {
+                'liste': liste_contrats_info,
+                'total_count': total_count,
+                'returned_count': len(liste_contrats_info),
+                'has_more': has_more,
+                'offset': offset,
+                'limit': limit,
+            }
 
             # Mettre en cache avec un timeout de 5 minutes (Seulement si ce n'est pas un delta_sync)
             if not bypass_cache and not modified_since:
@@ -213,130 +209,115 @@ class TaskMission:
 
 
     @staticmethod
-    async def process_releve(data, utilisateur):
-        # Serializer reste synchrone, on l'encapsule
-        serializer = await sync_to_async(MissionSerializer)(instance=None, data=data)
+    def process_releve(data, utilisateur):
+        serializer = MissionSerializer(instance=None, data=data)
 
-        # Valider le serializer dans un thread
-        is_valid = await sync_to_async(serializer.is_valid)(raise_exception=False)
-        if not is_valid:
-            errors = await sync_to_async(lambda: serializer.errors)()
-            return {'status': 'error', 'message': errors}
+        if not serializer.is_valid(raise_exception=False):
+            return {'status': 'error', 'message': serializer.errors}
 
         try:
-            # Encapsuler la logique synchrone dans un thread
-            @sync_to_async
-            def process():
-                with transaction.atomic():
-                    validated_data = serializer.validated_data
-                    compteur_id = validated_data.get('num_compteur')
-                    date_releve = validated_data.get('date_releve')
-                    volume = validated_data.get('volume')
-                    image_compteur = validated_data.get('image_compteur')
+            with transaction.atomic():
+                validated_data = serializer.validated_data
+                compteur_id = validated_data.get('num_compteur')
+                date_releve = validated_data.get('date_releve')
+                volume = validated_data.get('volume')
+                image_compteur = validated_data.get('image_compteur')
 
-                    if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
-                        return {'status': 'error', 'message': "La date de relevé existe déjà dans la base de données"}
+                if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
+                    return {'status': 'error', 'message': "La date de relevé existe déjà dans la base de données"}
 
-                    dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
+                dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
 
-                    if dernier_volume:
-                        if date_releve <= dernier_volume.date_releve:
-                            return {'status': 'error', 'message': "Veuillez fournir une date valide"}
+                if dernier_volume:
+                    if date_releve <= dernier_volume.date_releve:
+                        return {'status': 'error', 'message': "Veuillez fournir une date valide"}
 
-                        if dernier_volume.volume > volume:
-                            return {'status': 'error', 'message': "Assurez-vous de saisir les chiffres correctement et réessayez !"}
+                    if dernier_volume.volume > volume:
+                        return {'status': 'error', 'message': "Assurez-vous de saisir les chiffres correctement et réessayez !"}
 
-                        conso = volume - dernier_volume.volume
-                    else:
-                        conso = volume
+                    conso = volume - dernier_volume.volume
+                else:
+                    conso = volume
 
-                    releve = relever(dernier_volume.num_compteur_id, date_releve, volume, conso, image_compteur, utilisateur)
-                    facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
+                releve = relever(dernier_volume.num_compteur_id, date_releve, volume, conso, image_compteur, utilisateur)
+                facture_creation(date_releve, dernier_volume.num_compteur_id, releve)
 
-                    historique = f"Relever et Facture d'un compteur {compteur_id}"
-                    enregistre_historique(historique, utilisateur)
+                historique = f"Relever et Facture d'un compteur {compteur_id}"
+                enregistre_historique(historique, utilisateur)
 
-                    return {'status': 'success', 'message': 'Relevé enregistré avec succès !'}
+                return {'status': 'success', 'message': 'Relevé enregistré avec succès !'}
 
-            result = await process()
-            return result
         except ValueError as e:
             return {'status': 'error', 'message': str(e)}
         except Exception as e:
             return {'status': 'error', 'message': f"Erreur du serveur: {str(e)}"}
 
 
-async def process_compteur_details(compteur_id):
+def process_compteur_details(compteur_id):
     try:
-        # Encapsuler les opérations synchrones dans un thread
-        @sync_to_async
-        def get_details():
-            with transaction.atomic():
-                # Récupérer le compteur
-                compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
-                compteur_info = {
-                    'id': int(compteur.num_compteur),
-                    'marque': compteur.marque_compteur,
-                    'modele': compteur.modele_compteur,
+        with transaction.atomic():
+            # Récupérer le compteur
+            compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
+            compteur_info = {
+                'id': int(compteur.num_compteur),
+                'marque': compteur.marque_compteur,
+                'modele': compteur.modele_compteur,
+            }
+
+            # Récupérer le contrat
+            contrat = get_object_or_404(Contrat, num_compteur=compteur_id)
+            num_contrat_match = re.search(r'\d+', contrat.num_contrat)
+            if not num_contrat_match:
+                raise ValueError("Numéro de contrat invalide : aucun chiffre trouvé")
+            num_contrat = num_contrat_match.group()
+
+            contrat_info = {
+                'id': int(num_contrat),
+                'numero_contrat': contrat.num_contrat,
+                'date_debut': contrat.date_debut,
+                'date_fin': contrat.date_fin,
+                'adresse_contrat': contrat.adresse_contrat,
+                'pays_contrat': contrat.pays_contrat,
+            }
+
+            # Récupérer le client
+            client = contrat.client
+            client_info = {
+                'id': client.num_client,
+                'nom': client.nom_client,
+                'prenom': client.prenom_client or '',
+                'adresse': client.adresse_client,
+                'commune': client.cp_commune.commune,
+                'region': client.cp_commune.region.region,
+                'telephone1': client.tel1_client,
+                'telephone2': client.tel2_client or '',
+                'actif': client.compte_actif
+            }
+
+            # Récupérer les relevés
+            releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
+            releves_list = [
+                {
+                    'id': int(releve.id_releve),
+                    'id_releve': int(releve.id_releve),
+                    'compteur_id': int(compteur.num_compteur),
+                    'contrat_id': int(num_contrat),
+                    'client_id': int(client.num_client),
+                    'date_releve': releve.date_releve,
+                    'volume': releve.volume,
+                    'conso': releve.conso,
+                    'image_compteur': releve.image_compteur.url if releve.image_compteur else None,
+                    'etatFacture': 'Payé' if (facture := Facture.objects.filter(relevecompteur=releve).first()) and facture.statut else 'Impayé' if facture else 'Pas de facture'
                 }
+                for releve in releves_data
+            ]
 
-                # Récupérer le contrat
-                contrat = get_object_or_404(Contrat, num_compteur=compteur_id)
-                num_contrat_match = re.search(r'\d+', contrat.num_contrat)
-                if not num_contrat_match:
-                    raise ValueError("Numéro de contrat invalide : aucun chiffre trouvé")
-                num_contrat = num_contrat_match.group()
-
-                contrat_info = {
-                    'id': int(num_contrat),
-                    'numero_contrat': contrat.num_contrat,
-                    'date_debut': contrat.date_debut,
-                    'date_fin': contrat.date_fin,
-                    'adresse_contrat': contrat.adresse_contrat,
-                    'pays_contrat': contrat.pays_contrat,
-                }
-
-                # Récupérer le client
-                client = contrat.client
-                client_info = {
-                    'id': client.num_client,
-                    'nom': client.nom_client,
-                    'prenom': client.prenom_client or '',
-                    'adresse': client.adresse_client,
-                    'commune': client.cp_commune.commune,
-                    'region': client.cp_commune.region.region,
-                    'telephone1': client.tel1_client,
-                    'telephone2': client.tel2_client or '',
-                    'actif': client.compte_actif
-                }
-
-                # Récupérer les relevés
-                releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
-                releves_list = [
-                    {
-                        'id': int(releve.id_releve),
-                        'id_releve': int(releve.id_releve),
-                        'compteur_id': int(compteur.num_compteur),
-                        'contrat_id': int(num_contrat),
-                        'client_id': int(client.num_client),
-                        'date_releve': releve.date_releve,
-                        'volume': releve.volume,
-                        'conso': releve.conso,
-                        'image_compteur': releve.image_compteur.url if releve.image_compteur else None,
-                        'etatFacture': 'Payé' if (facture := Facture.objects.filter(relevecompteur=releve).first()) and facture.statut else 'Impayé' if facture else 'Pas de facture'
-                    }
-                    for releve in releves_data
-                ]
-
-                return {
-                    'compteur': compteur_info,
-                    'contrat': contrat_info,
-                    'client': client_info,
-                    'releves': releves_list
-                }
-
-        resultat = await get_details()
-        return resultat
+            return {
+                'compteur': compteur_info,
+                'contrat': contrat_info,
+                'client': client_info,
+                'releves': releves_list
+            }
 
     except Compteur.DoesNotExist:
         raise ValueError('Compteur non trouvé')
@@ -351,58 +332,53 @@ async def process_compteur_details(compteur_id):
 
 class TaskFactureDetail:
     @staticmethod
-    async def process_facture_list(id_releve):
+    def process_facture_list(id_releve):
         try:
-            @sync_to_async
-            def get_facture_details():
-                with transaction.atomic():
-                    releve = Facture.objects.select_related(
-                        'num_contrat__client',
-                        'num_contrat__cp_commune'
-                    ).get(relevecompteur_id=id_releve)
+            with transaction.atomic():
+                releve = Facture.objects.select_related(
+                    'num_contrat__client',
+                    'num_contrat__cp_commune'
+                ).get(relevecompteur_id=id_releve)
 
-                    if not releve:
-                        return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
+                if not releve:
+                    return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
 
-                    montant_ht = MontantHT.objects.get(facture_id=releve.id_facture)
+                montant_ht = MontantHT.objects.get(facture_id=releve.id_facture)
 
-                    avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
-                    avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
-                    restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
-                    restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
-                    montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
+                avoir_avant = releve.avoir_avant if releve.avoir_avant else 0.0
+                avoir_utilise = releve.avoir_utilise if releve.avoir_utilise else 0.0
+                restant_precedant = releve.restant_precedant if releve.restant_precedant else 0.0
+                restant_nouvel = releve.restant_nouvel if releve.restant_nouvel else 0.0
+                montant_total_ttc = releve.montant_total_ttc if releve.montant_total_ttc else 0.0
 
-                    montant_payer = 0.0 if montant_total_ttc == 0.0 or restant_nouvel == 0.0 \
-                        else montant_total_ttc - restant_nouvel
+                montant_payer = 0.0 if montant_total_ttc == 0.0 or restant_nouvel == 0.0 \
+                    else montant_total_ttc - restant_nouvel
 
-                    typeclient = releve.num_contrat.client.type_client_id
-                    cp_commune = releve.num_contrat.cp_commune_id
-                    tarif = Tarif.objects.filter(cp_commune_id=cp_commune).first()
-                    tarif_m3 = {
-                        1: tarif.prix_m3_bp,
-                        2: tarif.prix_m3_bs,
-                        3: tarif.prix_m3_k
-                    }.get(typeclient, 0.0) if tarif else 0.0
+                typeclient = releve.num_contrat.client.type_client_id
+                cp_commune = releve.num_contrat.cp_commune_id
+                tarif = Tarif.objects.filter(cp_commune_id=cp_commune).first()
+                tarif_m3 = {
+                    1: tarif.prix_m3_bp,
+                    2: tarif.prix_m3_bs,
+                    3: tarif.prix_m3_k
+                }.get(typeclient, 0.0) if tarif else 0.0
 
-                    facture = {
-                        'id': int(releve.id_facture),
-                        'relevecompteur_id': int(releve.relevecompteur_id),
-                        'num_facture': releve.num_facture,
-                        'num_compteur': int(releve.num_contrat.num_compteur_id),
-                        'date_facture': releve.date_facture,
-                        'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
-                        'tarif_m3': tarif_m3,
-                        'avoir_avant': avoir_avant,
-                        'avoir_utilise': avoir_utilise,
-                        'restant_precedant': restant_precedant,
-                        'montant_payer': montant_payer,
-                        'montant_total_ttc': montant_total_ttc,
-                        'statut': 'Payé' if releve.statut else 'Impayé',
-                    }
-                    return facture
-
-            resultat = await get_facture_details()
-            return resultat
+                facture = {
+                    'id': int(releve.id_facture),
+                    'relevecompteur_id': int(releve.relevecompteur_id),
+                    'num_facture': releve.num_facture,
+                    'num_compteur': int(releve.num_contrat.num_compteur_id),
+                    'date_facture': releve.date_facture,
+                    'total_conso_ht': montant_ht.total_conso_ht if montant_ht.total_conso_ht is not None else 0.0,
+                    'tarif_m3': tarif_m3,
+                    'avoir_avant': avoir_avant,
+                    'avoir_utilise': avoir_utilise,
+                    'restant_precedant': restant_precedant,
+                    'montant_payer': montant_payer,
+                    'montant_total_ttc': montant_total_ttc,
+                    'statut': 'Payé' if releve.statut else 'Impayé',
+                }
+                return facture
 
         except Facture.DoesNotExist:
             return {'status': 'error', 'message': 'La facture n\'a pas été trouvée pour l\'ID de relevé spécifié'}
@@ -413,40 +389,16 @@ class TaskFactureDetail:
             return {'status': 'error', 'message': f"Erreur du serveur: {str(e)}"}
 
     @staticmethod
-    async def process_facture_paiement(id_releve, montant_payer, utilisateur_id):
+    def process_facture_paiement(id_releve, montant_payer, utilisateur_id):
         try:
-            @sync_to_async
-            def process_payment():
-                with transaction.atomic():
-                    if montant_payer >= 0.1:
-                        paiement(id_releve, montant_payer, utilisateur_id)  # Assurez-vous que paiement est synchrone
-                        return {'status': 'success', 'message': 'Paiement effectué avec succès !'}
-                    else:
-                        return {'status': 'error', 'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'}
-
-            resultat = await process_payment()
-            return resultat
+            with transaction.atomic():
+                if montant_payer >= 0.1:
+                    paiement(id_releve, montant_payer, utilisateur_id)  # Assurez-vous que paiement est synchrone
+                    return {'status': 'success', 'message': 'Paiement effectué avec succès !'}
+                else:
+                    return {'status': 'error', 'message': 'Le montant du paiement doit être supérieur ou égal à 0.1.'}
 
         except ValueError as e:
             raise ValueError(str(e))
         except Exception as e:
-            logger.error(f"Erreur dans process_facture_paiement pour id_releve={id_releve}: {str(e)}", exc_info=True)
             raise Exception(str(e))
-
-# if id_releve is not None:
-#     compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
-#     dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
-#
-#     if dernier_releve.volume >= volume:
-#         return {'status': 'error', 'message': "Assurez-vous d'envoyer les chiffres correctement et réessayez !"}
-#
-#     if date_releve <= dernier_releve.date_releve:
-#         return {'status': 'error', 'message': "Veuillez fournir une date valide"}
-#
-#     mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume, image_compteur,
-#                                                dernier_releve)
-#     facture_creation(date_releve, compteur.num_compteur, mod_releve)
-#
-#     return {'status': 'success', 'message': 'Mise à jour effectuée avec succès !'}
-#
-# else:
