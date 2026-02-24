@@ -8,7 +8,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework import permissions
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 
 from Main_Courante.api_anomalie.serializer import MainCouranteSerializer, PhotosSerializer, SuivieSerializer
 from Main_Courante.models import MainCourante, StatutMC
