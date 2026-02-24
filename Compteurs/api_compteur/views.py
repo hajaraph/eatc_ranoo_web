@@ -113,7 +113,7 @@ def accueil(request):
         'nombre_total_facture_payer': nombre_total_facture_payer
     }
 
-    return ApiResponse.success(data=response_data)
+    return Response(response_data)
 
 
 @api_view(['GET'])

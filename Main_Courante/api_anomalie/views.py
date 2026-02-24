@@ -27,7 +27,6 @@ class DeclareMaincourate(APIView):
         """
         Récupère la liste des anomalies.
         """
-        start_time = time.time()
         
         try:
             modified_since_str = request.GET.get('modified_since')
