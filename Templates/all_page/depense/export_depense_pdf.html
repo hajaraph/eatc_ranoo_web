@@ -18,8 +18,11 @@
 </head>
 <body>
     <h1>Liste des Dépenses {{ periode_depense }}</h1>
+    {% if commune_nom %}
+    <p><strong>Commune:</strong> {{ commune_nom }}</p>
+    {% endif %}
     <p>Date d'export: {{ date_export|date:"d/m/Y H:i" }}</p>
-    
+
     <div class="summary">
         <p><strong>Nombre de dépenses:</strong> {{ nombre_depenses|default:"0" }}</p>
         <p><strong>Total des dépenses:</strong> {{ total_depenses|default:"0" }} Ar</p>

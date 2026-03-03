@@ -142,6 +142,18 @@
                             </div>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <div class="form-floating">
+                            <select id="exportDepenseCommune"
+                                class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                                <option value="">Toutes les communes</option>
+                                {% for c in communes_actives %}
+                                <option value="{{ c.cp_commune }}">{{ c.commune }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="exportDepenseCommune">Commune</label>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -197,7 +209,18 @@
                             <label>Catégorie</label>
                         </div>
                     </div>
-
+                    <div class="mb-4">
+                        <div class="form-floating">
+                            <select class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                                id="calcCommune">
+                                <option value="">Toutes les communes</option>
+                                {% for c in communes_actives %}
+                                <option value="{{ c.cp_commune }}">{{ c.commune }}</option>
+                                {% endfor %}
+                            </select>
+                            <label>Commune</label>
+                        </div>
+                    </div>
                     <div class="alert alert-info d-none text-center" id="calcResultArea">
                         <h3 class="mb-0" id="calcResultValue">0 Ar</h3>
                         <small id="calcResultCount">0 transactions</small>

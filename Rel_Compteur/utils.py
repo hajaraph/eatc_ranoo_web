@@ -11,7 +11,6 @@ from Facturation.models import Facture
 from django.template.loader import render_to_string
 from weasyprint import HTML
 
-# Type variable for queryset
 def filter_by_client_number(
     queryset: QuerySet,
     client_field: str = 'num_contrat__client__num_client',
@@ -267,11 +266,18 @@ def generate_pdf_export(
     Returns:
         HttpResponse: La réponse HTTP contenant le PDF.
     """
+    from Acommune.models import Commune
+
     mois_debut_str = request.GET.get('datedeb')
     mois_fin_str = request.GET.get('datefin')
+    commune_id = request.GET.get('commune')
 
     # Appliquer le filtre par rôle utilisateur
     filtered_queryset = filter_by_user_role(request, queryset, filter_field)
+
+    # Filtrer par commune si spécifiée
+    if commune_id:
+        filtered_queryset = filtered_queryset.filter(**{filter_field: commune_id})
 
     # Utilisation de la fonction utilitaire pour filtrer par mois
     filtered_queryset, mois_debut_obj, mois_fin_obj = filter_by_month_range(
@@ -285,6 +291,13 @@ def generate_pdf_export(
     # Calculer le total et le nombre d'éléments
     total_sum = filtered_queryset.aggregate(total=Sum(total_field))['total'] or 0
     item_count = filtered_queryset.count()
+
+    # Récupérer le nom de la commune sélectionnée
+    commune_nom = None
+    if commune_id:
+        commune = Commune.objects.filter(pk=commune_id).first()
+        if commune:
+            commune_nom = commune.commune
 
     if mois_debut_str and mois_fin_str:
         start_date = datetime.strptime(mois_debut_str, '%Y-%m')
@@ -306,16 +319,21 @@ def generate_pdf_export(
         f'total_{item_name}': total_sum,
         f'nombre_{item_name}': item_count,
         title_key: periode_str,
+        'commune_nom': commune_nom,
     }
 
     html_string = render_to_string(template_path, context)
-    
+
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'filename="{filename_prefix}_{datetime.now().strftime("%Y-%m-%d")}.pdf"'
-    
+    if commune_nom:
+        commune_safe = commune_nom.replace(' ', '_').replace('/', '_')
+        response['Content-Disposition'] = f'filename="{filename_prefix}_{commune_safe}_{datetime.now().strftime("%Y-%m-%d")}.pdf"'
+    else:
+        response['Content-Disposition'] = f'filename="{filename_prefix}_{datetime.now().strftime("%Y-%m-%d")}.pdf"'
+
     HTML(
         string=html_string,
         base_url=request.build_absolute_uri('/')
     ).write_pdf(response)
-    
+
     return response

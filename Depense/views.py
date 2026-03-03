@@ -175,11 +175,16 @@ def calculate_depense_total(request):
     date_debut = request.GET.get('date_debut')
     date_fin = request.GET.get('date_fin')
     categorie_id = request.GET.get('categorie_id')
+    commune_id = request.GET.get('commune_id')
 
     queryset = Transactions.objects.all()
 
     # Filtrer par rôle (Commune)
     queryset = filter_by_user_role(request, queryset, 'cp_commune_id')
+
+    # Filtrer par commune
+    if commune_id:
+        queryset = queryset.filter(cp_commune_id=commune_id)
 
     # Filtrer par date
     if date_debut:

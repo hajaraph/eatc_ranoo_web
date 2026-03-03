@@ -4,6 +4,7 @@ $(document).ready(function () {
         const dateDeb = $('#calcDateDeb').val();
         const dateFin = $('#calcDateFin').val();
         const categorieId = $('#calcCategorie').val();
+        const communeId = $('#calcCommune').val();
 
         const $resultArea = $('#calcResultArea');
         const $resultValue = $('#calcResultValue');
@@ -26,7 +27,8 @@ $(document).ready(function () {
             data: {
                 'date_debut': dateDeb,
                 'date_fin': dateFin,
-                'categorie_id': categorieId
+                'categorie_id': categorieId,
+                'commune_id': communeId
             },
             success: function (response) {
                 // Affichage du résultat

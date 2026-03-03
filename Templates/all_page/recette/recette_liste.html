@@ -144,6 +144,18 @@
                             </div>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <div class="form-floating">
+                            <select id="exportRecetteCommune"
+                                class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                                <option value="">Toutes les communes</option>
+                                {% for c in communes_actives %}
+                                <option value="{{ c.cp_commune }}">{{ c.commune }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="exportRecetteCommune">Commune</label>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">

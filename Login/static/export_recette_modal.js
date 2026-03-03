@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const exportRecetteModal = document.getElementById('exportRecetteModal');
     const openExportRecetteModalBtn = document.getElementById('openExportRecetteModalBtn');
     const confirmExportRecetteBtn = document.getElementById('confirmExportRecetteBtn');
@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // When the modal is opened, pre-fill the date inputs with current filter values
     if (openExportRecetteModalBtn) {
-        openExportRecetteModalBtn.addEventListener('click', function() {
+        openExportRecetteModalBtn.addEventListener('click', function () {
             const currentDatedeb = document.querySelector('input[name="datedeb"]').value;
             const currentDatefin = document.querySelector('input[name="datefin"]').value;
 
@@ -22,9 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle the export button click inside the modal
     if (confirmExportRecetteBtn) {
-        confirmExportRecetteBtn.addEventListener('click', function() {
+        confirmExportRecetteBtn.addEventListener('click', function () {
             const datedeb = exportDatedebInput ? exportDatedebInput.value : '';
             const datefin = exportDatefinInput ? exportDatefinInput.value : '';
+            const communeSelect = document.getElementById('exportRecetteCommune');
+            const commune = communeSelect ? communeSelect.value : '';
 
             let exportUrl = '/recette/export/';
             const params = new URLSearchParams();
@@ -34,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (datefin) {
                 params.append('datefin', datefin);
+            }
+            if (commune) {
+                params.append('commune', commune);
             }
 
             if (params.toString()) {

@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const exportDepenseModal = document.getElementById('exportDepenseModal');
     const openExportDepenseModalBtn = document.getElementById('openExportDepenseModalBtn');
     const confirmExportDepenseBtn = document.getElementById('confirmExportDepenseBtn');
@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // When the modal is opened, pre-fill the date inputs with current filter values
     if (openExportDepenseModalBtn) {
-        openExportDepenseModalBtn.addEventListener('click', function() {
+        openExportDepenseModalBtn.addEventListener('click', function () {
             const currentDatedeb = document.querySelector('input[name="datedeb"]').value;
             const currentDatefin = document.querySelector('input[name="datefin"]').value;
 
@@ -22,9 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle the export button click inside the modal
     if (confirmExportDepenseBtn) {
-        confirmExportDepenseBtn.addEventListener('click', function() {
+        confirmExportDepenseBtn.addEventListener('click', function () {
             const datedeb = exportDepenseDatedebInput ? exportDepenseDatedebInput.value : '';
             const datefin = exportDepenseDatefinInput ? exportDepenseDatefinInput.value : '';
+            const communeSelect = document.getElementById('exportDepenseCommune');
+            const commune = communeSelect ? communeSelect.value : '';
 
             let exportUrl = '/depense/export/';
             const params = new URLSearchParams();
@@ -34,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (datefin) {
                 params.append('datefin', datefin);
+            }
+            if (commune) {
+                params.append('commune', commune);
             }
 
             if (params.toString()) {

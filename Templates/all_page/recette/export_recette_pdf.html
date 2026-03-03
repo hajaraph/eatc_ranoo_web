@@ -18,8 +18,11 @@
 </head>
 <body>
     <h1>Liste des Recettes {{ periode_recette }}</h1>
+    {% if commune_nom %}
+    <p><strong>Commune:</strong> {{ commune_nom }}</p>
+    {% endif %}
     <p>Date d'export: {{ date_export|date:"d/m/Y H:i" }}</p>
-    
+
     <div class="summary">
         <p><strong>Nombre de recettes:</strong> {{ nombre_recettes }}</p>
         <p><strong>Total des recettes:</strong> {{ total_recettes|default:"0" }} Ar</p>
