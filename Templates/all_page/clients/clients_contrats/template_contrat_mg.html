@@ -2,7 +2,7 @@
 <html lang="mg">
 <head>
     <meta charset="UTF-8">
-    <title>Fifanarahana eo amin'ny mpanjifa sy {{ entreprise.nom_entreprise|default:"EATC" }}</title>
+    <title>Fifanarahana eo amin'ny mpanjifa sy {{ entreprise.nom_entreprise }}</title>
     <style>
         @page  {
             margin: 50px 90px;
@@ -24,8 +24,8 @@
 
     <strong>Eo amin'ny Tompon'andraikitra (Délégataire)</strong>
     <p>
-        Ny orinasa {{ entreprise.nom_entreprise|default:"EATC-A" }} Tompon'andraikitry ny rafitra famatsiana rano ao amin'ny kaominina {{ instance.cp_commune.region.region }} {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }};
-        Manana ny foiben-toerany ao amin'ny {{ entreprise.siege_social|default:"Lot AV 173 Bis Loharanombato – Antananarivo 101, Madagascar" }}
+        Ny orinasa {{ entreprise.nom_entreprise }} Tompon'andraikitry ny rafitra famatsiana rano ao amin'ny kaominina {{ instance.cp_commune.region.region }} {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }};
+        Manana ny foiben-toerany ao amin'ny {{ entreprise.siege_social }}
     </p>
 
     <p style="text-align: right">eo amin'ny lafiny iray</p>
@@ -156,7 +156,7 @@
             <th>Ny Mpanjifa</th>
         </tr>
         <tr>
-            <td>Solontena : {{ entreprise.representant_legal|default:"SANJAMASINAVALONA Aldon" }}</td>
+            <td>Solontena : {{ entreprise.representant_legal }}</td>
             <td>{{ instance.client.nom_client }} {% if instance.client.prenom_client %} {{ instance.client.prenom_client }} {% endif %}</td>
         </tr>
         <tr>

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Contrat entre le client et {{ entreprise.nom_entreprise|default:"EATC" }}</title>
+    <title>Contrat entre le client et {{ entreprise.nom_entreprise }}</title>
     <style>
         @page  {
             margin: 50px 90px;
@@ -24,8 +24,8 @@
 
     <strong>Entre le Délégataire</strong>
     <p>
-        L'entreprise {{ entreprise.nom_entreprise|default:"EATC-A" }} Délégataire du système d'alimentation en eau dans la commune de {{ instance.cp_commune.region.region }} {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }};
-        Ayant son siège local à {{ entreprise.siege_social|default:"Lot AV 173 Bis Loharanombato – Antananarivo 101, Madagascar" }}
+        L'entreprise {{ entreprise.nom_entreprise }} Délégataire du système d'alimentation en eau dans la commune de {{ instance.cp_commune.region.region }} {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }};
+        Ayant son siège local à {{ entreprise.siege_social }}
     </p>
 
     <p style="text-align: right">d'une part</p>
@@ -156,7 +156,7 @@
             <th>L'abonné</th>
         </tr>
         <tr>
-            <td>Représenté par : {{ entreprise.representant_legal|default:"SANJAMASINAVALONA Aldon" }}</td>
+            <td>Représenté par : {{ entreprise.representant_legal }}</td>
             <td>{{ instance.client.nom_client }} {% if instance.client.prenom_client %} {{ instance.client.prenom_client }} {% endif %}</td>
         </tr>
         <tr>
