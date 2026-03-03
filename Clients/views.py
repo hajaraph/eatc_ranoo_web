@@ -276,7 +276,10 @@ class ClientContrat(SchemaAwareView):
         contrat = ''
 
         try:
-            if Client.objects.filter(pk=pk).exists():
+            # Vérifier si pk est numérique (ID client) ou un numéro de contrat
+            is_client_id = str(pk).isdigit()
+
+            if is_client_id and Client.objects.filter(pk=pk).exists():
                 client = Client.objects.get(pk=pk)
                 contrats = client.contrats.all()
                 contrat = client.contrats.latest('date_debut')
@@ -315,7 +318,9 @@ class ClientContrat(SchemaAwareView):
         num_contrat = request.POST['num_contrat'] if 'num_contrat' in request.POST else None
         contrat_data = extract_contrat_data(request)
 
-        if Client.objects.filter(pk=pk).exists():
+        is_client_id = str(pk).isdigit()
+
+        if is_client_id and Client.objects.filter(pk=pk).exists():
             client = Client.objects.get(pk=pk)
             contrat = client.contrats.get(num_contrat=num_contrat)
         else:
