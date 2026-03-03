@@ -17,6 +17,8 @@ class Entreprise(TenantMixin):
     stat = models.CharField(max_length=100, verbose_name="STAT", blank=True, null=True)
     logo_entreprise = models.ImageField(upload_to='logo/entreprise', blank=True, verbose_name='Logo')
     signature_entreprise = models.ImageField(upload_to='signature/entreprise', blank=True, verbose_name='Signature')
+    siege_social = models.CharField(max_length=255, blank=True, null=True, verbose_name='Siège social')
+    representant_legal = models.CharField(max_length=100, blank=True, null=True, verbose_name='Représentant légal')
     created_on = models.DateTimeField(auto_now_add=True, verbose_name='Date de creation')
     
     def __str__(self):

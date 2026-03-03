@@ -2,14 +2,18 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Contrat entre le client et EATC</title>
+    <title>Contrat entre le client et {{ entreprise.nom_entreprise|default:"EATC" }}</title>
     <style>
         @page  {
             margin: 50px 90px;
         }
     </style>
 <body style="text-align: justify">
-    <img src="static/logo/logo.png" style="width: 80px; height: 80px;" alt="EATC">
+    {% if entreprise and entreprise.logo_entreprise %}
+        <img src="{{ entreprise.logo_entreprise.path }}" style="width: 80px; height: 80px;" alt="{{ entreprise.nom_entreprise }}">
+    {% else %}
+        <img src="static/logo/logo.png" style="width: 80px; height: 80px;" alt="EATC">
+    {% endif %}
     <h3 style="text-align: center; padding-top: 5px">CONTRAT ABONNEMENT EAU</h3>
 
     <div style="padding-left: 70px; padding-top: 10px">
@@ -20,39 +24,39 @@
 
     <strong>Entre le Délégataire</strong>
     <p>
-        L’entreprise EATC-A Délégataire du système d’alimentation en eau dans la commune de {{ instance.cp_commune.region.region }} {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }};
-        Ayant son siège local à Lot AV 173 Bis Loharanombato – Antananarivo 101, Madagascar
+        L'entreprise {{ entreprise.nom_entreprise|default:"EATC-A" }} Délégataire du système d'alimentation en eau dans la commune de {{ instance.cp_commune.region.region }} {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }};
+        Ayant son siège local à {{ entreprise.siege_social|default:"Lot AV 173 Bis Loharanombato – Antananarivo 101, Madagascar" }}
     </p>
 
     <p style="text-align: right">d'une part</p>
 
-    <strong>Et l’abonné</strong>
+    <strong>Et l'abonné</strong>
     <p>
         Monsieur/ Madame <strong>{{ instance.client.nom_client }} {% if instance.client.prenom_client %} {{ instance.client.prenom_client }} {% endif %}</strong> domicilié à {{ instance.adresse_contrat }},
         commune de {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }},
         région de {{ instance.cp_commune.region.region }}
     </p>
 
-    <p style="text-align: right">d’autre part.</p>
+    <p style="text-align: right">d'autre part.</p>
 
-    <p>a pour objet de connecter l’abonné au réseau de distribution du système d’alimentation en eau de la Commune</p>
+    <p>a pour objet de connecter l'abonné au réseau de distribution du système d'alimentation en eau de la Commune</p>
     <div style="padding-left: 70px; padding-top: 10px">
         <strong>Article 2 : Durée de contrat :</strong>
     </div>
     <p>
-        Le présent contrat entre en vigueur lorsqu’il est signé entre les deux parties et que l’abonné commence à puiser l’eau au niveau du compteur.
-        La durée du contrat est indéterminée jusqu’à sa résiliation.
+        Le présent contrat entre en vigueur lorsqu'il est signé entre les deux parties et que l'abonné commence à puiser l'eau au niveau du compteur.
+        La durée du contrat est indéterminée jusqu'à sa résiliation.
     </p>
 
     <div style="padding-left: 70px; padding-top: 10px">
         <strong>Article 3 : Limite de propriété :</strong>
     </div>
     <p>
-        La propriété de l’abonné est limitée aux équipements dont il a acheté auprès du Délégataire ou
-        des autres fournisseurs pour assurer le raccordement de l’abonné au réseau d’alimentation en eau potable de {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }}
+        La propriété de l'abonné est limitée aux équipements dont il a acheté auprès du Délégataire ou
+        des autres fournisseurs pour assurer le raccordement de l'abonné au réseau d'alimentation en eau potable de {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }}
     </p>
     <p>
-        Tous nouveaux branchements dont la prise s’effectue dans cette limite de propriété nécessite une autorisation de l’abonné.
+        Tous nouveaux branchements dont la prise s'effectue dans cette limite de propriété nécessite une autorisation de l'abonné.
     </p>
 
     <div style="padding-left: 70px; padding-top: 10px">
@@ -66,7 +70,7 @@
         <strong>Article 5 : Nature de service</strong>
     </div>
     <p>
-        Le type de service offert à l’abonné est :
+        Le type de service offert à l'abonné est :
     </p>
     <div style="padding-left: 20px">
         <p>- {{ instance.client.type_client.designation_client }}</p>
@@ -82,10 +86,10 @@
     </p>
 
     <p>
-        Le Délégataire est chargé de mettre en œuvre le recouvrement des factures qu’il a émises.
+        Le Délégataire est chargé de mettre en œuvre le recouvrement des factures qu'il a émises.
         En cas de non-paiement par les abonnés, il se conforme strictement aux dispositions prévues par le règlement du service.
-        En particulier, aucune interruption de la fourniture de l’eau, ni aucune poursuite judiciaire ne peut être engagée avant que
-        les abonnés n’aient disposé du temps nécessaire pour régulariser leur situation après une mise en demeure qui leur est notifié par le Délégataire.
+        En particulier, aucune interruption de la fourniture de l'eau, ni aucune poursuite judiciaire ne peut être engagée avant que
+        les abonnés n'aient disposé du temps nécessaire pour régulariser leur situation après une mise en demeure qui leur est notifié par le Délégataire.
     </p>
     <p>
         En cas de non-paiement, si les abonnés ne régularisent pas leur situation après mise en demeure,
@@ -100,19 +104,19 @@
         <strong>Article 7 : Modalité de règlement</strong>
     </div>
     <p>
-        L’abonné est tenu de régler la consommation de l’eau conformément à la facture émise par le Délégataire et de respecter le délai de paiement.
+        L'abonné est tenu de régler la consommation de l'eau conformément à la facture émise par le Délégataire et de respecter le délai de paiement.
     </p>
     <p>
-        Tout frais causé par le retard de paiement est à la charge de l’abonné.
+        Tout frais causé par le retard de paiement est à la charge de l'abonné.
     </p>
 
     <div style="padding-left: 70px; padding-top: 10px">
-        <strong>Article 8 : Contrôle de l’abonnement</strong>
+        <strong>Article 8 : Contrôle de l'abonnement</strong>
     </div>
-    <p>Les deux parties sont responsables de l’abonnement :</p>
+    <p>Les deux parties sont responsables de l'abonnement :</p>
     <div style="padding-left: 20px">
         <p>- La vérification du relevé du compteur correspondant au volume puisé ;</p>
-        <p>- L’entretien des équipements dans la limite de propriété ;</p>
+        <p>- L'entretien des équipements dans la limite de propriété ;</p>
     </div>
 
     <div style="padding-left: 70px; padding-top: 10px">
@@ -122,7 +126,7 @@
         Chacune des parties pourra résilier le contrat par lettre recommandée avec accusé de réception en respectant un délai de trois mois,
         en indiquant le motif de résiliation.
     </p>
-    <p>Les motifs de résiliations par l’abonné sont :</p>
+    <p>Les motifs de résiliations par l'abonné sont :</p>
     <div style="padding-left: 20px">
         <p>- Volonté de désabonner par son propre gré ;</p>
         <p>- Impossibilité de payer les factures ;</p>
@@ -149,15 +153,19 @@
     <table style="padding-top: 10px; text-align: center">
         <tr>
             <th>Le Délégataire</th>
-            <th>L’abonné</th>
+            <th>L'abonné</th>
         </tr>
         <tr>
-            <td>Représenté par : SANJAMASINAVALONA Aldon</td>
+            <td>Représenté par : {{ entreprise.representant_legal|default:"SANJAMASINAVALONA Aldon" }}</td>
             <td>{{ instance.client.nom_client }} {% if instance.client.prenom_client %} {{ instance.client.prenom_client }} {% endif %}</td>
         </tr>
         <tr>
             <td>
-                <img src="static/logo/img1.png" style="width: 150px; height: 50px;"  alt="">
+                {% if entreprise and entreprise.signature_entreprise %}
+                    <img src="{{ entreprise.signature_entreprise.path }}" style="width: 150px; height: 50px;" alt="">
+                {% else %}
+                    <img src="static/logo/img1.png" style="width: 150px; height: 50px;" alt="">
+                {% endif %}
             </td>
         </tr>
     </table>

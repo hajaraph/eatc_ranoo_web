@@ -83,9 +83,14 @@
                         </a>
                     </td>
                     <td>
-                        <a href="{% url 'genere_pdf_contrat' contrat.pk %}" class="btn btn-sm btn-success ">
-                            <i class="fas fa-file-alt"></i>
-                        </a>
+                        <div class="btn-group">
+                            <a href="{% url 'genere_pdf_contrat' contrat.pk %}" class="btn btn-sm btn-success" title="Contrat en Français">
+                                <i class="fas fa-file-alt"></i> FR
+                            </a>
+                            <a href="{% url 'genere_pdf_contrat_mg' contrat.pk %}" class="btn btn-sm btn-outline-success" title="Contrat en Malgache">
+                                <i class="fas fa-file-alt"></i> MG
+                            </a>
+                        </div>
                     </td>
                     <td>{{ contrat.date_debut|date:'d/m/Y' }}</td>
                     <td>

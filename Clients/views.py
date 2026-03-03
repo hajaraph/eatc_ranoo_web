@@ -10,6 +10,7 @@ from datetime import datetime
 from xhtml2pdf import pisa
 
 from Clients.models import Client, PieceClient, Contrat, TypeClient
+from Tenants.models import Entreprise
 from Compteurs.models import Compteur
 from Facturation.models import Tarif, Facture
 from Login.views import role_requis
@@ -531,8 +532,34 @@ def genere_pdf_contrat(request, pk):
     nom_fichier_prefix = f'Contrat_de_{contrat.client.nom_client}'
     message = f"Export de contrat numéro {pk}"
     enregistre_historique(message, request.session.get('id_utilisateur'))
+
+    # Récupérer l'entreprise (délégataire) pour les infos dynamiques du contrat
+    entreprise_id = request.session.get('entreprise')
+    entreprise = Entreprise.objects.get(pk=entreprise_id) if entreprise_id else None
+
     context = {
         'instance': contrat,
+        'entreprise': entreprise,
+    }
+    return generate_pdf(request, context, template_path, nom_fichier_prefix)
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def genere_pdf_contrat_mg(request, pk):
+    template_path = 'all_page/clients/clients_contrats/template_contrat_mg.html'
+    contrat = Contrat.objects.get(pk=pk)
+    nom_fichier_prefix = f'Fifanarahana_{contrat.client.nom_client}'
+    message = f"Export de contrat (MG) numéro {pk}"
+    enregistre_historique(message, request.session.get('id_utilisateur'))
+
+    # Récupérer l'entreprise (délégataire) pour les infos dynamiques du contrat
+    entreprise_id = request.session.get('entreprise')
+    entreprise = Entreprise.objects.get(pk=entreprise_id) if entreprise_id else None
+
+    context = {
+        'instance': contrat,
+        'entreprise': entreprise,
     }
     return generate_pdf(request, context, template_path, nom_fichier_prefix)
 

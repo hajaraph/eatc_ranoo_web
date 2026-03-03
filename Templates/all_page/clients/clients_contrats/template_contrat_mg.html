@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="mg">
+<head>
+    <meta charset="UTF-8">
+    <title>Fifanarahana eo amin'ny mpanjifa sy {{ entreprise.nom_entreprise|default:"EATC" }}</title>
+    <style>
+        @page  {
+            margin: 50px 90px;
+        }
+    </style>
+<body style="text-align: justify">
+    {% if entreprise and entreprise.logo_entreprise %}
+        <img src="{{ entreprise.logo_entreprise.path }}" style="width: 80px; height: 80px;" alt="{{ entreprise.nom_entreprise }}">
+    {% else %}
+        <img src="static/logo/logo.png" style="width: 80px; height: 80px;" alt="EATC">
+    {% endif %}
+    <h3 style="text-align: center; padding-top: 5px">FIFANARAHANA FISORATANA ANARANA RANO</h3>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 1 : Roa tonta mifanaiky - Vontoatin'ny fifanarahana</strong>
+    </div>
+    <p>Ity fifanarahana ity dia nosoratana ny {{ instance.date_debut|date:'d/m/Y' }} amin'ny dika roa (02),</p>
+    <p>Mitondra ny laharan'ny fifanarahana {{ instance.num_contrat }}</p>
+
+    <strong>Eo amin'ny Tompon'andraikitra (Délégataire)</strong>
+    <p>
+        Ny orinasa {{ entreprise.nom_entreprise|default:"EATC-A" }} Tompon'andraikitry ny rafitra famatsiana rano ao amin'ny kaominina {{ instance.cp_commune.region.region }} {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }};
+        Manana ny foiben-toerany ao amin'ny {{ entreprise.siege_social|default:"Lot AV 173 Bis Loharanombato – Antananarivo 101, Madagascar" }}
+    </p>
+
+    <p style="text-align: right">eo amin'ny lafiny iray</p>
+
+    <strong>Sy ny mpanjifa</strong>
+    <p>
+        Andriamatoa / Ramatoa <strong>{{ instance.client.nom_client }} {% if instance.client.prenom_client %} {{ instance.client.prenom_client }} {% endif %}</strong> monina ao {{ instance.adresse_contrat }},
+        kaominina {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }},
+        faritra {{ instance.cp_commune.region.region }}
+    </p>
+
+    <p style="text-align: right">eo amin'ny lafiny iray koa.</p>
+
+    <p>dia mikendry ny hampifandray ny mpanjifa amin'ny tambajotra fizarana rano ao amin'ny kaominina.</p>
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 2 : Faharetan'ny fifanarahana :</strong>
+    </div>
+    <p>
+        Ity fifanarahana ity dia manan-kery rehefa nosoniavina teo amin'ny roa tonta ary rehefa nanomboka nampiasa rano tamin'ny alalan'ny fitaovana mpandrefy (compteur) ny mpanjifa.
+        Tsy voafetra ny faharetan'ny fifanarahana mandra-panafoana azy.
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 3 : Fetra-pananana :</strong>
+    </div>
+    <p>
+        Ny fananan'ny mpanjifa dia voafetra amin'ireo fitaovana novidiny tamin'ny Tompon'andraikitra na
+        amin'ny mpamatsy hafa mba hahafahana mampifandray ny mpanjifa amin'ny tambajotra famatsiana rano fisotro madio ao {{ instance.cp_commune.commune }} {{ instance.cp_commune_id }}
+    </p>
+    <p>
+        Ny fifandraisana vaovao rehetra izay atao ao anatin'ity fetra-pananana ity dia mila fanomezan-dalan'ny mpanjifa.
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 4 : Fitaovana mpandrefy mifandray amin'ny fifanarahana</strong>
+    </div>
+    <p>
+        Ity fifanarahana ity dia mifandray amin'ny fitaovana mpandrefy tokana mitondra ny laharana : {{ instance.num_contrat }}
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 5 : Karazan'ny asa fanompoana</strong>
+    </div>
+    <p>
+        Ny karazan'ny asa fanompoana omena ny mpanjifa dia :
+    </p>
+    <div style="padding-left: 20px">
+        <p>- {{ instance.client.type_client.designation_client }}</p>
+    </div>
+    <p>Ny vidin'ny karazan'ny asa fanompoana tsirairay dia aseho ao amin'ny biraon'ny Tompon'andraikitra.</p>
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 6 : Fomba faktiora.</strong>
+    </div>
+
+    <p>
+        Ny fakana ny tarehimarika amin'ny fitaovana mpandrefy dia atao isam-bolana ary arahin'ny faktiora mifototra amin'ny antsipirihan'ny vidin'ny
+        rano lany mba hahafahana mandoa ny habetsahan'ny rano nampiasaina.
+    </p>
+
+    <p>
+        Ny Tompon'andraikitra no miandraikitra ny fanangonana ny faktiora navoakany.
+        Raha tsy mandoa ny mpanjifa dia manaraka ny fepetra voalazan'ny fitsipiky ny asa fanompoana.
+        Manokana, tsy misy fampiatoana ny famatsiana rano, na fitoriana eo amin'ny fitsarana azo atao,
+        raha tsy efa nahazo fotoana ampy handaminana ny toe-javatra ny mpanjifa taorian'ny fampitandremana nalefan'ny Tompon'andraikitra.
+    </p>
+    <p>
+        Raha tsy mandoa, ary tsy mandamina ny toe-javany ny mpanjifa taorian'ny fampitandremana,
+        dia mahazo alalana hampiasa ny fomba ara-dalàna rehetra ny Tompon'andraikitra mba hanangonana ny faktiora tsy voaloa.
+    </p>
+    <p>
+        Ny Tompon'andraikitra dia mahazo alalana hampiantsena ny mpanjifa ny fandaniana noho ny fanangonana ireo faktiora tsy voaloa.
+        Ireo vola miditra mifanaraka amin'izany dia aseho ao amin'ny tatitry ny vola.
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 7 : Fomba fandoavana</strong>
+    </div>
+    <p>
+        Ny mpanjifa dia tsy maintsy mandoa ny rano nampiasainy araka ny faktiora navoakan'ny Tompon'andraikitra ary manaja ny fe-potoana fandoavana.
+    </p>
+    <p>
+        Ny sazy rehetra noho ny tsy fandoavana ara-potoana dia iantohan'ny mpanjifa.
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 8 : Fanaraha-maso ny fisoratana anarana</strong>
+    </div>
+    <p>Samy tompon'andraikitra eo amin'ny fisoratana anarana ny roa tonta :</p>
+    <div style="padding-left: 20px">
+        <p>- Ny fanamarinana ny tarehimarika amin'ny fitaovana mpandrefy mifanandrify amin'ny habetsahan'ny rano nakana ;</p>
+        <p>- Ny fikojakojana ny fitaovana ao anatin'ny fetra-pananana ;</p>
+    </div>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 9 : Fifaranan'ny fifanarahana</strong>
+    </div>
+    <p>
+        Ny tsirairay amin'ireo roa tonta dia afaka manafoana ny fifanarahana amin'ny alalan'ny taratasy misy tapakila fanamarinana fa voaray ka manaja ny fe-potoana telo volana,
+        sady milaza ny antony fanafoananana.
+    </p>
+    <p>Ireto ny anton'ny fanafoananana avy amin'ny mpanjifa :</p>
+    <div style="padding-left: 20px">
+        <p>- Faniriana hiala amin'ny fisoratana anarana an-tsitrapo ;</p>
+        <p>- Tsy fahafahana mandoa ny faktiora ;</p>
+    </div>
+    <p>
+        Ny hany antony fanafoananana avy amin'ny Tompon'andraikitra dia ny tsy fandoavan'ny faktiora mihoatra ny telo volana taorian'ny taratasy fampitandremana.
+    </p>
+
+    <div style="padding-left: 70px; padding-top: 10px">
+        <strong>Andininy 10 : Fifanolanana</strong>
+    </div>
+    <p>
+        Ny fifanolanana rehetra avy amin'ity fifanarahana ity dia tsy maintsy alamina am-pilaminana eo amin'ny roa tonta.
+    </p>
+    <p>
+        Raha tsy misy fifanarahana am-pilaminana, dia ny fitsipiky ny fampihavanana sy ny fitsarana eo amin'ny andrim-panjakana mahafehy
+        ao amin'ny Repoblikan'i Madagasikara no handaminana tanteraka ny fifanolanana.
+    </p>
+
+    <p style="padding-top: 20px">
+        Natao tao {{ instance.adresse_contrat }} ny {{ instance.date_debut|date:'d/m/Y' }}:
+    </p>
+
+    <table style="padding-top: 10px; text-align: center">
+        <tr>
+            <th>Ny Tompon'andraikitra</th>
+            <th>Ny Mpanjifa</th>
+        </tr>
+        <tr>
+            <td>Solontena : {{ entreprise.representant_legal|default:"SANJAMASINAVALONA Aldon" }}</td>
+            <td>{{ instance.client.nom_client }} {% if instance.client.prenom_client %} {{ instance.client.prenom_client }} {% endif %}</td>
+        </tr>
+        <tr>
+            <td>
+                {% if entreprise and entreprise.signature_entreprise %}
+                    <img src="{{ entreprise.signature_entreprise.path }}" style="width: 150px; height: 50px;" alt="">
+                {% else %}
+                    <img src="static/logo/img1.png" style="width: 150px; height: 50px;" alt="">
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

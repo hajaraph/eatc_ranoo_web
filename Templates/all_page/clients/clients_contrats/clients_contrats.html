@@ -22,9 +22,23 @@
             {% for contrats in contrat %}
                 <tr>
                     <td>
-                        <a href="#" onclick="openUrlInNewTab('{% url 'genere_pdf_contrat' contrats.num_contrat %}')" class="text-decoration-none contrat">
-                            {{ contrats.num_contrat }}
-                        </a>
+                        <div class="dropdown d-inline">
+                            <a href="#" class="text-decoration-none contrat dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ contrats.num_contrat }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="openUrlInNewTab('{% url 'genere_pdf_contrat' contrats.num_contrat %}')">
+                                        <i class="fas fa-file-alt text-success"></i> Contrat en Français
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="openUrlInNewTab('{% url 'genere_pdf_contrat_mg' contrats.num_contrat %}')">
+                                        <i class="fas fa-file-alt text-primary"></i> Contrat en Malgache
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </td>
                     <td>{{ contrats.client.nom_client }}</td>
                     <td>{{ contrats.client.prenom_client|default:"-" }}</td>

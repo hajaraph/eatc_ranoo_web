@@ -1,7 +1,7 @@
 from django.urls import path
 
 from Clients.views import client_liste, client_contrat, ClientNew, ContratNew, ClientContrat, \
-    ClientDetail, supp_file_client, export_clients, delete_client, genere_pdf_contrat, supp_contrat, export_clients_pdf, \
+    ClientDetail, supp_file_client, export_clients, delete_client, genere_pdf_contrat, genere_pdf_contrat_mg, supp_contrat, export_clients_pdf, \
     liste_num_client_lte, get_clients_by_commune
 
 urlpatterns = [
@@ -16,6 +16,7 @@ urlpatterns = [
     path('supprimer/id_client=<int:pk>', delete_client, name='client_delete'),
     path('suppression/num_contrat=<str:pk>', supp_contrat, name='supp_contrat'),
     path('pdf/num_contrat=<str:pk>', genere_pdf_contrat, name='genere_pdf_contrat'),
+    path('pdf/mg/num_contrat=<str:pk>', genere_pdf_contrat_mg, name='genere_pdf_contrat_mg'),
     path('pdf/client', export_clients_pdf, name='export_clients_pdf'),
     path('liste/num_client_deb=<str:num_client_deb>', liste_num_client_lte, name='liste_num_client_lte'),
     path('liste/num_client_by_commune/', get_clients_by_commune, name='get_clients_by_commune')
