@@ -868,19 +868,22 @@ def paiement(id_releve, montant_payer, utilisateur):
             # Il y a un surplus
             surplus = nouveau_total_paye - fact_paiement.montant_total_ttc
 
-            # Créer ou mettre à jour l'avoir avec le surplus
-            avoir = Avoir.objects.filter(num_contrat=num_contrat).first()
-            if avoir:
-                avoir.montant_avoir += round(surplus, 0)
-                avoir.save()
+            if surplus > 0:
+                # Créer ou mettre à jour l'avoir avec le surplus
+                avoir = Avoir.objects.filter(num_contrat=num_contrat).first()
+                if avoir:
+                    avoir.montant_avoir += round(surplus, 0)
+                    avoir.save()
+                else:
+                    Avoir.objects.create(
+                        montant_avoir=round(surplus, 0),
+                        utilisateur_id=utilisateur,
+                        num_contrat_id=num_contrat
+                    )
+                fact_paiement.avoir_nouveau = round(surplus, 0)
             else:
-                Avoir.objects.create(
-                    montant_avoir=round(surplus, 0),
-                    utilisateur_id=utilisateur,
-                    num_contrat_id=num_contrat
-                )
+                fact_paiement.avoir_nouveau = None
 
-            fact_paiement.avoir_nouveau = round(surplus, 0)
             fact_paiement.restant_nouvel = None
 
             # Supprimer le restant car tout est payé
