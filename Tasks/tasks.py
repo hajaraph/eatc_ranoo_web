@@ -133,9 +133,13 @@ class TaskMission:
                     date_releve = contrat.dernier_releve_date if contrat.dernier_releve_date else None
                     
                     # Calculer le statut
-                    # 0 = non-relevé ce mois, 2 = relevé ce mois
+                    # 0 = non-relevé ce mois (ou rejeté), 2 = relevé ce mois (confirmé ou en attente)
                     if date_releve and hasattr(date_releve, 'month') and date_releve.month == end_of_month.month:
-                        statut = 2  # Déjà relevé ce mois
+                        # Si le dernier relevé du mois est rejeté, on considère la mission comme "à refaire" (statut 0)
+                        if contrat.dernier_statut_validation == 'REJETE':
+                            statut = 0
+                        else:
+                            statut = 2  # Déjà relevé ce mois (En attente ou Confirmé)
                     else:
                         statut = 0  # Pas encore relevé ce mois
                     
