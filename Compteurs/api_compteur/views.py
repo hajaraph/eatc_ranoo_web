@@ -127,7 +127,8 @@ def relever_client(request):
 
     try:
         resultat = process_compteur_details(compteur_id)
-        return ApiResponse.success(data=resultat)
+        # On retourne le format plat attendu par SyncMissionService.fetchDataClientDetails
+        return Response(resultat, status=status.HTTP_200_OK)
     except ValueError as e:
         return ApiResponse.error(str(e), code="VALIDATION_ERROR")
     except Exception as e:
@@ -214,8 +215,8 @@ class Missions(APIView):
                     has_more=has_more
                 )
             else:
-                # Format de réponse original pour compatibilité
-                return ApiResponse.success(data={'compteurs_liste': missions_list})
+                # Format de réponse original (plat) pour compatibilité
+                return Response({'compteurs_liste': missions_list}, status=status.HTTP_200_OK)
                 
         except Exception as e:
             return ApiResponse.error(f"Erreur du serveur: {str(e)}", code="SERVER_ERROR", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
