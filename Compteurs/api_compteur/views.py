@@ -294,16 +294,13 @@ class Missions(APIView):
                         'version': releve.version,
                     }
 
-            # Si c'est un dict de succès, retourner avec ApiResponse
+            # Pour les missions, on retourne le format plat attendu par l'app mobile
+            # et on ajoute un léger délai pour que le "chargement" soit visible
             if isinstance(result, dict) and result.get('success'):
-                return ApiResponse.created(data={
-                    'enregistre': result.get('enregistre'),
-                    'id_releve': result.get('id_releve'),
-                    'sync_id': result.get('sync_id'),
-                    'version': result.get('version'),
-                })
+                time.sleep(1)  # Délai pour le feedback visuel (comme pour les anomalies)
+                return Response(result, status=status.HTTP_201_CREATED)
             
-            return result
+            return Response(result, status=status.HTTP_200_OK)
         except ValueError as e:
             return ApiResponse.error(str(e), code="VALIDATION_ERROR")
         except Exception as e:
