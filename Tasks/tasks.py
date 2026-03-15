@@ -1,9 +1,11 @@
 import re
-from asyncio.log import logger
-
+import logging
 from asgiref.sync import sync_to_async
 from django.core.cache import cache
 from django.db.models import Max, Sum
+from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 from Clients.models import Contrat
 from Compteurs.api_compteur.serializer import MissionSerializer
@@ -73,14 +75,15 @@ class TaskMission:
                 ).exclude(statut_validation='REJETE').order_by('-date_releve').values('conso')[:1]
                 
                 # Sous-requête pour obtenir le statut de validation du dernier relevé (y compris rejeté)
+                # On trie par id_releve pour avoir l'état le plus récent de façon certaine
                 dernier_statut_validation_subquery = ReleveCompteur.all_objects.filter(
                     num_compteur=OuterRef('num_compteur')
-                ).order_by('-created_at').values('statut_validation')[:1]
+                ).order_by('-id_releve').values('statut_validation')[:1]
 
                 # Sous-requête pour obtenir le motif de rejet du dernier relevé (y compris rejeté)
                 dernier_motif_rejet_subquery = ReleveCompteur.all_objects.filter(
                     num_compteur=OuterRef('num_compteur')
-                ).order_by('-created_at').values('motif_rejet')[:1]
+                ).order_by('-id_releve').values('motif_rejet')[:1]
 
                 # Sous-requête pour savoir si le dernier relevé créé est supprimé (soft deleted)
                 dernier_is_deleted_subquery = ReleveCompteur.all_objects.filter(
@@ -130,38 +133,40 @@ class TaskMission:
 
                 liste_contrats_info = []
                 for contrat in contrats_commune:
-                    date_releve = contrat.dernier_releve_date if contrat.dernier_releve_date else None
+                    # Déterminer si la mission est rejetée
+                    statut_validation = contrat.dernier_statut_validation
                     
-                    # Calculer le statut
-                    # 0 = non-relevé ce mois (ou rejeté), 2 = relevé ce mois (confirmé ou en attente)
-                    if date_releve and hasattr(date_releve, 'month') and date_releve.month == end_of_month.month:
-                        # Si le dernier relevé du mois est rejeté, on considère la mission comme "à refaire" (statut 0)
-                        if contrat.dernier_statut_validation == 'REJETE':
-                            statut = 0
-                        else:
-                            statut = 2  # Déjà relevé ce mois (En attente ou Confirmé)
+                    # LOGIQUE SPÉCIALE REJET : On transforme la mission en "Nouvelle" pour le mobile
+                    if statut_validation == 'REJETE':
+                        statut = 0
+                        releve_id = 0  # Force le mobile à considérer que c'est une nouvelle donnée
+                        final_updated_at = timezone.now() # Force la visibilité dans le Delta Sync
                     else:
-                        statut = 0  # Pas encore relevé ce mois
+                        # Cas classique : calcul du statut selon la date du mois
+                        date_releve = contrat.dernier_releve_date
+                        if date_releve and hasattr(date_releve, 'month') and date_releve.month == end_of_month.month:
+                            statut = 2  # Déjà fait
+                        else:
+                            statut = 0  # Nouveau
+                            
+                        # Récupérer l'ID du dernier relevé valide
+                        releve_id = 0
+                        if contrat.dernier_releve_id:
+                            try:
+                                releve_id = int(contrat.dernier_releve_id)
+                            except (ValueError, TypeError):
+                                releve_id = 0
+                        
+                        # Calcul du updated_at global
+                        compteur_updated_at = contrat.num_compteur.updated_at
+                        releve_updated_at = contrat.dernier_updated_at
+                        final_updated_at = compteur_updated_at
+                        if releve_updated_at and releve_updated_at > compteur_updated_at:
+                            final_updated_at = releve_updated_at
                     
                     # Filtrer par statut si demandé
                     if status_filter is not None and statut != status_filter:
                         continue
-
-                    # S'assurer que l'ID est toujours un entier
-                    releve_id = 0
-                    if contrat.dernier_releve_id:
-                        try:
-                            releve_id = int(contrat.dernier_releve_id)
-                        except (ValueError, TypeError):
-                            releve_id = 0
-
-                    # Calcul du updated_at global (Max entre compteur et dernier mouvement de relevé)
-                    compteur_updated_at = contrat.num_compteur.updated_at
-                    releve_updated_at = contrat.dernier_updated_at
-                    
-                    final_updated_at = compteur_updated_at
-                    if releve_updated_at and releve_updated_at > compteur_updated_at:
-                        final_updated_at = releve_updated_at
 
                     contrat_info = {
                         'id': releve_id,
