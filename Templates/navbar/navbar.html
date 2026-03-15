@@ -26,14 +26,23 @@
                     <div class="notification-list">
                         {% if notifications %}
                             {% for notif in notifications %}
-                            <a href="{% url 'comparaison_consommation' notif.compteur %}" class="notification-item {% if not notif.lu %}unread{% endif %}">
+                            <a href="{% url 'alerte_marquer_lu' notif.id %}?next={% url 'comparaison_consommation' notif.compteur %}" class="notification-item {% if not notif.lu %}unread{% endif %}">
                                 <div class="notification-icon {% if notif.type == 'ECART_CRITIQUE' %}critical{% endif %}">
-                                    <i class="fas fa-{{ notif.icone|default:'info-circle' }}"></i>
+                                    <i class="fas fa-{{ notif.icone|default:'exclamation-triangle' }}"></i>
                                 </div>
                                 <div class="notification-content">
                                     <p class="notification-text">
                                         <strong>{{ notif.compteur }}</strong><br>
-                                        Écart: {{ notif.ecart }} m³ ({{ notif.pourcentage }}%)
+                                        {% if notif.type == 'ECART_CRITIQUE' %}
+                                        <span class="text-danger fw-bold">CRITIQUE</span>
+                                        {% else %}
+                                        <span class="text-warning fw-bold">Écart détecté</span>
+                                        {% endif %}
+                                        <br>
+                                        <small>
+                                            {{ notif.type_anomalie }}: 
+                                            <strong>{{ notif.ecart }} m³ ({{ notif.pourcentage }}%)</strong>
+                                        </small>
                                     </p>
                                     <small class="notification-time">{{ notif.date_creation|timesince }}</small>
                                 </div>

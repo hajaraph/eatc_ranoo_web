@@ -21,5 +21,9 @@
         {% include 'all_page/ranoo_config/config_branchement_new.html' %}
     {% elif titre_branchement_mod %}
         {% include 'all_page/ranoo_config/config_branchement_mod.html' %}
+    {% elif titre_config_alertes %}
+        {% include 'all_page/ranoo_config/config_alertes.html' %}
+    {% elif titre_liste_alertes %}
+        {% include 'all_page/ranoo_config/liste_alertes.html' %}
     {% endif %}
 {% endblock %}

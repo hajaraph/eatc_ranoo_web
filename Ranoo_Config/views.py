@@ -1,10 +1,11 @@
 from django.contrib import messages
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Q
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
 from Acommune.models import Region, Province
 from Clients.models import TypeClient
+from Compteurs.models import AlerteConsommation, CompteurPrincipale
 from Facturation.models import Tarif, Taxe
 from Ranoo_Config.models import ConfigBranchement
 from Tenants.middleware import schema_use, SchemaAwareView
@@ -501,3 +502,67 @@ class TarifMod(SchemaAwareView):
         except Exception as e:
             messages.error(request, f'Une erreur est survenue lors de la modification du tarif: {str(e)}')
             return redirect('config_tarif')
+
+
+class ListeAlertes(SchemaAwareView):
+    """Classe pour afficher la liste des alertes de consommation"""
+    
+    template_name = 'all_page/ranoo_config/content.html'
+    
+    @role_requis('Administrateur', 'Gestionnaire')
+    def get(self, request):
+        titre = 'Ranoo Config | Historique des Alertes'
+        active = 'active'
+        font = 'custom-font'
+        
+        # Récupérer les filtres
+        statut = request.GET.get('statut')
+        type_alerte = request.GET.get('type_alerte')
+        compteur = request.GET.get('compteur')
+        date_deb = request.GET.get('date_deb')
+        date_fin = request.GET.get('date_fin')
+        
+        # Requête de base
+        alertes = AlerteConsommation.objects.select_related('compteur_principal', 'utilisateur_traitement').all()
+        
+        # Appliquer les filtres
+        if statut:
+            alertes = alertes.filter(statut=statut)
+        
+        if type_alerte:
+            alertes = alertes.filter(type_alerte=type_alerte)
+        
+        if compteur:
+            alertes = alertes.filter(compteur_principal__num_compteur_principale__icontains=compteur)
+        
+        if date_deb:
+            alertes = alertes.filter(date_releve__gte=date_deb)
+        
+        if date_fin:
+            alertes = alertes.filter(date_releve__lte=date_fin)
+        
+        # Trier par date de création (plus récent en premier)
+        alertes = alertes.order_by('-date_creation')
+        
+        # Statistiques
+        total_alertes = AlerteConsommation.objects.count()
+        alertes_non_lues = AlerteConsommation.objects.filter(statut='NON_LU').count()
+        alertes_lues = AlerteConsommation.objects.filter(statut='LU').count()
+        alertes_traites = AlerteConsommation.objects.filter(statut='TRAITE').count()
+        
+        context = {
+            'titre_liste_alertes': titre,
+            'active_config_alertes': active,
+            'font_rano': font,
+            'alertes': alertes,
+            'statut': statut,
+            'type_alerte': type_alerte,
+            'compteur': compteur,
+            'date_deb': date_deb,
+            'date_fin': date_fin,
+            'total_alertes': total_alertes,
+            'alertes_non_lues': alertes_non_lues,
+            'alertes_lues': alertes_lues,
+            'alertes_traites': alertes_traites,
+        }
+        return render(request, self.template_name, context)

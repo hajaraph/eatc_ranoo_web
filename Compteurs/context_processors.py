@@ -30,17 +30,34 @@ def alertes_context(request):
         # Transformer en format pour le template
         notifications = []
         for alerte in alertes:
-            icone = 'exclamation-triangle' if alerte.type_alerte == 'ECART_CRITIQUE' else 'exclamation-circle'
+            icone = 'radiation' if alerte.type_alerte == 'ECART_CRITIQUE' else 'exclamation-triangle'
+            
+            # Créer un message court et clair pour la notification
+            if alerte.type_alerte == 'ECART_CRITIQUE':
+                titre_court = "ALERTE CRITIQUE"
+            else:
+                titre_court = "Écart détecté"
+            
+            # Déterminer le type d'anomalie
+            if alerte.ecart_m3 > 0:
+                type_anomalie = "Perte d'eau"
+            else:
+                type_anomalie = "Anomalie (sous-compteurs > principal)"
+            
+            message_court = f"{titre_court}\n{type_anomalie}: {abs(alerte.ecart_m3)} m³ ({alerte.pourcentage_ecart}%)"
+            
             notifications.append({
                 'id': alerte.id_alerte,
-                'message': alerte.message,
+                'message': message_court,
+                'message_complet': alerte.message,
                 'date_creation': alerte.date_creation,
                 'icone': icone,
                 'lu': False,
                 'type': alerte.type_alerte,
                 'compteur': alerte.compteur_principal.num_compteur_principale,
                 'ecart': alerte.ecart_m3,
-                'pourcentage': alerte.pourcentage_ecart
+                'pourcentage': alerte.pourcentage_ecart,
+                'type_anomalie': type_anomalie
             })
         
         context['notifications'] = notifications

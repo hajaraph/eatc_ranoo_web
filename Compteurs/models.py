@@ -2,6 +2,7 @@ from django.db import models
 
 from Tenants.models import Utilisateur
 from Rel_Compteur.mixins import SyncMixin, SyncManager
+from django.utils import timezone
 
 
 def upload_to_compteur(instance, filename):
@@ -201,46 +202,75 @@ class AlerteConsommation(models.Model):
         return f"Alerte {self.type_alerte} - {self.compteur_principal} ({self.date_releve})"
     
     @classmethod
-    def creer_alerte_si_necessaire(cls, compteur_principal, seuil_alerte=5, seuil_critique=10):
+    def creer_alerte_si_necessaire(cls, compteur_principal, seuil_alerte=None, seuil_critique=None, verifier_doublon=True):
         """
         Crée une alerte si l'écart dépasse le seuil.
-        seuil_alerte: pourcentage à partir duquel une alerte est créée (défaut: 5%)
-        seuil_critique: pourcentage à partir duquel l'alerte est critique (défaut: 10%)
+        Si aucun seuil n'est fourni, utilise les paramètres configurés en base.
+        
+        Détecte deux types d'anomalies :
+        1. Perte d'eau : Principal > Sous-compteurs (fuite, compteur défectueux)
+        2. Surconsommation anormale : Sous-compteurs > Principal (erreur de relevé, fraude)
+        
+        CRÉE TOUJOURS UNE NOUVELLE ALERTE pour assurer l'historique et la traçabilité.
+
+        Args:
+            compteur_principal: Le compteur principal à vérifier
+            seuil_alerte: Pourcentage à partir duquel une alerte est créée (défaut: 5% ou valeur configurée)
+            seuil_critique: Pourcentage à partir duquel l'alerte est critique (défaut: 10% ou valeur configurée)
+            verifier_doublon: Si True, vérifie les doublons sur la même date de relevé (défaut: True)
         """
+        # Récupérer les paramètres configurés si non fournis
+        if seuil_alerte is None or seuil_critique is None:
+            params = ParametreAlerte.get_parametres_actifs()
+            seuil_alerte = params.seuil_alerte
+            seuil_critique = params.seuil_critique
+
         ecart = compteur_principal.get_ecart_consommation()
         if ecart is None:
             return None
-            
+
         dernier_releve = compteur_principal.releves.order_by('-date_releve').first()
         if not dernier_releve or not dernier_releve.conso:
             return None
-            
+
         conso_principal = dernier_releve.conso
         total_sous_compteurs = compteur_principal.get_total_conso_sous_compteurs(dernier_releve.date_releve)
-        
+
         if conso_principal == 0:
             return None
-            
+
         pourcentage = abs(ecart) / conso_principal * 100
-        
-        # Vérifier si une alerte existe déjà pour cette date
-        alerte_existante = cls.objects.filter(
-            compteur_principal=compteur_principal,
-            date_releve=dernier_releve.date_releve
-        ).first()
-        
-        if alerte_existante:
-            return alerte_existante
-        
-        # Créer l'alerte si le seuil est dépassé
-        if ecart > 0 and pourcentage >= seuil_alerte:
-            if pourcentage >= seuil_critique:
-                type_alerte = 'ECART_CRITIQUE'
-                message = f"ALERTE CRITIQUE : Écart de {ecart} m³ ({pourcentage:.1f}%) détecté sur le compteur {compteur_principal.num_compteur_principale}. Perte d'eau significative possible."
+
+        # Vérifier les doublons uniquement si demandé (pour éviter spam lors de modifications mineures)
+        if verifier_doublon:
+            alerte_existante = cls.objects.filter(
+                compteur_principal=compteur_principal,
+                date_releve=dernier_releve.date_releve
+            ).first()
+
+            if alerte_existante:
+                return alerte_existante
+
+        # Créer l'alerte si le seuil est dépassé (en valeur absolue)
+        if pourcentage >= seuil_alerte:
+            # Déterminer le type d'anomalie
+            if ecart > 0:
+                # CAS 1 : Principal > Sous-compteurs (Perte d'eau)
+                if pourcentage >= seuil_critique:
+                    type_alerte = 'ECART_CRITIQUE'
+                    message = f"ALERTE CRITIQUE : Écart de {ecart} m³ ({pourcentage:.1f}%) détecté sur le compteur {compteur_principal.num_compteur_principale}. Perte d'eau significative possible."
+                else:
+                    type_alerte = 'ECART_ELEVE'
+                    message = f"Écart de {ecart} m³ ({pourcentage:.1f}%) détecté sur le compteur {compteur_principal.num_compteur_principale}. Perte d'eau à surveiller."
             else:
-                type_alerte = 'ECART_ELEVE'
-                message = f"Écart de {ecart} m³ ({pourcentage:.1f}%) détecté sur le compteur {compteur_principal.num_compteur_principale}. À surveiller."
-            
+                # CAS 2 : Sous-compteurs > Principal (Anomalie inverse)
+                if pourcentage >= seuil_critique:
+                    type_alerte = 'ECART_CRITIQUE'
+                    message = f"ALERTE CRITIQUE : Consommation des sous-compteurs ({total_sous_compteurs} m³) dépasse le compteur principal ({conso_principal} m³) de {abs(ecart)} m³ ({pourcentage:.1f}%). Erreur de relevé ou fraude possible."
+                else:
+                    type_alerte = 'ECART_ELEVE'
+                    message = f"Anomalie : Consommation des sous-compteurs ({total_sous_compteurs} m³) dépasse le compteur principal ({conso_principal} m³) de {abs(ecart)} m³ ({pourcentage:.1f}%). Vérification recommandée."
+
             alerte = cls.objects.create(
                 compteur_principal=compteur_principal,
                 type_alerte=type_alerte,
@@ -252,6 +282,53 @@ class AlerteConsommation(models.Model):
                 date_releve=dernier_releve.date_releve
             )
             return alerte
-        
+
         return None
+
+
+class ParametreAlerte(models.Model):
+    """
+    Paramètres configurables pour les alertes de consommation.
+    Un seul enregistrement actif à la fois.
+    """
+    seuil_alerte = models.FloatField(
+        default=5.0,
+        verbose_name="Seuil d'alerte (%)",
+        help_text="Pourcentage à partir duquel une alerte est créée"
+    )
+    seuil_critique = models.FloatField(
+        default=10.0,
+        verbose_name="Seuil critique (%)",
+        help_text="Pourcentage à partir duquel l'alerte est critique"
+    )
+    date_modification = models.DateTimeField(auto_now=True, verbose_name="Date de modification")
+    utilisateur_modification = models.ForeignKey(
+        Utilisateur,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Modifié par"
+    )
+    actif = models.BooleanField(default=True, verbose_name="Actif")
+
+    class Meta:
+        verbose_name = "Paramètre d'Alerte"
+        verbose_name_plural = "Paramètres d'Alerte"
+
+    def __str__(self):
+        return f"Alerte: {self.seuil_alerte}% | Critique: {self.seuil_critique}%"
+
+    def save(self, *args, **kwargs):
+        """S'assurer qu'un seul enregistrement actif existe"""
+        if self.actif:
+            ParametreAlerte.objects.exclude(pk=self.pk).update(actif=False)
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_parametres_actifs(cls):
+        """Récupère les paramètres actifs ou crée les valeurs par défaut"""
+        params = cls.objects.filter(actif=True).first()
+        if not params:
+            params = cls.objects.create()
+        return params
 

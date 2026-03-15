@@ -2,7 +2,8 @@ from django.urls import path
 
 from Ranoo_Config.views import config_utilisateur, NouvelUtilisateur, sup_utilisateur, UtilisateurMod, \
     config_tarif, TarifMod, TarifNew, branchement, BranchementConfig, get_branchement_list, BranchementMod, \
-    branchement_supp
+    branchement_supp, ListeAlertes
+from Compteurs.views import ConfigurationAlertes
 
 urlpatterns = [
     path('utilisateur', config_utilisateur, name='config_utilisateur'),
@@ -17,4 +18,8 @@ urlpatterns = [
     path('branchement/modifier/<int:pk>', BranchementMod.as_view(), name='branchement_mod'),
     path('branchement/supprimer/<int:pk>', branchement_supp, name='branchement_supp'),
     path('branchement/liste', get_branchement_list),
+
+    # Configuration des Alertes
+    path('configuration-alertes/', ConfigurationAlertes.as_view(), name='config_alertes'),
+    path('liste-alertes/', ListeAlertes.as_view(), name='liste_alertes'),
 ]

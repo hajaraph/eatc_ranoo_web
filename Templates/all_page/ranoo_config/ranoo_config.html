@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/tableau_bord.css' %}">
     <link rel="stylesheet" href="{% static 'css/style_general.css' %}">
-    <title>{{ titre_ranoo_utilisateur }}{{ titre_new_tarif }}{{ titre_mod_tarif }}{{ titre_mod_utilisateur }}{{ titre_creation_utilisateur }}{{ titre_config_tarif }} {{ titre_branchement }} {{ titre_new_branchement }}{{ titre_branchement_mod }}</title>
+    <title>{{ titre_ranoo_utilisateur }}{{ titre_new_tarif }}{{ titre_mod_tarif }}{{ titre_mod_utilisateur }}{{ titre_creation_utilisateur }}{{ titre_config_tarif }} {{ titre_branchement }} {{ titre_new_branchement }}{{ titre_branchement_mod }}{{ titre_config_alertes }}{{ titre_liste_alertes }}</title>
     <style>
         .dataTables_filter input[type="search"] {
             height: 50px;
@@ -43,6 +43,13 @@
                                         <i class="fas fa-tags me-2"></i>Gestion des tarifs
                                     </a>
                                 </div>
+                                {% if request.session.role_utilisateur == 'Administrateur' or request.session.role_utilisateur == 'Gestionnaire' %}
+                                <div class="col-md-2 mt-4">
+                                    <a href="{% url 'liste_alertes' %}" class="btn btn-sm w-100 {{ active_config_alertes }}">
+                                        <i class="fas fa-history me-2"></i>Historique Alertes
+                                    </a>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="card-body">

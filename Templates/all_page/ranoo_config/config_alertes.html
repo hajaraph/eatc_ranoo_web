@@ -1,0 +1,87 @@
+<div class="card-body px-md-4">
+    <h4 class="text-center mb-5">Configuration des Seuils d'Alerte</h4>
+    
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Information :</strong> Les seuils définis ici seront utilisés pour toutes les alertes de consommation d'eau. 
+        Lorsqu'un écart est détecté entre le compteur principal et la somme des sous-compteurs, une alerte sera générée si le pourcentage dépasse le seuil configuré.
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <input type="number" name="seuil_alerte" id="seuil_alerte" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                           value="{{ params.seuil_alerte }}" step="0.1" min="0.1" required>
+                    <label for="seuil_alerte">Seuil d'Alerte (%)*</label>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> 
+                    Pourcentage à partir duquel une alerte "Écart élevé" est générée
+                </small>
+            </div>
+            <div class="col-md-6 col-lg-4 mt-4">
+                <div class="form-floating">
+                    <input type="number" name="seuil_critique" id="seuil_critique" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                           value="{{ params.seuil_critique }}" step="0.1" min="0.1" required>
+                    <label for="seuil_critique">Seuil Critique (%)*</label>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-radiation text-danger"></i> 
+                    Pourcentage à partir duquel une alerte "Écart critique" est générée
+                </small>
+            </div>
+        </div>
+        
+        <div class="alert alert-warning mt-3">
+            <i class="fas fa-lightbulb me-2"></i>
+            <strong>Recommandation :</strong> Seuil d'alerte : 3-7%, Seuil critique : 8-15%
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded">
+                    <h6 class="mb-2 text-secondary">
+                        <i class="fas fa-calculator me-2"></i>Formule
+                    </h6>
+                    <code class="small text-muted">
+                        Écart (%) = |Conso Principal - Σ Sous-compteurs| / Conso Principal × 100
+                    </code>
+                    <div class="mt-2 small text-muted">
+                        <strong>Exemple :</strong> 1000 m³ - 940 m³ = 60 m³ (6%)
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded">
+                    <h6 class="mb-2 text-info">
+                        <i class="fas fa-clock me-2"></i>Dernière modification
+                    </h6>
+                    <div class="small">
+                        <p class="mb-1">
+                            <strong>{{ params.date_modification|date:"d/m/Y H:i" }}</strong> 
+                            <span class="text-muted">par {{ params.utilisateur_modification.get_full_name|default:"Système" }}</span>
+                        </p>
+                        <p class="mb-0">
+                            <strong>Actuels :</strong>
+                            <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> {{ params.seuil_alerte }}%</span> | 
+                            <span class="text-danger"><i class="fas fa-radiation"></i> {{ params.seuil_critique }}%</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="d-flex justify-content-end mt-4 gap-2">
+                <a href="{% url 'liste_alertes' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list"></i> Voir les alertes
+                </a>
+                <button class="btn btn-success" type="submit">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

@@ -311,18 +311,40 @@ a.notification-item:hover .notification-text {
 
 .notification-content {
     flex: 1;
+    min-width: 0; /* Permet au texte de truncater correctement */
 }
 
 .notification-text {
     margin: 0;
     font-size: 13px;
+    line-height: 1.5;
     color: #343a40;
-    line-height: 1.4;
+    word-wrap: break-word; /* Permet le retour à la ligne */
+    white-space: normal; /* Affiche le texte sur plusieurs lignes */
+}
+
+.notification-text small {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.notification-text .text-danger {
+    color: #dc3545 !important;
+}
+
+.notification-text .text-warning {
+    color: #ffc107 !important;
 }
 
 .notification-time {
     color: #6c757d;
     font-size: 11px;
+    display: block;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #f0f0f0;
 }
 
 .notification-empty {

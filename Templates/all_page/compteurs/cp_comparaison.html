@@ -56,22 +56,22 @@
                     {% if ecart > 0 %}
                         <i class="fas fa-exclamation-triangle"></i> Perte détectée
                     {% elif ecart < 0 %}
-                        Surplus détecté
+                        <i class="fas fa-exclamation-circle"></i> Anomalie détectée
                     {% else %}
-                        Équilibré
+                        <i class="fas fa-check-circle"></i> Équilibré
                     {% endif %}
                 </small>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card {% if pourcentage_ecart > 10 %}bg-danger{% elif pourcentage_ecart > 5 %}bg-warning{% else %}bg-info{% endif %} text-white text-center p-3">
+            <div class="card {% if pourcentage_ecart > 10 or pourcentage_ecart < -10 %}bg-danger{% elif pourcentage_ecart > 5 or pourcentage_ecart < -5 %}bg-warning{% else %}bg-info{% endif %} text-white text-center p-3">
                 <h6>Pourcentage d'Écart</h6>
                 <h3>{{ pourcentage_ecart }}%</h3>
                 <small>
-                    {% if pourcentage_ecart > 10 %}
-                        <i class="fas fa-exclamation-circle"></i> Critique
-                    {% elif pourcentage_ecart > 5 %}
-                        <i class="fas fa-exclamation-triangle"></i> À surveiller
+                    {% if pourcentage_ecart > 10 or pourcentage_ecart < -10 %}
+                        <i class="fas fa-radiation"></i> Critique
+                    {% elif pourcentage_ecart > 5 or pourcentage_ecart < -5 %}
+                        <i class="fas fa-exclamation-triangle"></i> Anormal
                     {% else %}
                         <i class="fas fa-check-circle"></i> Normal
                     {% endif %}
@@ -149,8 +149,9 @@
     <div class="alert alert-secondary mt-4">
         <h6><i class="fas fa-info-circle me-2"></i>Interprétation de l'écart</h6>
         <ul class="mb-0">
-            <li><strong>Écart positif :</strong> Le compteur principal indique plus que la somme des sous-compteurs. Cela peut indiquer des fuites ou des branchements non comptabilisés.</li>
-            <li><strong>Écart négatif :</strong> La somme des sous-compteurs dépasse le compteur principal. Vérifiez les relevés.</li>
+            <li><strong>Écart positif (Principal > Sous-compteurs) :</strong> Cela peut indiquer des fuites, des compteurs défectueux ou des branchements non comptabilisés.</li>
+            <li><strong>Écart négatif (Sous-compteurs > Principal) :</strong> Anomalie détectée ! Cela peut indiquer une erreur de relevé, une fraude, ou un compteur principal bloqué.</li>
+            <li><strong>Pourcentage d'écart :</strong> Le signe indique le type d'anomalie. > 0% = perte, < 0% = surplus. Un pourcentage > 5% ou < -5% est anormal, > 10% ou < -10% est critique.</li>
             <li><strong>Écart nul :</strong> Situation idéale, la distribution est correctement comptabilisée.</li>
         </ul>
     </div>

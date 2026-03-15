@@ -13,7 +13,7 @@ from django.utils import timezone
 from weasyprint import HTML
 
 from Acommune.models import Province, Commune
-from Compteurs.models import Compteur, ReleveCompteur, CompteurPrincipale, ReleveCompteurPrincipale, AlerteConsommation
+from Compteurs.models import Compteur, ReleveCompteur, CompteurPrincipale, ReleveCompteurPrincipale, AlerteConsommation, ParametreAlerte
 from Clients.models import Contrat
 from Facturation.models import Facture
 from Facturation.views import facture_creation
@@ -326,10 +326,14 @@ class ReleveNew(SchemaAwareView):
                 # Pas de facture - sera créée lors de la confirmation
             
             # Vérifier l'alerte si lié à un compteur principal
+            # Crée toujours une nouvelle alerte pour assurer l'historique
             try:
                 compteur = Compteur.objects.get(pk=num_compteur)
                 if compteur.num_compteur_principale:
-                    alerte = AlerteConsommation.creer_alerte_si_necessaire(compteur.num_compteur_principale)
+                    alerte = AlerteConsommation.creer_alerte_si_necessaire(
+                        compteur.num_compteur_principale, 
+                        verifier_doublon=False
+                    )
                     if alerte:
                         messages.warning(request, f"Alerte créée sur le compteur principal : {alerte.message}")
             except Exception as e:
@@ -475,6 +479,68 @@ def del_releve(request, pk):
     
     messages.success(request, f"Relevé supprimé avec succès !")
     return redirect('compteur_detail', releve.num_compteur.pk)
+
+
+class ConfigurationAlertes(SchemaAwareView):
+    """Classe pour la configuration des seuils d'alerte"""
+    
+    template_name = 'all_page/ranoo_config/content.html'
+    
+    @role_requis('Administrateur', 'Gestionnaire')
+    def get(self, request):
+        params = ParametreAlerte.get_parametres_actifs()
+        
+        titre = 'Ranoo Config | Configuration des Alertes'
+        active = 'active'
+        font = 'custom-font'
+
+        context = {
+            'params': params,
+            'titre_config_alertes': titre,
+            'active_config_alertes': active,
+            'font_rano': font,
+        }
+        return render(request, self.template_name, context)
+    
+    @role_requis('Administrateur', 'Gestionnaire')
+    def post(self, request):
+        params = ParametreAlerte.get_parametres_actifs()
+        
+        seuil_alerte = request.POST.get('seuil_alerte')
+        seuil_critique = request.POST.get('seuil_critique')
+        
+        # Validation
+        try:
+            seuil_alerte = float(seuil_alerte)
+            seuil_critique = float(seuil_critique)
+            
+            if seuil_alerte <= 0 or seuil_critique <= 0:
+                messages.error(request, "Les seuils doivent être positifs.")
+            elif seuil_alerte >= seuil_critique:
+                messages.error(request, "Le seuil d'alerte doit être inférieur au seuil critique.")
+            else:
+                # Mise à jour
+                params.seuil_alerte = seuil_alerte
+                params.seuil_critique = seuil_critique
+                params.utilisateur_modification_id = request.session.get('id_utilisateur')
+                params.save()
+                messages.success(request, "Paramètres d'alerte mis à jour avec succès !")
+                return redirect('config_alertes')
+        except ValueError:
+            messages.error(request, "Veuillez entrer des valeurs numériques valides.")
+        
+        # Réafficher le formulaire avec les erreurs
+        titre = 'Ranoo Config | Configuration des Alertes'
+        active = 'active'
+        font = 'custom-font'
+        
+        context = {
+            'params': params,
+            'titre_config_alertes': titre,
+            'active_config_alertes': active,
+            'font_rano': font,
+        }
+        return render(request, self.template_name, context)
 
 
 @schema_use
@@ -1046,8 +1112,9 @@ class ReleveCompteurPrincipaleNew(SchemaAwareView):
                 utilisateur_id=request.session.get('id_utilisateur')
             )
 
-            # Vérifier et créer une alerte si nécessaire (écart > 5%)
-            alerte = AlerteConsommation.creer_alerte_si_necessaire(cp, seuil_alerte=5, seuil_critique=10)
+            # Vérifier et créer une alerte si nécessaire
+            # Crée toujours une nouvelle alerte pour assurer l'historique
+            alerte = AlerteConsommation.creer_alerte_si_necessaire(cp, verifier_doublon=False)
             if alerte:
                 messages.warning(request, f"Alerte créée : {alerte.message}")
 
@@ -1126,6 +1193,7 @@ def comparaison_consommation(request, pk):
         total_sous_compteurs = sum(item['conso'] for item in sous_compteurs_data)
         conso_principal = releve_principal.conso if releve_principal and releve_principal.conso else 0
         ecart = conso_principal - total_sous_compteurs
+        # Calcul du pourcentage avec le signe (négatif si sous-compteurs > principal)
         pourcentage_ecart = (ecart / conso_principal * 100) if conso_principal > 0 else 0
 
         title = f'Comparaison | {cp.num_compteur_principale}'
@@ -1157,6 +1225,11 @@ def alerte_marquer_lu(request, pk):
         alerte = AlerteConsommation.objects.get(pk=pk)
         alerte.statut = 'LU'
         alerte.save()
+        
+        # Rediriger vers la page suivante ou la page de comparaison
+        next_url = request.GET.get('next')
+        if next_url:
+            return redirect(next_url)
         return redirect(request.META.get('HTTP_REFERER', 'compteur_principale_list'))
     except AlerteConsommation.DoesNotExist:
         messages.error(request, "Cette alerte n'existe pas.")

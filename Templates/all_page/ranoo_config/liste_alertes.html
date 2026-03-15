@@ -1,0 +1,138 @@
+<div class="card-body px-md-4">
+  
+    <!-- Filtres -->
+    <div class="mb-4">
+        <form method="get" id="formFiltre">
+            <div class="row">
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <select name="statut" id="statut"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                            <option value="">Tous les statuts</option>
+                            <option value="NON_LU" {% if statut == 'NON_LU' %}selected{% endif %}>Non lu</option>
+                            <option value="LU" {% if statut == 'LU' %}selected{% endif %}>Lu</option>
+                            <option value="TRAITE" {% if statut == 'TRAITE' %}selected{% endif %}>Traité</option>
+                        </select>
+                        <label for="statut">Statut</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <select name="type_alerte" id="type_alerte"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0">
+                            <option value="">Tous les types</option>
+                            <option value="ECART_ELEVE" {% if type_alerte == 'ECART_ELEVE' %}selected{% endif %}>Écart élevé</option>
+                            <option value="ECART_CRITIQUE" {% if type_alerte == 'ECART_CRITIQUE' %}selected{% endif %}>Écart critique</option>
+                        </select>
+                        <label for="type_alerte">Type d'alerte</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <input type="date" name="date_deb" id="date_deb"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            value="{{ date_deb|default:'' }}">
+                        <label for="date_deb">Du </label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <div class="form-floating">
+                        <input type="date" name="date_fin" id="date_fin"
+                            class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
+                            value="{{ date_fin|default:'' }}">
+                        <label for="date_fin">au </label>
+                    </div>
+                </div>
+                <div class="col-md-1 col-sm-6 col-6 d-flex align-items-center justify-content-center">
+                    <button class="btn btn-primary" type="submit" style="width: 50px; height: 50px;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="d-flex justify-content-between mb-4">
+       <div class="mx-5 col-md">
+            <a href="{% url 'config_alertes' %}" class="btn btn-primary">
+                <i class="fas fa-sliders-h me-2"></i>Configuration des Seuils
+            </a>
+       </div>
+    </div>
+    
+    <!-- Tableau des alertes -->
+    <div class="table-responsive">
+        <table class="table table-hover" id="myTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Compteur</th>
+                    <th>Type</th>
+                    <th>Écart</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alerte in alertes %}
+                <tr class="{% if alerte.statut == 'NON_LU' %}table-danger{% elif alerte.statut == 'TRAITE' %}table-success{% endif %}">
+                    <td>
+                        <small>
+                            <strong>{{ alerte.date_creation|date:'d/m/Y H:i' }}</strong><br>
+                            <span class="text-muted">{{ alerte.date_releve|date:'d/m/Y' }}</span>
+                        </small>
+                    </td>
+                    <td>
+                        <a href="{% url 'comparaison_consommation' alerte.compteur_principal.pk %}" class="text-decoration-none fw-bold">
+                            {{ alerte.compteur_principal.num_compteur_principale }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if alerte.type_alerte == 'ECART_CRITIQUE' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-radiation"></i> Critique
+                            </span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-exclamation-triangle"></i> Élevé
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ alerte.ecart_m3 }} m³</strong><br>
+                        <small class="text-muted">{{ alerte.pourcentage_ecart }}%</small>
+                    </td>
+                    <td>
+                        {% if alerte.statut == 'NON_LU' %}
+                            <span class="badge bg-danger">Non lu</span>
+                        {% elif alerte.statut == 'LU' %}
+                            <span class="badge bg-warning text-dark">Lu</span>
+                        {% elif alerte.statut == 'TRAITE' %}
+                            <span class="badge bg-success">Traité</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Ignoré</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm gap-2">
+                            {% if alerte.statut != 'LU' %}
+                            <a href="{% url 'alerte_marquer_lu' alerte.pk %}" class="btn btn-outline-primary" title="Marquer comme lu">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% endif %}
+                            {% if alerte.statut != 'TRAITE' %}
+                            <a href="{% url 'alerte_traiter' alerte.pk %}" class="btn btn-outline-success" title="Marquer comme traité">
+                                <i class="fas fa-check"></i>
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'comparaison_consommation' alerte.compteur_principal.pk %}" class="btn btn-outline-info" title="Voir comparaison">
+                                <i class="fas fa-chart-bar"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
