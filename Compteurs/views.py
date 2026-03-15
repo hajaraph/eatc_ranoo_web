@@ -1392,6 +1392,23 @@ def confirmer_mission(request, pk):
         message = f"Confirmation du relevé {pk} pour le compteur {releve.num_compteur_id}"
         enregistre_historique(message, request.session.get('id_utilisateur'))
         
+        # Vérifier l'alerte si lié à un compteur principal
+        # Crée toujours une nouvelle alerte pour assurer l'historique
+        try:
+            compteur = releve.num_compteur
+            if compteur.num_compteur_principale:
+                # On utilise la date du relevé confirmé pour la vérification
+                # Note: creer_alerte_si_necessaire attendra que TOUS les sous-compteurs soient relevés
+                alerte = AlerteConsommation.creer_alerte_si_necessaire(
+                    compteur.num_compteur_principale, 
+                    verifier_doublon=False
+                )
+                if alerte:
+                    messages.warning(request, f"Alerte créée sur le compteur principal : {alerte.message}")
+        except Exception as e:
+            # Ne pas bloquer le flux principal pour une erreur d'alerte
+            messages.error(f"Erreur lors de la vérification d'alerte : {e}")
+        
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': True,

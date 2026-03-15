@@ -73,12 +73,12 @@ class TaskMission:
                 ).exclude(statut_validation='REJETE').order_by('-date_releve').values('conso')[:1]
                 
                 # Sous-requête pour obtenir le statut de validation du dernier relevé (y compris rejeté)
-                dernier_statut_validation_subquery = ReleveCompteur.objects.filter(
+                dernier_statut_validation_subquery = ReleveCompteur.all_objects.filter(
                     num_compteur=OuterRef('num_compteur')
                 ).order_by('-created_at').values('statut_validation')[:1]
 
                 # Sous-requête pour obtenir le motif de rejet du dernier relevé (y compris rejeté)
-                dernier_motif_rejet_subquery = ReleveCompteur.objects.filter(
+                dernier_motif_rejet_subquery = ReleveCompteur.all_objects.filter(
                     num_compteur=OuterRef('num_compteur')
                 ).order_by('-created_at').values('motif_rejet')[:1]
 
