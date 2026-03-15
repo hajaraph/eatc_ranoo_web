@@ -12,24 +12,24 @@
         <div class="row">
             <div class="col-md-6 col-lg-4 mt-4">
                 <div class="form-floating">
-                    <input type="number" name="seuil_alerte" id="seuil_alerte" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                    <input type="number" name="seuil_alerte" id="seuil_alerte" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
                            value="{{ params.seuil_alerte }}" step="0.1" min="0.1" required>
                     <label for="seuil_alerte">Seuil d'Alerte (%)*</label>
                 </div>
                 <small class="text-muted">
-                    <i class="fas fa-exclamation-triangle text-warning"></i> 
-                    Pourcentage à partir duquel une alerte "Écart élevé" est générée
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    Pourcentage d'écart maximum autorisé entre le compteur principal et la somme des sous-compteurs. Au-delà, une alerte "Écart élevé" est créée.
                 </small>
             </div>
             <div class="col-md-6 col-lg-4 mt-4">
                 <div class="form-floating">
-                    <input type="number" name="seuil_critique" id="seuil_critique" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0" 
+                    <input type="number" name="seuil_critique" id="seuil_critique" class="form-control shadow-none border-start-0 border-top-0 border-end-0 rounded-0"
                            value="{{ params.seuil_critique }}" step="0.1" min="0.1" required>
                     <label for="seuil_critique">Seuil Critique (%)*</label>
                 </div>
                 <small class="text-muted">
-                    <i class="fas fa-radiation text-danger"></i> 
-                    Pourcentage à partir duquel une alerte "Écart critique" est générée
+                    <i class="fas fa-radiation text-danger"></i>
+                    Pourcentage d'écart critique. Au-delà, une alerte "Écart critique" est créée, indiquant une perte d'eau significative ou une anomalie grave.
                 </small>
             </div>
         </div>

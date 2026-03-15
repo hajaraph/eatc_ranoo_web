@@ -121,13 +121,18 @@
                             </a>
                             {% endif %}
                             {% if alerte.statut != 'TRAITE' %}
-                            <a href="{% url 'alerte_traiter' alerte.pk %}" class="btn btn-outline-success" title="Marquer comme traité">
+                            <a href="{% url 'alerte_traiter' alerte.pk %}" class="btn btn-success" title="Marquer comme traité">
                                 <i class="fas fa-check"></i>
                             </a>
                             {% endif %}
-                            <a href="{% url 'comparaison_consommation' alerte.compteur_principal.pk %}" class="btn btn-outline-info" title="Voir comparaison">
+                            <a href="{% url 'comparaison_consommation' alerte.compteur_principal.pk %}" class="btn btn-info" title="Voir comparaison">
                                 <i class="fas fa-chart-bar"></i>
                             </a>
+                            {% if request.session.role_utilisateur == 'Administrateur' or request.session.role_utilisateur == 'Gestionnaire' %}
+                            <a href="{% url 'alerte_supprimer' alerte.pk %}" class="btn btn-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

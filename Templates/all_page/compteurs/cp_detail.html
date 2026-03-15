@@ -38,39 +38,66 @@
         </div>
         
         <!-- Statistiques -->
-        <div class="row mt-5">
+        <div class="row mt-5 g-3 align-items-start">
+            <!-- Dernière Conso -->
             <div class="col-md-3">
-                <div class="card bg-primary text-white text-center p-3">
-                    <h6>Dernière Conso.</h6>
-                    <h3>{{ dernier_releve.conso|default:0 }} m³</h3>
+                <div class="card border-0 text-white p-3" style="height: auto !important; border-radius: 16px !important; background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%) !important; box-shadow: 0 8px 25px rgba(25, 118, 210, 0.3) !important; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-tachometer-alt" style="font-size: 18px;"></i>
+                        </div>
+                        <span class="ms-2 fw-semibold" style="font-size: 0.85rem; opacity: 0.9;">Dernière Conso.</span>
+                    </div>
+                    <h3 class="mb-0 fw-bold">{{ dernier_releve.conso|default:0 }} m³</h3>
                 </div>
             </div>
+
+            <!-- Total Sous-Compteurs -->
             <div class="col-md-3">
-                <div class="card bg-success text-white text-center p-3">
-                    <h6>Total Sous-Compteurs</h6>
-                    <h3>{{ total_sous_compteurs }} m³</h3>
+                <div class="card border-0 text-white p-3" style="height: auto !important; border-radius: 16px !important; background: linear-gradient(135deg, #2e7d32 0%, #66bb6a 100%) !important; box-shadow: 0 8px 25px rgba(46, 125, 50, 0.3) !important; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-layer-group" style="font-size: 18px;"></i>
+                        </div>
+                        <span class="ms-2 fw-semibold" style="font-size: 0.85rem; opacity: 0.9;">Total Sous-Compteurs</span>
+                    </div>
+                    <h3 class="mb-0 fw-bold">{{ total_sous_compteurs }} m³</h3>
                 </div>
             </div>
+
+            <!-- Écart -->
             <div class="col-md-3">
-                <div class="card {% if ecart and ecart > 0 %}bg-danger{% else %}bg-secondary{% endif %} text-white text-center p-3">
-                    <h6>Écart</h6>
-                    <h3>{% if ecart is not None %}{{ ecart }}{% else %}0{% endif %} m³</h3>
+                <div class="card border-0 text-white p-3" style="height: auto !important; border-radius: 16px !important; background: linear-gradient(135deg, {% if ecart and ecart > 0 %}#c62828, #ef5350{% else %}#455a64, #90a4ae{% endif %}) !important; box-shadow: 0 8px 25px {% if ecart and ecart > 0 %}rgba(198, 40, 40, 0.3){% else %}rgba(69, 90, 100, 0.3){% endif %} !important; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-exchange-alt" style="font-size: 18px;"></i>
+                        </div>
+                        <span class="ms-2 fw-semibold" style="font-size: 0.85rem; opacity: 0.9;">Écart</span>
+                    </div>
+                    <h3 class="mb-0 fw-bold">{% if ecart is not None %}{{ ecart }}{% else %}0{% endif %} m³</h3>
                 </div>
             </div>
+
+            <!-- Sous-Compteurs -->
             <div class="col-md-3">
-                <div class="card bg-info text-white text-center p-3">
-                    <h6>Sous-Compteurs</h6>
-                    <h3>{{ sous_compteurs.count }}</h3>
+                <div class="card border-0 text-white p-3" style="height: auto !important; border-radius: 16px !important; background: linear-gradient(135deg, #0277bd 0%, #4fc3f7 100%) !important; box-shadow: 0 8px 25px rgba(2, 119, 189, 0.3) !important; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-cubes" style="font-size: 18px;"></i>
+                        </div>
+                        <span class="ms-2 fw-semibold" style="font-size: 0.85rem; opacity: 0.9;">Sous-Compteurs</span>
+                    </div>
+                    <h3 class="mb-0 fw-bold">{{ sous_compteurs.count }}</h3>
                 </div>
             </div>
         </div>
         
-        <div class="d-flex justify-content-end mt-5">
-            <a href="{% url 'comparaison_consommation' compteur_principal.pk %}" class="btn btn-info mx-2">
+        <div class="d-flex justify-content-end mt-5 gap-2">
+            <a href="{% url 'comparaison_consommation' compteur_principal.pk %}" class="btn btn-info">
                 <i class="fas fa-chart-bar"></i>
                 Comparaison
             </a>
-            <a href="{% url 'releve_cp_new' compteur_principal.pk %}" class="btn btn-warning mx-2">
+            <a href="{% url 'releve_cp_new' compteur_principal.pk %}" class="btn btn-warning">
                 <i class="fas fa-plus"></i>
                 Nouveau Relevé
             </a>
@@ -81,28 +108,9 @@
         </div>
     </form>
     
-    <!-- Sous-compteurs liés -->
-    {% if sous_compteurs %}
-    <h5 class="mt-5 mb-3 border-bottom pb-2">Sous-Compteurs Liés ({{ sous_compteurs.count }})</h5>
-    <div class="row">
-        {% for sc in sous_compteurs %}
-        <div class="col-md-3 mb-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h6>{{ sc.num_compteur }}</h6>
-                    <a href="{% url 'compteur_detail' sc.pk %}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-eye"></i> Voir
-                    </a>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    
     <!-- Historique des relevés -->
     <h5 class="mt-5 mb-3 border-bottom pb-2">Historique des Relevés</h5>
-    <div class="card p-4">
+    <div class="card p-4" style="height: auto !important; border-radius: 12px !important;">
         <div class="table-responsive p-1">
             <table class="table" id="myTable">
                 <thead>

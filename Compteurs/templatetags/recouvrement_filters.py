@@ -38,3 +38,11 @@ def string_to_date(value, date_format="%d/%m/%Y %H:%M"):
     except ValueError:
         # If parsing fails for any reason, return the original value
         return value
+
+@register.filter
+def neg(value):
+    """Retourne la valeur négative d'un nombre"""
+    try:
+        return -float(value)
+    except (ValueError, TypeError):
+        return 0

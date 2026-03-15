@@ -22,6 +22,7 @@ from Parametre.views import enregistre_historique, exporter_en_excel
 from Tenants.middleware import schema_use, SchemaAwareView
 from Rel_Compteur.utils import get_month_name_fr, filter_by_user_role, \
     get_3_months_range, get_month_range, filter_by_client_number
+from Compteurs.models import ParametreAlerte
 
 
 @schema_use
@@ -1196,17 +1197,23 @@ def comparaison_consommation(request, pk):
         # Calcul du pourcentage avec le signe (négatif si sous-compteurs > principal)
         pourcentage_ecart = (ecart / conso_principal * 100) if conso_principal > 0 else 0
 
+        # Récupérer les seuils configurés
+        params_alerte = ParametreAlerte.get_parametres_actifs()
+
         title = f'Comparaison | {cp.num_compteur_principale}'
         context = {
             'title_comparaison': title,
             'font_compteur': 'custom-font',
+            'active_cp_releve': 'active',
             'compteur_principal': cp,
             'releve_principal': releve_principal,
             'sous_compteurs': sous_compteurs_data,
             'total_sous_compteurs': total_sous_compteurs,
             'ecart': ecart,
             'pourcentage_ecart': round(pourcentage_ecart, 2),
-            'date_filtre': date_filtre
+            'date_filtre': date_filtre,
+            'seuil_alerte': params_alerte.seuil_alerte,
+            'seuil_critique': params_alerte.seuil_critique,
         }
         return render(request, 'all_page/compteurs/compteurs.html', context)
 
@@ -1243,6 +1250,20 @@ def alerte_marquer_toutes_lues(request):
     AlerteConsommation.objects.filter(statut='NON_LU').update(statut='LU')
     messages.success(request, "Toutes les alertes ont été marquées comme lues.")
     return redirect(request.META.get('HTTP_REFERER', 'compteur_principale_list'))
+
+
+@role_requis('Administrateur', 'Gestionnaire')
+@schema_use
+def alerte_supprimer(request, pk):
+    """Supprimer définitivement une alerte"""
+    try:
+        alerte = AlerteConsommation.objects.get(pk=pk)
+        alerte.delete()
+        messages.success(request, "Alerte supprimée avec succès.")
+        return redirect(request.META.get('HTTP_REFERER', 'liste_alertes'))
+    except AlerteConsommation.DoesNotExist:
+        messages.error(request, "Cette alerte n'existe pas.")
+        return redirect('liste_alertes')
 
 
 @role_requis('Administrateur', 'Gestionnaire')

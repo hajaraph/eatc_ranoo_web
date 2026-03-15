@@ -1,3 +1,5 @@
+{% load recouvrement_filters %}
+
 <div class="card-body">
     <h4 class="text-center my-4">Comparaison - {{ compteur_principal.num_compteur_principale }}</h4>
     
@@ -27,56 +29,86 @@
     </div>
     
     <!-- Résumé -->
-    <div class="row mb-4">
+    <div class="row mb-4 g-3 align-items-start">
+        <!-- Compteur Principal -->
         <div class="col-md-3">
-            <div class="card bg-primary text-white text-center p-3">
-                <h6>Compteur Principal</h6>
-                <h3>{{ releve_principal.conso|default:0 }} m³</h3>
-                <small>
-                    {% if releve_principal %}
-                        {{ releve_principal.date_releve|date:'d/m/Y' }}
-                    {% else %}
-                        Aucun relevé
-                    {% endif %}
+            <div class="card border-0 text-white p-3" style="height: auto !important; border-radius: 16px !important; background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%) !important; box-shadow: 0 8px 25px rgba(25, 118, 210, 0.3) !important; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                <div class="d-flex align-items-center mb-2">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-tachometer-alt" style="font-size: 18px;"></i>
+                    </div>
+                    <span class="ms-2 fw-semibold" style="font-size: 0.85rem; opacity: 0.9;">Compteur Principal</span>
+                </div>
+                <h3 class="mb-1 fw-bold">{{ releve_principal.conso|default:0 }} m³</h3>
+                <small style="opacity: 0.75;">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    {% if releve_principal %}{{ releve_principal.date_releve|date:'d/m/Y' }}{% else %}Aucun relevé{% endif %}
                 </small>
             </div>
         </div>
+
+        <!-- Total Sous-Compteurs -->
         <div class="col-md-3">
-            <div class="card bg-success text-white text-center p-3">
-                <h6>Total Sous-Compteurs</h6>
-                <h3>{{ total_sous_compteurs }} m³</h3>
-                <small>{{ sous_compteurs|length }} compteur(s)</small>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card {% if ecart > 0 %}bg-danger{% elif ecart < 0 %}bg-warning{% else %}bg-secondary{% endif %} text-white text-center p-3">
-                <h6>Écart</h6>
-                <h3>{% if ecart > 0 %}+{% endif %}{{ ecart }} m³</h3>
-                <small>
-                    {% if ecart > 0 %}
-                        <i class="fas fa-exclamation-triangle"></i> Perte détectée
-                    {% elif ecart < 0 %}
-                        <i class="fas fa-exclamation-circle"></i> Anomalie détectée
-                    {% else %}
-                        <i class="fas fa-check-circle"></i> Équilibré
-                    {% endif %}
+            <div class="card border-0 text-white p-3" style="height: auto !important; border-radius: 16px !important; background: linear-gradient(135deg, #2e7d32 0%, #66bb6a 100%) !important; box-shadow: 0 8px 25px rgba(46, 125, 50, 0.3) !important; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                <div class="d-flex align-items-center mb-2">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-layer-group" style="font-size: 18px;"></i>
+                    </div>
+                    <span class="ms-2 fw-semibold" style="font-size: 0.85rem; opacity: 0.9;">Total Sous-Compteurs</span>
+                </div>
+                <h3 class="mb-1 fw-bold">{{ total_sous_compteurs }} m³</h3>
+                <small style="opacity: 0.75;">
+                    <i class="fas fa-cubes me-1"></i>{{ sous_compteurs|length }} compteur(s)
                 </small>
             </div>
         </div>
+
+        <!-- Écart -->
         <div class="col-md-3">
-            <div class="card {% if pourcentage_ecart > 10 or pourcentage_ecart < -10 %}bg-danger{% elif pourcentage_ecart > 5 or pourcentage_ecart < -5 %}bg-warning{% else %}bg-info{% endif %} text-white text-center p-3">
-                <h6>Pourcentage d'Écart</h6>
-                <h3>{{ pourcentage_ecart }}%</h3>
-                <small>
-                    {% if pourcentage_ecart > 10 or pourcentage_ecart < -10 %}
-                        <i class="fas fa-radiation"></i> Critique
-                    {% elif pourcentage_ecart > 5 or pourcentage_ecart < -5 %}
-                        <i class="fas fa-exclamation-triangle"></i> Anormal
+            {% with seuil_alerte_neg=seuil_alerte|neg|floatformat:1 seuil_critique_neg=seuil_critique|neg|floatformat:1 %}
+            <div class="card border-0 text-white p-3" style="height: auto !important; border-radius: 16px !important; background: linear-gradient(135deg, {% if pourcentage_ecart > seuil_critique or pourcentage_ecart < seuil_critique_neg %}#c62828, #ef5350{% elif pourcentage_ecart > seuil_alerte or pourcentage_ecart < seuil_alerte_neg %}#e65100, #ffa726{% else %}#0277bd, #4fc3f7{% endif %}) !important; box-shadow: 0 8px 25px {% if pourcentage_ecart > seuil_critique or pourcentage_ecart < seuil_critique_neg %}rgba(198, 40, 40, 0.3){% elif pourcentage_ecart > seuil_alerte or pourcentage_ecart < seuil_alerte_neg %}rgba(230, 81, 0, 0.3){% else %}rgba(2, 119, 189, 0.3){% endif %} !important; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                <div class="d-flex align-items-center mb-2">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-exchange-alt" style="font-size: 18px;"></i>
+                    </div>
+                    <span class="ms-2 fw-semibold" style="font-size: 0.85rem; opacity: 0.9;">Écart</span>
+                </div>
+                <h3 class="mb-1 fw-bold">{% if ecart > 0 %}+{% endif %}{{ ecart }} m³</h3>
+                <small style="opacity: 0.75;">
+                    {% if pourcentage_ecart > seuil_critique or pourcentage_ecart < seuil_critique_neg %}
+                        <i class="fas fa-radiation me-1"></i> Critique
+                    {% elif pourcentage_ecart > seuil_alerte or pourcentage_ecart < seuil_alerte_neg %}
+                        <i class="fas fa-exclamation-triangle me-1"></i> Anormal
                     {% else %}
-                        <i class="fas fa-check-circle"></i> Normal
+                        <i class="fas fa-check-circle me-1"></i> Normal
                     {% endif %}
                 </small>
             </div>
+            {% endwith %}
+        </div>
+
+        <!-- Pourcentage d'Écart -->
+        <div class="col-md-3">
+            {% with seuil_alerte_neg=seuil_alerte|neg|floatformat:1 seuil_critique_neg=seuil_critique|neg|floatformat:1 %}
+            <div class="card border-0 text-white p-3" style="height: auto !important; border-radius: 16px !important; background: linear-gradient(135deg, {% if pourcentage_ecart > seuil_critique or pourcentage_ecart < seuil_critique_neg %}#c62828, #ef5350{% elif pourcentage_ecart > seuil_alerte or pourcentage_ecart < seuil_alerte_neg %}#e65100, #ffa726{% else %}#0277bd, #4fc3f7{% endif %}) !important; box-shadow: 0 8px 25px {% if pourcentage_ecart > seuil_critique or pourcentage_ecart < seuil_critique_neg %}rgba(198, 40, 40, 0.3){% elif pourcentage_ecart > seuil_alerte or pourcentage_ecart < seuil_alerte_neg %}rgba(230, 81, 0, 0.3){% else %}rgba(2, 119, 189, 0.3){% endif %} !important; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                <div class="d-flex align-items-center mb-2">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-percentage" style="font-size: 18px;"></i>
+                    </div>
+                    <span class="ms-2 fw-semibold" style="font-size: 0.85rem; opacity: 0.9;">Pourcentage d'Écart</span>
+                </div>
+                <h3 class="mb-1 fw-bold">{{ pourcentage_ecart }}%</h3>
+                <small style="opacity: 0.75;">
+                    {% if pourcentage_ecart > seuil_critique or pourcentage_ecart < seuil_critique_neg %}
+                        <i class="fas fa-radiation me-1"></i> Critique
+                    {% elif pourcentage_ecart > seuil_alerte or pourcentage_ecart < seuil_alerte_neg %}
+                        <i class="fas fa-exclamation-triangle me-1"></i> Anormal
+                    {% else %}
+                        <i class="fas fa-check-circle me-1"></i> Normal
+                    {% endif %}
+                </small>
+            </div>
+            {% endwith %}
         </div>
     </div>
     
@@ -147,12 +179,12 @@
     
     <!-- Légende -->
     <div class="alert alert-secondary mt-4">
-        <h6><i class="fas fa-info-circle me-2"></i>Interprétation de l'écart</h6>
+        <h6><i class="fas fa-info-circle me-2"></i>Interprétation de l'écart (Seuils configurés : {{ seuil_alerte }}% / {{ seuil_critique }}%)</h6>
         <ul class="mb-0">
             <li><strong>Écart positif (Principal > Sous-compteurs) :</strong> Cela peut indiquer des fuites, des compteurs défectueux ou des branchements non comptabilisés.</li>
             <li><strong>Écart négatif (Sous-compteurs > Principal) :</strong> Anomalie détectée ! Cela peut indiquer une erreur de relevé, une fraude, ou un compteur principal bloqué.</li>
-            <li><strong>Pourcentage d'écart :</strong> Le signe indique le type d'anomalie. > 0% = perte, < 0% = surplus. Un pourcentage > 5% ou < -5% est anormal, > 10% ou < -10% est critique.</li>
-            <li><strong>Écart nul :</strong> Situation idéale, la distribution est correctement comptabilisée.</li>
+            <li><strong>Pourcentage d'écart :</strong> Basé sur l'écart absolu. < {{ seuil_alerte }}% = Normal (bleu), {{ seuil_alerte }}-{{ seuil_critique }}% = Anormal (jaune), > {{ seuil_critique }}% = Critique (rouge).</li>
+            <li><strong>Couleurs :</strong> Les deux cartes (Écart et Pourcentage) utilisent la même échelle basée sur les seuils configurés.</li>
         </ul>
     </div>
 </div>

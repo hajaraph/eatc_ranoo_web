@@ -202,6 +202,47 @@ class AlerteConsommation(models.Model):
         return f"Alerte {self.type_alerte} - {self.compteur_principal} ({self.date_releve})"
     
     @classmethod
+    def tous_sous_compteurs_releves(cls, compteur_principal, date_releve=None):
+        """
+        Vérifie si tous les sous-compteurs (avec contrat) ont été relevés pour le mois de la date donnée.
+        
+        Args:
+            compteur_principal: Le compteur principal à vérifier
+            date_releve: Date de référence pour la vérification (défaut: date du dernier relevé du principal)
+        
+        Returns:
+            bool: True si tous les sous-compteurs ont été relevés, False sinon
+        """
+        # Déterminer le mois et l'année à vérifier
+        if date_releve:
+            mois = date_releve.month
+            annee = date_releve.year
+        else:
+            dernier_releve = compteur_principal.releves.order_by('-date_releve').first()
+            if not dernier_releve:
+                return False
+            mois = dernier_releve.date_releve.month
+            annee = dernier_releve.date_releve.year
+        
+        # Vérifier chaque sous-compteur qui a un contrat
+        for compteur in compteur_principal.compteurs.all():
+            # Exclure les compteurs sans contrat
+            if not compteur.contrats.exists():
+                continue
+            
+            # Vérifier s'il y a un relevé pour ce mois/année
+            releve = compteur.relevecompteurs.filter(
+                date_releve__month=mois,
+                date_releve__year=annee
+            ).first()
+            
+            if not releve:
+                return False  # Au moins un compteur n'a pas été relevé
+        
+        return True  # Tous les compteurs avec contrat ont été relevés
+
+
+    @classmethod
     def creer_alerte_si_necessaire(cls, compteur_principal, seuil_alerte=None, seuil_critique=None, verifier_doublon=True):
         """
         Crée une alerte si l'écart dépasse le seuil.
@@ -211,8 +252,8 @@ class AlerteConsommation(models.Model):
         1. Perte d'eau : Principal > Sous-compteurs (fuite, compteur défectueux)
         2. Surconsommation anormale : Sous-compteurs > Principal (erreur de relevé, fraude)
         
-        CRÉE TOUJOURS UNE NOUVELLE ALERTE pour assurer l'historique et la traçabilité.
-
+        ATTEND QUE TOUS LES SOUS-COMPTEURS (AVEC CONTRAT) SOIENT RELEVÉS avant de créer l'alerte.
+        
         Args:
             compteur_principal: Le compteur principal à vérifier
             seuil_alerte: Pourcentage à partir duquel une alerte est créée (défaut: 5% ou valeur configurée)
@@ -224,6 +265,10 @@ class AlerteConsommation(models.Model):
             params = ParametreAlerte.get_parametres_actifs()
             seuil_alerte = params.seuil_alerte
             seuil_critique = params.seuil_critique
+
+        # VÉRIFICATION IMPORTANTE : Attendre que tous les sous-compteurs soient relevés
+        if not cls.tous_sous_compteurs_releves(compteur_principal):
+            return None  # Ne pas créer d'alerte tant que ce n'est pas complet
 
         ecart = compteur_principal.get_ecart_consommation()
         if ecart is None:
