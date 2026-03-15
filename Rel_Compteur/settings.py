@@ -255,11 +255,25 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django': {
+        '': {  # Root logger
             'handlers': ['console', 'file'],
             'level': 'INFO',
+        },
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': config('DJANGO_LOG_LEVEL', default='INFO'),
+            'propagate': False,
+        },
+        'gunicorn.error': {
+            'level': 'INFO',
+            'handlers': ['console'],
             'propagate': True,
-        }
+        },
+        'gunicorn.access': {
+            'level': 'INFO',
+            'handlers': ['console'],
+            'propagate': False,
+        },
     },
 }
 

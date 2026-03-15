@@ -71,10 +71,10 @@
             </div>
         </div>
         {% endif %}
-        <div class="d-flex justify-content-end mt-5">
+        <div class="d-flex justify-content-end mt-5 gap-2">
             {% if contrat %}
                 {% if client_active %}
-                    <a href="{% url 'releve_new' detail.pk %}" class="btn btn-warning mx-5">
+                    <a href="{% url 'releve_new' detail.pk %}" class="btn btn-warning">
                         <i class="fas fa-plus"></i>
                         Nouveau Relevé
                     </a>

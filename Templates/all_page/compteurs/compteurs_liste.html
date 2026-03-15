@@ -48,11 +48,11 @@
                         {{ list.dernier_releve|default_if_none:"-"|date:"d/m/Y" }}
                     </td>
                     <td>
-                        <a href="{% url 'compteur_detail' list.pk %}" class="btn btn-primary btn-sm " title="Détail">
+                        <a href="{% url 'compteur_detail' list.pk %}" class="btn btn-primary btn-sm" title="Détail">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         {% if request.session.role_utilisateur == 'Administrateur' %}
-                            <a href="{% url 'compteur_supp' list.pk %}" class="btn btn-danger btn-sm " title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce Compteur ?')">
+                            <a href="{% url 'compteur_supp' list.pk %}" class="btn btn-danger btn-sm" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce Compteur ?')">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                         {% endif %}
