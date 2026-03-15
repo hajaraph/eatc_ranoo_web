@@ -114,10 +114,14 @@ class TaskMission:
                 
                 # === OPTIMISATION MAJEURE DU DELTA SYNC ===
                 if modified_since:
+                    # Marge de sécurité de 1 seconde pour éviter les problèmes de précision
+                    effective_since = modified_since - timezone.timedelta(seconds=1)
+                    
                     # Demander uniquement les lignes modifiées à PostgreSQL
+                    # On inclut num_compteur OR releve_updated_at (qui inclut les rejets)
                     contrats_queryset = contrats_queryset.filter(
-                        Q(num_compteur__updated_at__gte=modified_since) |
-                        Q(dernier_updated_at__gte=modified_since)
+                        Q(num_compteur__updated_at__gte=effective_since) |
+                        Q(dernier_updated_at__gte=effective_since)
                     )
                 
                 # Compter le total avant pagination
