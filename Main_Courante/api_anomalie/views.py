@@ -113,7 +113,8 @@ class DeclareMaincourate(APIView):
                     server_time=timezone.now().isoformat()
                 )
             else:
-                return ApiResponse.success(data=response_data)
+                # Format plat pour compatibilité
+                return Response(response_data, status=status.HTTP_200_OK)
                 
         except Exception as e:
             return ApiResponse.server_error(f"Erreur serveur: {str(e)}")
@@ -172,7 +173,14 @@ class DeclareMaincourate(APIView):
                     main_courante_id=main_courante.pk,
                     date_status=date_declaration
                 )
-                return ApiResponse.created(data={'id': main_courante.pk}, message="Données enregistrées avec succès")
+                
+                # Format plat et délai pour le feedback visuel
+                time.sleep(1)
+                return Response({
+                    'success': True,
+                    'id': main_courante.pk,
+                    'message': "Données enregistrées avec succès"
+                }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             return ApiResponse.server_error(f"Erreur serveur: {str(e)}")
@@ -210,7 +218,10 @@ def suivie_mc(request):
                 return ApiResponse.error("Erreur de validation", code="VALIDATION_ERROR", details=serializer.errors)
 
             serializer.save()
-            return ApiResponse.success(message=f'Commentaire MC ({id_mc}) enregistré avec succès')
+            return Response({
+                'success': True,
+                'message': f'Commentaire MC ({id_mc}) enregistré avec succès'
+            }, status=status.HTTP_200_OK)
 
     except Exception as e:
         return ApiResponse.server_error(f"Erreur serveur: {str(e)}")
