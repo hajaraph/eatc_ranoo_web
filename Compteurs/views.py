@@ -369,7 +369,7 @@ class ReleveMod(SchemaAwareView):
 
     template_name = 'all_page/compteurs/compteurs.html'
 
-    @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+    @role_requis('Administrateur', 'Gestionnaire')
     def get(self, request, pk):
         releve = ReleveCompteur.objects.get(pk=pk)
         title = f"Relevé | Détail | "
@@ -402,7 +402,7 @@ class ReleveMod(SchemaAwareView):
         return mod_releve
 
     @staticmethod
-    @role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+    @role_requis('Administrateur', 'Gestionnaire')
     def post(request, pk):
         date_releve = request.POST['date_releve']
         date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
@@ -453,12 +453,26 @@ class ReleveMod(SchemaAwareView):
         return redirect('compteur_detail', compteur.pk)
 
 
-@role_requis('Administrateur', 'Gestionnaire', 'Releveur')
+@role_requis('Administrateur', 'Gestionnaire')
 @schema_use
 def del_releve(request, pk):
     releve = get_object_or_404(ReleveCompteur, pk=pk)
+    
+    # Vérifier si une facture existe pour ce relevé
+    facture = Facture.objects.filter(relevecompteur__id_releve=pk).first()
+    
+    # Si la facture existe et est déjà payée, empêcher la suppression
+    if facture and facture.statut:
+        messages.error(request, f"Impossible de supprimer ce relevé car la facture associée est déjà payée !")
+        return redirect('compteur_detail', releve.num_compteur.pk)
+    
     releve.image_compteur.delete()
     releve.delete()
+    
+    # Supprimer la facture associée si elle existe
+    if facture:
+        facture.delete()
+    
     messages.success(request, f"Relevé supprimé avec succès !")
     return redirect('compteur_detail', releve.num_compteur.pk)
 
@@ -733,9 +747,6 @@ def export_relever(request, num_compteur):
     # Récupérer le paramètre de filtre par commune
     commune_id = request.GET.get('commune')
     
-    # Construire la requête de base pour les rel    from Rel_Compteur.utils import get_previous_month
-    #     date_debut_affichage = get_previous_month(date_debut)
-    #     date_fin_affichage = get_previous_month(date_fin)evés
     releves_query = ReleveCompteur.objects.filter(num_compteur_id=num_compteur)
 
     # Filtrer par commune si spécifiée
