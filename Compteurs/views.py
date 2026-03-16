@@ -360,7 +360,7 @@ def relever(num_compteur, date_releve, volume, conso, image_compteur, utilisateu
             statut_validation='EN_ATTENTE', valideur_id=None):
 
     releve = ReleveCompteur.objects.create(
-        num_compteur_id=num_compteur,
+        num_compteur=num_compteur if isinstance(num_compteur, Compteur) else Compteur.objects.get(pk=num_compteur),
         date_releve=date_releve,
         volume=volume,
         conso=conso,
@@ -395,7 +395,8 @@ class ReleveMod(SchemaAwareView):
     @staticmethod
     def mod_relever_facture(id_releve, date_releve, volume, image_compteur, dernier_releve, valideur_id=None):
         mod_releve = ReleveCompteur.objects.get(pk=id_releve)
-        conso = volume - dernier_releve.volume
+        # Calcul de conso robuste (supporte le cas où il n'y a pas de relevé précédent)
+        conso = volume - dernier_releve.volume if dernier_releve else volume
         mod_releve.date_releve = date_releve
         mod_releve.volume = volume
         mod_releve.conso = conso

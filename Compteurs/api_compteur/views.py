@@ -272,6 +272,8 @@ class Missions(APIView):
                     }
 
                 else:
+                    id_compteur_str = compteur_id.num_compteur if hasattr(compteur_id, 'num_compteur') else str(compteur_id)
+                    
                     if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
                         return ApiResponse.error("La date de relevé existe déjà dans la base de données", code="DUPLICATE_DATE")
 
@@ -290,11 +292,12 @@ class Missions(APIView):
                         conso = volume
                         dernier_volume = None
 
-                    releve = relever(compteur_id, date_releve,
+                    # Utiliser l'ID du compteur pour la création
+                    releve = relever(id_compteur_str, date_releve,
                                      volume, conso, image_compteur, utilisateur)
                     # La facture sera créée lors de la confirmation par le gestionnaire
 
-                    historique = f"Relevé du compteur {compteur_id} en attente de validation"
+                    historique = f"Relevé du compteur {id_compteur_str} en attente de validation"
                     enregistre_historique(historique, utilisateur)
                     
                     # Retourner avec les métadonnées de sync
