@@ -32,10 +32,10 @@ def compteur_liste(request):
     header = 'Liste Compteurs'
     font = 'custom-font'
 
-    # Récupération des derniers relevés
+    # Récupération des derniers relevés (hors rejetés)
     derniers_releves = ReleveCompteur.objects.filter(
         num_compteur_id=OuterRef('pk')
-    ).order_by('-date_releve')
+    ).exclude(statut_validation='REJETE').order_by('-date_releve')
 
     # Récupération des compteurs avec leurs contrats et clients associés
     compteurs_query = Compteur.objects.prefetch_related(
@@ -270,8 +270,8 @@ class ReleveNew(SchemaAwareView):
             active = 'active'
             font = 'custom-font'
 
-            # Récupérer le dernier relevé
-            dernier_releve = compteur.relevecompteurs.order_by('-date_releve').first()
+            # Récupérer le dernier relevé (hors rejetés)
+            dernier_releve = compteur.relevecompteurs.exclude(statut_validation='REJETE').order_by('-date_releve').first()
 
             context = {
                 'title_releve_new': title,
@@ -299,7 +299,10 @@ class ReleveNew(SchemaAwareView):
         utilisateur = request.session.get('id_utilisateur')
 
         try:
-            dernier_volume = ReleveCompteur.objects.filter(num_compteur_id=num_compteur).latest('date_releve')
+            # Exclure les relevés rejetés pour le calcul de la consommation
+            dernier_volume = ReleveCompteur.objects.filter(
+                num_compteur_id=num_compteur
+            ).exclude(statut_validation='REJETE').latest('date_releve')
 
             if dernier_volume:
                 if date_releve <= dernier_volume.date_releve:
@@ -390,7 +393,7 @@ class ReleveMod(SchemaAwareView):
         return render(request, self.template_name, context)
 
     @staticmethod
-    def mod_relever_facture(id_releve, date_releve, volume, image_compteur, dernier_releve):
+    def mod_relever_facture(id_releve, date_releve, volume, image_compteur, dernier_releve, valideur_id=None):
         mod_releve = ReleveCompteur.objects.get(pk=id_releve)
         conso = volume - dernier_releve.volume
         mod_releve.date_releve = date_releve
@@ -398,6 +401,13 @@ class ReleveMod(SchemaAwareView):
         mod_releve.conso = conso
         if image_compteur:
             mod_releve.image_compteur = image_compteur
+            
+        # Si modifié/corrigé par un gestionnaire, on le confirme et on efface les traces du rejet
+        mod_releve.statut_validation = 'CONFIRME'
+        if valideur_id:
+            mod_releve.valideur_id = valideur_id
+        mod_releve.date_validation = timezone.now()
+        mod_releve.motif_rejet = None
         mod_releve.save()
         
         # La suppression de l'ancienne facture est maintenant gérée par facture_creation
@@ -416,10 +426,10 @@ class ReleveMod(SchemaAwareView):
         releve_a_mod = ReleveCompteur.objects.get(pk=pk)
         compteur = releve_a_mod.num_compteur
 
-        # Trouver le relevé chronologiquement précédent pour calculer la consommation
+        # Trouver le relevé chronologiquement précédent (hors rejetés)
         dernier_releve = compteur.relevecompteurs.filter(
             date_releve__lt=releve_a_mod.date_releve
-        ).order_by('-date_releve').first()
+        ).exclude(statut_validation='REJETE').order_by('-date_releve').first()
 
         if not dernier_releve:
             # Cas du premier relevé
@@ -428,6 +438,12 @@ class ReleveMod(SchemaAwareView):
             releve_a_mod.conso = 0  # Ou volume si c'est le cas
             if image_compteur:
                 releve_a_mod.image_compteur = image_compteur
+            
+            # Forcer la confirmation car fait par un gestionnaire
+            releve_a_mod.statut_validation = 'CONFIRME'
+            releve_a_mod.valideur_id = request.session.get('id_utilisateur')
+            releve_a_mod.date_validation = timezone.now()
+            releve_a_mod.motif_rejet = None
             releve_a_mod.save()
             
             # Mise à jour de la facture si Admin
@@ -446,9 +462,11 @@ class ReleveMod(SchemaAwareView):
             messages.warning(request, f"Vous ne pouvez pas enregistrer un relevé inférieur au précédent !")
             return redirect('releve_mod', pk)
         
-        # Mise à jour via la méthode statique
-        mod_releve = ReleveMod.mod_relever_facture(pk, date_releve,
-                                                   volume, image_compteur, dernier_releve)
+        # Mise à jour via la méthode statique (inclut la confirmation automatique)
+        mod_releve = ReleveMod.mod_relever_facture(
+            pk, date_releve, volume, image_compteur, dernier_releve,
+            valideur_id=request.session.get('id_utilisateur')
+        )
         
         # Recréation de la facture si Admin
         if request.session.get('role_utilisateur') in ['Administrateur', 'Gestionnaire']:
@@ -585,18 +603,18 @@ def export_fiche_releve(request):
         if not compteur:
             continue
 
-        # Récupérer le relevé du mois actuel
+        # Récupérer le relevé du mois actuel (hors rejetés)
         releve_actuel = compteur.relevecompteurs.filter(
             date_releve__year=aujourdhui.year,
             date_releve__month=aujourdhui.month
-        ).order_by('-date_releve').first()
+        ).exclude(statut_validation='REJETE').order_by('-date_releve').first()
 
-        # Récupérer le DERNIER relevé connu (hors mois actuel) pour avoir l'index de référence correct
+        # Récupérer le DERNIER relevé connu (hors mois actuel et hors rejetés)
         # Cela gère le cas où il n'y a pas eu de relevé le mois précédent
         releve_precedent = compteur.relevecompteurs.exclude(
             date_releve__year=aujourdhui.year,
             date_releve__month=aujourdhui.month
-        ).order_by('-date_releve').first()
+        ).exclude(statut_validation='REJETE').order_by('-date_releve').first()
 
         # INFO : releve_actuel peut être None si pas encore fait
         # releve_precedent est le dernier index "sûr" connu du système

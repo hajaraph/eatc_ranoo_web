@@ -240,16 +240,25 @@ class Missions(APIView):
                 image_compteur = request.FILES.get('image_compteur')
 
                 if id_releve is not None:
-                    compteur = get_object_or_404(Compteur, relevecompteurs__id_releve=id_releve)
-                    dernier_releve = compteur.relevecompteurs.order_by('-id_releve')[1]
+                    releve_a_mod = get_object_or_404(ReleveCompteur, pk=id_releve)
+                    compteur = releve_a_mod.num_compteur
+                    
+                    # Trouver le relevé chronologiquement précédent (hors rejetés et hors celui qu'on modifie)
+                    dernier_releve = compteur.relevecompteurs.filter(
+                        date_releve__lt=releve_a_mod.date_releve
+                    ).exclude(statut_validation='REJETE').order_by('-date_releve').first()
 
-                    if dernier_releve.volume >= volume:
-                        return ApiResponse.error("Assurez-vous d'envoyer les chiffres correctement et réessayez !", code="INVALID_VOLUME")
+                    if dernier_releve:
+                        if dernier_releve.volume > volume:
+                            return ApiResponse.error("Le volume ne peut pas être inférieur au relevé précédent !", code="INVALID_VOLUME")
+                        if date_releve <= dernier_releve.date_releve:
+                            return ApiResponse.error("Veuillez fournir une date valide", code="INVALID_DATE")
+                    else:
+                        # Cas du premier relevé
+                        pass
 
-                    if date_releve <= dernier_releve.date_releve:
-                        return ApiResponse.error("Veuillez fournir une date valide", code="INVALID_DATE")
-
-                    mod_releve = ReleveMod.mod_relever_facture(id_releve, compteur, date_releve, volume,
+                    # Correction de l'appel (on enlève 'compteur' qui n'est pas attendu par la méthode)
+                    mod_releve = ReleveMod.mod_relever_facture(id_releve, date_releve, volume,
                                                                image_compteur, dernier_releve)
                     # La facture sera créée lors de la confirmation par le gestionnaire
                     
@@ -266,9 +275,9 @@ class Missions(APIView):
                     if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
                         return ApiResponse.error("La date de relevé existe déjà dans la base de données", code="DUPLICATE_DATE")
 
-                    dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
-
-                    if dernier_volume:
+                    try:
+                        dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
+                        
                         if date_releve <= dernier_volume.date_releve:
                             return ApiResponse.error("Veuillez fournir une date valide", code="INVALID_DATE")
 
@@ -276,10 +285,12 @@ class Missions(APIView):
                             return ApiResponse.error("Assurez-vous de saisir les chiffres correctement et réessayez !", code="INVALID_VOLUME")
 
                         conso = volume - dernier_volume.volume
-                    else:
+                    except ReleveCompteur.DoesNotExist:
+                        # Premier relevé du compteur
                         conso = volume
+                        dernier_volume = None
 
-                    releve = relever(dernier_volume.num_compteur_id, date_releve,
+                    releve = relever(compteur_id, date_releve,
                                      volume, conso, image_compteur, utilisateur)
                     # La facture sera créée lors de la confirmation par le gestionnaire
 

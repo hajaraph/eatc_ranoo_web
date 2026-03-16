@@ -143,7 +143,6 @@ class TaskMission:
                     # LOGIQUE SPÉCIALE REJET : On transforme la mission en "Nouvelle" pour le mobile
                     if statut_validation == 'REJETE':
                         statut = 0
-                        releve_id = 0  # Force le mobile à considérer que c'est une nouvelle donnée
                         final_updated_at = timezone.now() # Force la visibilité dans le Delta Sync
                     else:
                         # Cas classique : calcul du statut selon la date du mois
@@ -153,15 +152,19 @@ class TaskMission:
                         else:
                             statut = 0  # Nouveau
                             
-                        # Récupérer l'ID du dernier relevé valide
-                        releve_id = 0
-                        if contrat.dernier_releve_id:
-                            try:
-                                releve_id = int(contrat.dernier_releve_id)
-                            except (ValueError, TypeError):
-                                releve_id = 0
-                        
-                        # Calcul du updated_at global
+                    # Récupérer l'ID du dernier relevé (celui du mois dernier si rejeté, ou 0)
+                    releve_id = 0
+                    if contrat.dernier_releve_id:
+                        try:
+                            releve_id = int(contrat.dernier_releve_id)
+                        except (ValueError, TypeError):
+                            releve_id = 0
+                    
+                    # Si c'était rejeté mais qu'on a un ID de relevé (celui du mois dernier), 
+                    # le mobile verra id_local (rejeté) != id_serveur (précédent), ce qui est bon.
+                    
+                    if statut_validation != 'REJETE':
+                        # Calcul du updated_at global classique
                         compteur_updated_at = contrat.num_compteur.updated_at
                         releve_updated_at = contrat.dernier_updated_at
                         final_updated_at = compteur_updated_at

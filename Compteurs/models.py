@@ -31,10 +31,13 @@ class CompteurPrincipale(models.Model):
             if not compteur.contrats.exists():
                 continue
             if date_releve:
-                # Prendre le relevé le plus récent à la date ou avant la date spécifiée
-                releve = compteur.relevecompteurs.filter(date_releve__lte=date_releve).order_by('-date_releve').first()
+                # Prendre le relevé le plus récent à la date ou avant la date spécifiée (hors rejetés)
+                releve = compteur.relevecompteurs.filter(
+                    date_releve__lte=date_releve
+                ).exclude(statut_validation='REJETE').order_by('-date_releve').first()
             else:
-                releve = compteur.relevecompteurs.order_by('-date_releve').first()
+                # Hors rejetés
+                releve = compteur.relevecompteurs.exclude(statut_validation='REJETE').order_by('-date_releve').first()
             if releve and releve.conso:
                 total += releve.conso
         return total
@@ -230,11 +233,11 @@ class AlerteConsommation(models.Model):
             if not compteur.contrats.exists():
                 continue
             
-            # Vérifier s'il y a un relevé pour ce mois/année
+            # Vérifier s'il y a un relevé pour ce mois/année (hors rejetés)
             releve = compteur.relevecompteurs.filter(
                 date_releve__month=mois,
                 date_releve__year=annee
-            ).first()
+            ).exclude(statut_validation='REJETE').first()
             
             if not releve:
                 return False  # Au moins un compteur n'a pas été relevé
