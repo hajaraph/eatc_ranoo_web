@@ -1182,38 +1182,49 @@ def comparaison_consommation(request, pk):
         cp = CompteurPrincipale.objects.prefetch_related('compteurs__relevecompteurs').get(pk=pk)
 
         date_filtre = request.GET.get('date_filtre')
+        
+        # Déterminer la date de référence (aujourd'hui ou date_filtre)
+        if date_filtre:
+            try:
+                date_ref = datetime.strptime(date_filtre, '%Y-%m-%d').date()
+            except ValueError:
+                date_ref = timezone.now().date()
+        else:
+            # Par défaut, on peut aussi prendre le mois du dernier relevé du principal
+            dernier_p = cp.releves.order_by('-date_releve').first()
+            date_ref = dernier_p.date_releve if dernier_p else timezone.now().date()
 
-        # Données du compteur principal
-        releve_principal = cp.releves.filter(date_releve=date_filtre).first() if date_filtre else cp.releves.order_by('-date_releve').first()
+        target_month = date_ref.month
+        target_year = date_ref.year
 
-        # Données des sous-compteurs (exclure ceux sans contrat)
+        # Données du compteur principal pour ce mois
+        releves_p = cp.releves.filter(date_releve__month=target_month, date_releve__year=target_year)
+        releve_principal = releves_p.order_by('-date_releve').first() # Pour l'affichage (date, volume)
+        conso_principal = releves_p.aggregate(total=models.Sum('conso'))['total'] or 0
+
+        # Données des sous-compteurs (uniquement pour le même mois)
         sous_compteurs_data = []
         for compteur in cp.compteurs.all():
-            # Exclure les compteurs sans contrat
             if not compteur.contrats.exists():
                 continue
                 
-            # Définir la date de référence pour la recherche
-            date_ref = date_filtre
-            if not date_ref and releve_principal:
-                date_ref = releve_principal.date_releve
-                
-            if date_ref:
-                releve = compteur.relevecompteurs.filter(date_releve__lte=date_ref).order_by('-date_releve').first()
-            else:
-                releve = compteur.relevecompteurs.order_by('-date_releve').first()
-
-            conso = releve.conso if releve and releve.conso else 0
+            # Relevés du sous-compteur pour ce mois
+            releves_sc = compteur.relevecompteurs.filter(
+                date_releve__month=target_month,
+                date_releve__year=target_year
+            ).exclude(statut_validation='REJETE')
+            
+            releve_sc = releves_sc.order_by('-date_releve').first()
+            conso_sc = releves_sc.aggregate(total=models.Sum('conso'))['total'] or 0
+            
             sous_compteurs_data.append({
                 'compteur': compteur,
-                'releve': releve,
-                'conso': conso
+                'releve': releve_sc,
+                'conso': conso_sc
             })
 
         total_sous_compteurs = sum(item['conso'] for item in sous_compteurs_data)
-        conso_principal = releve_principal.conso if releve_principal and releve_principal.conso else 0
         ecart = conso_principal - total_sous_compteurs
-        # Calcul du pourcentage avec le signe (négatif si sous-compteurs > principal)
         pourcentage_ecart = (ecart / conso_principal * 100) if conso_principal > 0 else 0
 
         # Récupérer les seuils configurés

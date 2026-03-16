@@ -24,31 +24,67 @@ class CompteurPrincipale(models.Model):
         return f"CP-{self.num_compteur_principale}"
 
     def get_total_conso_sous_compteurs(self, date_releve=None):
-        """Calcule la somme des consommations de tous les sous-compteurs pour une date donnée"""
+        """Calcule la somme des consommations de tous les sous-compteurs pour le même mois que date_releve"""
+        if not date_releve:
+            # On prend le mois du dernier relevé principal par défaut
+            releve_p = self.releves.order_by('-date_releve').first()
+            if not releve_p:
+                return 0
+            date_releve = releve_p.date_releve
+            
+        # Si date_releve est une chaîne, on tente de la convertir
+        if isinstance(date_releve, str):
+            try:
+                from datetime import datetime
+                date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
+            except ValueError:
+                return 0
+
+        target_month = date_releve.month
+        target_year = date_releve.year
+        
         total = 0
         for compteur in self.compteurs.all():
-            # Exclure les compteurs sans contrat
             if not compteur.contrats.exists():
                 continue
-            if date_releve:
-                # Prendre le relevé le plus récent à la date ou avant la date spécifiée (hors rejetés)
-                releve = compteur.relevecompteurs.filter(
-                    date_releve__lte=date_releve
-                ).exclude(statut_validation='REJETE').order_by('-date_releve').first()
-            else:
-                # Hors rejetés
-                releve = compteur.relevecompteurs.exclude(statut_validation='REJETE').order_by('-date_releve').first()
-            if releve and releve.conso:
-                total += releve.conso
+            
+            # Somme des consommations du même mois (hors rejetés)
+            # Utilisation de aggregate pour plus de précision si plusieurs relevés dans le mois
+            res = compteur.relevecompteurs.filter(
+                date_releve__month=target_month,
+                date_releve__year=target_year
+            ).exclude(statut_validation='REJETE').aggregate(total_conso=models.Sum('conso'))
+            
+            total += res['total_conso'] or 0
         return total
 
     def get_ecart_consommation(self, date_releve=None):
-        """Calcule l'écart entre le compteur principal et la somme des sous-compteurs"""
-        releve_principal = self.releves.filter(date_releve=date_releve).first() if date_releve else self.releves.order_by('-date_releve').first()
-        if not releve_principal:
-            return None
-        total_sous_compteurs = self.get_total_conso_sous_compteurs(date_releve or releve_principal.date_releve)
-        return releve_principal.conso - total_sous_compteurs
+        """Calcule l'écart entre le compteur principal et la somme des sous-compteurs pour le mois de date_releve"""
+        if not date_releve:
+            dernier_p = self.releves.order_by('-date_releve').first()
+            if not dernier_p:
+                return None
+            date_releve = dernier_p.date_releve
+
+        # Si date_releve est une chaîne, on tente de la convertir
+        if isinstance(date_releve, str):
+            try:
+                from datetime import datetime
+                date_releve = datetime.strptime(date_releve, '%Y-%m-%d').date()
+            except ValueError:
+                return None
+
+        target_month = date_releve.month
+        target_year = date_releve.year
+
+        # Consommation totale du principal pour ce mois
+        conso_p = self.releves.filter(
+            date_releve__month=target_month,
+            date_releve__year=target_year
+        ).aggregate(total_conso=models.Sum('conso'))['total_conso'] or 0
+        
+        total_sous = self.get_total_conso_sous_compteurs(date_releve)
+        return conso_p - total_sous
 
 
 class ReleveCompteurPrincipale(models.Model):
