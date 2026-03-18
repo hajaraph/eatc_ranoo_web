@@ -123,6 +123,9 @@ def api_evo_conso_commune(request):
     else:
         conso_filters &= Q(contrat__num_compteur__relevecompteurs__date_releve__year=timezone.now().year)
 
+    # Exclure les relevés rejetés
+    conso_filters &= ~Q(contrat__num_compteur__relevecompteurs__statut_validation='REJETE')
+
     commune_query = commune_query.annotate(
         total_conso=Coalesce(Sum('contrat__num_compteur__relevecompteurs__conso', filter=conso_filters), Value(0))
     ).exclude(total_conso=0)
@@ -133,7 +136,7 @@ def api_evo_conso_commune(request):
             mois_releve=ExtractMonth('num_compteur__relevecompteurs__date_releve'),
             annee_releve=ExtractYear('num_compteur__relevecompteurs__date_releve')
         ).values('mois_releve', 'annee_releve').annotate(
-            total_conso=Coalesce(Sum('num_compteur__relevecompteurs__conso'), Value(0))
+            total_conso=Coalesce(Sum('num_compteur__relevecompteurs__conso', filter=~Q(num_compteur__relevecompteurs__statut_validation='REJETE')), Value(0))
         ).order_by('annee_releve', 'mois_releve').exclude(total_conso=0)
 
         resultats.append({
@@ -205,7 +208,8 @@ def api_factures_par_type_client(request):
 @role_requis('Administrateur', 'Gestionnaire', 'Autre')
 @schema_use
 def api_conso_par_type_client(request):
-    conso_query = _get_filtered_queryset(request, ReleveCompteur, 'num_compteur__contrats__cp_commune_id', 'num_compteur__contrats__cp_commune__region', 'date_releve')
+    # Exclure les relevés rejetés
+    conso_query = _get_filtered_queryset(request, ReleveCompteur.objects.exclude(statut_validation='REJETE'), 'num_compteur__contrats__cp_commune_id', 'num_compteur__contrats__cp_commune__region', 'date_releve')
     types_client_conso = (
         conso_query
         .annotate(

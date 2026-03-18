@@ -74,7 +74,7 @@ MIDDLEWARE = [
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='app.eatc.me,www.app.eatc.me,localhost,127.0.0.1', cast=Csv())
 
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOW_CREDENTIALS = True
 
