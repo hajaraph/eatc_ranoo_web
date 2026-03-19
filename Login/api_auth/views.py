@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 
 from Tenants.models import Utilisateur
+from Rel_Compteur.api_utils import ApiResponse
 
 
 @api_view(['POST'])
@@ -16,9 +17,10 @@ def authentification(request):
     motpasse_utilisateur = request.data.get('password')
 
     if not num_utilisateur or not motpasse_utilisateur:
-        return Response(
-            {"detail": "Les champs 'num_utilisateur' et 'password' sont requis."},
-            status=status.HTTP_400_BAD_REQUEST
+        return ApiResponse.error(
+            "Les champs 'num_utilisateur' et 'password' sont requis.",
+            code="MISSING_PARAM",
+            http_status=status.HTTP_400_BAD_REQUEST
         )
 
     try:
@@ -36,20 +38,22 @@ def authentification(request):
                 utilisateur.last_token = str(access_token)
                 utilisateur.save()
 
-                return Response({
-                    'access_token': str(access_token),
-                    'info_utilisateur': {
-                        'id_utilisateur': utilisateur.id_utilisateur,
-                        'nom_utilisateur': utilisateur.nom_utilisateur,
-                        'prenom_utilisateur': utilisateur.prenom_utilisateur,
-                        'num_utilisateur': utilisateur.num_utilisateur,
-                        'role': utilisateur.role.role,
-                        'region': utilisateur.cp_commune.region.region,
-                        'commune': utilisateur.cp_commune.commune,
-                        'cp_commune': utilisateur.cp_commune_id,
-                        'last_token': utilisateur.last_token
+                return ApiResponse.success(
+                    data={
+                        'access_token': str(access_token),
+                        'info_utilisateur': {
+                            'id_utilisateur': utilisateur.id_utilisateur,
+                            'nom_utilisateur': utilisateur.nom_utilisateur,
+                            'prenom_utilisateur': utilisateur.prenom_utilisateur,
+                            'num_utilisateur': utilisateur.num_utilisateur,
+                            'role': utilisateur.role.role,
+                            'region': utilisateur.cp_commune.region.region,
+                            'commune': utilisateur.cp_commune.commune,
+                            'cp_commune': utilisateur.cp_commune_id,
+                            'last_token': utilisateur.last_token
+                        }
                     }
-                }, status=status.HTTP_200_OK)
+                )
             else:
                 # Message générique ou spécifique selon besoin. Ici on dit juste que c'est pour l'app web.
                 raise AuthenticationFailed("Accès réservé aux Releveurs. Veuillez utiliser l'application web.")
@@ -65,4 +69,4 @@ def check_server(request):
     """
     Vue pour vérifier la disponibilité du serveur.
     """
-    return Response({'status': 'Server is available'}, status=status.HTTP_200_OK)
+    return ApiResponse.success(data={'status': 'Server is available'})

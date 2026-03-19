@@ -82,38 +82,41 @@ def calculer_nombre_relever_effectuer(cp_commune_id):
 @permission_classes([IsAuthenticated])
 @schema_use_api
 def accueil(request):
+    try:
+        cp_commune_id = request.user.cp_commune_id
 
-    cp_commune_id = request.user.cp_commune_id
+        # Comptes d'anomalies
+        non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
+        realise = MainCourante.objects.filter(statuts__realise=True).count()
+        en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
 
-    # Comptes d'anomalies
-    non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
-    realise = MainCourante.objects.filter(statuts__realise=True).count()
-    en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
-    
-    total_anomalie = non_traite + en_cours
+        total_anomalie = non_traite + en_cours
 
-    # Appeler la fonction pour les compteurs et factures
-    (
-        nombre_total_compteur,
-        nombre_relever_effectuer,
-        nombre_restant_a_relever,
-        nombre_total_facture_impayer,
-        nombre_total_facture_payer
-    ) = calculer_nombre_relever_effectuer(cp_commune_id)
+        # Appeler la fonction pour les compteurs et factures
+        (
+            nombre_total_compteur,
+            nombre_relever_effectuer,
+            nombre_restant_a_relever,
+            nombre_total_facture_impayer,
+            nombre_total_facture_payer
+        ) = calculer_nombre_relever_effectuer(cp_commune_id)
 
-    response_data = {
-        'non_traite': non_traite,
-        'realise': realise,
-        'en_cours': en_cours,
-        'totale_anomalie': total_anomalie,
-        'nombre_total_compteur': nombre_total_compteur,
-        'nombre_relever_effectuer': nombre_relever_effectuer,
-        'nombre_restant_a_relever': nombre_restant_a_relever,
-        'nombre_total_facture_impayer': nombre_total_facture_impayer,
-        'nombre_total_facture_payer': nombre_total_facture_payer
-    }
+        response_data = {
+            'non_traite': non_traite,
+            'realise': realise,
+            'en_cours': en_cours,
+            'totale_anomalie': total_anomalie,
+            'nombre_total_compteur': nombre_total_compteur,
+            'nombre_relever_effectuer': nombre_relever_effectuer,
+            'nombre_restant_a_relever': nombre_restant_a_relever,
+            'nombre_total_facture_impayer': nombre_total_facture_impayer,
+            'nombre_total_facture_payer': nombre_total_facture_payer
+        }
 
-    return Response(response_data)
+        return ApiResponse.success(data=response_data)
+
+    except Exception as e:
+        return ApiResponse.server_error(f"Erreur du serveur: {str(e)}")
 
 
 @api_view(['GET'])
@@ -128,7 +131,7 @@ def relever_client(request):
     try:
         resultat = process_compteur_details(compteur_id)
         # On retourne le format plat attendu par SyncMissionService.fetchDataClientDetails
-        return Response(resultat, status=status.HTTP_200_OK)
+        return ApiResponse.success(data=resultat)
     except ValueError as e:
         return ApiResponse.error(str(e), code="VALIDATION_ERROR")
     except Exception as e:
@@ -216,7 +219,7 @@ class Missions(APIView):
                 )
             else:
                 # Format de réponse original (plat) pour compatibilité
-                return Response({'compteurs_liste': missions_list}, status=status.HTTP_200_OK)
+                return ApiResponse.success(data={'compteurs_liste': missions_list})
                 
         except Exception as e:
             return ApiResponse.error(f"Erreur du serveur: {str(e)}", code="SERVER_ERROR", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -313,9 +316,9 @@ class Missions(APIView):
             # et on ajoute un léger délai pour que le "chargement" soit visible
             if isinstance(result, dict) and result.get('success'):
                 time.sleep(1)  # Délai pour le feedback visuel (comme pour les anomalies)
-                return Response(result, status=status.HTTP_201_CREATED)
-            
-            return Response(result, status=status.HTTP_200_OK)
+                return ApiResponse.created(data=result)
+
+            return ApiResponse.success(data=result)
         except ValueError as e:
             return ApiResponse.error(str(e), code="VALIDATION_ERROR")
         except Exception as e:

@@ -22,11 +22,11 @@ from Rel_Compteur.utils import filter_by_user_role
 
 # FONCTION D'ASSISTANCE POUR LE FILTRAGE
 # =================================================
-def _get_filtered_queryset(request, model, role_filter_path, region_filter_path, date_filter_path, default_to_year=True):
+def _get_filtered_queryset(request, model, role_filter_path, commune_filter_path, date_filter_path, default_to_year=True):
     """
-    Applique les filtres communs (rôle, région, date) à un queryset.
+    Applique les filtres communs (rôle, commune, date) à un queryset.
     """
-    region = request.GET.get('region')
+    commune = request.GET.get('commune')
     date_deb = request.GET.get('date_deb')
     date_fin = request.GET.get('date_fin')
 
@@ -34,8 +34,8 @@ def _get_filtered_queryset(request, model, role_filter_path, region_filter_path,
     if role_filter_path:
         queryset = filter_by_user_role(request, queryset, role_filter_path)
 
-    if region and region_filter_path:
-        queryset = queryset.filter(**{f'{region_filter_path}': region})
+    if commune and commune_filter_path:
+        queryset = queryset.filter(**{f'{commune_filter_path}': commune})
 
     if date_filter_path:
         if date_deb and date_fin:
@@ -53,13 +53,13 @@ def _get_filtered_queryset(request, model, role_filter_path, region_filter_path,
 @schema_use
 def tableau_bord(request):
     font = 'custom-font'
-    regions = Region.objects.all()
+    communes = Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune')
     date_deb = request.GET.get('date_deb')
     date_fin = request.GET.get('date_fin')
 
     context = {
         'font_tableau': font,
-        'regions': regions,
+        'communes': communes,
         'datedeb': date_deb if date_deb else '',
         'datefin': date_fin if date_fin else '',
     }
@@ -77,16 +77,16 @@ def api_kpi_globaux(request):
     annee_precedente = annee_actuelle - 1
 
     # --- Chiffre d'affaires ---
-    chiffres_query = _get_filtered_queryset(request, Paiement, 'facture__num_contrat__cp_commune_id', 'facture__num_contrat__cp_commune__region', 'facture__relevecompteur__date_releve', default_to_year=False)
+    chiffres_query = _get_filtered_queryset(request, Paiement, 'facture__num_contrat__cp_commune_id', 'facture__num_contrat__cp_commune', 'facture__relevecompteur__date_releve', default_to_year=False)
     chiffres = chiffres_query.aggregate(Sum('montant_payer'))['montant_payer__sum'] or 0
 
     # --- Nombre de clients ---
-    contrats_actuels_query = _get_filtered_queryset(request, Contrat, 'cp_commune_id', 'cp_commune__region', 'date_debut')
-    contrats_prec_query = _get_filtered_queryset(request, Contrat, 'cp_commune_id', 'cp_commune__region', 'date_debut', default_to_year=False).filter(date_debut__year=annee_precedente)
+    contrats_actuels_query = _get_filtered_queryset(request, Contrat, 'cp_commune_id', 'cp_commune', 'date_debut')
+    contrats_prec_query = _get_filtered_queryset(request, Contrat, 'cp_commune_id', 'cp_commune', 'date_debut', default_to_year=False).filter(date_debut__year=annee_precedente)
 
     # --- Recettes et Dépenses ---
-    recettes_query = _get_filtered_queryset(request, Recette, 'facture__num_contrat__cp_commune_id', 'facture__num_contrat__cp_commune__region', 'date_encaissement')
-    depenses_query = _get_filtered_queryset(request, Transactions, 'utilisateur__cp_commune_id', 'utilisateur__cp_commune__region', 'date_transaction')
+    recettes_query = _get_filtered_queryset(request, Recette, 'facture__num_contrat__cp_commune_id', 'facture__num_contrat__cp_commune', 'date_encaissement')
+    depenses_query = _get_filtered_queryset(request, Transactions, 'utilisateur__cp_commune_id', 'utilisateur__cp_commune', 'date_transaction')
 
     total_recettes = recettes_query.aggregate(total=Sum('montant'))['total'] or 0
     total_depenses = depenses_query.aggregate(total=Sum('montant'))['total'] or 0
@@ -109,13 +109,13 @@ def api_kpi_globaux(request):
 @schema_use
 def api_evo_conso_commune(request):
     # Cette vue a une logique de filtrage plus spécifique, on ne la refactorise pas avec l'helper.
-    region = request.GET.get('region')
+    commune = request.GET.get('commune')
     date_deb = request.GET.get('date_deb')
     date_fin = request.GET.get('date_fin')
 
     commune_query = filter_by_user_role(request, Commune.objects.all(), 'id')
-    if region:
-        commune_query = commune_query.filter(region_id=region)
+    if commune:
+        commune_query = commune_query.filter(id=commune)
 
     conso_filters = Q()
     if date_deb and date_fin:
@@ -151,7 +151,7 @@ def api_evo_conso_commune(request):
 @role_requis('Administrateur', 'Gestionnaire', 'Autre')
 @schema_use
 def api_statut_factures(request):
-    factures_query = _get_filtered_queryset(request, Facture, 'num_contrat__cp_commune_id', 'num_contrat__cp_commune__region', 'date_facture')
+    factures_query = _get_filtered_queryset(request, Facture, 'num_contrat__cp_commune_id', 'num_contrat__cp_commune', 'date_facture')
     factures_data = factures_query.annotate(
         mois=ExtractMonth('date_facture'),
         annee=ExtractYear('date_facture'),
@@ -165,7 +165,7 @@ def api_statut_factures(request):
 @role_requis('Administrateur', 'Gestionnaire', 'Autre')
 @schema_use
 def api_statut_main_courante(request):
-    mc_query = _get_filtered_queryset(request, StatutMC, 'main_courante__cp_commune_id', 'main_courante__cp_commune__region', 'date_status')
+    mc_query = _get_filtered_queryset(request, StatutMC, 'main_courante__cp_commune_id', 'main_courante__cp_commune', 'date_status')
     mc_data = mc_query.annotate(
         mois=ExtractMonth('main_courante__date_mc'),
         annee=ExtractYear('main_courante__date_mc'),
@@ -180,7 +180,7 @@ def api_statut_main_courante(request):
 @role_requis('Administrateur', 'Gestionnaire', 'Autre')
 @schema_use
 def api_factures_par_type_client(request):
-    base_query = _get_filtered_queryset(request, Facture, 'num_contrat__cp_commune_id', 'num_contrat__cp_commune__region', 'relevecompteur__date_releve')
+    base_query = _get_filtered_queryset(request, Facture, 'num_contrat__cp_commune_id', 'num_contrat__cp_commune', 'relevecompteur__date_releve')
     factures_par_type_client = (
         base_query
         .annotate(
@@ -210,10 +210,10 @@ def api_factures_par_type_client(request):
 @schema_use
 def api_conso_par_type_client(request):
     # Exclure les relevés rejetés et supprimés (soft delete)
-    conso_query = _get_filtered_queryset(request, ReleveCompteur, 'num_compteur__contrats__cp_commune_id', 'num_compteur__contrats__cp_commune__region', 'date_releve')
+    conso_query = _get_filtered_queryset(request, ReleveCompteur, 'num_compteur__contrats__cp_commune_id', 'num_compteur__contrats__cp_commune', 'date_releve')
     # Filtrer les relevés rejetés et supprimés après application des filtres communs
     conso_query = conso_query.exclude(statut_validation='REJETE').filter(is_deleted=False)
-    
+
     types_client_conso = (
         conso_query
         .annotate(
@@ -233,7 +233,7 @@ def api_conso_par_type_client(request):
 @role_requis('Administrateur', 'Gestionnaire', 'Autre')
 @schema_use
 def api_debit_par_commune(request):
-    debit_query = _get_filtered_queryset(request, DebitEau, None, 'cp_commune__region', 'date_creation', default_to_year=False)
+    debit_query = _get_filtered_queryset(request, DebitEau, None, 'cp_commune', 'date_creation', default_to_year=False)
     debit_par_commune = debit_query.values(
         'cp_commune_id', 'cp_commune__commune', 'date_creation__month', 'date_creation__year', 'debit'
     ).order_by('cp_commune__commune', 'date_creation__year', 'date_creation__month', 'date_creation')
@@ -266,13 +266,13 @@ def api_debit_par_commune(request):
 def api_marnage_par_commune(request):
     # Cette vue a une logique de filtrage de date trop spécifique (semaine par défaut)
     # pour utiliser l'helper générique.
-    region = request.GET.get('region')
+    commune = request.GET.get('commune')
     date_deb = request.GET.get('date_deb')
     date_fin = request.GET.get('date_fin')
 
     marnage_query = Marnage.objects.all()
-    if region:
-        marnage_query = marnage_query.filter(cp_commune__region=region)
+    if commune:
+        marnage_query = marnage_query.filter(cp_commune=commune)
 
     if date_deb and date_fin:
         debut_plage = datetime.strptime(date_deb, '%Y-%m-%d')
@@ -296,7 +296,7 @@ def api_marnage_par_commune(request):
         commune_nom = item['cp_commune__commune']
         if commune_nom not in communes_marnage:
             communes_marnage[commune_nom] = {'nom': str(commune_nom), 'mesures': []}
-        
+
         try:
             date_creation = datetime.fromisoformat(item['date_creation'])
             communes_marnage[commune_nom]['mesures'].append({
