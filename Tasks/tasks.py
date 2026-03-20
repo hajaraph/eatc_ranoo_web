@@ -192,6 +192,21 @@ class TaskMission:
                     if status_filter is not None and statut != status_filter:
                         continue
 
+                    # Récupérer les 3 derniers relevés pour ce compteur (hors rejetés)
+                    derniers_releves_qs = ReleveCompteur.objects.filter(
+                        num_compteur=contrat.num_compteur
+                    ).exclude(statut_validation='REJETE').order_by('-date_releve')[:3]
+                    
+                    derniers_releves = [
+                        {
+                            'date_releve': str(r.date_releve) if r.date_releve else '',
+                            'volume': r.volume or 0,
+                            'conso': r.conso or 0,
+                            'statut_validation': r.statut_validation,
+                        }
+                        for r in derniers_releves_qs
+                    ]
+
                     contrat_info = {
                         'id': releve_id,
                         'nom_client': contrat.client.nom_client,
@@ -206,7 +221,8 @@ class TaskMission:
                         'motif_rejet': contrat.dernier_motif_rejet,
                         'last_is_deleted': contrat.dernier_is_deleted,
                         'is_deleted': getattr(contrat.num_compteur, 'is_deleted', False),
-                        'updated_at': final_updated_at.isoformat() if final_updated_at else None
+                        'updated_at': final_updated_at.isoformat() if final_updated_at else None,
+                        'derniers_releves': derniers_releves,
                     }
                     liste_contrats_info.append(contrat_info)
 
