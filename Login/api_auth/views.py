@@ -1,10 +1,8 @@
 from django.contrib.auth.hashers import check_password
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.response import Response
 
 from Tenants.models import Utilisateur
 from Rel_Compteur.api_utils import ApiResponse
@@ -28,7 +26,11 @@ def authentification(request):
         if check_password(motpasse_utilisateur, utilisateur.password):
             # 1. Vérifier si le compte est actif
             if not utilisateur.statut:
-                raise AuthenticationFailed("Votre compte est désactivé !")
+                return ApiResponse.error(
+                    "Votre compte est désactivé !",
+                    code="ACCOUNT_DISABLED",
+                    http_status=status.HTTP_401_UNAUTHORIZED
+                )
 
             # 2. Vérifier si c'est un Releveur (avec sécurité si role est None)
             if utilisateur.role and utilisateur.role.role == "Releveur":
@@ -55,12 +57,23 @@ def authentification(request):
                     }
                 )
             else:
-                # Message générique ou spécifique selon besoin. Ici on dit juste que c'est pour l'app web.
-                raise AuthenticationFailed("Accès réservé aux Releveurs. Veuillez utiliser l'application web.")
+                return ApiResponse.error(
+                    "Accès réservé aux Releveurs. Veuillez utiliser l'application web.",
+                    code="ACCESS_DENIED",
+                    http_status=status.HTTP_403_FORBIDDEN
+                )
         else:
-            raise AuthenticationFailed('Mot de passe incorrect !')
+            return ApiResponse.error(
+                "Mot de passe incorrect !",
+                code="INVALID_PASSWORD",
+                http_status=status.HTTP_401_UNAUTHORIZED
+            )
     except Utilisateur.DoesNotExist:
-        raise AuthenticationFailed("Votre compte n'existe pas !")
+        return ApiResponse.error(
+            "Votre compte n'existe pas !",
+            code="USER_NOT_FOUND",
+            http_status=status.HTTP_401_UNAUTHORIZED
+        )
 
 
 @api_view(['GET'])
