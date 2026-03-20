@@ -124,6 +124,23 @@ class TaskMission:
                         Q(dernier_updated_at__gte=effective_since)
                     )
                 
+                # Exclure les compteurs déjà relevés ce mois-ci (sauf delta sync et sauf si on demande explicitement le statut 2)
+                if not modified_since and status_filter != 2:
+                    current_month = end_of_month.month
+                    current_year = end_of_month.year
+                    
+                    # Sous-requête: compteurs ayant un relevé confirmé (non rejeté) dans le mois courant
+                    compteurs_deja_releves = ReleveCompteur.objects.filter(
+                        num_compteur=OuterRef('num_compteur'),
+                        date_releve__month=current_month,
+                        date_releve__year=current_year,
+                    ).exclude(statut_validation='REJETE')
+                    
+                    from django.db.models import Exists
+                    contrats_queryset = contrats_queryset.annotate(
+                        a_releve_mois_courant=Exists(compteurs_deja_releves)
+                    ).exclude(a_releve_mois_courant=True)
+                
                 # Compter le total avant pagination
                 total_count = contrats_queryset.count()
                 
