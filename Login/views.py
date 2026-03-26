@@ -10,7 +10,7 @@ from django.views import View
 
 
 from Tenants.models import Utilisateur, Initial
-from eatc_web.Login.models import MobileVersion
+from Login.models import MobileVersion
 
 
 # Fonction decorateur pour verifie si un utilisateur et connecté ou pas avant d'acceder a un url
