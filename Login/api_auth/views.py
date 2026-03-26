@@ -1,5 +1,6 @@
 import os
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -8,7 +9,6 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from Tenants.models import Utilisateur
-from Login.models import MobileVersion
 from Rel_Compteur.api_utils import ApiResponse
 from Login.models import DownloadToken, MobileVersion
 from django.urls import reverse
