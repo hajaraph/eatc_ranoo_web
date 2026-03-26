@@ -1,9 +1,5 @@
 import os
-import uuid
-from datetime import datetime
 from django.conf import settings
-from django.core.files.storage import default_storage
-from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -14,6 +10,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from Tenants.models import Utilisateur
 from Login.models import MobileVersion
 from Rel_Compteur.api_utils import ApiResponse
+from Login.models import DownloadToken, MobileVersion
+from django.urls import reverse
+from django.http import FileResponse
 
 
 @api_view(['POST'])
@@ -249,8 +248,6 @@ def generate_download_token(request):
     - duration: Durée en heures (défaut: 24)
     - max_downloads: Nombre max de téléchargements (défaut: 5)
     """
-    from Login.models import DownloadToken, MobileVersion
-    from django.urls import reverse
 
     # Récupérer la version demandée
     version_id = request.data.get('version_id')
@@ -317,9 +314,6 @@ def download_with_token(request, token_string):
     Télécharge le fichier APK avec un token valide.
     Valide le token et incrémente le compteur.
     """
-    from Login.models import DownloadToken
-    from django.http import FileResponse, Http404
-    import os
     
     # Valider le token
     token = DownloadToken.get_valid_token(token_string)
