@@ -17,3 +17,8 @@ urlpatterns = [
     path('generate-token/', generate_download_token, name='generate_download_token'),
     path('download/<str:token_string>/', download_with_token, name='download_with_token'),
 ]
+
+# URLs pour téléchargement direct (hors namespace /api/)
+download_urlpatterns = [
+    path('<str:token_string>/', download_with_token, name='download_direct'),
+]
