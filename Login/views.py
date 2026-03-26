@@ -141,6 +141,7 @@ def mobile_app_page(request):
     """
     from django.utils import timezone
     from datetime import timedelta
+    from django.urls import reverse
 
     # Version actuelle depuis la base de données
     version_actuelle = MobileVersion.obtenir_version_actuelle()
@@ -158,9 +159,9 @@ def mobile_app_page(request):
             max_downloads=5,
             ip_address=ip_address,
         )
-        temp_download_url = request.build_absolute_uri(
-            f'/api/mobile/download/{token_obj.token}/'
-        )
+        # Utiliser reverse() pour générer l'URL correctement
+        download_path = reverse('download_direct', kwargs={'token_string': token_obj.token})
+        temp_download_url = request.build_absolute_uri(download_path)
 
     # Préparer le contexte
     if version_actuelle:

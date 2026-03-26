@@ -22,7 +22,7 @@ urlpatterns = [
     path('recette/', include('Recette.urls')),
     path('depense/', include('Depense.urls')),
     path('rubrique/', include('Rubrique.urls')),
-    path('download/<str:token_string>/', download_with_token, name='download_direct'),
+    path('download/<str:token_string>', download_with_token, name='download_direct'),
     path('api/', include([
         path('', include('Login.api_auth.urls')),
         path('', include('Compteurs.api_compteur.urls')),
