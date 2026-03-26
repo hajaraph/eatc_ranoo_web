@@ -8,422 +8,507 @@
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/mobile_app.css' %}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <title>Ranoo Releveurs - Application Mobile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Ranoo Releveurs - Experience Mobile</title>
 </head>
-<body class="mobile-app-page">
+<body class="mobile-experience-page">
 
-    <!-- Animated Background -->
-    <div class="bg-animation">
-        <div class="bg-gradient"></div>
-        <div class="bg-grid"></div>
-        <div class="bg-orb orb-1"></div>
-        <div class="bg-orb orb-2"></div>
-        <div class="bg-orb orb-3"></div>
+    <!-- Animated Mesh Gradient Background -->
+    <div class="mesh-gradient">
+        <div class="gradient-blob blob-1"></div>
+        <div class="gradient-blob blob-2"></div>
+        <div class="gradient-blob blob-3"></div>
+        <div class="gradient-blob blob-4"></div>
+    </div>
+
+    <!-- Floating Particles -->
+    <div class="particles-container">
+        <div class="particle" style="--i:1"></div>
+        <div class="particle" style="--i:2"></div>
+        <div class="particle" style="--i:3"></div>
+        <div class="particle" style="--i:4"></div>
+        <div class="particle" style="--i:5"></div>
+        <div class="particle" style="--i:6"></div>
+        <div class="particle" style="--i:7"></div>
+        <div class="particle" style="--i:8"></div>
     </div>
 
     {% if has_versions %}
 
-    <!-- Hero Container -->
-    <div class="container-hero">
-        <div class="hero-glass">
-            <div class="hero-content-wrapper">
-                <div class="hero-text">
-                    <div class="hero-badge-container">
-                        <span class="hero-badge">
-                            <i class="fas fa-mobile-alt"></i>
-                            Application Mobile
-                        </span>
-                        <span class="version-pill">v{{ current_version.version }}</span>
-                    </div>
-                    
-                    <h1 class="hero-title">
-                        <span class="title-line">Ranoo</span>
-                        <span class="title-line gradient-text">Releveurs</span>
-                    </h1>
-                    
-                    <p class="hero-description">
-                        La solution complète pour gérer vos relevés de compteurs d'eau. 
-                        Simple, rapide et sécurisé.
-                    </p>
+    <!-- Navigation Floating -->
+    <nav class="floating-nav">
+        <div class="nav-glass">
+            <div class="nav-brand">
+                <div class="brand-logo">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <span>Ranoo</span>
+            </div>
+            <div class="nav-status">
+                <span class="status-dot"></span>
+                <span>En ligne</span>
+            </div>
+        </div>
+    </nav>
 
-                    <!-- Stats Container -->
-                    <div class="stats-container">
-                        <div class="stat-box">
-                            <div class="stat-icon">
-                                <i class="fas fa-download"></i>
-                            </div>
-                            <div class="stat-content">
-                                <span class="stat-value">{{ current_version.version }}</span>
-                                <span class="stat-label">Version</span>
-                            </div>
-                        </div>
-                        <div class="stat-divider"></div>
-                        <div class="stat-box">
-                            <div class="stat-icon">
-                                <i class="fab fa-android"></i>
-                            </div>
-                            <div class="stat-content">
-                                <span class="stat-value">Android</span>
-                                <span class="stat-label">Plateforme</span>
-                            </div>
-                        </div>
-                        <div class="stat-divider"></div>
-                        <div class="stat-box">
-                            <div class="stat-icon">
-                                <i class="fas fa-hdd"></i>
-                            </div>
-                            <div class="stat-content">
-                                <span class="stat-value">{{ current_version.size }}</span>
-                                <span class="stat-label">Taille</span>
-                            </div>
-                        </div>
+    <!-- Main Hero Section -->
+    <section class="hero-section-creative">
+        <div class="container-fluid">
+            <div class="hero-grid">
+                
+                <!-- Left Content -->
+                <div class="hero-left">
+                    <div class="scroll-indicator">
+                        <span>Scroll</span>
+                        <div class="scroll-line"></div>
                     </div>
 
-                    <!-- CTA Container -->
-                    <div class="cta-container">
-                        <a href="{{ apk_download_url }}" class="btn-primary-glow" download>
-                            <div class="btn-content">
-                                <i class="fas fa-download"></i>
-                                <span>Télécharger l'APK</span>
+                    <div class="hero-content">
+                        <div class="hero-label-wrapper">
+                            <span class="hero-label">
+                                <span class="label-dot"></span>
+                                Nouvelle Version
+                            </span>
+                            <span class="hero-version-badge">{{ current_version.version }}</span>
+                        </div>
+
+                        <h1 class="hero-headline">
+                            <span class="headline-line">L'avenir du</span>
+                            <span class="headline-line gradient-text-3d">relevé d'eau</span>
+                            <span class="headline-line">est entre vos mains</span>
+                        </h1>
+
+                        <p class="hero-description">
+                            Une expérience mobile révolutionnaire pour les releveurs professionnels. 
+                            Rapide, intuitif, connecté.
+                        </p>
+
+                        <!-- Download Box -->
+                        <div class="download-box">
+                            <div class="download-main">
+                                <a href="{{ apk_download_url }}" class="download-btn-3d" download>
+                                    <div class="btn-3d-content">
+                                        <div class="btn-icon-wrapper">
+                                            <i class="fas fa-download"></i>
+                                        </div>
+                                        <div class="btn-text">
+                                            <span class="btn-title">Télécharger</span>
+                                            <span class="btn-subtitle">APK • {{ current_version.size }}</span>
+                                        </div>
+                                        <div class="btn-arrow">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                    <div class="btn-3d-glow"></div>
+                                </a>
                             </div>
-                            <div class="btn-shine"></div>
-                        </a>
-                        <button class="btn-secondary-glass" onclick="showQRCode()">
-                            <i class="fas fa-qrcode"></i>
-                            <span>QR Code</span>
-                        </button>
+                            
+                            <button class="download-qr" onclick="showQRCode()">
+                                <i class="fas fa-qrcode"></i>
+                                <span>Scanner</span>
+                            </button>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="quick-stats">
+                            <div class="stat-item-modern">
+                                <div class="stat-icon-box">
+                                    <i class="fas fa-download"></i>
+                                </div>
+                                <div class="stat-details">
+                                    <span class="stat-number">{{ current_version.version }}</span>
+                                    <span class="stat-text">Version</span>
+                                </div>
+                            </div>
+                            <div class="stat-divider-vertical"></div>
+                            <div class="stat-item-modern">
+                                <div class="stat-icon-box">
+                                    <i class="fab fa-android"></i>
+                                </div>
+                                <div class="stat-details">
+                                    <span class="stat-number">Android</span>
+                                    <span class="stat-text">Système</span>
+                                </div>
+                            </div>
+                            <div class="stat-divider-vertical"></div>
+                            <div class="stat-item-modern">
+                                <div class="stat-icon-box">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <div class="stat-details">
+                                    <span class="stat-number">Rapide</span>
+                                    <span class="stat-text">Performance</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Phone Preview Container -->
-                <div class="phone-container">
-                    <div class="phone-frame">
-                        <div class="phone-notch"></div>
-                        <div class="phone-screen">
-                            <div class="app-interface">
-                                <div class="app-header">
-                                    <i class="fas fa-tint"></i>
-                                    <span>Ranoo</span>
-                                </div>
-                                <div class="app-body">
-                                    <div class="app-card">
-                                        <i class="fas fa-chart-line"></i>
-                                        <span>Relevés</span>
-                                    </div>
-                                    <div class="app-card">
-                                        <i class="fas fa-file-invoice"></i>
-                                        <span>Factures</span>
+                <!-- Right Content - 3D Phone -->
+                <div class="hero-right">
+                    <div class="phone-showcase">
+                        <div class="phone-ring"></div>
+                        <div class="phone-ring-2"></div>
+                        
+                        <div class="phone-3d-wrapper">
+                            <div class="phone-3d">
+                                <div class="phone-body">
+                                    <div class="phone-screen-container">
+                                        <div class="phone-screen">
+                                            <div class="app-ui">
+                                                <div class="app-ui-header">
+                                                    <div class="app-logo">
+                                                        <i class="fas fa-tint"></i>
+                                                    </div>
+                                                    <span>Ranoo</span>
+                                                </div>
+                                                <div class="app-ui-content">
+                                                    <div class="ui-card">
+                                                        <i class="fas fa-chart-line"></i>
+                                                        <span>Relevés</span>
+                                                    </div>
+                                                    <div class="ui-card">
+                                                        <i class="fas fa-file-invoice"></i>
+                                                        <span>Factures</span>
+                                                    </div>
+                                                    <div class="ui-card">
+                                                        <i class="fas fa-map-marker-alt"></i>
+                                                        <span>GPS</span>
+                                                    </div>
+                                                    <div class="ui-card">
+                                                        <i class="fas fa-sync"></i>
+                                                        <span>Sync</span>
+                                                    </div>
+                                                </div>
+                                                <div class="app-ui-footer">
+                                                    <div class="footer-indicator"></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Floating Elements -->
+                            <div class="floating-element float-1">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Sync OK</span>
+                            </div>
+                            <div class="floating-element float-2">
+                                <i class="fas fa-wifi"></i>
+                                <span>Offline</span>
+                            </div>
+                            <div class="floating-element float-3">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Sécurisé</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="phone-shadow"></div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Main Content Container -->
-    <div class="content-wrapper">
+    <!-- Features Section -->
+    <section class="features-section-creative">
         <div class="container">
-
-            <!-- Features Container -->
-            <div class="container-section">
-                <div class="section-header">
-                    <div class="section-icon-box">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <h2>Fonctionnalités</h2>
-                    <p>Découvrez tout ce que l'application peut faire pour vous</p>
+            <div class="section-header-creative">
+                <div class="header-badge">
+                    <i class="fas fa-star"></i>
+                    <span>Fonctionnalités</span>
                 </div>
+                <h2>Conçu pour l'excellence</h2>
+                <p>Chaque fonctionnalité a été pensée pour optimiser votre travail quotidien</p>
+            </div>
 
-                <div class="features-grid">
-                    <div class="feature-card-glass">
-                        <div class="card-glow"></div>
-                        <div class="feature-icon-box">
+            <div class="features-showcase">
+                <div class="feature-item-large">
+                    <div class="feature-visual">
+                        <div class="visual-icon-box">
                             <i class="fas fa-tachometer-alt"></i>
                         </div>
-                        <h3>Relevés Rapides</h3>
-                        <p>Enregistrez vos relevés de compteurs en quelques secondes avec une interface intuitive</p>
-                        <div class="card-footer">
-                            <span class="badge-success">Populaire</span>
-                        </div>
                     </div>
+                    <div class="feature-content">
+                        <h3>Relevés Éclair</h3>
+                        <p>Enregistrez vos relevés en moins de 10 secondes. Interface optimisée pour une saisie ultra-rapide.</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Saisie intuitive</li>
+                            <li><i class="fas fa-check"></i> Historique automatique</li>
+                            <li><i class="fas fa-check"></i> Validation instantanée</li>
+                        </ul>
+                    </div>
+                </div>
 
-                    <div class="feature-card-glass">
-                        <div class="card-glow"></div>
-                        <div class="feature-icon-box">
+                <div class="feature-item-large reverse">
+                    <div class="feature-visual">
+                        <div class="visual-icon-box">
                             <i class="fas fa-wifi"></i>
                         </div>
-                        <h3>Mode Offline</h3>
-                        <p>Travaillez sans connexion internet, les données se synchroniseront automatiquement</p>
-                        <div class="card-footer">
-                            <span class="badge-info">Essentiel</span>
-                        </div>
                     </div>
+                    <div class="feature-content">
+                        <h3>Mode Offline Avancé</h3>
+                        <p>Travaillez sans connexion. Vos données sont synchronisées automatiquement dès le retour du réseau.</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Stockage local sécurisé</li>
+                            <li><i class="fas fa-check"></i> Sync automatique</li>
+                            <li><i class="fas fa-check"></i> Pas de perte de données</li>
+                        </ul>
+                    </div>
+                </div>
 
-                    <div class="feature-card-glass">
-                        <div class="card-glow"></div>
-                        <div class="feature-icon-box">
+                <div class="feature-item-large">
+                    <div class="feature-visual">
+                        <div class="visual-icon-box">
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
-                        <h3>Alertes & Anomalies</h3>
-                        <p>Signalez instantanément les fuites, anomalies et incidents sur le terrain</p>
-                        <div class="card-footer">
-                            <span class="badge-warning">Important</span>
-                        </div>
                     </div>
+                    <div class="feature-content">
+                        <h3>Alertes Intelligentes</h3>
+                        <p>Détectez et signalez les anomalies en temps réel. Photos, localisation, tout y est.</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Photos géolocalisées</li>
+                            <li><i class="fas fa-check"></i> Catégories d'alertes</li>
+                            <li><i class="fas fa-check"></i> Suivi en temps réel</li>
+                        </ul>
+                    </div>
+                </div>
 
-                    <div class="feature-card-glass">
-                        <div class="card-glow"></div>
-                        <div class="feature-icon-box">
+                <div class="feature-item-large reverse">
+                    <div class="feature-visual">
+                        <div class="visual-icon-box">
                             <i class="fas fa-file-invoice-dollar"></i>
                         </div>
-                        <h3>Historique Factures</h3>
-                        <p>Consultez l'historique complet des factures et paiements de vos clients</p>
-                        <div class="card-footer">
-                            <span class="badge-primary">Pratique</span>
-                        </div>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Gestion Factures</h3>
+                        <p>Accédez à l'historique complet des factures et paiements de vos clients.</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Historique complet</li>
+                            <li><i class="fas fa-check"></i> Recherche rapide</li>
+                            <li><i class="fas fa-check"></i> Export PDF</li>
+                        </ul>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- Changelog Container -->
-            <div class="container-section">
-                <div class="section-header">
-                    <div class="section-icon-box">
-                        <i class="fas fa-sparkles"></i>
-                    </div>
-                    <h2>Nouveautés v{{ current_version.version }}</h2>
-                    <p>Les dernières améliorations apportées à l'application</p>
+    <!-- Changelog Section -->
+    <section class="changelog-section-creative">
+        <div class="container">
+            <div class="section-header-creative">
+                <div class="header-badge">
+                    <i class="fas fa-sparkles"></i>
+                    <span>Innovation</span>
                 </div>
+                <h2>Nouveautés v{{ current_version.version }}</h2>
+                <p>Découvrez les dernières améliorations</p>
+            </div>
 
-                <div class="changelog-container-glass">
-                    <div class="changelog-header">
-                        <div class="release-info">
-                            <span class="release-version">Version {{ current_version.version }}</span>
-                            <span class="release-date">{{ current_version.date|date:"d F Y" }}</span>
-                        </div>
-                        <span class="badge-new">Nouveau</span>
+            <div class="changelog-showcase">
+                <div class="changelog-card-creative">
+                    <div class="changelog-side">
+                        <div class="version-big">{{ current_version.version }}</div>
+                        <div class="version-date">{{ current_version.date|date:"d F Y" }}</div>
                     </div>
-                    
-                    <div class="changelog-body">
-                        <div class="timeline-vertical">
+                    <div class="changelog-main">
+                        <div class="changelog-items">
                             {% for feature in current_version.changelog %}
-                            <div class="timeline-item">
-                                <div class="timeline-marker">
-                                    <div class="marker-dot"></div>
-                                    {% if not forloop.last %}<div class="marker-line"></div>{% endif %}
+                            <div class="changelog-item">
+                                <div class="item-indicator">
+                                    <div class="indicator-dot"></div>
+                                    <div class="indicator-line"></div>
                                 </div>
-                                <div class="timeline-content">
-                                    <div class="content-check">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
+                                <div class="item-content">
+                                    <i class="fas fa-check-circle"></i>
                                     <p>{{ feature }}</p>
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Previous Versions Container -->
-            {% if previous_versions %}
-            <div class="container-section">
-                <div class="section-header">
-                    <div class="section-icon-box">
-                        <i class="fas fa-box-archive"></i>
-                    </div>
-                    <h2>Versions Précédentes</h2>
-                    <p>Accédez aux anciennes versions stables de l'application</p>
-                </div>
-
-                <div class="versions-container-glass">
-                    {% for version in previous_versions %}
-                    <div class="version-card">
-                        <div class="version-main">
-                            <div class="version-info">
-                                <span class="version-tag">v{{ version.version }}</span>
-                                <span class="version-date">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    {{ version.date|date:"d M Y" }}
-                                </span>
-                            </div>
-                            <span class="version-size-badge">{{ version.size }}</span>
-                        </div>
-                        <div class="version-actions">
-                            <a href="{{ version.download_url }}" class="btn-download-version" download>
-                                <i class="fas fa-download"></i>
-                                <span>Télécharger</span>
-                            </a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Installation Steps Container -->
-            <div class="container-section">
-                <div class="section-header">
-                    <div class="section-icon-box">
-                        <i class="fas fa-rocket"></i>
-                    </div>
-                    <h2>Installation en 4 Étapes</h2>
-                    <p>Suivez ce guide simple pour installer l'application</p>
-                </div>
-
-                <div class="steps-wrapper">
-                    <div class="step-card-modern">
-                        <div class="step-number-glow">1</div>
-                        <div class="step-content">
-                            <h3>Télécharger</h3>
-                            <p>Cliquez sur le bouton "Télécharger l'APK" en haut de page</p>
-                            <div class="step-tip">
-                                <i class="fas fa-lightbulb"></i>
-                                <span>Le fichier fait environ {{ current_version.size }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="step-connector"></div>
-
-                    <div class="step-card-modern">
-                        <div class="step-number-glow">2</div>
-                        <div class="step-content">
-                            <h3>Autoriser</h3>
-                            <p>Dans Paramètres → Sécurité, autorisez les "Sources inconnues"</p>
-                            <div class="step-tip">
-                                <i class="fas fa-shield-alt"></i>
-                                <span>Paramètres de sécurité Android</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="step-connector"></div>
-
-                    <div class="step-card-modern">
-                        <div class="step-number-glow">3</div>
-                        <div class="step-content">
-                            <h3>Installer</h3>
-                            <p>Ouvrez le fichier APK téléchargé et appuyez sur "Installer"</p>
-                            <div class="step-tip">
-                                <i class="fas fa-clock"></i>
-                                <span>L'installation prend ~30 secondes</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="step-connector"></div>
-
-                    <div class="step-card-modern">
-                        <div class="step-number-glow">4</div>
-                        <div class="step-content">
-                            <h3>Utiliser</h3>
-                            <p>Lancez l'application et connectez-vous avec vos identifiants</p>
-                            <div class="step-tip">
-                                <i class="fas fa-user-check"></i>
-                                <span>Identifiants fournis par l'admin</span>
-                            </div>
+                    <div class="changelog-badge-side">
+                        <div class="badge-creative">
+                            <i class="fas fa-rocket"></i>
+                            <span>Nouveau</span>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Support Container -->
-            <div class="container-section">
-                <div class="support-card-premium">
-                    <div class="support-background"></div>
-                    <div class="support-content">
-                        <div class="support-icon-wrapper">
-                            <div class="icon-circle">
-                                <i class="fas fa-headset"></i>
-                            </div>
-                        </div>
-                        <h3>Besoin d'aide ?</h3>
-                        <p>Notre équipe support est disponible pour vous accompagner dans l'installation et l'utilisation de l'application</p>
-                        <div class="support-actions">
-                            <a href="{% url 'authentification' %}" class="btn-support">
-                                <i class="fas fa-arrow-left"></i>
-                                <span>Retour au Tableau de Bord</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
-    </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section class="install-section-creative">
+        <div class="container">
+            <div class="section-header-creative">
+                <div class="header-badge">
+                    <i class="fas fa-rocket"></i>
+                    <span>Guide</span>
+                </div>
+                <h2>Installation en 4 étapes</h2>
+                <p>Simple, rapide, efficace</p>
+            </div>
+
+            <div class="install-timeline">
+                <div class="timeline-item-creative">
+                    <div class="timeline-number">01</div>
+                    <div class="timeline-content">
+                        <h3>Télécharger</h3>
+                        <p>Cliquez sur le bouton de téléchargement ci-dessus pour obtenir le fichier APK</p>
+                        <div class="timeline-tip">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Fichier: {{ current_version.size }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-connector"></div>
+
+                <div class="timeline-item-creative">
+                    <div class="timeline-number">02</div>
+                    <div class="timeline-content">
+                        <h3>Autoriser</h3>
+                        <p>Dans Paramètres → Sécurité, autorisez l'installation de sources inconnues</p>
+                        <div class="timeline-tip">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Paramètres Android</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-connector"></div>
+
+                <div class="timeline-item-creative">
+                    <div class="timeline-number">03</div>
+                    <div class="timeline-content">
+                        <h3>Installer</h3>
+                        <p>Ouvrez le fichier APK et appuyez sur "Installer". L'installation est automatique.</p>
+                        <div class="timeline-tip">
+                            <i class="fas fa-clock"></i>
+                            <span>~30 secondes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-connector"></div>
+
+                <div class="timeline-item-creative">
+                    <div class="timeline-number">04</div>
+                    <div class="timeline-content">
+                        <h3>Utiliser</h3>
+                        <p>Lancez l'application et connectez-vous avec vos identifiants fournis par l'admin</p>
+                        <div class="timeline-tip">
+                            <i class="fas fa-user-check"></i>
+                            <span>Identifiants requis</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section-creative">
+        <div class="container">
+            <div class="cta-card-premium">
+                <div class="cta-background">
+                    <div class="cta-gradient-orb"></div>
+                    <div class="cta-grid-pattern"></div>
+                </div>
+                <div class="cta-content">
+                    <div class="cta-icon-wrapper">
+                        <div class="icon-circle-glow">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                    </div>
+                    <h2>Une question ?</h2>
+                    <p>Notre équipe support est là pour vous aider. Contactez-nous à tout moment.</p>
+                    <div class="cta-actions">
+                        <a href="{{ apk_download_url }}" class="btn-cta-primary" download>
+                            <i class="fas fa-download"></i>
+                            <span>Télécharger Maintenant</span>
+                        </a>
+                        <a href="{% url 'authentification' %}" class="btn-cta-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>Retour au Dashboard</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     {% else %}
 
-    <!-- No Version Container -->
-    <div class="container-no-version">
-        <div class="no-version-glass">
-            <div class="no-version-icon">
-                <i class="fas fa-exclamation-triangle"></i>
+    <!-- No Version Section -->
+    <section class="no-version-section">
+        <div class="container">
+            <div class="no-version-card-creative">
+                <div class="no-version-visual">
+                    <div class="visual-circle">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <h2>Pas encore disponible</h2>
+                <p>L'application mobile sera bientôt disponible. Veuillez contacter l'administrateur pour plus d'informations.</p>
+                <a href="{% url 'authentification' %}" class="btn-cta-primary">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Retour au Dashboard</span>
+                </a>
             </div>
-            <h2>Aucune version disponible</h2>
-            <p>L'application mobile n'a pas encore été déployée.</p>
-            <p class="text-muted">Veuillez contacter l'administrateur ou réessayer ultérieurement.</p>
-            <a href="{% url 'authentification' %}" class="btn-primary-glow">
-                <i class="fas fa-arrow-left"></i>
-                <span>Retour au Tableau de Bord</span>
-            </a>
         </div>
-    </div>
+    </section>
 
     {% endif %}
 
     <!-- QR Code Modal -->
-    <div id="qrModal" class="qr-modal-premium" style="display: none;" onclick="hideQRCode()">
-        <div class="modal-backdrop"></div>
-        <div class="modal-container" onclick="event.stopPropagation()">
-            <div class="modal-header">
+    <div id="qrModal" class="qr-modal-creative" style="display: none;" onclick="hideQRCode()">
+        <div class="modal-overlay"></div>
+        <div class="modal-content-creative" onclick="event.stopPropagation()">
+            <div class="modal-header-creative">
                 <div>
-                    <h3><i class="fas fa-qrcode"></i> Scanner pour télécharger</h3>
-                    <p>Utilisez votre téléphone pour scanner ce code QR</p>
+                    <h3><i class="fas fa-qrcode"></i> Scanner</h3>
+                    <p>Utilisez votre téléphone pour télécharger</p>
                 </div>
-                <button class="btn-close-modal" onclick="hideQRCode()">
+                <button class="modal-close" onclick="hideQRCode()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="qr-code-container">
-                    <div class="qr-border"></div>
+            <div class="modal-body-creative">
+                <div class="qr-wrapper">
+                    <div class="qr-frame">
+                        <div class="frame-corner tl"></div>
+                        <div class="frame-corner tr"></div>
+                        <div class="frame-corner bl"></div>
+                        <div class="frame-corner br"></div>
+                    </div>
                     <div id="qrcode"></div>
-                    <div class="qr-corner tl"></div>
-                    <div class="qr-corner tr"></div>
-                    <div class="qr-corner bl"></div>
-                    <div class="qr-corner br"></div>
                 </div>
-                <div class="qr-info">
+                <div class="qr-message">
                     <i class="fas fa-info-circle"></i>
-                    <p>Ouvrez l'appareil photo de votre téléphone et scannez ce code pour télécharger l'application directement</p>
+                    <p>Ouvrez l'appareil photo et scannez pour télécharger</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="app-footer-premium">
+    <footer class="footer-creative">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <div class="brand-icon">
+                    <div class="brand-mark">
                         <i class="fas fa-tint"></i>
                     </div>
                     <span>Ranoo Releveurs</span>
                 </div>
-                <div class="footer-links">
+                <div class="footer-info">
                     <span>&copy; {% now "Y" %} Demondra</span>
                     <span class="separator">•</span>
                     <span>Tous droits réservés</span>
                 </div>
-                <p class="footer-disclaimer">Application réservée aux releveurs agréés</p>
+                <p class="footer-notice">Application professionnelle réservée aux releveurs agréés</p>
             </div>
         </div>
     </footer>
@@ -443,8 +528,8 @@
             qrContainer.innerHTML = qr.createImgTag(8, 2);
             const img = qrContainer.querySelector('img');
             if (img) {
-                img.style.width = '220px';
-                img.style.height = '220px';
+                img.style.width = '240px';
+                img.style.height = '240px';
             }
         }
 
@@ -464,25 +549,26 @@
             }
         });
 
-        // Animation on scroll
-        document.addEventListener('DOMContentLoaded', function() {
-            const observerOptions = {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
-            };
+        // Parallax effect on scroll
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            document.querySelectorAll('.gradient-blob').forEach((blob, index) => {
+                const speed = 0.1 + (index * 0.05);
+                blob.style.transform = `translateY(${scrolled * speed}px)`;
+            });
+        });
 
-            const observer = new IntersectionObserver(function(entries) {
+        // Intersection Observer for animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-in');
-                        observer.unobserve(entry.target);
+                        entry.target.classList.add('animate-in-view');
                     }
                 });
-            }, observerOptions);
+            }, { threshold: 0.1 });
 
-            document.querySelectorAll('.feature-card-glass, .step-card-modern, .version-card').forEach(el => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(30px)';
+            document.querySelectorAll('.feature-item-large, .timeline-item-creative').forEach(el => {
                 observer.observe(el);
             });
         });
