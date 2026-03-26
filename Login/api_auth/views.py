@@ -244,16 +244,17 @@ def generate_download_token(request):
     """
     Génère un token de téléchargement temporaire (valable 24h).
     Peut être utilisé pour sécuriser l'accès aux APK.
-    
+
     Params optionnels:
     - duration: Durée en heures (défaut: 24)
     - max_downloads: Nombre max de téléchargements (défaut: 5)
     """
     from Login.models import DownloadToken, MobileVersion
-    
+    from django.urls import reverse
+
     # Récupérer la version demandée
     version_id = request.data.get('version_id')
-    
+
     if not version_id:
         # Utiliser la version actuelle par défaut
         version = MobileVersion.obtenir_version_actuelle()
@@ -272,17 +273,17 @@ def generate_download_token(request):
                 code="VERSION_NOT_FOUND",
                 http_status=status.HTTP_404_NOT_FOUND
             )
-    
+
     # Paramètres optionnels
     duration_hours = int(request.data.get('duration', 24))
     max_downloads = int(request.data.get('max_downloads', 5))
-    
+
     # Limiter la durée maximale à 7 jours (168h)
     duration_hours = min(duration_hours, 168)
-    
+
     # Récupérer l'IP
     ip_address = request.META.get('REMOTE_ADDR')
-    
+
     # Créer le token
     token = DownloadToken.create_token(
         mobile_version=version,
@@ -290,12 +291,11 @@ def generate_download_token(request):
         max_downloads=max_downloads,
         ip_address=ip_address,
     )
-    
-    # Construire l'URL de téléchargement temporaire
-    download_url = request.build_absolute_uri(
-        f'/api/mobile/download/{token.token}/'
-    )
-    
+
+    # Construire l'URL de téléchargement temporaire avec reverse()
+    download_path = reverse('download_direct', kwargs={'token_string': token.token})
+    download_url = request.build_absolute_uri(download_path)
+
     return ApiResponse.success(
         data={
             'token': token.token,
