@@ -63,7 +63,8 @@ class MobileVersion(models.Model):
     def url_telechargement(self):
         """Retourne l'URL de téléchargement"""
         from django.conf import settings
-        return f"{settings.STATIC_URL}login/apk/{self.filename}"
+        # Utiliser MEDIA_URL car le fichier est uploadé via FileField
+        return f"{settings.MEDIA_URL}login/apk/{self.filename}"
     
     @property
     def taille_formatee(self):
