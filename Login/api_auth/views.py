@@ -110,7 +110,8 @@ def upload_apk(request):
     """
     # Vérifier que l'utilisateur est un utilisateur de service
     user = request.user
-    if not user.num_utilisateur.startswith('service_') and not user.is_superuser:
+    # Accepter les préfixes 'svc_' et 'service_' pour les utilisateurs de service
+    if not (user.num_utilisateur.startswith('svc_') or user.num_utilisateur.startswith('service_')) and not user.is_superuser:
         return ApiResponse.error(
             "Accès réservé aux services.",
             code="ACCESS_DENIED",
