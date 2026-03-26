@@ -11,8 +11,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--username',
             type=str,
-            default='github_actions',
-            help='Nom d\'utilisateur pour le service (défaut: github_actions)'
+            default='github',
+            help='Nom d\'utilisateur pour le service (défaut: github, max 5 caractères)'
         )
         parser.add_argument(
             '--revoke',
@@ -23,10 +23,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         username = options.get('username')
         revoke = options.get('revoke', False)
-        
+
+        # Limiter le nom à 5 caractères pour respecter la contrainte max_length=10
+        # Format: svc_XXX (svc_ = 4 caractères + 5 = 9 caractères)
+        username_short = username[:5].lower().replace(' ', '_').replace('-', '_')
+        service_username = f'svc_{username_short}'
+
         # Créer utilisateur service s'il n'existe pas
         user, created = Utilisateur.objects.get_or_create(
-            num_utilisateur=f'service_{username}',
+            num_utilisateur=service_username,
             defaults={
                 'nom_utilisateur': 'Service',
                 'prenom_utilisateur': username.replace('_', ' ').title(),
@@ -36,20 +41,20 @@ class Command(BaseCommand):
                 'is_superuser': False,
             }
         )
-        
+
         if created:
             # Définir un mot de passe aléatoire (non utilisé car authentification par token)
             random_password = secrets.token_urlsafe(32)
             user.set_password(random_password)
             user.save()
             self.stdout.write(
-                self.style.SUCCESS(f'✓ Utilisateur de service créé: service_{username}')
+                self.style.SUCCESS(f'✓ Utilisateur de service créé: {service_username}')
             )
         else:
             self.stdout.write(
-                self.style.WARNING(f'⚠ Utilisateur existe déjà: service_{username}')
+                self.style.WARNING(f'⚠ Utilisateur existe déjà: {service_username}')
             )
-        
+
         # Révoquer ancien token si demandé
         if revoke:
             old_tokens = Token.objects.filter(user=user)
@@ -58,21 +63,21 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.WARNING('⚠ Anciens tokens révoqués')
                 )
-        
+
         # Créer nouveau token
         token, created = Token.objects.get_or_create(user=user)
-        
+
         if not created:
             self.stdout.write(
                 self.style.WARNING('⚠ Token existant récupéré (utilisez --revoke pour régénérer)')
             )
-        
+
         # Afficher le token avec un formatage clair
         token_key = token.key
-        
+
         self.stdout.write(self.style.SUCCESS(''))
         self.stdout.write(self.style.SUCCESS('┌──────────────────────────────────────────────────────────────┐'))
-        self.stdout.write(self.style.SUCCESS(f'│  TOKEN GÉNÉRÉ POUR service_{username:<38} │'))
+        self.stdout.write(self.style.SUCCESS(f'│  TOKEN GÉNÉRÉ POUR {service_username:<38} │'))
         self.stdout.write(self.style.SUCCESS('├──────────────────────────────────────────────────────────────┤'))
         self.stdout.write(self.style.SUCCESS(f'│                                                              │'))
         self.stdout.write(self.style.SUCCESS(f'│  Token: {token_key:<43} │'))
@@ -80,7 +85,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'│  API Upload: POST /api/upload-apk/                          │'))
         self.stdout.write(self.style.SUCCESS(f'│  API Version:  GET  /api/version/                           │'))
         self.stdout.write(self.style.SUCCESS(f'│                                                              │'))
-        self.stdout.write(self.style.SUCCESS(f'│          COPIEZ CE TOKEN DANS GITHUB SECRETS !                   │'))
+        self.stdout.write(self.style.SUCCESS(f'│  ⚠️  COPIEZ CE TOKEN DANS GITHUB SECRETS !                   │'))
         self.stdout.write(self.style.SUCCESS(f'│     GitHub → Settings → Secrets → DJANGO_SERVICE_TOKEN       │'))
         self.stdout.write(self.style.SUCCESS('│                                                              │'))
         self.stdout.write(self.style.SUCCESS('└──────────────────────────────────────────────────────────────┘'))
