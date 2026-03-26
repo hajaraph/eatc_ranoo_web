@@ -1,4 +1,5 @@
 from functools import wraps
+from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -9,6 +10,7 @@ from django.views import View
 
 
 from Tenants.models import Utilisateur, Initial
+from eatc_web.Login.models import MobileVersion
 
 
 # Fonction decorateur pour verifie si un utilisateur et connecté ou pas avant d'acceder a un url
@@ -76,7 +78,7 @@ class Authentification(View):
         except Utilisateur.DoesNotExist:
             messages.warning(request, "Votre Compte n'existe pas !")
             return redirect('authentification')
-            
+
         # 2. Bloquer l'accès aux SuperAdmin / Staff sur cette interface
         if utilisateur.is_superuser or utilisateur.is_staff:
             messages.warning(request, "Les administrateurs doivent utiliser l'interface d'administration (/admin).")
@@ -110,22 +112,67 @@ class Authentification(View):
 
         # Gestion de la durée de session (Se souvenir de moi)
         if sauvegarder:
-            request.session.set_expiry(None) # Expire à la fermeture du navigateur (comportement Django par défaut quand None, ou session cookie age si configuré) - *Correction*: set_expiry(None) uses global policies. Usually browser close implies session cookie.
+            request.session.set_expiry(None)
         else:
-            request.session.set_expiry(0) # Expire à la fermeture du navigateur
+            request.session.set_expiry(0)
 
         # 6. Redirection selon le rôle
         destination = 'tableau_bord'
-        
+
         if utilisateur.role.role in ['Releveur', 'Gestionnaire']:
             request.session['cp_commune'] = utilisateur.cp_commune_id
-            
+
         if utilisateur.role.role == 'Releveur':
             destination = 'compteur_list'
-            
+
         return redirect(destination)
 
 
 def deconnexion(request):
     logout(request)
     return redirect('authentification')
+
+
+@authentification_requis
+def mobile_app_page(request):
+    """
+    Page de téléchargement de l'application mobile pour les releveurs.
+    Accessible uniquement aux utilisateurs connectés.
+    """
+
+    # Version actuelle depuis la base de données
+    version_actuelle = MobileVersion.obtenir_version_actuelle()
+
+    # Versions précédentes (historique)
+    versions_precedentes = MobileVersion.obtenir_historique()
+
+    # Préparer le contexte
+    if version_actuelle:
+        context = {
+            'current_version': {
+                'version': version_actuelle.version,
+                'date': version_actuelle.telecharge_le,
+                'size': version_actuelle.taille,
+                'changelog': version_actuelle.changelog.split('\n') if version_actuelle.changelog else [],
+            },
+            'previous_versions': [
+                {
+                    'version': v.version,
+                    'date': v.telecharge_le,
+                    'size': v.taille,
+                    'download_url': v.url_telechargement,
+                }
+                for v in versions_precedentes
+            ],
+            'apk_download_url': version_actuelle.url_telechargement if version_actuelle else '',
+            'has_versions': version_actuelle is not None,
+        }
+    else:
+        context = {
+            'current_version': None,
+            'previous_versions': [],
+            'apk_download_url': '',
+            'has_versions': False,
+        }
+
+    return render(request, 'login/mobile_app.html', context)

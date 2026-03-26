@@ -1,0 +1,236 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{% static 'logo/img.png' %}" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mobile_app.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Ranoo Releveurs - Télécharger l'Application</title>
+</head>
+<body class="mobile-app-page">
+    
+    <!-- Header -->
+    <div class="app-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="{% static 'logo/img.png' %}" alt="Ranoo Logo" class="main-logo">
+                    <h1 class="app-title">Ranoo Releveurs</h1>
+                </div>
+                <p class="app-tagline">Application mobile de relevé des compteurs d'eau</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="container">
+            
+            {% if has_versions %}
+            
+            <!-- Section: Version Actuelle -->
+            <div class="download-section">
+                <div class="section-header">
+                    <i class="fas fa-download"></i>
+                    <h2>Version Actuelle</h2>
+                </div>
+
+                <div class="current-version-card">
+                    <div class="version-info">
+                        <div class="version-badge">
+                            <span class="version-number">{{ current_version.version }}</span>
+                            <span class="version-date">{{ current_version.date|date:"d F Y" }}</span>
+                        </div>
+                        <div class="version-details">
+                            <span class="file-size"><i class="fas fa-hdd"></i> {{ current_version.size }}</span>
+                            <span class="file-type"><i class="fab fa-android"></i> Android APK</span>
+                        </div>
+                    </div>
+
+                    <div class="download-actions">
+                        <a href="{{ apk_download_url }}" class="btn btn-primary btn-download" download>
+                            <i class="fas fa-download"></i>
+                            Télécharger l'APK
+                        </a>
+                        <button class="btn btn-outline-secondary" onclick="showQRCode()">
+                            <i class="fas fa-qrcode"></i>
+                            QR Code
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR Code Modal -->
+                <div id="qrModal" class="qr-modal" style="display: none;" onclick="hideQRCode()">
+                    <div class="qr-modal-content" onclick="event.stopPropagation()">
+                        <div class="qr-header">
+                            <h3>Scanner pour télécharger</h3>
+                            <button class="btn-close" onclick="hideQRCode()"></button>
+                        </div>
+                        <div class="qr-body">
+                            <div id="qrcode"></div>
+                            <p class="qr-instruction">Ouvrez l'appareil photo de votre téléphone et scannez ce code</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Changelog -->
+            <div class="changelog-section">
+                <div class="section-header">
+                    <i class="fas fa-scroll"></i>
+                    <h2>Nouveautés de la version {{ current_version.version }}</h2>
+                </div>
+
+                <div class="changelog-card">
+                    <ul class="changelog-list">
+                        {% for feature in current_version.changelog %}
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>{{ feature }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Section: Versions Précédentes -->
+            {% if previous_versions %}
+            <div class="old-versions-section">
+                <div class="section-header">
+                    <i class="fas fa-box-archive"></i>
+                    <h2>Versions Précédentes</h2>
+                </div>
+
+                <div class="versions-list">
+                    {% for version in previous_versions %}
+                    <div class="version-item">
+                        <div class="version-info">
+                            <span class="version-name">v{{ version.version }}</span>
+                            <span class="version-date">{{ version.date|date:"d F Y" }}</span>
+                            <span class="file-size">{{ version.size }}</span>
+                        </div>
+                        <a href="{{ version.download_url }}" class="btn btn-sm btn-outline-secondary" download>
+                            <i class="fas fa-download"></i>
+                            Télécharger
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section: Instructions d'Installation -->
+            <div class="instructions-section">
+                <div class="section-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h2>Instructions d'Installation</h2>
+                </div>
+
+                <div class="instructions-card">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Télécharger l'APK</h4>
+                            <p>Cliquez sur le bouton "Télécharger l'APK" ci-dessus</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Autoriser les sources inconnues</h4>
+                            <p>Si demandé, autorisez l'installation depuis des sources inconnues dans les paramètres de votre téléphone</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Installer l'application</h4>
+                            <p>Ouvrez le fichier APK téléchargé et suivez les instructions d'installation</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Se connecter</h4>
+                            <p>Utilisez votre numéro de téléphone et mot de passe fournis par l'administrateur</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Support -->
+            <div class="support-section">
+                <div class="support-card">
+                    <i class="fas fa-headset"></i>
+                    <h4>Besoin d'aide ?</h4>
+                    <p>En cas de problème, contactez votre administrateur ou le support technique</p>
+                    <a href="{% url 'authentification' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour à la connexion
+                    </a>
+                </div>
+            </div>
+            
+            {% else %}
+            
+            <!-- Aucun APK disponible -->
+            <div class="download-section">
+                <div class="current-version-card">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #f59e0b; margin-bottom: 1rem;"></i>
+                        <h3>Aucune version disponible</h3>
+                        <p class="text-muted">L'application mobile n'a pas encore été uploadée.</p>
+                        <p class="text-muted">Veuillez contacter l'administrateur pour plus d'informations.</p>
+                        <a href="{% url 'authentification' %}" class="btn btn-outline-primary mt-3">
+                            <i class="fas fa-arrow-left"></i>
+                            Retour à la connexion
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="container">
+            <p>&copy; {% now "Y" %} EATC - Tous droits réservés</p>
+            <p class="footer-note">Application réservée aux releveurs agréés</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="{% static 'js/mobile_app.js' %}"></script>
+    <script>
+        // Initialisation du QR Code avec l'URL de téléchargement
+        const apkUrl = "{{ apk_download_url }}";
+        const qrContainer = document.getElementById('qrcode');
+        
+        if (qrContainer && window.qrcode) {
+            const qr = qrcode(0, 'M');
+            qr.addData(apkUrl);
+            qr.make();
+            qrContainer.innerHTML = qr.createImgTag(6, 2);
+        }
+        
+        function showQRCode() {
+            document.getElementById('qrModal').style.display = 'flex';
+        }
+        
+        function hideQRCode() {
+            document.getElementById('qrModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

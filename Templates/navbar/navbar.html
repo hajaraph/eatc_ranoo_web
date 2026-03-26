@@ -172,6 +172,15 @@
                     </a>
                 </li>
                 {% endif %}
+                <!-- Application Mobile Download - Visible pour tous sauf Releveurs (ils l'ont déjà) -->
+                <li class="nav-item">
+                    <a href="{% url 'mobile_app' %}" class="nav-link" title="Application Mobile">
+                        <div class="nav-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <span class="nav-text">Application Mobile</span>
+                    </a>
+                </li>
             </ul>
         </nav>
 
