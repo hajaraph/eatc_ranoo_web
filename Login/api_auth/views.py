@@ -147,7 +147,7 @@ def upload_apk(request):
         )
     
     # Générer le nom de fichier
-    filename = f"Ranno_v{version}.apk"
+    filename = f"Ranoo_v{version}.apk"
 
     # Chemin de stockage
     upload_dir = os.path.join(settings.MEDIA_ROOT, 'login', 'apk')
