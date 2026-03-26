@@ -1,7 +1,108 @@
 import os
+import hashlib
+import secrets
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+
+class DownloadToken(models.Model):
+    """
+    Modèle pour gérer les tokens de téléchargement temporaires.
+    Chaque token est valide pour une durée limitée (défaut: 24h).
+    """
+    
+    id_token = models.AutoField(primary_key=True, verbose_name="ID Token")
+    token = models.CharField(max_length=64, unique=True, verbose_name="Token")
+    mobile_version = models.ForeignKey(
+        'MobileVersion',
+        on_delete=models.CASCADE,
+        related_name='download_tokens',
+        verbose_name="Version mobile"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
+    expires_at = models.DateTimeField(verbose_name="Date d'expiration")
+    used = models.BooleanField(default=False, verbose_name="Utilisé")
+    used_at = models.DateTimeField(null=True, blank=True, verbose_name="Date d'utilisation")
+    download_count = models.IntegerField(default=0, verbose_name="Nombre de téléchargements")
+    max_downloads = models.IntegerField(default=5, verbose_name="Max téléchargements")
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="Adresse IP")
+    
+    class Meta:
+        verbose_name = "Token de Téléchargement"
+        verbose_name_plural = "Tokens de Téléchargement"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Token {self.token[:8]}... (expire: {self.expires_at})"
+    
+    def is_valid(self):
+        """Vérifie si le token est encore valide"""
+        now = timezone.now()
+        return (
+            not self.used and
+            now < self.expires_at and
+            self.download_count < self.max_downloads
+        )
+    
+    def increment_download(self):
+        """Incrémente le compteur de téléchargements"""
+        self.download_count += 1
+        if self.download_count >= self.max_downloads:
+            self.used = True
+            self.used_at = timezone.now()
+        self.save(update_fields=['download_count', 'used', 'used_at'])
+    
+    @classmethod
+    def create_token(cls, mobile_version, duration_hours=24, max_downloads=5, ip_address=None):
+        """
+        Crée un nouveau token de téléchargement.
+        
+        Args:
+            mobile_version: Instance de MobileVersion
+            duration_hours: Durée de validité en heures (défaut: 24)
+            max_downloads: Nombre max de téléchargements autorisés
+            ip_address: Adresse IP du demandeur
+        
+        Returns:
+            Instance de DownloadToken
+        """
+        # Générer un token unique et sécurisé
+        token_string = secrets.token_urlsafe(32)
+        
+        # Calculer la date d'expiration
+        expires_at = timezone.now() + timedelta(hours=duration_hours)
+        
+        # Créer le token en base
+        token = cls.objects.create(
+            token=token_string,
+            mobile_version=mobile_version,
+            expires_at=expires_at,
+            max_downloads=max_downloads,
+            ip_address=ip_address,
+        )
+        
+        return token
+    
+    @classmethod
+    def get_valid_token(cls, token_string):
+        """
+        Récupère un token valide depuis sa chaîne.
+        
+        Args:
+            token_string: La chaîne du token
+        
+        Returns:
+            Instance de DownloadToken ou None
+        """
+        try:
+            token = cls.objects.get(token=token_string)
+            if token.is_valid():
+                return token
+            return None
+        except cls.DoesNotExist:
+            return None
 
 
 class MobileVersion(models.Model):

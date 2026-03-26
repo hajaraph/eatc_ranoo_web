@@ -10,7 +10,7 @@ from django.views import View
 
 
 from Tenants.models import Utilisateur, Initial
-from Login.models import MobileVersion
+from Login.models import MobileVersion, DownloadToken
 
 
 # Fonction decorateur pour verifie si un utilisateur et connecté ou pas avant d'acceder a un url
@@ -139,12 +139,28 @@ def mobile_app_page(request):
     Page de téléchargement de l'application mobile pour les releveurs.
     Accessible uniquement aux utilisateurs connectés.
     """
+    from django.utils import timezone
+    from datetime import timedelta
 
     # Version actuelle depuis la base de données
     version_actuelle = MobileVersion.obtenir_version_actuelle()
 
     # Versions précédentes (historique)
     versions_precedentes = MobileVersion.obtenir_historique()
+
+    # Générer un token de téléchargement temporaire (24h)
+    temp_download_url = None
+    if version_actuelle:
+        ip_address = request.META.get('REMOTE_ADDR')
+        token_obj = DownloadToken.create_token(
+            mobile_version=version_actuelle,
+            duration_hours=24,
+            max_downloads=5,
+            ip_address=ip_address,
+        )
+        temp_download_url = request.build_absolute_uri(
+            f'/api/mobile/download/{token_obj.token}/'
+        )
 
     # Préparer le contexte
     if version_actuelle:
@@ -164,8 +180,10 @@ def mobile_app_page(request):
                 }
                 for v in versions_precedentes
             ],
-            'apk_download_url': version_actuelle.url_telechargement if version_actuelle else '',
+            'apk_download_url': temp_download_url if temp_download_url else version_actuelle.url_telechargement,
             'has_versions': version_actuelle is not None,
+            'download_token': temp_download_url,
+            'token_expires_at': timezone.now() + timedelta(hours=24),
         }
     else:
         context = {
@@ -173,6 +191,8 @@ def mobile_app_page(request):
             'previous_versions': [],
             'apk_download_url': '',
             'has_versions': False,
+            'download_token': None,
+            'token_expires_at': None,
         }
 
     return render(request, 'login/mobile_app.html', context)

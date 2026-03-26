@@ -225,7 +225,7 @@ def get_mobile_version(request):
     # Incrémenter le compteur de téléchargements si demandé
     if request.GET.get('track_download', 'false').lower() == 'true':
         version_actuelle.incrementer_telechargements()
-    
+
     return ApiResponse.success(
         data={
             'version': version_actuelle.version,
@@ -236,3 +236,120 @@ def get_mobile_version(request):
             'force_update': version_actuelle.maj_forcee,
         }
     )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def generate_download_token(request):
+    """
+    Génère un token de téléchargement temporaire (valable 24h).
+    Peut être utilisé pour sécuriser l'accès aux APK.
+    
+    Params optionnels:
+    - duration: Durée en heures (défaut: 24)
+    - max_downloads: Nombre max de téléchargements (défaut: 5)
+    """
+    from Login.models import DownloadToken, MobileVersion
+    
+    # Récupérer la version demandée
+    version_id = request.data.get('version_id')
+    
+    if not version_id:
+        # Utiliser la version actuelle par défaut
+        version = MobileVersion.obtenir_version_actuelle()
+        if not version:
+            return ApiResponse.error(
+                "Aucune version disponible.",
+                code="NO_VERSION",
+                http_status=status.HTTP_404_NOT_FOUND
+            )
+    else:
+        try:
+            version = MobileVersion.objects.get(id_version=version_id)
+        except MobileVersion.DoesNotExist:
+            return ApiResponse.error(
+                "Version non trouvée.",
+                code="VERSION_NOT_FOUND",
+                http_status=status.HTTP_404_NOT_FOUND
+            )
+    
+    # Paramètres optionnels
+    duration_hours = int(request.data.get('duration', 24))
+    max_downloads = int(request.data.get('max_downloads', 5))
+    
+    # Limiter la durée maximale à 7 jours (168h)
+    duration_hours = min(duration_hours, 168)
+    
+    # Récupérer l'IP
+    ip_address = request.META.get('REMOTE_ADDR')
+    
+    # Créer le token
+    token = DownloadToken.create_token(
+        mobile_version=version,
+        duration_hours=duration_hours,
+        max_downloads=max_downloads,
+        ip_address=ip_address,
+    )
+    
+    # Construire l'URL de téléchargement temporaire
+    download_url = request.build_absolute_uri(
+        f'/api/mobile/download/{token.token}/'
+    )
+    
+    return ApiResponse.success(
+        data={
+            'token': token.token,
+            'download_url': download_url,
+            'expires_at': token.expires_at.isoformat(),
+            'expires_in_hours': duration_hours,
+            'max_downloads': max_downloads,
+            'version': version.version,
+            'filename': version.filename,
+        },
+        message=f"Token généré - Valable {duration_hours}h"
+    )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def download_with_token(request, token_string):
+    """
+    Télécharge le fichier APK avec un token valide.
+    Valide le token et incrémente le compteur.
+    """
+    from Login.models import DownloadToken
+    from django.http import FileResponse, Http404
+    import os
+    
+    # Valider le token
+    token = DownloadToken.get_valid_token(token_string)
+    
+    if not token:
+        return ApiResponse.error(
+            "Token invalide ou expiré.",
+            code="INVALID_TOKEN",
+            http_status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Vérifier que le fichier existe
+    file_path = token.mobile_version.file.path
+    
+    if not os.path.exists(file_path):
+        return ApiResponse.error(
+            "Fichier non trouvé.",
+            code="FILE_NOT_FOUND",
+            http_status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Incrémenter le compteur
+    token.increment_download()
+    
+    # Servir le fichier
+    response = FileResponse(
+        open(file_path, 'rb'),
+        content_type='application/vnd.android.package-archive'
+    )
+    response['Content-Length'] = os.path.getsize(file_path)
+    response['Content-Disposition'] = f'attachment; filename="{token.mobile_version.filename}"'
+    
+    return response
