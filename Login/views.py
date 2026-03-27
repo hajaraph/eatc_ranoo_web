@@ -19,23 +19,11 @@ logger = logging.getLogger(__name__)
 # Constantes de session
 SESSION_KEY = 'num_utilisateur'
 SESSION_ROLE_KEY = 'role_utilisateur'
-SESSION_FIELDS = [
-    'id_utilisateur',
-    'nom_utilisateur',
-    'prenom_utilisateur',
-    'num_utilisateur',
-    'role_utilisateur',
-    'photo_utilisateur',
-    'initial_utilisateur',
-    'entreprise',
-    'cp_commune',
-]
 
 # Constantes de redirection
 REDIRECT_ROLES_RELEVEUR = ['Releveur', 'Gestionnaire']
 RELEVEUR_REDIRECT = 'compteur_list'
 DEFAULT_REDIRECT = 'tableau_bord'
-ADMIN_REDIRECT = '/admin'
 
 # Messages
 MSG_AUTH_REQUIS = "Veuillez vous connecter !"

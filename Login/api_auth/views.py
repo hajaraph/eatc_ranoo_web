@@ -19,10 +19,8 @@ from django.http import FileResponse
 logger = logging.getLogger(__name__)
 
 # Constantes de validation
-AUTH_REQUIRED_FIELDS = ['num_utilisateur', 'password']
 ALLOWED_ROLES = ['Releveur']
 MAX_PASSWORD_LENGTH = 128
-MIN_PASSWORD_LENGTH = 8
 
 
 def _validate_auth_request(data):
