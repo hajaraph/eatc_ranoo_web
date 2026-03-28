@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from Tenants.models import Utilisateur
 from Rel_Compteur.api_utils import ApiResponse
@@ -33,7 +34,7 @@ def authentification(request):
 
     try:
         utilisateur = Utilisateur.objects.select_related(
-            'role', 'cp_commune', 'cp_commune__region'
+            'role', 'cp_commune'
         ).get(num_utilisateur=num_utilisateur)
         
         if check_password(motpasse_utilisateur, utilisateur.password):
@@ -358,3 +359,73 @@ def download_with_token(request, token_string):
     response['Content-Disposition'] = f'attachment; filename="{token.mobile_version.filename}"'
 
     return response
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def refresh_token(request):
+    """
+    Rafraîchit un access token expiré à l'aide d'un refresh token valide.
+    
+    Utilise quand l'access token expire (15 min) pour continuer sans reconnexion.
+    Le refresh token est valable 30 jours et est automatiquement tourné.
+    
+    Corps de la requête attendu :
+    {
+        "refresh": "votre_refresh_token"
+    }
+    
+    Retourne :
+    {
+        "access": "nouvel_access_token",
+        "refresh": "nouveau_refresh_token"
+    }
+    """
+
+    refresh_token_str = request.data.get('refresh')
+
+    if not refresh_token_str:
+        logger.warning("Tentative refresh sans token")
+        return ApiResponse.error(
+            "Le champ 'refresh' est requis.",
+            code="MISSING_REFRESH_TOKEN",
+            http_status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        refresh_token_obj = RefreshToken(refresh_token_str)
+        access_token = refresh_token_obj.access_token
+
+        logger.info(f"Refresh token réussi")
+        
+        return ApiResponse.success(
+            data={
+                'access_token': str(access_token),
+                'refresh_token': str(refresh_token_obj),
+                'token_type': 'Bearer',
+                'expires_in': 900,
+            },
+            message="Token rafraîchi avec succès"
+        )
+
+    except TokenError as e:
+        logger.warning(f"Refresh token invalide: {str(e)}")
+        return ApiResponse.error(
+            "Refresh token invalide ou expiré.",
+            code="INVALID_REFRESH_TOKEN",
+            http_status=status.HTTP_401_UNAUTHORIZED
+        )
+    except InvalidToken as e:
+        logger.warning(f"Refresh token malformé: {str(e)}")
+        return ApiResponse.error(
+            "Refresh token malformé.",
+            code="MALFORMED_TOKEN",
+            http_status=status.HTTP_400_BAD_REQUEST
+        )
+    except Exception as e:
+        logger.error(f"Erreur refresh token: {str(e)}")
+        return ApiResponse.error(
+            f"Erreur serveur: {str(e)}",
+            code="SERVER_ERROR",
+            http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
