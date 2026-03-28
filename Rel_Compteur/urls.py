@@ -28,7 +28,6 @@ urlpatterns = [
         path('', include('Compteurs.api_compteur.urls')),
         path('', include('Main_Courante.api_anomalie.urls')),
         path('tableau-bord/', include('Tableau_Bord.api.urls')),
-        path('', include('Tableau_Bord.urls')),
     ])),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
