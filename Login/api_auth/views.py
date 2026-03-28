@@ -164,10 +164,10 @@ def _get_permissions_par_role(role: str) -> dict:
             'dashboard': True,  # Dashboard limité (stats personnelles)
             'missions': True,
             'anomalies': True,
-            'factures': True,  # Consultation + paiement
-            'paiements': True,
+            # Les Releveurs n'ont PAS accès aux factures/paiements
+            # Ils se concentrent uniquement sur les relevés de compteurs
         })
-    
+
     elif role == 'Gestionnaire':
         permissions_base.update({
             'dashboard': True,  # Dashboard complet (limité à sa commune)
