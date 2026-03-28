@@ -22,6 +22,20 @@ logger = logging.getLogger(__name__)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def authentification(request):
+    """
+    Authentification multi-rôles pour l'application mobile Ranoo.
+    
+    Rôles autorisés : Releveur, Gestionnaire, Administrateur
+    
+    Params:
+        - num_utilisateur: Numéro de téléphone de l'utilisateur
+        - password: Mot de passe
+    
+    Returns:
+        - access_token: JWT token d'accès (valable 15 min)
+        - refresh_token: JWT token de rafraîchissement (valable 30 jours)
+        - info_utilisateur: Informations utilisateur et permissions
+    """
     num_utilisateur = request.data.get('num_utilisateur')
     motpasse_utilisateur = request.data.get('password')
 
@@ -34,9 +48,9 @@ def authentification(request):
 
     try:
         utilisateur = Utilisateur.objects.select_related(
-            'role', 'cp_commune'
+            'role', 'cp_commune', 'cp_commune__region', 'entreprise'
         ).get(num_utilisateur=num_utilisateur)
-        
+
         if check_password(motpasse_utilisateur, utilisateur.password):
             # 1. Vérifier si le compte est actif
             if not utilisateur.statut:
@@ -47,22 +61,43 @@ def authentification(request):
                     http_status=status.HTTP_401_UNAUTHORIZED
                 )
 
-            # 2. Vérifier si c'est un Releveur
-            if not utilisateur.role or utilisateur.role.role != "Releveur":
-                logger.warning(f"Rôle non autorisé: {num_utilisateur}")
+            # 2. Vérifier le rôle de l'utilisateur
+            if not utilisateur.role:
+                logger.warning(f"Aucun rôle défini: {num_utilisateur}")
                 return ApiResponse.error(
-                    "Accès réservé aux Releveurs. Veuillez utiliser l'application web.",
+                    "Aucun rôle n'est défini pour votre compte. Contactez l'administrateur.",
+                    code="NO_ROLE",
+                    http_status=status.HTTP_403_FORBIDDEN
+                )
+            
+            role = utilisateur.role.role
+            roles_autorises = ['Releveur', 'Gestionnaire', 'Administrateur']
+            
+            if role not in roles_autorises:
+                logger.warning(f"Rôle non autorisé: {role} pour {num_utilisateur}")
+                return ApiResponse.error(
+                    f"Rôle '{role}' non autorisé sur l'application mobile.",
                     code="ACCESS_DENIED",
                     http_status=status.HTTP_403_FORBIDDEN
                 )
 
-            # 3. Générer les tokens JWT
-            refresh_token = RefreshToken.for_user(utilisateur)
-            access_token = refresh_token.access_token
+            # 3. Déterminer le mode de données selon le rôle
+            # Releveur = offline-first, Admin/Gest = online-only
+            mode_donnees = 'offline-first' if role == 'Releveur' else 'online-only'
 
-            logger.info(f"Connexion réussie: {num_utilisateur}")
+            # 4. Générer les tokens JWT
+            refresh_tokens = RefreshToken.for_user(utilisateur)
+            access_token = refresh_tokens.access_token
 
-            # 4. Retourner les tokens
+            # Ajouter des claims personnalisées au token
+            access_token['role'] = role
+            access_token['cp_commune_id'] = utilisateur.cp_commune_id
+            access_token['entreprise_id'] = utilisateur.entreprise_id
+            access_token['mode_donnees'] = mode_donnees
+
+            logger.info(f"Connexion réussie: {num_utilisateur} (Rôle: {role})")
+
+            # 5. Retourner les tokens avec informations complètes
             return ApiResponse.success(
                 data={
                     'access_token': str(access_token),
@@ -72,12 +107,16 @@ def authentification(request):
                         'nom_utilisateur': utilisateur.nom_utilisateur,
                         'prenom_utilisateur': utilisateur.prenom_utilisateur,
                         'num_utilisateur': utilisateur.num_utilisateur,
-                        'role': utilisateur.role.role,
+                        'role': role,
                         'region': utilisateur.cp_commune.region.region if utilisateur.cp_commune and utilisateur.cp_commune.region else None,
                         'commune': utilisateur.cp_commune.commune if utilisateur.cp_commune else None,
                         'cp_commune': utilisateur.cp_commune_id,
+                        'entreprise_id': utilisateur.entreprise_id,
+                        'mode_donnees': mode_donnees,
+                        'permissions': _get_permissions_par_role(role),
                     }
-                }
+                },
+                message=f"Bienvenue {utilisateur.prenom_utilisateur} ({role})"
             )
         else:
             logger.warning(f"Mot de passe incorrect: {num_utilisateur}")
@@ -93,6 +132,70 @@ def authentification(request):
             code="USER_NOT_FOUND",
             http_status=status.HTTP_401_UNAUTHORIZED
         )
+
+
+def _get_permissions_par_role(role: str) -> dict:
+    """
+    Retourne les permissions pour chaque rôle.
+    
+    Args:
+        role: Le rôle de l'utilisateur (Releveur, Gestionnaire, Administrateur)
+    
+    Returns:
+        dict: Permissions avec accès aux modules
+    """
+    permissions_base = {
+        'dashboard': False,
+        'missions': False,
+        'anomalies': False,
+        'clients': False,
+        'compteurs': False,
+        'factures': False,
+        'paiements': False,
+        'validation_releves': False,
+        'parametres': False,
+        'utilisateurs': False,
+        'depenses': False,
+        'recettes': False,
+    }
+    
+    if role == 'Releveur':
+        permissions_base.update({
+            'dashboard': True,  # Dashboard limité (stats personnelles)
+            'missions': True,
+            'anomalies': True,
+            'factures': True,  # Consultation + paiement
+            'paiements': True,
+        })
+    
+    elif role == 'Gestionnaire':
+        permissions_base.update({
+            'dashboard': True,  # Dashboard complet (limité à sa commune)
+            'clients': True,  # Consultation + modification (limité à sa commune)
+            'compteurs': True,  # Consultation + validation
+            'factures': True,  # Consultation + paiement
+            'paiements': True,
+            'validation_releves': True,
+            'anomalies': True,  # Consultation
+            'depenses': True,  # Limité à sa commune
+        })
+    
+    elif role == 'Administrateur':
+        permissions_base.update({
+            'dashboard': True,  # Dashboard global
+            'clients': True,  # CRUD complet
+            'compteurs': True,  # CRUD complet
+            'factures': True,  # CRUD complet + création
+            'paiements': True,
+            'validation_releves': True,
+            'anomalies': True,  # Consultation + validation
+            'parametres': True,  # Tarifs, configuration
+            'utilisateurs': True,  # CRUD utilisateurs
+            'depenses': True,  # Global
+            'recettes': True,  # Global
+        })
+    
+    return permissions_base
 
 
 @api_view(['GET'])
@@ -120,21 +223,21 @@ def upload_apk(request):
     - size: Taille du fichier (optionnel)
     """
     # Vérifier que l'utilisateur est un utilisateur de service
-    user = request.user
+    utilisateur = request.user
     # Accepter les préfixes 'svc_' et 'service_' pour les utilisateurs de service
-    if not (user.num_utilisateur.startswith('svc_') or user.num_utilisateur.startswith('service_')) and not user.is_superuser:
+    if not (utilisateur.num_utilisateur.startswith('svc_') or utilisateur.num_utilisateur.startswith('service_')) and not utilisateur.is_superuser:
         return ApiResponse.error(
             "Accès réservé aux services.",
             code="ACCESS_DENIED",
             http_status=status.HTTP_403_FORBIDDEN
         )
-    
+
     # Récupérer les données
     apk_file = request.FILES.get('apk_file')
     version = request.data.get('version')
     changelog = request.data.get('changelog', '')
     size = request.data.get('size', '')
-    
+
     # Validation
     if not apk_file:
         return ApiResponse.error(
@@ -142,7 +245,7 @@ def upload_apk(request):
             code="MISSING_FILE",
             http_status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     if not version:
         return ApiResponse.error(
             "La version est requise.",
@@ -187,9 +290,9 @@ def upload_apk(request):
             existing_version.taille = size or size_mb
             existing_version.changelog = changelog
             existing_version.est_actuelle = True
-            existing_version.telecharge_par = user if hasattr(user, 'id_utilisateur') else None
+            existing_version.telecharge_par = utilisateur if hasattr(utilisateur, 'id_utilisateur') else None
             existing_version.save()
-            
+
             mobile_version = existing_version
             logger.info(f"APK v{version} mis à jour (remplacement)")
         else:
@@ -201,7 +304,7 @@ def upload_apk(request):
                 taille=size or size_mb,
                 changelog=changelog,
                 est_actuelle=True,
-                telecharge_par=user if hasattr(user, 'id_utilisateur') else None,
+                telecharge_par=utilisateur if hasattr(utilisateur, 'id_utilisateur') else None,
             )
             logger.info(f"APK v{version} créé (nouvelle version)")
 
@@ -209,7 +312,6 @@ def upload_apk(request):
         MobileVersion.objects.exclude(id_version=mobile_version.id_version).update(
             est_actuelle=False
         )
-
         return ApiResponse.success(
             data={
                 'id_version': mobile_version.id_version,

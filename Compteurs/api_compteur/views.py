@@ -1,19 +1,13 @@
 import time
-from asyncio.log import logger
 
 import pandas as pd
-from asgiref.sync import async_to_sync, sync_to_async
 from django.db import transaction
-from django.db.models import Count
-from django.db.models import Q
-from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 
@@ -26,7 +20,6 @@ from .serializer import MissionSerializer
 from Tasks.tasks import TaskMission, process_compteur_details, TaskFactureDetail
 from Compteurs.models import Compteur, ReleveCompteur
 from Facturation.models import Facture
-from Facturation.views import facture_creation
 from Main_Courante.models import MainCourante
 from pandas.tseries.offsets import MonthEnd
 
@@ -293,7 +286,6 @@ class Missions(APIView):
                     except ReleveCompteur.DoesNotExist:
                         # Premier relevé du compteur
                         conso = volume
-                        dernier_volume = None
 
                     # Utiliser l'ID du compteur pour la création
                     releve = relever(id_compteur_str, date_releve,
