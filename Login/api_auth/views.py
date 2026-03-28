@@ -167,8 +167,11 @@ def upload_apk(request):
 
     file_path = os.path.join(upload_dir, filename)
 
+    # Vérifier si une version avec ce numéro existe déjà
+    existing_version = MobileVersion.objects.filter(version=version).first()
+
     try:
-        # Sauvegarder le fichier
+        # Sauvegarder le fichier (écrase l'ancien si existe)
         with open(file_path, 'wb+') as destination:
             for chunk in apk_file.chunks():
                 destination.write(chunk)
@@ -176,23 +179,36 @@ def upload_apk(request):
         # Calculer la taille réelle
         file_size = os.path.getsize(file_path)
         size_mb = f"{file_size / (1024 * 1024):.2f} MB"
-        
-        # Créer l'entrée en base de données
-        mobile_version = MobileVersion.objects.create(
-            version=version,
-            filename=filename,
-            file=file_path,
-            taille=size or size_mb,
-            changelog=changelog,
-            est_actuelle=True,  # Première version ou version par défaut
-            telecharge_par=user if hasattr(user, 'id_utilisateur') else None,
+
+        if existing_version:
+            # Mettre à jour la version existante
+            existing_version.filename = filename
+            existing_version.file = file_path
+            existing_version.taille = size or size_mb
+            existing_version.changelog = changelog
+            existing_version.est_actuelle = True
+            existing_version.telecharge_par = user if hasattr(user, 'id_utilisateur') else None
+            existing_version.save()
+            
+            mobile_version = existing_version
+            logger.info(f"APK v{version} mis à jour (remplacement)")
+        else:
+            # Créer une nouvelle entrée
+            mobile_version = MobileVersion.objects.create(
+                version=version,
+                filename=filename,
+                file=file_path,
+                taille=size or size_mb,
+                changelog=changelog,
+                est_actuelle=True,
+                telecharge_par=user if hasattr(user, 'id_utilisateur') else None,
+            )
+            logger.info(f"APK v{version} créé (nouvelle version)")
+
+        # Définir cette version comme actuelle et désactiver les autres
+        MobileVersion.objects.exclude(id_version=mobile_version.id_version).update(
+            est_actuelle=False
         )
-        
-        # Si c'est la première version, la définir comme actuelle
-        if MobileVersion.objects.filter(est_actuelle=True).exclude(id_version=mobile_version.id_version).exists():
-            # S'il y a déjà une version actuelle, on ne définit pas celle-ci comme actuelle automatiquement
-            mobile_version.est_actuelle = False
-            mobile_version.save(update_fields=['est_actuelle'])
 
         return ApiResponse.success(
             data={
