@@ -21,8 +21,8 @@ from .views import (
 )
 
 urlpatterns = [
-    path('kpi/', dashboard_kpi, name='api-admin-dashboard-kpi'),
-    path('evo-conso/', dashboard_evo_conso, name='api-admin-dashboard-evo-conso'),
-    path('factures-statut/', dashboard_factures_statut, name='api-admin-dashboard-factures-statut'),
-    path('anomalies-statut/', dashboard_anomalies_statut, name='api-admin-dashboard-anomalies-statut'),
+    path('kpi', dashboard_kpi, name='api-admin-dashboard-kpi'),
+    path('evo-conso', dashboard_evo_conso, name='api-admin-dashboard-evo-conso'),
+    path('factures-statut', dashboard_factures_statut, name='api-admin-dashboard-factures-statut'),
+    path('anomalies-statut', dashboard_anomalies_statut, name='api-admin-dashboard-anomalies-statut'),
 ]
