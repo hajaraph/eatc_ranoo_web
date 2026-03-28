@@ -209,11 +209,18 @@ REST_FRAMEWORK = {
     ]
 }
 
-# Configuration JWT
+# Configuration JWT - Optimisée pour applications mobiles offline
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': False,
+    # Access token court (15 min) - Sécurité maximale
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    
+    # Refresh token long (30 jours) - Permet travail offline
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    
+    # Rotation activée - Sécurité : nouveau refresh token à chaque usage
+    'ROTATE_REFRESH_TOKENS': True,
+    
+    'UPDATE_LAST_LOGIN': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'VERIFYING_KEY': None,
@@ -221,6 +228,8 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id_utilisateur',
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
 }
 
 # Configurations de Celery

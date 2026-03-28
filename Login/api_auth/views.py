@@ -1,4 +1,5 @@
 import os
+import logging
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from rest_framework import status
@@ -13,6 +14,8 @@ from Rel_Compteur.api_utils import ApiResponse
 from Login.models import DownloadToken, MobileVersion
 from django.urls import reverse
 from django.http import FileResponse
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
@@ -29,53 +32,61 @@ def authentification(request):
         )
 
     try:
-        utilisateur = Utilisateur.objects.get(num_utilisateur=num_utilisateur)
+        utilisateur = Utilisateur.objects.select_related(
+            'role', 'cp_commune', 'cp_commune__region'
+        ).get(num_utilisateur=num_utilisateur)
+        
         if check_password(motpasse_utilisateur, utilisateur.password):
             # 1. Vérifier si le compte est actif
             if not utilisateur.statut:
+                logger.warning(f"Compte désactivé: {num_utilisateur}")
                 return ApiResponse.error(
                     "Votre compte est désactivé !",
                     code="ACCOUNT_DISABLED",
                     http_status=status.HTTP_401_UNAUTHORIZED
                 )
 
-            # 2. Vérifier si c'est un Releveur (avec sécurité si role est None)
-            if utilisateur.role and utilisateur.role.role == "Releveur":
-                refresh_token = RefreshToken.for_user(utilisateur)
-                access_token = refresh_token.access_token
-
-                utilisateur.last_token = str(access_token)
-                utilisateur.save()
-
-                return ApiResponse.success(
-                    data={
-                        'access_token': str(access_token),
-                        'info_utilisateur': {
-                            'id_utilisateur': utilisateur.id_utilisateur,
-                            'nom_utilisateur': utilisateur.nom_utilisateur,
-                            'prenom_utilisateur': utilisateur.prenom_utilisateur,
-                            'num_utilisateur': utilisateur.num_utilisateur,
-                            'role': utilisateur.role.role,
-                            'region': utilisateur.cp_commune.region.region,
-                            'commune': utilisateur.cp_commune.commune,
-                            'cp_commune': utilisateur.cp_commune_id,
-                            'last_token': utilisateur.last_token
-                        }
-                    }
-                )
-            else:
+            # 2. Vérifier si c'est un Releveur
+            if not utilisateur.role or utilisateur.role.role != "Releveur":
+                logger.warning(f"Rôle non autorisé: {num_utilisateur}")
                 return ApiResponse.error(
                     "Accès réservé aux Releveurs. Veuillez utiliser l'application web.",
                     code="ACCESS_DENIED",
                     http_status=status.HTTP_403_FORBIDDEN
                 )
+
+            # 3. Générer les tokens JWT
+            refresh_token = RefreshToken.for_user(utilisateur)
+            access_token = refresh_token.access_token
+
+            logger.info(f"Connexion réussie: {num_utilisateur}")
+
+            # 4. Retourner les tokens
+            return ApiResponse.success(
+                data={
+                    'access_token': str(access_token),
+                    'refresh_token': str(refresh_token),
+                    'info_utilisateur': {
+                        'id_utilisateur': utilisateur.id_utilisateur,
+                        'nom_utilisateur': utilisateur.nom_utilisateur,
+                        'prenom_utilisateur': utilisateur.prenom_utilisateur,
+                        'num_utilisateur': utilisateur.num_utilisateur,
+                        'role': utilisateur.role.role,
+                        'region': utilisateur.cp_commune.region.region if utilisateur.cp_commune and utilisateur.cp_commune.region else None,
+                        'commune': utilisateur.cp_commune.commune if utilisateur.cp_commune else None,
+                        'cp_commune': utilisateur.cp_commune_id,
+                    }
+                }
+            )
         else:
+            logger.warning(f"Mot de passe incorrect: {num_utilisateur}")
             return ApiResponse.error(
                 "Mot de passe incorrect !",
                 code="INVALID_PASSWORD",
                 http_status=status.HTTP_401_UNAUTHORIZED
             )
     except Utilisateur.DoesNotExist:
+        logger.info(f"Tentative compte inexistant: {num_utilisateur}")
         return ApiResponse.error(
             "Votre compte n'existe pas !",
             code="USER_NOT_FOUND",
@@ -337,7 +348,7 @@ def download_with_token(request, token_string):
     
     # Incrémenter le compteur
     token.increment_download()
-    
+
     # Servir le fichier
     response = FileResponse(
         open(file_path, 'rb'),
@@ -345,5 +356,5 @@ def download_with_token(request, token_string):
     )
     response['Content-Length'] = os.path.getsize(file_path)
     response['Content-Disposition'] = f'attachment; filename="{token.mobile_version.filename}"'
-    
+
     return response

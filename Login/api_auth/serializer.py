@@ -10,12 +10,6 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 
 
 class UtilisateurSerializerWithLastToken(serializers.ModelSerializer):
-    last_token = serializers.SerializerMethodField()
-
-    @staticmethod
-    def get_last_token(utilisateur):
-        return utilisateur.last_token if utilisateur.last_token else "Pas de token"
-
     class Meta:
         model = Utilisateur
         fields = [
@@ -26,7 +20,6 @@ class UtilisateurSerializerWithLastToken(serializers.ModelSerializer):
             'password',
             'cp_commune',
             'role_id',
-            'last_token'
         ]
 
 class UstilisateursSynchrone(serializers.ModelSerializer):
@@ -40,5 +33,4 @@ class UstilisateursSynchrone(serializers.ModelSerializer):
             'password',
             'cp_commune',
             'role_id',
-            'last_token'
         ]

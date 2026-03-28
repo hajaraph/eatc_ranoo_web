@@ -52,7 +52,6 @@ class Utilisateur(AbstractUser):
     cp_commune = models.ForeignKey(Commune, on_delete=models.CASCADE, blank=True, null=True, verbose_name='Commune')
     role = models.ForeignKey('Role', blank=True, on_delete=models.PROTECT, null=True)
     entreprise = models.ForeignKey('Entreprise', on_delete=models.PROTECT, blank=True, null=True)
-    last_token = models.CharField(max_length=255, blank=True, null=True)
 
     username = models.CharField(max_length=100, blank=True, null=True, unique=True, verbose_name='Pseudo')
     # first_name et last_name sont des champs de AbstractUser, on ne doit pas les écraser avec des strings
