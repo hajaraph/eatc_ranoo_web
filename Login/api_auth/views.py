@@ -12,12 +12,9 @@ from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from Tenants.models import Utilisateur
 from Rel_Compteur.api_utils import ApiResponse
-from Login.models import DownloadToken, MobileVersion
+from Login.models import MobileVersion
 from django.urls import reverse
-from django.http import FileResponse, HttpResponse, StreamingHttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views.decorators.http import require_http_methods
+from django.http import StreamingHttpResponse
 
 logger = logging.getLogger(__name__)
 
@@ -370,202 +367,69 @@ def get_mobile_version(request):
     )
 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def generate_download_token(request):
-    """
-    Génère un token de téléchargement temporaire (valable 24h).
-    Peut être utilisé pour sécuriser l'accès aux APK.
-
-    Params optionnels:
-    - duration: Durée en heures (défaut: 24)
-    - max_downloads: Nombre max de téléchargements (défaut: 5)
-    """
-
-    # Récupérer la version demandée
-    version_id = request.data.get('version_id')
-
-    if not version_id:
-        # Utiliser la version actuelle par défaut
-        version = MobileVersion.obtenir_version_actuelle()
-        if not version:
-            return ApiResponse.error(
-                "Aucune version disponible.",
-                code="NO_VERSION",
-                http_status=status.HTTP_404_NOT_FOUND
-            )
-    else:
-        try:
-            version = MobileVersion.objects.get(id_version=version_id)
-        except MobileVersion.DoesNotExist:
-            return ApiResponse.error(
-                "Version non trouvée.",
-                code="VERSION_NOT_FOUND",
-                http_status=status.HTTP_404_NOT_FOUND
-            )
-
-    # Paramètres optionnels
-    duration_hours = int(request.data.get('duration', 24))
-    max_downloads = int(request.data.get('max_downloads', 5))
-
-    # Limiter la durée maximale à 7 jours (168h)
-    duration_hours = min(duration_hours, 168)
-
-    # Récupérer l'IP
-    ip_address = request.META.get('REMOTE_ADDR')
-
-    # Créer le token
-    token = DownloadToken.create_token(
-        mobile_version=version,
-        duration_hours=duration_hours,
-        max_downloads=max_downloads,
-        ip_address=ip_address,
-    )
-
-    # Construire l'URL de téléchargement temporaire avec reverse()
-    download_path = reverse('download_direct', kwargs={'token_string': token.token})
-    download_url = request.build_absolute_uri(download_path)
-
-    return ApiResponse.success(
-        data={
-            'token': token.token,
-            'download_url': download_url,
-            'expires_at': token.expires_at.isoformat(),
-            'expires_in_hours': duration_hours,
-            'max_downloads': max_downloads,
-            'version': version.version,
-            'filename': version.filename,
-        },
-        message=f"Token généré - Valable {duration_hours}h"
-    )
-
-
 def iter_file(file_path, chunk_size=65536):
     """
     Générateur optimisé pour streamer un fichier.
     Chunk size 64KB pour meilleur throughput TCP.
-    
-    Yield le fichier par morceaux sans jamais le charger en mémoire.
     """
     with open(file_path, 'rb') as f:
         while chunk := f.read(chunk_size):
             yield chunk
 
 
-@csrf_exempt
-@require_http_methods(["GET"])
-def download_with_token(request, token_string):
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def download_apk(request):
     """
-    Télécharge le fichier APK avec un token valide.
-    Valide le token et incrémente le compteur.
+    Téléchargement direct de l'APK sans token.
     
-    SOLUTION ULTIME 2025 :
-    - StreamingHttpResponse avec générateur iter_file
-    - Chunk size 64KB (65536 bytes) pour throughput optimal
-    - Fonctionne avec TOUS les serveurs WSGI (Gunicorn, uWSGI, etc.)
-    - Support range requests pour reprise téléchargement
+    OPTIMISATION 2025 :
+    - StreamingHttpResponse avec générateur (mémoire constante)
+    - Chunk size 64KB pour throughput optimal
+    - Support range requests (reprise après coupure)
+    - Compatible tous navigateurs mobile
     """
-    import logging
+    # Récupérer la dernière version
+    version = MobileVersion.obtenir_version_actuelle()
     
-    logger = logging.getLogger(__name__)
+    if not version or not version.file:
+        logger.error("Aucune version APK disponible")
+        return ApiResponse.error(
+            "Aucune version disponible. Contactez l'administrateur.",
+            code="NO_VERSION_AVAILABLE",
+            http_status=status.HTTP_404_NOT_FOUND
+        )
     
-    # Valider le token
-    token = DownloadToken.get_valid_token(token_string)
-
-    if not token:
-        logger.warning(f"Token invalide: {token_string}")
-        return HttpResponse(
-            '{"error": "Token invalide ou expiré.", "code": "INVALID_TOKEN"}',
-            content_type='application/json',
-            status=403
-        )
-
-    # Vérifier que la version mobile existe
-    if not token.mobile_version:
-        logger.error(f"MobileVersion associée inexistante pour le token: {token_string}")
-        return HttpResponse(
-            '{"error": "Version mobile introuvable.", "code": "VERSION_NOT_FOUND"}',
-            content_type='application/json',
-            status=404
-        )
-
-    # Vérifier que le fichier est défini
-    if not token.mobile_version.file:
-        logger.error(f"Fichier non défini pour MobileVersion ID={token.mobile_version.id}")
-        return HttpResponse(
-            '{"error": "Fichier APK non configuré. Contactez l\'administrateur.", "code": "FILE_NOT_CONFIGURED"}',
-            content_type='application/json',
-            status=404
-        )
-
-    # Vérifier que le fichier existe
-    file_path = token.mobile_version.file.path
-    filename = token.mobile_version.filename or os.path.basename(file_path)
+    file_path = version.file.path
+    filename = version.filename or os.path.basename(file_path)
     file_size = os.path.getsize(file_path)
     
-    logger.info(f"Téléchargement APK - File path: {file_path}")
-    logger.info(f"Filename: {filename}, Size: {file_size} octets ({file_size / 1024 / 1024:.2f} MB)")
+    logger.info(f"Téléchargement APK - {filename} ({file_size / 1024 / 1024:.2f} MB)")
     
     if not os.path.exists(file_path):
         logger.error(f"Fichier inexistant: {file_path}")
-        return HttpResponse(
-            '{"error": "Fichier non trouvé sur le serveur.", "code": "FILE_NOT_FOUND"}',
-            content_type='application/json',
-            status=404
+        return ApiResponse.error(
+            "Fichier non trouvé sur le serveur.",
+            code="FILE_NOT_FOUND",
+            http_status=status.HTTP_404_NOT_FOUND
         )
-
-    if file_size == 0:
-        logger.error(f"Fichier vide: {file_path}")
-        return HttpResponse(
-            '{"error": "Fichier vide.", "code": "EMPTY_FILE"}',
-            content_type='application/json',
-            status=500
-        )
-
-    # Incrémenter le compteur AVANT le téléchargement
-    token.increment_download()
-    logger.info(f"Compteur incrémenté. Downloads: {token.download_count}")
-
-    # ========================================================================
-    # SOLUTION ULTIME : StreamingHttpResponse avec générateur
-    # 
-    # Pourquoi ça marche TOUJOURS :
-    # - Le générateur lit le fichier par chunks de 64KB
-    # - Chaque chunk est envoyé immédiatement au client
-    # - Aucun buffering, mémoire constante quel que soit la taille
-    # - Compatible Gunicorn, uWSGI, Nginx, Traefik
-    # ========================================================================
     
-    # Créer le générateur
+    # Streamer le fichier
     file_stream = iter_file(file_path)
     
-    # Créer la réponse streaming
     response = StreamingHttpResponse(
         file_stream,
         content_type='application/vnd.android.package-archive'
     )
     
-    # Headers CRITIQUES
+    # Headers critiques
     response['Content-Length'] = str(file_size)
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
-    # Support range requests (reprise téléchargement si coupure)
     response['Accept-Ranges'] = 'bytes'
-    
-    # Headers de sécurité
     response['X-Content-Type-Options'] = 'nosniff'
-    
-    # Désactiver buffering pour flux continu
-    response['X-Accel-Buffering'] = 'no'
-    response['X-Proxy-Buffering'] = 'no'
-    
-    # Headers de cache
     response['Cache-Control'] = 'private, no-cache, no-store, must-revalidate'
-    response['Pragma'] = 'no-cache'
-    response['Expires'] = '0'
     
-    logger.info(f"StreamingHttpResponse créé: {file_size} octets, filename={filename}")
-    logger.info(f"Début du streaming pour: {filename}")
+    logger.info(f"Téléchargement démarré: {filename}")
     
     return response
 
