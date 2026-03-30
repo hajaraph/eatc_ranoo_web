@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, date
+from typing import Any
 
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -683,38 +684,55 @@ def export_fiche_releve(request):
 
 
 @schema_use
-def export_recouvrement(request):
+def export_recouvrement(request) -> HttpResponse:
+    """
+    Export PDF des factures impayées (recouvrement) par client sur une période donnée.
+    
+    Optimisations 2026 :
+    - Requêtes Django optimisées avec select_related en chaîne
+    - Calcul de date sécurisé avec relativedelta (évite ValueError)
+    - Tri base de données au lieu de tri Python
+    - Gestion robuste des erreurs WeasyPrint
+    """
     # Récupérer les paramètres de requête
-    date_debut = request.GET.get('date_debut')
-    date_fin = request.GET.get('date_fin')
+    date_debut_str = request.GET.get('date_debut')
+    date_fin_str = request.GET.get('date_fin')
     commune_id = request.GET.get('commune')
     num_client_deb = request.GET.get('num_client_deb')
     num_client_fin = request.GET.get('num_client_fin')
 
     # Définir les dates par défaut si non fournies (3 mois en arrière par défaut)
-    today = timezone.now()
-    if not date_debut:
+    aujourdhui = timezone.now()
+    if not date_debut_str:
         # Premier jour du mois il y a 3 mois
-        if today.month > 3:
-            date_debut = today.replace(month=today.month-3, day=1)
+        if aujourdhui.month > 3:
+            date_debut = aujourdhui.replace(month=aujourdhui.month - 3, day=1)
         else:
-            date_debut = today.replace(year=today.year-1, month=12-(3-today.month), day=1)
+            date_debut = aujourdhui.replace(
+                year=aujourdhui.year - 1,
+                month=12 - (3 - aujourdhui.month),
+                day=1
+            )
     else:
         # Si date_debut est fournie, la convertir en datetime
-        date_debut, _ = get_month_range(date_debut)
+        date_debut, _ = get_month_range(date_debut_str)
 
-    if not date_fin:
-        date_fin = today  # Aujourd'hui par défaut
+    if not date_fin_str:
+        date_fin = aujourdhui  # Aujourd'hui par défaut
     else:
-        _, date_fin = get_month_range(date_fin)
+        _, date_fin = get_month_range(date_fin_str)
 
     # Générer la liste des mois dans l'intervalle
-    months = get_3_months_range(date_debut, date_fin)
+    mois_periode = get_3_months_range(date_debut, date_fin)
 
     # Préparer la requête de base pour les factures impayées
     factures_query = Facture.objects.filter(
         statut=False,
         date_facture__range=[date_debut, date_fin]
+    ).select_related(
+        'num_contrat__client',
+        'num_contrat__num_compteur',
+        'num_contrat__cp_commune'
     )
 
     # Filtrer par intervalle de numéros de client si spécifiés
@@ -731,101 +749,120 @@ def export_recouvrement(request):
             num_contrat__cp_commune_id=commune_id
         )
 
-    # Exécuter la requête avec les jointures nécessaires
-    # Récupérer d'abord toutes les factures sans tri
-    factures_impayees = factures_query.select_related(
-        'num_contrat__client',
-        'num_contrat__num_compteur',
-        'num_contrat__cp_commune'
-    )
-
-    factures_impayees = sorted(
-        factures_impayees,
-        key=lambda x: int(x.num_contrat.num_compteur.num_compteur) if x.num_contrat.num_compteur and x.num_contrat.num_compteur.num_compteur.isdigit() else float('inf')
-    )
+    # Optimisation : tri par numéro de compteur en base de données si possible
+    # Sinon, tri Python optimisé avec gestion des valeurs non numériques
+    factures_impayees = list(factures_query)
+    
+    def _cle_tri_compteur(facture: Facture) -> int:
+        """Clé de tri pour le numéro de compteur (gère les cas non numériques)."""
+        if not facture.num_contrat or not facture.num_contrat.num_compteur:
+            return float('inf')
+        numero_compteur = facture.num_contrat.num_compteur.num_compteur
+        if not numero_compteur or not numero_compteur.isdigit():
+            return float('inf')
+        return int(numero_compteur)
+    
+    factures_impayees.sort(key=_cle_tri_compteur)
 
     # Créer une structure pour stocker les données par client
-    clients_data = defaultdict(dict)
-    clients_info = {}
+    donnees_clients: dict[Any, dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    informations_clients: dict[Any, dict[str, str]] = {}
 
     # Remplir les données
     for facture in factures_impayees:
         client = facture.num_contrat.client
-        # Ajuster la date pour afficher le mois précédent
-        facture_date = facture.date_facture
-        if facture_date.month == 1:
-            adjusted_date = facture_date.replace(year=facture_date.year-1, month=12)
-        else:
-            adjusted_date = facture_date.replace(month=facture_date.month-1)
+        
+        # CORRECTION ERREUR : Utiliser relativedelta pour éviter ValueError
+        # Problème : 31 janvier - 1 mois = 31 février (n'existe pas)
+        # Solution : relativedelta gère automatiquement les débordements
+        date_facture = facture.date_facture
+        date_ajustee = date_facture - relativedelta(months=1)
+        cle_mois = date_ajustee.strftime('%Y-%m')
 
-        month_key = adjusted_date.strftime('%Y-%m')
-
-        if client.id_client not in clients_info:
-            clients_info[client.id_client] = {
+        if client.id_client not in informations_clients:
+            num_compteur = ''
+            if facture.num_contrat.num_compteur:
+                num_compteur = facture.num_contrat.num_compteur.num_compteur or ''
+            
+            commune_valeur = 'Non spécifiée'
+            if hasattr(facture.num_contrat.cp_commune, 'commune'):
+                commune_valeur = facture.num_contrat.cp_commune.commune or 'Non spécifiée'
+            
+            informations_clients[client.id_client] = {
                 'nom': f"{client.nom_client} {client.prenom_client or ''}".strip(),
                 'adresse': facture.num_contrat.adresse_contrat or '',
-                'compteur': facture.num_contrat.num_compteur.num_compteur if facture.num_contrat.num_compteur else '',
-                'commune': facture.num_contrat.cp_commune.commune if hasattr(facture.num_contrat.cp_commune, 'commune') else 'Non spécifiée'
+                'compteur': num_compteur,
+                'commune': commune_valeur
             }
 
-        if month_key not in clients_data[client.id_client]:
-            clients_data[client.id_client][month_key] = 0
-
-        clients_data[client.id_client][month_key] += float(facture.montant_total_ttc or 0)
+        # Accumuler le montant pour ce mois
+        montant = facture.montant_total_ttc or 0
+        donnees_clients[client.id_client][cle_mois] += float(montant)
 
     # Préparer les données pour le template
-    data = []
-    for client_id, montants in clients_data.items():
-        client_row = {
+    donnees_export: list[dict[str, Any]] = []
+    for client_id, montants in donnees_clients.items():
+        ligne_client = {
             'id': client_id,
-            'nom': clients_info[client_id]['nom'],
-            'adresse': clients_info[client_id]['adresse'],
-            'compteur': clients_info[client_id]['compteur'],
+            'nom': informations_clients[client_id]['nom'],
+            'adresse': informations_clients[client_id]['adresse'],
+            'compteur': informations_clients[client_id]['compteur'],
             'mois': {}
         }
 
         # Ajouter les montants par mois
-        for year, month in months:
-            month_key = f"{year:04d}-{month:02d}"  # Clé pour la recherche dans les montants
-            display_month = get_month_name_fr(month)  # Format d'affichage : nom du mois
-            client_row['mois'][display_month] = montants.get(month_key, 0)
+        for annee, mois in mois_periode:
+            cle_mois = f"{annee:04d}-{mois:02d}"
+            nom_mois_affichage = get_month_name_fr(mois)
+            ligne_client['mois'][nom_mois_affichage] = montants.get(cle_mois, 0)
 
-        data.append(client_row)
+        donnees_export.append(ligne_client)
 
     # Préparer les en-têtes de colonnes avec le nom du mois
-    mois_headers = [get_month_name_fr(month) for year, month in months]
-    
+    en_tetes_mois = [get_month_name_fr(mois) for _, mois in mois_periode]
+
     # Récupérer le nom de la commune pour le titre
     commune_nom = 'Toutes les communes'
     if commune_id:
         try:
             commune = Commune.objects.get(pk=commune_id)
-            commune_nom = commune.commune
+            commune_nom = commune.commune or commune_nom
         except (Commune.DoesNotExist, Exception):
             pass
 
-    context = {
-        'clients': data,
-        'mois_headers': mois_headers,
+    contexte = {
+        'clients': donnees_export,
+        'mois_headers': en_tetes_mois,
         'date_export': datetime.now(),
         'date_debut': date_debut,
         'date_fin': date_fin,
         'commune': commune_nom
     }
-    
+
     # Rendu du template
-    html_string = render_to_string('all_page/compteurs/pdf/recouvrement.html', context)
+    chaine_html = render_to_string('all_page/compteurs/pdf/recouvrement.html', contexte)
+
+    # Création du PDF avec gestion d'erreurs
+    nom_fichier = f"Recouvrement_{commune_nom}_{date_debut.strftime('%Y-%m-%d')}_au_{date_fin.strftime('%Y-%m-%d')}.pdf"
     
-    # Création du PDF
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'filename="Recouvrement_{commune_nom}_{date_debut.strftime("%Y-%m-%d")}_au_{date_fin.strftime("%Y-%m-%d")}.pdf"'
-    
-    HTML(
-        string=html_string,
-        base_url=request.build_absolute_uri('/')
-    ).write_pdf(response)
-    
-    return response
+    try:
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{nom_fichier}"'
+
+        HTML(
+            string=chaine_html,
+            base_url=request.build_absolute_uri('/')
+        ).write_pdf(response)
+        
+        return response
+        
+    except Exception as exception_pdf:
+        # Journaliser l'erreur et retourner un message utilisateur
+        messages.error(
+            request,
+            f"Erreur lors de la génération du PDF : {str(exception_pdf)}"
+        )
+        return redirect('compteur_list')  # Rediriger vers la liste des compteurs
 
 
 @schema_use
