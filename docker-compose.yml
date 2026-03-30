@@ -39,6 +39,10 @@ services:
       - traefik.http.routers.eatc.tls.certresolver=myresolver
       - traefik.http.services.eatc.loadbalancer.server.port=8000
       - traefik.docker.network=traefik_preprod
+      # Timeout étendu pour gros téléchargements (10 min)
+      - traefik.http.services.eatc.loadbalancer.responseheaderstimeout=600s
+      - traefik.http.routers.eatc.transport=web
+      - traefik.http.services.eatc.loadbalancer.passHostHeader=true
     depends_on:
       db:
         condition: service_healthy
