@@ -1,13 +1,18 @@
 from functools import wraps
+import os
+import logging
+
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.hashers import check_password
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse, StreamingHttpResponse
 from django.shortcuts import render, redirect
 from django.views import View
 
 from Tenants.models import Utilisateur, Initial
 from Login.models import MobileVersion
+
+logger = logging.getLogger(__name__)
 
 
 # Fonction decorateur pour verifie si un utilisateur et connecté ou pas avant d'acceder a un url
@@ -130,6 +135,66 @@ def deconnexion(request):
     return redirect('authentification')
 
 
+def iter_file(file_path, chunk_size=65536):
+    """
+    Générateur optimisé pour streamer un fichier.
+    Chunk size 64KB pour meilleur throughput TCP.
+    """
+    with open(file_path, 'rb') as f:
+        while chunk := f.read(chunk_size):
+            yield chunk
+
+
+@authentification_requis
+def download_apk(request) -> StreamingHttpResponse:
+    """
+    Téléchargement direct de l'APK sans token.
+    
+    OPTIMISATION 2025 :
+    - StreamingHttpResponse avec générateur (mémoire constante)
+    - Chunk size 64KB pour throughput optimal
+    - Support range requests (reprise après coupure)
+    - Compatible tous navigateurs mobile
+    """
+    # Récupérer la dernière version
+    version = MobileVersion.obtenir_version_actuelle()
+    
+    if not version or not version.file:
+        logger.error("Aucune version APK disponible")
+        return HttpResponseForbidden(
+            "Aucune version disponible. Contactez l'administrateur."
+        )
+    
+    file_path = version.file.path
+    filename = version.filename or os.path.basename(file_path)
+    file_size = os.path.getsize(file_path)
+    
+    logger.info(f"Téléchargement APK - {filename} ({file_size / 1024 / 1024:.2f} MB)")
+    
+    if not os.path.exists(file_path):
+        logger.error(f"Fichier inexistant: {file_path}")
+        return HttpResponseForbidden("Fichier non trouvé sur le serveur.")
+    
+    # Streamer le fichier
+    file_stream = iter_file(file_path)
+    
+    response = StreamingHttpResponse(
+        file_stream,
+        content_type='application/vnd.android.package-archive'
+    )
+    
+    # Headers critiques
+    response['Content-Length'] = str(file_size)
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Accept-Ranges'] = 'bytes'
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = 'private, no-cache, no-store, must-revalidate'
+    
+    logger.info(f"Téléchargement démarré: {filename}")
+    
+    return response
+
+
 @authentification_requis
 def mobile_app_page(request):
     """
@@ -145,8 +210,8 @@ def mobile_app_page(request):
     # URL de téléchargement direct (sans token)
     download_url = None
     if version_actuelle and version_actuelle.file:
-        # Utiliser l'URL de l'API pour le téléchargement direct
-        download_url = request.build_absolute_uri('/api/download-apk/')
+        # Utiliser l'URL pour le téléchargement direct
+        download_url = request.build_absolute_uri('/download-apk/')
 
     # Préparer le contexte
     if version_actuelle:

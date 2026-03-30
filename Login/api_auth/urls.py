@@ -5,7 +5,6 @@ from Login.api_auth.views import (
     check_server,
     upload_apk,
     get_mobile_version,
-    download_apk,
     refresh_token,
 )
 
@@ -15,5 +14,4 @@ urlpatterns = [
     path('serveurTest/', check_server, name='check_server_availability'),
     path('upload-apk/', upload_apk, name='upload_apk'),
     path('version/', get_mobile_version, name='get_mobile_version'),
-    path('download-apk/', download_apk, name='download_apk'),
 ]
