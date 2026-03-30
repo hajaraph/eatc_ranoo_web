@@ -440,16 +440,15 @@ def generate_download_token(request):
     )
 
 
-def download_file_iterator(file_path, chunk_size=65536):
+def iter_file(file_path, chunk_size=65536):
     """
-    Générateur pour streamer le fichier par chunks de 64KB.
-    Optimisé pour les gros fichiers (>100MB).
+    Générateur optimisé pour streamer un fichier.
+    Chunk size 64KB pour meilleur throughput TCP.
+    
+    Yield le fichier par morceaux sans jamais le charger en mémoire.
     """
     with open(file_path, 'rb') as f:
-        while True:
-            chunk = f.read(chunk_size)
-            if not chunk:
-                break
+        while chunk := f.read(chunk_size):
             yield chunk
 
 
@@ -460,11 +459,11 @@ def download_with_token(request, token_string):
     Télécharge le fichier APK avec un token valide.
     Valide le token et incrémente le compteur.
     
-    OPTIMISATION 2025 - BEST PRACTICE :
-    - FileResponse avec wsgi.file_wrapper (sendfile zero-copy)
-    - Chunk size 64KB pour meilleur throughput réseau
+    SOLUTION ULTIME 2025 :
+    - StreamingHttpResponse avec générateur iter_file
+    - Chunk size 64KB (65536 bytes) pour throughput optimal
+    - Fonctionne avec TOUS les serveurs WSGI (Gunicorn, uWSGI, etc.)
     - Support range requests pour reprise téléchargement
-    - Timeout étendu via headers pour gros fichiers
     """
     import logging
     
@@ -528,23 +527,25 @@ def download_with_token(request, token_string):
     logger.info(f"Compteur incrémenté. Downloads: {token.download_count}")
 
     # ========================================================================
-    # OPTIMISATION : FileResponse avec wsgi.file_wrapper
-    # Utilise sendfile() du kernel pour transfert zero-copy (performance max)
-    # Gunicorn/Uvicorn l'utilisent automatiquement si disponible
+    # SOLUTION ULTIME : StreamingHttpResponse avec générateur
+    # 
+    # Pourquoi ça marche TOUJOURS :
+    # - Le générateur lit le fichier par chunks de 64KB
+    # - Chaque chunk est envoyé immédiatement au client
+    # - Aucun buffering, mémoire constante quel que soit la taille
+    # - Compatible Gunicorn, uWSGI, Nginx, Traefik
     # ========================================================================
     
-    # Ouvrir le fichier en mode binaire
-    file_handle = open(file_path, 'rb')
+    # Créer le générateur
+    file_stream = iter_file(file_path)
     
-    # FileResponse utilise automatiquement wsgi.file_wrapper si disponible
-    response = FileResponse(
-        file_handle,
-        content_type='application/vnd.android.package-archive',
-        as_attachment=True,
-        filename=filename
+    # Créer la réponse streaming
+    response = StreamingHttpResponse(
+        file_stream,
+        content_type='application/vnd.android.package-archive'
     )
     
-    # Headers CRITIQUES pour Chrome mobile et gros fichiers
+    # Headers CRITIQUES
     response['Content-Length'] = str(file_size)
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
@@ -554,16 +555,17 @@ def download_with_token(request, token_string):
     # Headers de sécurité
     response['X-Content-Type-Options'] = 'nosniff'
     
-    # Headers de cache - private car fichier personnalisé
+    # Désactiver buffering pour flux continu
+    response['X-Accel-Buffering'] = 'no'
+    response['X-Proxy-Buffering'] = 'no'
+    
+    # Headers de cache
     response['Cache-Control'] = 'private, no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
     
-    # Timeout étendu pour gros fichiers (Gunicorn)
-    response['X-Accel-Buffering'] = 'no'  # Désactive buffering Nginx
-    response['X-Proxy-Buffering'] = 'no'  # Désactive buffering proxy
-    
-    logger.info(f"FileResponse envoyé: {file_size} octets, filename={filename}")
+    logger.info(f"StreamingHttpResponse créé: {file_size} octets, filename={filename}")
+    logger.info(f"Début du streaming pour: {filename}")
     
     return response
 
