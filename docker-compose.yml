@@ -39,9 +39,6 @@ services:
       - traefik.http.routers.eatc.tls.certresolver=myresolver
       - traefik.http.services.eatc.loadbalancer.server.port=8000
       - traefik.docker.network=traefik_preprod
-      # Désactiver buffering Traefik pour gros fichiers
-      - traefik.http.middlewares.nobuffering.buffering.bufferedbytes=0
-      - traefik.http.routers.eatc.middlewares=nobuffering
     depends_on:
       db:
         condition: service_healthy
