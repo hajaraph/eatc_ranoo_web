@@ -14,7 +14,10 @@ from Tenants.models import Utilisateur
 from Rel_Compteur.api_utils import ApiResponse
 from Login.models import DownloadToken, MobileVersion
 from django.urls import reverse
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
 
 logger = logging.getLogger(__name__)
 
@@ -437,22 +440,24 @@ def generate_download_token(request):
     )
 
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
+@csrf_exempt
+@require_http_methods(["GET"])
 def download_with_token(request, token_string):
     """
     Télécharge le fichier APK avec un token valide.
     Valide le token et incrémente le compteur.
+    
+    Utilise une vue Django standard (pas DRF) pour éviter les problèmes
+    de headers avec FileResponse sur Chrome mobile.
     """
-
     # Valider le token
     token = DownloadToken.get_valid_token(token_string)
 
     if not token:
-        return ApiResponse.error(
-            "Token invalide ou expiré.",
-            code="INVALID_TOKEN",
-            http_status=status.HTTP_403_FORBIDDEN
+        return HttpResponse(
+            '{"error": "Token invalide ou expiré.", "code": "INVALID_TOKEN"}',
+            content_type='application/json',
+            status=403
         )
 
     # Vérifier que le fichier existe
@@ -460,34 +465,32 @@ def download_with_token(request, token_string):
     filename = token.mobile_version.filename
 
     if not os.path.exists(file_path):
-        return ApiResponse.error(
-            "Fichier non trouvé.",
-            code="FILE_NOT_FOUND",
-            http_status=status.HTTP_404_NOT_FOUND
+        return HttpResponse(
+            '{"error": "Fichier non trouvé.", "code": "FILE_NOT_FOUND"}',
+            content_type='application/json',
+            status=404
         )
 
     # Incrémenter le compteur AVANT le téléchargement
     token.increment_download()
 
-    # Configuration pour forcer le téléchargement
-    content_type = 'application/vnd.android.package-archive'
+    # Ouvrir le fichier et créer la réponse
+    file_handle = open(file_path, 'rb')
     
-    # Créer la réponse avec les bons en-têtes pour forcer le téléchargement
-    response = FileResponse(
-        open(file_path, 'rb'),
-        content_type=content_type,
-        as_attachment=True,
-        filename=filename
-    )
+    response = FileResponse(file_handle, content_type='application/vnd.android.package-archive')
     
-    # En-têtes supplémentaires pour compatibilité navigateurs
+    # Headers CRITIQUES pour Chrome mobile
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    response['Content-Length'] = os.path.getsize(file_path)
+    response['Content-Length'] = str(os.path.getsize(file_path))
     response['X-Content-Type-Options'] = 'nosniff'
+    response['Content-Transfer-Encoding'] = 'binary'
+    response['Accept-Ranges'] = 'bytes'
+    
+    # Headers de cache - importants pour mobile
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
-
+    
     return response
 
 
