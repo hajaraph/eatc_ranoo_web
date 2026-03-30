@@ -83,7 +83,7 @@ $(document).ready(function () {
             // Charger les clients de cette commune
             $clientSelect.append('<option value="">Chargement...</option>');
             $.ajax({
-                url: '/clients/liste/num_client/by_commune/',
+                url: '/clients/liste/num_client_by_commune/',
                 data: {
                     'commune_id': communeId
                 },
