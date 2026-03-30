@@ -9,6 +9,7 @@ $(document).ready(function () {
     // Récupérer les éléments une seule fois
     const $exportType = $('#recouvrementExportType');
     const $dateRangeSection = $('#recouvrementDateRangeSection');
+    const $communeExport = $('#commune_export');
 
     // Définir les valeurs par défaut
     $('#recouvrementStartMonth').val(lastMonthFormatted);
@@ -36,6 +37,7 @@ $(document).ready(function () {
         const endMonth = $('#recouvrementEndMonth').val();
         const numClientDeb = $('#num_client_deb').val();
         const numClientFin = $('#num_client_fin').val();
+        const communeId = $communeExport.val();
 
         // Construire l'URL en fonction du type d'export
         let url;
@@ -43,8 +45,7 @@ $(document).ready(function () {
             // Pour les relevés, on utilise l'URL d'export des compteurs
             url = '/compteurs/exporte/compteur';
 
-            // Récupérer l'ID de la commune si spécifiée
-            const communeId = $('#commune').val();
+            // Ajouter le filtre de commune si une commune est sélectionnée
             if (communeId) {
                 url += `?commune=${communeId}`;
             } else {
@@ -53,8 +54,6 @@ $(document).ready(function () {
         } else {
             // Pour le recouvrement, on utilise les dates au format YYYY-MM uniquement
             // startMonth et endMonth sont déjà au format YYYY-MM
-            const communeId = $('#commune').val();
-
             // Construire l'URL de base avec les dates au format YYYY-MM
             url = `/compteurs/exporte/recouvrement?date_debut=${startMonth}&date_fin=${endMonth}`;
 
@@ -71,27 +70,26 @@ $(document).ready(function () {
     });
 
     // Gestion du changement de commune pour filtrer les clients
-    $('#commune').on('change', function () {
+    $communeExport.on('change', function () {
         const communeId = $(this).val();
         const $clientSelect = $('#num_client_deb');
-        // On vide aussi le select de fin car si la commune change, la plage n'est plus valide
         const $clientSelectFin = $('#num_client_fin');
 
-        // Vider le select
+        // Vider les selects
         $clientSelect.empty();
         $clientSelectFin.empty();
-        $clientSelect.append('<option value="">Chargement...</option>');
 
         if (communeId) {
+            // Charger les clients de cette commune
+            $clientSelect.append('<option value="">Chargement...</option>');
             $.ajax({
-                url: '/clients/liste/num_client_by_commune/',
+                url: '/clients/liste/num_client/by_commune/',
                 data: {
                     'commune_id': communeId
                 },
                 success: function (response) {
                     $clientSelect.empty();
-                    // Ajout d'une option vide cachée pour forcer la sélection
-                    $clientSelect.append('<option value="" hidden></option>');
+                    $clientSelect.append('<option value=""></option>');
 
                     if (response.clients && response.clients.length > 0) {
                         response.clients.forEach(function (client) {
@@ -107,13 +105,8 @@ $(document).ready(function () {
                 }
             });
         } else {
-            $clientSelect.empty();
-            $clientSelect.append('<option value="">Sélectionnez une commune</option>');
+            // Si "Toutes les communes" est sélectionné, désactiver la sélection de client
+            $clientSelect.append('<option value="" selected>Selectionner une commune d\'abord</option>');
         }
     });
-
-    // Fonction utilitaire pour obtenir l'ID du compteur sélectionné
-    function getSelectedCompteurId() {
-        return $('table tbody tr:first-child td:first-child a').text().trim() || '';
-    }
 });

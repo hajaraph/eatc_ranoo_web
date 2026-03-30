@@ -47,13 +47,16 @@ def compteur_liste(request):
 
     # Application du filtre par rôle
     compteurs = filter_by_user_role(request, compteurs_query, 'contrats__cp_commune_id')
-    
+
     # Conversion en liste et tri
     compteurs = list(compteurs.order_by('num_compteur'))
 
     compteurs.sort(key=lambda x: int(x.num_compteur))
 
-    provinces = Province.objects.all().order_by('province')
+    # Récupérer les communes actives (ayant au moins un contrat)
+    communes_actives = Commune.objects.filter(
+        contrat__isnull=False
+    ).distinct().order_by('commune')
 
     context = {
         'title_liste': title,
@@ -61,8 +64,7 @@ def compteur_liste(request):
         'active_li_co': active,
         'font_compteur': font,
         'compteur': compteurs,
-        'client': Contrat.objects.all().order_by('client__num_client'),
-        'provinces': provinces,
+        'communes_actives': communes_actives,
     }
     return render(request, 'all_page/compteurs/compteurs.html', context)
 
