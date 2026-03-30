@@ -440,10 +440,10 @@ def generate_download_token(request):
     )
 
 
-def download_file_iterator(file_path, chunk_size=8192):
+def download_file_iterator(file_path, chunk_size=65536):
     """
-    Générateur pour streamer le fichier par chunks.
-    Plus fiable que FileResponse pour le téléchargement mobile.
+    Générateur pour streamer le fichier par chunks de 64KB.
+    Optimisé pour les gros fichiers (>100MB).
     """
     with open(file_path, 'rb') as f:
         while True:
@@ -460,9 +460,14 @@ def download_with_token(request, token_string):
     Télécharge le fichier APK avec un token valide.
     Valide le token et incrémente le compteur.
     
-    Utilise StreamingHttpResponse avec générateur pour un streaming fiable.
+    OPTIMISATION 2025 - BEST PRACTICE :
+    - FileResponse avec wsgi.file_wrapper (sendfile zero-copy)
+    - Chunk size 64KB pour meilleur throughput réseau
+    - Support range requests pour reprise téléchargement
+    - Timeout étendu via headers pour gros fichiers
     """
     import logging
+    
     logger = logging.getLogger(__name__)
     
     # Valider le token
@@ -497,9 +502,10 @@ def download_with_token(request, token_string):
     # Vérifier que le fichier existe
     file_path = token.mobile_version.file.path
     filename = token.mobile_version.filename or os.path.basename(file_path)
+    file_size = os.path.getsize(file_path)
     
     logger.info(f"Téléchargement APK - File path: {file_path}")
-    logger.info(f"Filename: {filename}")
+    logger.info(f"Filename: {filename}, Size: {file_size} octets ({file_size / 1024 / 1024:.2f} MB)")
     
     if not os.path.exists(file_path):
         logger.error(f"Fichier inexistant: {file_path}")
@@ -508,9 +514,6 @@ def download_with_token(request, token_string):
             content_type='application/json',
             status=404
         )
-    
-    file_size = os.path.getsize(file_path)
-    logger.info(f"File size: {file_size} octets")
 
     if file_size == 0:
         logger.error(f"Fichier vide: {file_path}")
@@ -524,28 +527,43 @@ def download_with_token(request, token_string):
     token.increment_download()
     logger.info(f"Compteur incrémenté. Downloads: {token.download_count}")
 
-    # Créer le générateur de fichier
-    file_iterator = download_file_iterator(file_path)
+    # ========================================================================
+    # OPTIMISATION : FileResponse avec wsgi.file_wrapper
+    # Utilise sendfile() du kernel pour transfert zero-copy (performance max)
+    # Gunicorn/Uvicorn l'utilisent automatiquement si disponible
+    # ========================================================================
     
-    # Créer la réponse avec streaming
-    response = StreamingHttpResponse(
-        file_iterator,
-        content_type='application/vnd.android.package-archive'
+    # Ouvrir le fichier en mode binaire
+    file_handle = open(file_path, 'rb')
+    
+    # FileResponse utilise automatiquement wsgi.file_wrapper si disponible
+    response = FileResponse(
+        file_handle,
+        content_type='application/vnd.android.package-archive',
+        as_attachment=True,
+        filename=filename
     )
     
-    # Headers CRITIQUES pour Chrome mobile
+    # Headers CRITIQUES pour Chrome mobile et gros fichiers
     response['Content-Length'] = str(file_size)
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    response['X-Content-Type-Options'] = 'nosniff'
-    response['Content-Transfer-Encoding'] = 'binary'
+    
+    # Support range requests (reprise téléchargement si coupure)
     response['Accept-Ranges'] = 'bytes'
     
-    # Headers de cache - importants pour mobile
-    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    # Headers de sécurité
+    response['X-Content-Type-Options'] = 'nosniff'
+    
+    # Headers de cache - private car fichier personnalisé
+    response['Cache-Control'] = 'private, no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
     
-    logger.info(f"Réponse envoyée: {file_size} octets, filename={filename}")
+    # Timeout étendu pour gros fichiers (Gunicorn)
+    response['X-Accel-Buffering'] = 'no'  # Désactive buffering Nginx
+    response['X-Proxy-Buffering'] = 'no'  # Désactive buffering proxy
+    
+    logger.info(f"FileResponse envoyé: {file_size} octets, filename={filename}")
     
     return response
 

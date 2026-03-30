@@ -28,7 +28,7 @@ services:
   web:
     image: ${DOCKER_HOST_REGISTRY_NAS}/eatc-web:latest
     container_name: eatc-web
-    command: gunicorn Rel_Compteur.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile -
+    command: gunicorn Rel_Compteur.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 600 --keep-alive 5 --access-logfile - --error-logfile -
     env_file: .env
     volumes:
       - ./static/media:/app/static/media
@@ -39,6 +39,9 @@ services:
       - traefik.http.routers.eatc.tls.certresolver=myresolver
       - traefik.http.services.eatc.loadbalancer.server.port=8000
       - traefik.docker.network=traefik_preprod
+      # Configuration pour gros fichiers - Désactiver buffering
+      - traefik.http.middlewares.eatc-buffering.buffering.forwardHeaders=false
+      - traefik.http.routers.eatc.middlewares=eatc-buffering
     depends_on:
       db:
         condition: service_healthy
