@@ -1,4 +1,7 @@
 from functools import wraps
+from django.utils import timezone
+from datetime import timedelta
+from django.urls import reverse
 
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -138,10 +141,6 @@ def mobile_app_page(request):
     Page de téléchargement de l'application mobile pour les releveurs.
     Accessible uniquement aux utilisateurs connectés.
     """
-    from django.utils import timezone
-    from datetime import timedelta
-    from django.urls import reverse
-
     # Version actuelle depuis la base de données
     version_actuelle = MobileVersion.obtenir_version_actuelle()
 

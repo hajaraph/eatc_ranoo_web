@@ -444,37 +444,49 @@ def download_with_token(request, token_string):
     Télécharge le fichier APK avec un token valide.
     Valide le token et incrémente le compteur.
     """
-    
+
     # Valider le token
     token = DownloadToken.get_valid_token(token_string)
-    
+
     if not token:
         return ApiResponse.error(
             "Token invalide ou expiré.",
             code="INVALID_TOKEN",
             http_status=status.HTTP_403_FORBIDDEN
         )
-    
+
     # Vérifier que le fichier existe
     file_path = token.mobile_version.file.path
-    
+    filename = token.mobile_version.filename
+
     if not os.path.exists(file_path):
         return ApiResponse.error(
             "Fichier non trouvé.",
             code="FILE_NOT_FOUND",
             http_status=status.HTTP_404_NOT_FOUND
         )
-    
-    # Incrémenter le compteur
+
+    # Incrémenter le compteur AVANT le téléchargement
     token.increment_download()
 
-    # Servir le fichier
+    # Configuration pour forcer le téléchargement
+    content_type = 'application/vnd.android.package-archive'
+    
+    # Créer la réponse avec les bons en-têtes pour forcer le téléchargement
     response = FileResponse(
         open(file_path, 'rb'),
-        content_type='application/vnd.android.package-archive'
+        content_type=content_type,
+        as_attachment=True,
+        filename=filename
     )
+    
+    # En-têtes supplémentaires pour compatibilité navigateurs
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     response['Content-Length'] = os.path.getsize(file_path)
-    response['Content-Disposition'] = f'attachment; filename="{token.mobile_version.filename}"'
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
 
     return response
 
