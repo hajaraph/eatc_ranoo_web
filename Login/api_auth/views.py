@@ -14,7 +14,7 @@ from Tenants.models import Utilisateur
 from Rel_Compteur.api_utils import ApiResponse
 from Login.models import DownloadToken, MobileVersion
 from django.urls import reverse
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
@@ -440,6 +440,19 @@ def generate_download_token(request):
     )
 
 
+def download_file_iterator(file_path, chunk_size=8192):
+    """
+    Générateur pour streamer le fichier par chunks.
+    Plus fiable que FileResponse pour le téléchargement mobile.
+    """
+    with open(file_path, 'rb') as f:
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
+
+
 @csrf_exempt
 @require_http_methods(["GET"])
 def download_with_token(request, token_string):
@@ -447,41 +460,82 @@ def download_with_token(request, token_string):
     Télécharge le fichier APK avec un token valide.
     Valide le token et incrémente le compteur.
     
-    Utilise une vue Django standard (pas DRF) pour éviter les problèmes
-    de headers avec FileResponse sur Chrome mobile.
+    Utilise StreamingHttpResponse avec générateur pour un streaming fiable.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     # Valider le token
     token = DownloadToken.get_valid_token(token_string)
 
     if not token:
+        logger.warning(f"Token invalide: {token_string}")
         return HttpResponse(
             '{"error": "Token invalide ou expiré.", "code": "INVALID_TOKEN"}',
             content_type='application/json',
             status=403
         )
 
-    # Vérifier que le fichier existe
-    file_path = token.mobile_version.file.path
-    filename = token.mobile_version.filename
-
-    if not os.path.exists(file_path):
+    # Vérifier que la version mobile existe
+    if not token.mobile_version:
+        logger.error(f"MobileVersion associée inexistante pour le token: {token_string}")
         return HttpResponse(
-            '{"error": "Fichier non trouvé.", "code": "FILE_NOT_FOUND"}',
+            '{"error": "Version mobile introuvable.", "code": "VERSION_NOT_FOUND"}',
             content_type='application/json',
             status=404
         )
 
+    # Vérifier que le fichier est défini
+    if not token.mobile_version.file:
+        logger.error(f"Fichier non défini pour MobileVersion ID={token.mobile_version.id}")
+        return HttpResponse(
+            '{"error": "Fichier APK non configuré. Contactez l\'administrateur.", "code": "FILE_NOT_CONFIGURED"}',
+            content_type='application/json',
+            status=404
+        )
+
+    # Vérifier que le fichier existe
+    file_path = token.mobile_version.file.path
+    filename = token.mobile_version.filename or os.path.basename(file_path)
+    
+    logger.info(f"Téléchargement APK - File path: {file_path}")
+    logger.info(f"Filename: {filename}")
+    
+    if not os.path.exists(file_path):
+        logger.error(f"Fichier inexistant: {file_path}")
+        return HttpResponse(
+            '{"error": "Fichier non trouvé sur le serveur.", "code": "FILE_NOT_FOUND"}',
+            content_type='application/json',
+            status=404
+        )
+    
+    file_size = os.path.getsize(file_path)
+    logger.info(f"File size: {file_size} octets")
+
+    if file_size == 0:
+        logger.error(f"Fichier vide: {file_path}")
+        return HttpResponse(
+            '{"error": "Fichier vide.", "code": "EMPTY_FILE"}',
+            content_type='application/json',
+            status=500
+        )
+
     # Incrémenter le compteur AVANT le téléchargement
     token.increment_download()
+    logger.info(f"Compteur incrémenté. Downloads: {token.download_count}")
 
-    # Ouvrir le fichier et créer la réponse
-    file_handle = open(file_path, 'rb')
+    # Créer le générateur de fichier
+    file_iterator = download_file_iterator(file_path)
     
-    response = FileResponse(file_handle, content_type='application/vnd.android.package-archive')
+    # Créer la réponse avec streaming
+    response = StreamingHttpResponse(
+        file_iterator,
+        content_type='application/vnd.android.package-archive'
+    )
     
     # Headers CRITIQUES pour Chrome mobile
+    response['Content-Length'] = str(file_size)
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    response['Content-Length'] = str(os.path.getsize(file_path))
     response['X-Content-Type-Options'] = 'nosniff'
     response['Content-Transfer-Encoding'] = 'binary'
     response['Accept-Ranges'] = 'bytes'
@@ -490,6 +544,8 @@ def download_with_token(request, token_string):
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
+    
+    logger.info(f"Réponse envoyée: {file_size} octets, filename={filename}")
     
     return response
 
