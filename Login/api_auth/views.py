@@ -14,7 +14,7 @@ from Tenants.models import Utilisateur
 from Rel_Compteur.api_utils import ApiResponse
 from Login.models import DownloadToken, MobileVersion
 from django.urls import reverse
-from django.http import FileResponse, HttpResponse, JsonResponse
+from django.http import StreamingHttpResponse
 from django.views.decorators.http import require_GET
 
 logger = logging.getLogger(__name__)
@@ -442,10 +442,8 @@ def generate_download_token(request):
 def download_with_token(request, token_string):
     """
     Telecharge le fichier APK avec un token valide.
-    Vue Django standard (pas DRF) pour eviter l'interference
-    de la negociation de contenu avec le FileResponse binaire.
-    Utilise HttpResponse avec lecture complete pour compatibilite
-    maximale avec Gunicorn + Traefik.
+    Vue Django standard (pas DRF) avec StreamingHttpResponse
+    pour compatibilite Chrome Android + Gunicorn + Traefik.
     """
 
     # Valider le token
@@ -453,9 +451,10 @@ def download_with_token(request, token_string):
 
     if not token:
         logger.warning(f"Token invalide ou expire: {token_string[:16]}...")
-        return JsonResponse(
-            {'error': 'Token invalide ou expire.', 'code': 'INVALID_TOKEN'},
-            status=403
+        return ApiResponse.error(
+            "Token invalide ou expire.",
+            code="INVALID_TOKEN",
+            http_status=status.HTTP_403_FORBIDDEN
         )
 
     # Verifier que le fichier existe et n'est pas vide
@@ -466,17 +465,19 @@ def download_with_token(request, token_string):
 
     if not os.path.exists(file_path):
         logger.error(f"Fichier introuvable sur le disque: {file_path}")
-        return JsonResponse(
-            {'error': 'Fichier non trouve.', 'code': 'FILE_NOT_FOUND'},
-            status=404
+        return ApiResponse.error(
+            "Fichier non trouve.",
+            code="FILE_NOT_FOUND",
+            http_status=status.HTTP_404_NOT_FOUND
         )
 
     file_size = os.path.getsize(file_path)
     if file_size == 0:
         logger.error(f"Fichier vide (0 octets): {file_path}")
-        return JsonResponse(
-            {'error': 'Le fichier est vide.', 'code': 'FILE_EMPTY'},
-            status=500
+        return ApiResponse.error(
+            "Le fichier est vide.",
+            code="FILE_EMPTY",
+            http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
     logger.info(f"Fichier valide: {filename} ({file_size} octets)")
@@ -484,22 +485,31 @@ def download_with_token(request, token_string):
     # Incrementer le compteur
     token.increment_download()
 
-    # Lecture complete du fichier et envoi via HttpResponse
-    # (pas de streaming pour eviter les problemes Gunicorn/Traefik)
-    with open(file_path, 'rb') as f:
-        response = HttpResponse(
-            f.read(),
-            content_type='application/vnd.android.package-archive'
-        )
+    # Streaming par chunks pour compatibilite Chrome Android.
+    # Chrome delegue au DownloadManager natif apres avoir lu les
+    # headers. Il faut envoyer les headers AVANT le corps, ce que
+    # StreamingHttpResponse garantit (contrairement a HttpResponse
+    # qui bufferise tout en memoire).
+    def file_iterator(path, chunk_size=65536):
+        with open(path, 'rb') as f:
+            while True:
+                chunk = f.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+
+    response = StreamingHttpResponse(
+        file_iterator(file_path),
+        content_type='application/vnd.android.package-archive'
+    )
 
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     response['Content-Length'] = file_size
     response['X-Content-Type-Options'] = 'nosniff'
-    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response['Pragma'] = 'no-cache'
-    response['Expires'] = '0'
+    response['Accept-Ranges'] = 'none'
+    response['Cache-Control'] = 'private'
 
-    logger.info(f"Reponse envoyee: {filename} ({file_size} octets)")
+    logger.info(f"Reponse streaming lancee: {filename} ({file_size} octets)")
     return response
 
 
