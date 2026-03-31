@@ -14,7 +14,7 @@ from Tenants.models import Utilisateur
 from Rel_Compteur.api_utils import ApiResponse
 from Login.models import DownloadToken, MobileVersion
 from django.urls import reverse
-from django.http import StreamingHttpResponse
+from django.http import FileResponse
 from django.views.decorators.http import require_GET
 
 logger = logging.getLogger(__name__)
