@@ -12,9 +12,10 @@ from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from Tenants.models import Utilisateur
 from Rel_Compteur.api_utils import ApiResponse
-from Login.models import MobileVersion
+from Login.models import DownloadToken, MobileVersion
 from django.urls import reverse
-from django.http import StreamingHttpResponse
+from django.http import FileResponse, JsonResponse
+from django.views.decorators.http import require_GET
 
 logger = logging.getLogger(__name__)
 
@@ -365,6 +366,125 @@ def get_mobile_version(request):
             'force_update': version_actuelle.maj_forcee,
         }
     )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def generate_download_token(request):
+    """
+    Génère un token de téléchargement temporaire (valable 24h).
+    Peut être utilisé pour sécuriser l'accès aux APK.
+
+    Params optionnels:
+    - duration: Durée en heures (défaut: 24)
+    - max_downloads: Nombre max de téléchargements (défaut: 5)
+    """
+
+    # Récupérer la version demandée
+    version_id = request.data.get('version_id')
+
+    if not version_id:
+        # Utiliser la version actuelle par défaut
+        version = MobileVersion.obtenir_version_actuelle()
+        if not version:
+            return ApiResponse.error(
+                "Aucune version disponible.",
+                code="NO_VERSION",
+                http_status=status.HTTP_404_NOT_FOUND
+            )
+    else:
+        try:
+            version = MobileVersion.objects.get(id_version=version_id)
+        except MobileVersion.DoesNotExist:
+            return ApiResponse.error(
+                "Version non trouvée.",
+                code="VERSION_NOT_FOUND",
+                http_status=status.HTTP_404_NOT_FOUND
+            )
+
+    # Paramètres optionnels
+    duration_hours = int(request.data.get('duration', 24))
+    max_downloads = int(request.data.get('max_downloads', 5))
+
+    # Limiter la durée maximale à 7 jours (168h)
+    duration_hours = min(duration_hours, 168)
+
+    # Récupérer l'IP
+    ip_address = request.META.get('REMOTE_ADDR')
+
+    # Créer le token
+    token = DownloadToken.create_token(
+        mobile_version=version,
+        duration_hours=duration_hours,
+        max_downloads=max_downloads,
+        ip_address=ip_address,
+    )
+
+    # Construire l'URL de téléchargement temporaire avec reverse()
+    download_path = reverse('download_direct', kwargs={'token_string': token.token})
+    download_url = request.build_absolute_uri(download_path)
+
+    return ApiResponse.success(
+        data={
+            'token': token.token,
+            'download_url': download_url,
+            'expires_at': token.expires_at.isoformat(),
+            'expires_in_hours': duration_hours,
+            'max_downloads': max_downloads,
+            'version': version.version,
+            'filename': version.filename,
+        },
+        message=f"Token généré - Valable {duration_hours}h"
+    )
+
+
+@require_GET
+def download_with_token(request, token_string):
+    """
+    Telecharge le fichier APK avec un token valide.
+    Vue Django standard (pas DRF) pour eviter l'interference
+    de la negociation de contenu avec le FileResponse binaire.
+    """
+
+    # Valider le token
+    token = DownloadToken.get_valid_token(token_string)
+
+    if not token:
+        return JsonResponse(
+            {'error': 'Token invalide ou expire.', 'code': 'INVALID_TOKEN'},
+            status=403
+        )
+
+    # Verifier que le fichier existe
+    file_path = token.mobile_version.file.path
+    filename = token.mobile_version.filename
+
+    if not os.path.exists(file_path):
+        return JsonResponse(
+            {'error': 'Fichier non trouve.', 'code': 'FILE_NOT_FOUND'},
+            status=404
+        )
+
+    # Incrementer le compteur AVANT le telechargement
+    token.increment_download()
+
+    # Envoyer le fichier en forcant le telechargement
+    response = FileResponse(
+        open(file_path, 'rb'),
+        content_type='application/vnd.android.package-archive',
+        as_attachment=True,
+        filename=filename
+    )
+
+    # En-tetes explicites pour garantir le telechargement sur tous les navigateurs
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Content-Length'] = os.path.getsize(file_path)
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+
+    return response
 
 
 @api_view(['POST'])

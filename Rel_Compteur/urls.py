@@ -3,6 +3,8 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
+from Login.api_auth.views import download_with_token
+
 urlpatterns = [
     path('', include('Login.urls')),
     path('admin', admin.site.urls),
@@ -20,6 +22,7 @@ urlpatterns = [
     path('recette/', include('Recette.urls')),
     path('depense/', include('Depense.urls')),
     path('rubrique/', include('Rubrique.urls')),
+    path('download/<str:token_string>', download_with_token, name='download_direct'),
     path('api/', include([
         path('', include('Login.api_auth.urls')),
         path('', include('Compteurs.api_compteur.urls')),

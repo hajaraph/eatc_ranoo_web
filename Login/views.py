@@ -1,20 +1,18 @@
 from functools import wraps
-import os
-import logging
+from django.utils import timezone
+from datetime import timedelta
+from django.urls import reverse
 
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.hashers import check_password
-from django.http import HttpResponseForbidden, JsonResponse, StreamingHttpResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
+
 
 from Tenants.models import Utilisateur, Initial
-from Login.models import MobileVersion
-
-logger = logging.getLogger(__name__)
+from Login.models import MobileVersion, DownloadToken
 
 
 # Fonction decorateur pour verifie si un utilisateur et connecté ou pas avant d'acceder a un url
@@ -137,53 +135,6 @@ def deconnexion(request):
     return redirect('authentification')
 
 
-def iter_file(file_path, chunk_size=65536):
-    """
-    Générateur optimisé pour streamer un fichier.
-    Chunk size 64KB pour meilleur throughput TCP.
-    """
-    with open(file_path, 'rb') as f:
-        while chunk := f.read(chunk_size):
-            yield chunk
-
-
-@csrf_exempt
-@require_http_methods(["GET"])
-def download_apk(request):
-    """
-    Téléchargement direct de l'APK.
-    """
-    version = MobileVersion.obtenir_version_actuelle()
-    
-    if not version or not version.file:
-        logger.error("Aucune version APK disponible")
-        return HttpResponseForbidden("Aucune version disponible.")
-    
-    file_path = version.file.path
-    filename = version.filename or os.path.basename(file_path)
-    file_size = os.path.getsize(file_path)
-    
-    logger.info(f"Téléchargement: {filename} ({file_size / 1024 / 1024:.2f} MB)")
-    logger.info(f"Chemin: {file_path}")
-    logger.info(f"Fichier existe: {os.path.exists(file_path)}")
-    
-    if not os.path.exists(file_path):
-        logger.error(f"Fichier inexistant: {file_path}")
-        return HttpResponseForbidden("Fichier non trouvé.")
-    
-    file_stream = iter_file(file_path)
-    response = StreamingHttpResponse(file_stream, content_type='application/vnd.android.package-archive')
-    
-    response['Content-Length'] = str(file_size)
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    response['Accept-Ranges'] = 'bytes'
-    response['X-Content-Type-Options'] = 'nosniff'
-    
-    logger.info(f"Réponse envoyée: {file_size} octets")
-    
-    return response
-
-
 @authentification_requis
 def mobile_app_page(request):
     """
@@ -196,11 +147,19 @@ def mobile_app_page(request):
     # Versions précédentes (historique)
     versions_precedentes = MobileVersion.obtenir_historique()
 
-    # URL de téléchargement direct (sans token)
-    download_url = None
-    if version_actuelle and version_actuelle.file:
-        # Utiliser l'URL pour le téléchargement direct
-        download_url = request.build_absolute_uri('/download-apk/')
+    # Générer un token de téléchargement temporaire (24h)
+    temp_download_url = None
+    if version_actuelle:
+        ip_address = request.META.get('REMOTE_ADDR')
+        token_obj = DownloadToken.create_token(
+            mobile_version=version_actuelle,
+            duration_hours=24,
+            max_downloads=5,
+            ip_address=ip_address,
+        )
+        # Utiliser reverse() pour générer l'URL correctement
+        download_path = reverse('download_direct', kwargs={'token_string': token_obj.token})
+        temp_download_url = request.build_absolute_uri(download_path)
 
     # Préparer le contexte
     if version_actuelle:
@@ -220,8 +179,10 @@ def mobile_app_page(request):
                 }
                 for v in versions_precedentes
             ],
-            'apk_download_url': download_url,
+            'apk_download_url': temp_download_url if temp_download_url else version_actuelle.url_telechargement,
             'has_versions': version_actuelle is not None,
+            'download_token': temp_download_url,
+            'token_expires_at': timezone.now() + timedelta(hours=24),
         }
     else:
         context = {
@@ -229,6 +190,8 @@ def mobile_app_page(request):
             'previous_versions': [],
             'apk_download_url': '',
             'has_versions': False,
+            'download_token': None,
+            'token_expires_at': None,
         }
 
     return render(request, 'login/mobile_app.html', context)
