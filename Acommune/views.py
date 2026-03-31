@@ -1,10 +1,5 @@
-from django.contrib import messages
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
-from django.views import View
-
-from Acommune.models import Commune, Region, Province
-from Login.views import authentification_requis, role_requis
+from Login.views import authentification_requis
 
 
 @authentification_requis

@@ -1,83 +1,76 @@
 from functools import wraps
-
 from django.contrib import messages
 from django.shortcuts import redirect
-from django.http import JsonResponse
-from django.views import View
+from django.core.cache import cache
 from django_tenants.utils import schema_exists, schema_context
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.views import View
 
+from Rel_Compteur.api_utils import ApiResponse
 from Tenants.models import Entreprise
 
 
 def get_entreprise_and_schema(request, is_api=False):
-    """Récupère l'entreprise et le schéma en fonction de la requête (API ou Web)"""
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    
-    # Authentification
-    if is_api:
-        if not hasattr(request, 'user') or not request.user.is_authenticated:
-            return None, None, Response(
-                {"detail": "Authentification requise."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        entreprise_id = request.user.entreprise_id
-    else:
-        if not request.session.get('num_utilisateur'):
-            messages.error(request, f"Veuillez vous connecté !")
-            if is_ajax:
-                return None, None, JsonResponse({"detail": "Authentification requise."}, status=401)
-            return None, None, redirect('authentification')
-        entreprise_id = request.session.get('entreprise')
+    """
+    Récupère l'entreprise et le schéma de manière optimisée via Cache/Session.
+    """
+    # 1. Vérification de l'authentification (basée sur request.user standardisé)
+    if not request.user.is_authenticated:
+        if is_api:
+            return None, None, ApiResponse.error("Authentification requise.", http_status=status.HTTP_401_UNAUTHORIZED)
+        
+        messages.error(request, "Veuillez vous connecter !")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return None, None, ApiResponse.error("Authentification requise.", http_status=401)
+        return None, None, redirect('authentification')
 
-    # Vérification de l'entreprise
+    entreprise_id = request.user.entreprise_id
+
+    # 2. Vérification de l'existence d'une entreprise associée
     if not entreprise_id:
+        msg = "Aucune entreprise n'est associée à votre compte."
         if is_api:
-            return None, None, Response(
-                {"detail": "Aucune entreprise n'est associée à votre compte."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        if is_ajax:
-            return None, None, JsonResponse({"detail": "Aucune entreprise n'est associée à votre compte."}, status=403)
-        messages.error(request, "Aucune entreprise n'est associée à votre compte.")
+            return None, None, ApiResponse.error(msg, http_status=status.HTTP_403_FORBIDDEN)
+        
+        messages.error(request, msg)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+             return None, None, ApiResponse.error(msg, http_status=403)
         return None, None, redirect('authentification')
 
-    try:
-        entreprise = Entreprise.objects.get(pk=entreprise_id)
-        schema_name = entreprise.schema_name
-    except (Entreprise.DoesNotExist, AttributeError):
-        if is_api:
-            return None, None, Response(
-                {"detail": "Impossible de déterminer le schéma de l'entreprise."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        if is_ajax:
-            return None, None, JsonResponse({"detail": "Impossible de déterminer le schéma de l'entreprise."}, status=404)
-        messages.error(request, "Impossible de déterminer le schéma de l'entreprise.")
-        return None, None, redirect('authentification')
+    # 3. Récupération du schéma (Optimisation CACHE REDIS)
+    cache_key = f"tenant_schema_{entreprise_id}"
+    schema_name = cache.get(cache_key)
 
-    # Vérification du schéma
+    if not schema_name:
+        try:
+            entreprise = Entreprise.objects.get(pk=entreprise_id)
+            schema_name = entreprise.schema_name
+            # Mise en cache pour 24 heures (86400s)
+            cache.set(cache_key, schema_name, 86400)
+        except (Entreprise.DoesNotExist, AttributeError):
+            msg = "Impossible de déterminer le schéma de l'entreprise."
+            if is_api: return None, None, ApiResponse.error(msg, http_status=404)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return None, None, ApiResponse.error(msg, http_status=404)
+            messages.error(request, msg)
+            return None, None, redirect('authentification')
+
+    # 4. Vérification finale de l'existence physique du schéma
     if not schema_exists(schema_name):
-        if is_api:
-            return None, None, Response(
-                {"detail": "Le schéma associé à cette entreprise est inexistant."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        if is_ajax:
-            return None, None, JsonResponse({"detail": "Le schéma associé à cette entreprise est inexistant."}, status=404)
-        messages.error(request, "Le schéma associé à cette entreprise est inexistant.")
+        msg = "Le schéma associé à cette entreprise est inexistant."
+        if is_api: return None, None, ApiResponse.error(msg, http_status=404)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return None, None, ApiResponse.error(msg, http_status=404)
+        messages.error(request, msg)
         return None, None, redirect('authentification')
 
-    return entreprise, schema_name, None
+    return None, schema_name, None
 
 
 def schema_use(view_func):
     """Décorateur pour les vues Web"""
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        entreprise, schema_name, error_response = get_entreprise_and_schema(request)
+        _, schema_name, error_response = get_entreprise_and_schema(request)
         if error_response:
             return error_response
 
@@ -90,7 +83,7 @@ def schema_use_api(view_func):
     """Décorateur pour les vues API"""
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        entreprise, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
+        _, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
         if error_response:
             return error_response
 
@@ -102,7 +95,7 @@ def schema_use_api(view_func):
 class SchemaAwareView(View):
     """Classe de base pour les vues basées sur les classes"""
     def dispatch(self, request, *args, **kwargs):
-        entreprise, schema_name, error_response = get_entreprise_and_schema(request)
+        _, schema_name, error_response = get_entreprise_and_schema(request)
         if error_response:
             return error_response
 
@@ -113,9 +106,10 @@ class SchemaAwareView(View):
 class SchemaAwareAPIView(APIView):
     """Classe de base pour les APIView basées sur les schémas"""
     def dispatch(self, request, *args, **kwargs):
-        entreprise, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
+        _, schema_name, error_response = get_entreprise_and_schema(request, is_api=True)
         if error_response:
             return error_response
 
         with schema_context(schema_name):
             return super().dispatch(request, *args, **kwargs)
+dispatch(request, *args, **kwargs)
