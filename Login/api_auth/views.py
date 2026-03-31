@@ -442,8 +442,7 @@ def generate_download_token(request):
 def download_with_token(request, token_string):
     """
     Telecharge le fichier APK avec un token valide.
-    Vue Django standard (pas DRF) avec StreamingHttpResponse
-    pour compatibilite Chrome Android + Gunicorn + Traefik.
+    Vue Django standard avec FileResponse (sendfile zero-copy).
     """
 
     # Valider le token
@@ -485,31 +484,19 @@ def download_with_token(request, token_string):
     # Incrementer le compteur
     token.increment_download()
 
-    # Streaming par chunks pour compatibilite Chrome Android.
-    # Chrome delegue au DownloadManager natif apres avoir lu les
-    # headers. Il faut envoyer les headers AVANT le corps, ce que
-    # StreamingHttpResponse garantit (contrairement a HttpResponse
-    # qui bufferise tout en memoire).
-    def file_iterator(path, chunk_size=65536):
-        with open(path, 'rb') as f:
-            while True:
-                chunk = f.read(chunk_size)
-                if not chunk:
-                    break
-                yield chunk
-
-    response = StreamingHttpResponse(
-        file_iterator(file_path),
-        content_type='application/vnd.android.package-archive'
+    # FileResponse avec sendfile() : transfert zero-copy sous Linux.
+    # application/octet-stream evite le traitement special de Chrome
+    # pour les fichiers APK (DownloadManager Android).
+    response = FileResponse(
+        open(file_path, 'rb'),
+        content_type='application/octet-stream',
+        as_attachment=True,
+        filename=filename,
     )
-
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     response['Content-Length'] = file_size
-    response['X-Content-Type-Options'] = 'nosniff'
-    response['Accept-Ranges'] = 'none'
     response['Cache-Control'] = 'private'
 
-    logger.info(f"Reponse streaming lancee: {filename} ({file_size} octets)")
+    logger.info(f"Reponse FileResponse lancee: {filename} ({file_size} octets)")
     return response
 
 
