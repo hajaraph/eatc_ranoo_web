@@ -102,6 +102,13 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 
+# Traefik termine TLS puis proxie en HTTP vers Gunicorn.
+# Ces settings permettent a Django de reconstruire les URLs
+# en HTTPS via build_absolute_uri() (corrige le blocage
+# Chrome/Edge "can't download file securely").
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 
 
 TEMPLATES = [
