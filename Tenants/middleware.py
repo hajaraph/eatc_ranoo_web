@@ -112,4 +112,3 @@ class SchemaAwareAPIView(APIView):
 
         with schema_context(schema_name):
             return super().dispatch(request, *args, **kwargs)
-dispatch(request, *args, **kwargs)
