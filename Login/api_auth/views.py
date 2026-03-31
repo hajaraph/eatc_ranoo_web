@@ -14,7 +14,7 @@ from Tenants.models import Utilisateur
 from Rel_Compteur.api_utils import ApiResponse
 from Login.models import DownloadToken, MobileVersion
 from django.urls import reverse
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
 
 logger = logging.getLogger(__name__)
@@ -444,48 +444,62 @@ def download_with_token(request, token_string):
     Telecharge le fichier APK avec un token valide.
     Vue Django standard (pas DRF) pour eviter l'interference
     de la negociation de contenu avec le FileResponse binaire.
+    Utilise HttpResponse avec lecture complete pour compatibilite
+    maximale avec Gunicorn + Traefik.
     """
 
     # Valider le token
     token = DownloadToken.get_valid_token(token_string)
 
     if not token:
-        return ApiResponse.error(
-            "Token invalide ou expiré.",
-            code="INVALID_TOKEN",
-            http_status=status.HTTP_403_FORBIDDEN
+        logger.warning(f"Token invalide ou expire: {token_string[:16]}...")
+        return JsonResponse(
+            {'error': 'Token invalide ou expire.', 'code': 'INVALID_TOKEN'},
+            status=403
         )
 
-    # Vérifier que le fichier existe
+    # Verifier que le fichier existe et n'est pas vide
     file_path = token.mobile_version.file.path
     filename = token.mobile_version.filename
 
+    logger.info(f"Telechargement demande: fichier={filename}, chemin={file_path}")
+
     if not os.path.exists(file_path):
-        return ApiResponse.error(
-            "Fichier non trouvé.",
-            code="FILE_NOT_FOUND",
-            http_status=status.HTTP_404_NOT_FOUND
+        logger.error(f"Fichier introuvable sur le disque: {file_path}")
+        return JsonResponse(
+            {'error': 'Fichier non trouve.', 'code': 'FILE_NOT_FOUND'},
+            status=404
         )
 
-    # Incrementer le compteur AVANT le telechargement
+    file_size = os.path.getsize(file_path)
+    if file_size == 0:
+        logger.error(f"Fichier vide (0 octets): {file_path}")
+        return JsonResponse(
+            {'error': 'Le fichier est vide.', 'code': 'FILE_EMPTY'},
+            status=500
+        )
+
+    logger.info(f"Fichier valide: {filename} ({file_size} octets)")
+
+    # Incrementer le compteur
     token.increment_download()
 
-    # Envoyer le fichier en forcant le telechargement
-    response = FileResponse(
-        open(file_path, 'rb'),
-        content_type='application/vnd.android.package-archive',
-        as_attachment=True,
-        filename=filename
-    )
+    # Lecture complete du fichier et envoi via HttpResponse
+    # (pas de streaming pour eviter les problemes Gunicorn/Traefik)
+    with open(file_path, 'rb') as f:
+        response = HttpResponse(
+            f.read(),
+            content_type='application/vnd.android.package-archive'
+        )
 
-    # En-tetes explicites pour garantir le telechargement sur tous les navigateurs
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    response['Content-Length'] = os.path.getsize(file_path)
+    response['Content-Length'] = file_size
     response['X-Content-Type-Options'] = 'nosniff'
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
 
+    logger.info(f"Reponse envoyee: {filename} ({file_size} octets)")
     return response
 
 
