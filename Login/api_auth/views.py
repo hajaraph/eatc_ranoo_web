@@ -450,19 +450,21 @@ def download_with_token(request, token_string):
     token = DownloadToken.get_valid_token(token_string)
 
     if not token:
-        return JsonResponse(
-            {'error': 'Token invalide ou expire.', 'code': 'INVALID_TOKEN'},
-            status=403
+        return ApiResponse.error(
+            "Token invalide ou expiré.",
+            code="INVALID_TOKEN",
+            http_status=status.HTTP_403_FORBIDDEN
         )
 
-    # Verifier que le fichier existe
+    # Vérifier que le fichier existe
     file_path = token.mobile_version.file.path
     filename = token.mobile_version.filename
 
     if not os.path.exists(file_path):
-        return JsonResponse(
-            {'error': 'Fichier non trouve.', 'code': 'FILE_NOT_FOUND'},
-            status=404
+        return ApiResponse.error(
+            "Fichier non trouvé.",
+            code="FILE_NOT_FOUND",
+            http_status=status.HTTP_404_NOT_FOUND
         )
 
     # Incrementer le compteur AVANT le telechargement
