@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from Login.views import authentification_requis
-from eatc_web.Acommune.models import Commune, Region
+from Acommune.models import Commune, Region
 
 
 @authentification_requis
