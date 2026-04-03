@@ -28,13 +28,13 @@ def client_liste(request):
     font = 'custom-font'
 
     client = filter_by_user_role(request, Client.objects.all().order_by('pk'), 'cp_commune')
-    province = Province.objects.order_by('region').all()
+    communes_actives = Commune.objects.filter(client__isnull=False).distinct().order_by('commune')
     context = {
         'title_liste': title,
         'active_liste': active,
         'font_client': font,
         'client': client,
-        'provinces': province
+        'communes': communes_actives
     }
     return render(request, 'all_page/clients/content_client.html', context)
 

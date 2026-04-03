@@ -86,39 +86,14 @@
                                 <option value="excel">Excel</option>
                             </select>
                         </div>
-                        <div class="row mt-4">
-                            <div class="col-md-4 col-sm-12 mt-4">
-                                <div class="form-floating">
-                                    <select name="province" id="province" class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
-                                        <option value="" selected hidden>Selectionné une province</option>
-                                        {% for province in provinces %}
-                                            <option value="{{ province.province }}">{{ province.province }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <label for="province">Province*</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-sm-12 mt-4">
-                                <div class="form-floating">
-                                    <select name="region" id="region" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
-                                    </select>
-                                    <label for="region">Région</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-sm-12 mt-4">
-                                <div class="form-floating">
-                                    <select name="commune" id="commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" required>
-                                    </select>
-                                    <label for="commune">Commune :</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-sm-12 mt-4">
-                                <div class="form-floating">
-                                    <select name="cp_commune" id="cp_commune" class="form-control shadow-none rounded-0 border-start-0 border-top-0 border-end-0" disabled>
-                                    </select>
-                                    <label for="cp_commune">CP Commune :</label>
-                                </div>
-                            </div>
+                        <div class="mb-3 mt-3">
+                            <label for="commune" class="form-label">Commune :</label>
+                            <select class="form-select shadow-none rounded-0 border-start-0 border-top-0 border-end-0" id="commune" name="commune">
+                                <option value="" selected>Toutes les communes</option>
+                                {% for commune in communes %}
+                                    <option value="{{ commune.cp_commune }}">{{ commune.commune }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                 </form>
