@@ -28,7 +28,7 @@ def client_liste(request):
     font = 'custom-font'
 
     client = filter_by_user_role(request, Client.objects.all().order_by('pk'), 'cp_commune')
-    communes_actives = Commune.objects.filter(clients__isnull=False).distinct().order_by('commune')
+    communes_actives = Commune.objects.filter(contrat__isnull=False).distinct().order_by('commune')
     context = {
         'title_liste': title,
         'active_liste': active,
