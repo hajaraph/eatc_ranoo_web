@@ -213,8 +213,9 @@ def facture_etat_detail(request, num_facture):
             None
         )
 
-    # Vérifier s'il existe des factures impayées antérieures
-    has_factures_anterieures_impayees = has_factures_impayees_anterieures(
+    # Bloquer le paiement du restant si une facture plus récente existe
+    # (le restant a déjà été transféré sur la facture suivante)
+    restant_deja_transfere = bool(factures.restant_nouvel) and has_facture_plus_recente(
         factures.num_contrat_id,
         factures.date_facture
     )
@@ -230,7 +231,7 @@ def facture_etat_detail(request, num_facture):
         'montant': montant,
         'typeclient': typeclient,
         'prix_unitaire': prix_unitaire,
-        'has_factures_anterieures_impayees': has_factures_anterieures_impayees,
+        'restant_deja_transfere': restant_deja_transfere,
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -691,26 +692,19 @@ def calculer_total_net_a_payer(montant_actuel, montants_impayees):
         logger.error(f"Erreur lors du calcul du total net à payer: {e}")
 
 
-def has_factures_impayees_anterieures(num_contrat, date_facture_actuelle):
+def has_facture_plus_recente(num_contrat, date_facture_actuelle):
     """
-    Vérifie s'il existe des factures impayées antérieures à la date donnée.
-    Retourne True si des factures antérieures avec restant existent.
+    Vérifie s'il existe une facture plus récente pour le contrat.
+    Utilisé pour bloquer le paiement d'un restant déjà transféré
+    sur une facture suivante (via precess_avoir_restant).
     """
     try:
-        # Chercher les factures impayées (statut=False) avec date antérieure
-        factures_impayees = Facture.objects.filter(
+        return Facture.objects.filter(
             num_contrat_id=num_contrat,
-            statut=False,
-            date_facture__lt=date_facture_actuelle
-        ).exclude(
-            restant_nouvel__isnull=True
-        ).exclude(
-            restant_nouvel=0
+            date_facture__gt=date_facture_actuelle
         ).exists()
-
-        return factures_impayees
     except Exception as e:
-        logger.error(f"Erreur lors de la vérification des factures antérieures: {e}")
+        logger.error(f"Erreur lors de la vérification d'une facture plus récente: {e}")
         return False
 
 
@@ -956,12 +950,13 @@ def facture_paiement(request):
         with transaction.atomic():
             fact = Facture.objects.select_for_update().get(relevecompteur_id=id_releve)
 
-            # Vérifier s'il existe des factures antérieures impayées avec restant
-            if has_factures_impayees_anterieures(fact.num_contrat_id, fact.date_facture):
+            # Bloquer le paiement du restant si une facture plus récente existe
+            # (le restant a déjà été transféré sur la facture suivante)
+            if fact.restant_nouvel and has_facture_plus_recente(fact.num_contrat_id, fact.date_facture):
                 messages.error(
                     request,
-                    'Impossible de payer cette facture : une ou plusieurs factures antérieures avec restant existent. '
-                    'Veuillez régler les factures plus anciennes en premier.'
+                    'Impossible de payer le restant de cette facture : il a déjà été reporté '
+                    'sur une facture plus récente. Veuillez régler la facture la plus récente.'
                 )
                 return redirect('facture_etat_detail', fact.num_facture)
 

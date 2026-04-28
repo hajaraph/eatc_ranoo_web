@@ -233,7 +233,7 @@
                                 <i class="fas fa-file-pdf"></i>
                                  PDF
                             </div>
-                            {% if not has_factures_anterieures_impayees %}
+                            {% if not restant_deja_transfere %}
                                 <button id="{{ factures.relevecompteur_id }}" class="btn btn-primary paiement-valide" data-bs-toggle="modal" data-bs-target="#paiement-valide">
                                     <i class="fas fa-credit-card"></i>
                                     {% if factures.restant_nouvel %}
@@ -245,7 +245,7 @@
                             {% else %}
                                 <span class="badge bg-warning text-dark ms-2">
                                     <i class="fas fa-exclamation-triangle"></i>
-                                    Factures antérieures à régler
+                                    Restant reporté sur une facture plus récente
                                 </span>
                             {% endif %}
                         {% endif %}
