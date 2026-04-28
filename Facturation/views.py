@@ -915,24 +915,39 @@ def paiement(id_releve, montant_payer, utilisateur):
 
         else:
             # Il reste un montant à payer
-            nouveau_restant = fact_paiement.montant_total_ttc - nouveau_total_paye
+            nouveau_restant = round(fact_paiement.montant_total_ttc - nouveau_total_paye, 0)
 
-            # Mettre à jour ou créer le restant
-            restant = Restant.objects.filter(num_contrat=num_contrat).first()
-            if restant:
-                restant.restant = round(nouveau_restant, 0)
-                restant.date_restant = timezone.now()
-                restant.utilisateur_id = utilisateur
-                restant.save()
+            # Cascade : transférer le restant sur la facture suivante non-payée si elle existe
+            facture_suivante = Facture.objects.filter(
+                num_contrat_id=num_contrat,
+                date_facture__gt=fact_paiement.date_facture,
+                statut=False
+            ).order_by('date_facture').first()
+
+            if facture_suivante:
+                # Le restant est reporté sur la facture suivante (cohérence métier)
+                facture_suivante.restant_precedant = (facture_suivante.restant_precedant or 0) + nouveau_restant
+                facture_suivante.montant_total_ttc = (facture_suivante.montant_total_ttc or 0) + nouveau_restant
+                facture_suivante.save()
+                # Supprimer tout Restant existant : la dette est désormais sur la facture suivante
+                Restant.objects.filter(num_contrat=num_contrat).delete()
             else:
-                Restant.objects.create(
-                    restant=round(nouveau_restant, 0),
-                    num_contrat_id=num_contrat,
-                    utilisateur_id=utilisateur,
-                    date_restant=timezone.now()
-                )
+                # Pas de facture suivante : créer/maj le Restant pour la prochaine facturation
+                restant = Restant.objects.filter(num_contrat=num_contrat).first()
+                if restant:
+                    restant.restant = nouveau_restant
+                    restant.date_restant = timezone.now()
+                    restant.utilisateur_id = utilisateur
+                    restant.save()
+                else:
+                    Restant.objects.create(
+                        restant=nouveau_restant,
+                        num_contrat_id=num_contrat,
+                        utilisateur_id=utilisateur,
+                        date_restant=timezone.now()
+                    )
 
-            fact_paiement.restant_nouvel = round(nouveau_restant, 0)
+            fact_paiement.restant_nouvel = nouveau_restant
             fact_paiement.avoir_nouveau = None
 
         # Marquer la facture comme payée dès qu'un paiement est effectué
