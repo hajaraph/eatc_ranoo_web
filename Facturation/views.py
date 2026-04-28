@@ -213,6 +213,12 @@ def facture_etat_detail(request, num_facture):
             None
         )
 
+    # Vérifier s'il existe des factures impayées antérieures
+    has_factures_anterieures_impayees = has_factures_impayees_anterieures(
+        factures.num_contrat_id,
+        factures.date_facture
+    )
+
     context = {
         'title_etat_detail': title,
         'active_etat': active,
@@ -224,6 +230,7 @@ def facture_etat_detail(request, num_facture):
         'montant': montant,
         'typeclient': typeclient,
         'prix_unitaire': prix_unitaire,
+        'has_factures_anterieures_impayees': has_factures_anterieures_impayees,
     }
     return render(request, 'all_page/facturation/facturation.html', context)
 
@@ -684,6 +691,29 @@ def calculer_total_net_a_payer(montant_actuel, montants_impayees):
         logger.error(f"Erreur lors du calcul du total net à payer: {e}")
 
 
+def has_factures_impayees_anterieures(num_contrat, date_facture_actuelle):
+    """
+    Vérifie s'il existe des factures impayées antérieures à la date donnée.
+    Retourne True si des factures antérieures avec restant existent.
+    """
+    try:
+        # Chercher les factures impayées (statut=False) avec date antérieure
+        factures_impayees = Facture.objects.filter(
+            num_contrat_id=num_contrat,
+            statut=False,
+            date_facture__lt=date_facture_actuelle
+        ).exclude(
+            restant_nouvel__isnull=True
+        ).exclude(
+            restant_nouvel=0
+        ).exists()
+
+        return factures_impayees
+    except Exception as e:
+        logger.error(f"Erreur lors de la vérification des factures antérieures: {e}")
+        return False
+
+
 @schema_use
 def facture_genere_pdf(request, num_facture):
     try:
@@ -926,6 +956,15 @@ def facture_paiement(request):
         with transaction.atomic():
             fact = Facture.objects.select_for_update().get(relevecompteur_id=id_releve)
 
+            # Vérifier s'il existe des factures antérieures impayées avec restant
+            if has_factures_impayees_anterieures(fact.num_contrat_id, fact.date_facture):
+                messages.error(
+                    request,
+                    'Impossible de payer cette facture : une ou plusieurs factures antérieures avec restant existent. '
+                    'Veuillez régler les factures plus anciennes en premier.'
+                )
+                return redirect('facture_etat_detail', fact.num_facture)
+
             # Vérifier s'il existe déjà un paiement pour cette facture
             paiement_existant = Paiement.objects.filter(facture=fact).first()
             if paiement_existant:
@@ -940,16 +979,6 @@ def facture_paiement(request):
             if fact.statut and not fact.restant_nouvel:
                 messages.error(request, 'Cette facture est déjà totalement payée')
                 return redirect('facture_etat_detail', fact.num_facture)
-
-            # # Vérifier s'il existe une facture plus récente
-            # existe_facture_recente = Facture.objects.filter(
-            #     num_contrat=fact.num_contrat,
-            #     date_facture__gt=fact.date_facture
-            # ).exists()
-            #
-            # if existe_facture_recente and not fact.restant_nouvel:
-            #     messages.error(request, 'Une facture plus récente existe déjà')
-            #     return redirect('facture_etat_detail', fact.num_facture)
 
             paiement(id_releve, montant_payer, utilisateur)
             messages.success(request, 'Paiement effectué avec succès !')
