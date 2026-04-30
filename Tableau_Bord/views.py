@@ -113,9 +113,9 @@ def api_evo_conso_commune(request):
     date_deb = request.GET.get('date_deb')
     date_fin = request.GET.get('date_fin')
 
-    commune_query = filter_by_user_role(request, Commune.objects.all(), 'id')
+    commune_query = filter_by_user_role(request, Commune.objects.all(), 'cp_commune')
     if commune:
-        commune_query = commune_query.filter(id=commune)
+        commune_query = commune_query.filter(cp_commune=commune)
 
     conso_filters = Q()
     if date_deb and date_fin:
