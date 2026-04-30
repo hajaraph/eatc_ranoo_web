@@ -694,14 +694,15 @@ def calculer_total_net_a_payer(montant_actuel, montants_impayees):
 
 def has_facture_plus_recente(num_contrat, date_facture_actuelle):
     """
-    Vérifie s'il existe une facture plus récente pour le contrat.
+    Vérifie s'il existe une facture plus récente non-payée pour le contrat.
     Utilisé pour bloquer le paiement d'un restant déjà transféré
     sur une facture suivante (via precess_avoir_restant).
     """
     try:
         return Facture.objects.filter(
             num_contrat_id=num_contrat,
-            date_facture__gt=date_facture_actuelle
+            date_facture__gt=date_facture_actuelle,
+            statut=False
         ).exists()
     except Exception as e:
         logger.error(f"Erreur lors de la vérification d'une facture plus récente: {e}")
