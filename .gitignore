@@ -29,3 +29,4 @@ Recette/__pycache__/
 .venv
 .idea
 .env
+.pytest_cache

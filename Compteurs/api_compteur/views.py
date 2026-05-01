@@ -40,19 +40,29 @@ def calculer_nombre_relever_effectuer(cp_commune_id):
         cp_commune_id=cp_commune_id
     ).count()
 
-    # Compter les compteurs qui ont au moins un relevé ce mois-ci
-    nombre_relever_effectuer = ReleveCompteur.objects.filter(
+    # Compter les compteurs qui ont au moins un relevé ce mois-ci avec select_related
+    nombre_relever_effectuer = ReleveCompteur.objects.select_related(
+        'num_compteur'
+    ).filter(
         num_compteur__contrats__cp_commune_id=cp_commune_id,
         date_releve__month=end_of_month.month,
         date_releve__year=end_of_month.year
     ).values('num_compteur').distinct().count()
 
-    # Calcul des factures
-    nombre_facture = Facture.objects.filter(
+    # Calcul des factures avec select_related
+    nombre_facture = Facture.objects.select_related(
+        'relevecompteur',
+        'relevecompteur__num_compteur',
+        'relevecompteur__num_compteur__contrats'
+    ).filter(
         relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id
     ).count()
 
-    nombre_total_facture_payer = Facture.objects.filter(
+    nombre_total_facture_payer = Facture.objects.select_related(
+        'relevecompteur',
+        'relevecompteur__num_compteur',
+        'relevecompteur__num_compteur__contrats'
+    ).filter(
         relevecompteur__num_compteur__contrats__cp_commune_id=cp_commune_id,
         statut=True
     ).count()
@@ -78,10 +88,10 @@ def accueil(request):
     try:
         cp_commune_id = request.user.cp_commune_id
 
-        # Comptes d'anomalies
-        non_traite = MainCourante.objects.filter(statuts__non_traite=True).count()
-        realise = MainCourante.objects.filter(statuts__realise=True).count()
-        en_cours = MainCourante.objects.filter(statuts__en_cours=True).count()
+        # Comptes d'anomalies avec optimisation select_related
+        non_traite = MainCourante.objects.select_related('statuts').filter(statuts__non_traite=True).count()
+        realise = MainCourante.objects.select_related('statuts').filter(statuts__realise=True).count()
+        en_cours = MainCourante.objects.select_related('statuts').filter(statuts__en_cours=True).count()
 
         total_anomalie = non_traite + en_cours
 
@@ -239,8 +249,10 @@ class Missions(APIView):
                     releve_a_mod = get_object_or_404(ReleveCompteur, pk=id_releve)
                     compteur = releve_a_mod.num_compteur
                     
-                    # Trouver le relevé chronologiquement précédent (hors rejetés et hors celui qu'on modifie)
-                    dernier_releve = compteur.relevecompteurs.filter(
+                    # Trouver le relevé chronologiquement précédent (hors rejetés et hors celui qu'on modifie) avec select_related
+                    dernier_releve = compteur.relevecompteurs.select_related(
+                        'num_compteur'
+                    ).filter(
                         date_releve__lt=releve_a_mod.date_releve
                     ).exclude(statut_validation='REJETE').order_by('-date_releve').first()
 
@@ -270,11 +282,13 @@ class Missions(APIView):
                 else:
                     id_compteur_str = compteur_id.num_compteur if hasattr(compteur_id, 'num_compteur') else str(compteur_id)
                     
-                    if ReleveCompteur.objects.filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
+                    if ReleveCompteur.objects.select_related('num_compteur').filter(num_compteur=compteur_id, date_releve=date_releve).exclude(statut_validation='REJETE').exists():
                         return ApiResponse.error("La date de relevé existe déjà dans la base de données", code="DUPLICATE_DATE")
 
                     try:
-                        dernier_volume = ReleveCompteur.objects.filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
+                        dernier_volume = ReleveCompteur.objects.select_related(
+                            'num_compteur'
+                        ).filter(num_compteur=compteur_id).exclude(statut_validation='REJETE').latest('date_releve')
                         
                         if date_releve <= dernier_volume.date_releve:
                             return ApiResponse.error("Veuillez fournir une date valide", code="INVALID_DATE")
@@ -371,9 +385,11 @@ def get_missions_details(toutes_missions):
     missions_details = []
     for mission in toutes_missions:
         compteur_id = mission['num_compteur__num_compteur']
-        compteur = get_object_or_404(Compteur, num_compteur=compteur_id)
-        contrat = get_object_or_404(Contrat, num_compteur=compteur)
+        # Optimisation : select_related pour éviter N+1
+        compteur = get_object_or_404(Compteur.objects.select_related('num_compteur_principale'), num_compteur=compteur_id)
+        contrat = get_object_or_404(Contrat.objects.select_related('client', 'client__cp_commune', 'client__cp_commune__region', 'num_compteur'), num_compteur=compteur)
         client = contrat.client
+        # Optimisation : prefetch_related pour les relevés
         releves_data = ReleveCompteur.objects.filter(num_compteur=compteur).order_by('-date_releve')
         releves_list = []
         for releve in releves_data:
