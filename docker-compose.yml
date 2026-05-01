@@ -31,8 +31,7 @@ services:
     command: gunicorn Rel_Compteur.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 600 --keep-alive 5 --access-logfile - --error-logfile -
     env_file: .env
     volumes:
-      - ./staticfiles:/app/staticfiles
-      - ./static/media:/app/static/media
+      - ./static:/app/static
     labels:
       - traefik.enable=true
       - traefik.http.routers.eatc.rule=Host(`app.eatc.me`)
@@ -97,8 +96,7 @@ services:
     command: celery -A Tasks worker --loglevel=info --concurrency=2
     env_file: .env
     volumes:
-      - ./staticfiles:/app/staticfiles
-      - ./static/media:/app/static/media
+      - ./static:/app/static
     depends_on:
       db:
         condition: service_healthy
@@ -114,8 +112,7 @@ services:
     command: celery -A Tasks flower --port=5555
     env_file: .env
     volumes:
-      - ./staticfiles:/app/staticfiles
-      - ./static/media:/app/static/media
+      - ./static:/app/static
     ports:
       - "5555:5555"
     depends_on:
