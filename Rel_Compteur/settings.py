@@ -26,6 +26,7 @@ SHARED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'drf_spectacular',
     'Acommune',
     'Login',
     'django_celery_results',
@@ -232,7 +233,29 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ]
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# Configuration drf-spectacular pour OpenAPI/Swagger
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'EATC API',
+    'DESCRIPTION': 'API pour le système de gestion de compteurs d eau EATC',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDES': [
+        {'url': 'http://localhost:8000/api/', 'description': 'Development server'},
+    ],
+    'SCHEMA_PATH_PREFIX': '/api',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'TAGS': [
+        {'name': 'Authentification', 'description': 'Endpoints d authentification'},
+        {'name': 'Compteurs', 'description': 'Gestion des compteurs et relevés'},
+        {'name': 'Clients', 'description': 'Gestion des clients et contrats'},
+        {'name': 'Facturation', 'description': 'Gestion des factures et paiements'},
+        {'name': 'Synchronisation', 'description': 'Synchronisation mobile offline-first'},
+        {'name': 'Anomalies', 'description': 'Gestion des anomalies et incidents'},
+        {'name': 'Tableau de Bord', 'description': 'Statistiques et KPIs'},
+    ],
 }
 
 # Configuration JWT - Optimisée pour applications mobiles offline
@@ -267,6 +290,29 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Indian/Antananarivo'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 600  # 10 minutes max par tâche
+
+# Configuration Flower (monitoring Celery)
+FLOWER_PORT = 5555
+FLOWER_BASIC_AUTH = config('FLOWER_BASIC_AUTH', default='')
+FLOWER_UNAUTHENTICATED = config('FLOWER_UNAUTHENTICATED', default='False')
+
+# Configuration Sentry (monitoring et alertes)
+SENTRY_DSN = config('SENTRY_DSN', default='')
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+            CeleryIntegration(),
+        ],
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        environment=config('ENVIRONMENT', default='production'),
+    )
 AUTH_USER_MODEL = "Tenants.Utilisateur"
 
 LOGGING = {

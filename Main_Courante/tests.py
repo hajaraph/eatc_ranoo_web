@@ -1,9 +1,23 @@
+import pytest
 from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import patch
 
 from Main_Courante.models import MainCourante, StatutMC, SuivieMC, PhotoMC
+
+
+@pytest.mark.django_db
+class TestMainCouranteModel(TestCase):
+    """Tests pour le modèle MainCourante"""
+
+    def test_creation_main_courante(self):
+        """Test la création d'une main courante"""
+        main_courante = MainCourante.objects.create(
+            description='Test incident',
+            date_incident=timezone.now().date()
+        )
+        self.assertEqual(main_courante.description, 'Test incident')
 
 
 class SignalSyncTests(TestCase):

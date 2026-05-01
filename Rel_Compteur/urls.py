@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from Login.api_auth.views import download_with_token
 
@@ -23,6 +24,10 @@ urlpatterns = [
     path('depense/', include('Depense.urls')),
     path('rubrique/', include('Rubrique.urls')),
     path('download/<str:token_string>', download_with_token, name='download_direct'),
+    # API Documentation (drf-spectacular)
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/', include([
         path('', include('Login.api_auth.urls')),
         path('', include('Compteurs.api_compteur.urls')),

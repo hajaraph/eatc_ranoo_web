@@ -105,3 +105,19 @@ services:
     restart: always
     networks:
       - webapp_preprod
+
+  flower:
+    image: ${DOCKER_HOST_REGISTRY_NAS}/eatc-web:latest
+    container_name: eatc-flower
+    command: celery -A Tasks flower --port=5555
+    env_file: .env
+    volumes:
+      - ./static/media:/app/static/media
+    ports:
+      - "5555:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+    networks:
+      - webapp_preprod
