@@ -59,6 +59,7 @@ ROOT_URLCONF = 'Rel_Compteur.urls'
 
 # Configuration des middlewares (TenantMainMiddleware doit être en premier)
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django_tenants.middleware.main.TenantMainMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -203,6 +204,7 @@ MESSAGE_TAGS = {
 
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STORAGES = {
     "default": {
@@ -213,9 +215,9 @@ STORAGES = {
         }
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         "OPTIONS": {
-            "location": os.path.join(BASE_DIR, 'static/'),
+            "location": STATIC_ROOT,
             "base_url": STATIC_URL,
         }
     },
