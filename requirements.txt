@@ -43,7 +43,7 @@ django-stubs==5.2.9
 django-stubs-ext==5.2.9
 django-tenants==3.10.1
 djangorestframework==3.16.0
-drf-spectacular==0.28.1
+drf-spectacular==0.29.0
 djangorestframework-simplejwt==5.3.1
 djangorestframework-stubs==3.16.7
 docopt==0.6.2
