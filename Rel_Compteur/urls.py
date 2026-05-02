@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/', include([
         path('', include('Login.api_auth.urls')),
         path('', include('Compteurs.api_compteur.urls')),
+        path('', include('Clients.api_clients.urls')),
         path('', include('Main_Courante.api_anomalie.urls')),
         path('tableau-bord/', include('Tableau_Bord.api.urls')),
     ])),
