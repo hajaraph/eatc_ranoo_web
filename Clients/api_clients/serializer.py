@@ -12,6 +12,21 @@ class TypeClientSerializer(serializers.ModelSerializer):
         read_only_fields = ['id_type_client']
 
 
+class ContratSerializer(serializers.ModelSerializer):
+    client_nom = serializers.CharField(source='client.nom_client', read_only=True)
+    compteur_marque = serializers.CharField(source='num_compteur.marque', read_only=True)
+    commune_nom = serializers.CharField(source='cp_commune.nom_commune', read_only=True)
+    
+    class Meta:
+        model = Contrat
+        fields = [
+            'num_contrat', 'date_debut', 'date_fin', 'adresse_contrat',
+            'pays_contrat', 'cp_commune', 'client', 'num_compteur',
+            'utilisateur', 'client_nom', 'compteur_marque', 'commune_nom'
+        ]
+        read_only_fields = ['num_contrat']
+
+
 class ClientSerializer(serializers.ModelSerializer):
     type_client_designation = serializers.CharField(source='type_client.designation_client', read_only=True)
     commune_nom = serializers.CharField(source='cp_commune.nom_commune', read_only=True)
@@ -47,21 +62,6 @@ class PieceClientSerializer(serializers.ModelSerializer):
         model = PieceClient
         fields = ['id_piece', 'pieces_client', 'designation', 'client', 'client_nom']
         read_only_fields = ['id_piece']
-
-
-class ContratSerializer(serializers.ModelSerializer):
-    client_nom = serializers.CharField(source='client.nom_client', read_only=True)
-    compteur_marque = serializers.CharField(source='num_compteur.marque', read_only=True)
-    commune_nom = serializers.CharField(source='cp_commune.nom_commune', read_only=True)
-    
-    class Meta:
-        model = Contrat
-        fields = [
-            'num_contrat', 'date_debut', 'date_fin', 'adresse_contrat',
-            'pays_contrat', 'cp_commune', 'client', 'num_compteur',
-            'utilisateur', 'client_nom', 'compteur_marque', 'commune_nom'
-        ]
-        read_only_fields = ['num_contrat']
 
 
 class ContratCreateSerializer(serializers.ModelSerializer):
