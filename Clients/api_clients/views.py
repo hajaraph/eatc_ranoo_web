@@ -72,7 +72,7 @@ class ClientListView(APIView):
     @staticmethod
     @schema_use_api
     def get(request):
-        clients = Client.objects.select_related('cp_commune', 'type_client').all()
+        clients = Client.objects.select_related('cp_commune', 'type_client').prefetch_related('contrats__num_compteur').all()
         
         # Filtrage par compte_actif
         actif = request.GET.get('actif')
