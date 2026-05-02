@@ -15,7 +15,8 @@ class TypeClientSerializer(serializers.ModelSerializer):
 class ClientSerializer(serializers.ModelSerializer):
     type_client_designation = serializers.CharField(source='type_client.designation_client', read_only=True)
     commune_nom = serializers.CharField(source='cp_commune.nom_commune', read_only=True)
-    
+    compteurs = serializers.SerializerMethodField()
+
     class Meta:
         model = Client
         fields = [
@@ -23,9 +24,20 @@ class ClientSerializer(serializers.ModelSerializer):
             'tel1_client', 'tel2_client', 'email_client', 'adresse_client',
             'pays_client', 'profession_client', 'nb_personne_menage',
             'compte_actif', 'cp_commune', 'type_client',
-            'type_client_designation', 'commune_nom'
+            'type_client_designation', 'commune_nom', 'compteurs'
         ]
         read_only_fields = ['id_client']
+
+    def get_compteurs(self, obj):
+        from Compteurs.models import Compteur
+        compteurs = Compteur.objects.filter(contrats__client=obj).distinct()
+        return [
+            {
+                'num_compteur': c.num_compteur,
+                'marque': c.marque,
+            }
+            for c in compteurs
+        ]
 
 
 class ClientCreateSerializer(serializers.ModelSerializer):
