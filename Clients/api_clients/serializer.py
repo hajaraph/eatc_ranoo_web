@@ -30,7 +30,7 @@ class ContratSerializer(serializers.ModelSerializer):
 class ClientSerializer(serializers.ModelSerializer):
     type_client_designation = serializers.CharField(source='type_client.designation_client', read_only=True)
     commune_nom = serializers.CharField(source='cp_commune.nom_commune', read_only=True)
-    contrats = ContratSerializer(source='contrats', many=True, read_only=True)
+    contrats = ContratSerializer(many=True, read_only=True)
 
     class Meta:
         model = Client
