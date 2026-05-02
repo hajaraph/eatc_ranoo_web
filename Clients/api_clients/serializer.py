@@ -15,7 +15,7 @@ class TypeClientSerializer(serializers.ModelSerializer):
 class ClientSerializer(serializers.ModelSerializer):
     type_client_designation = serializers.CharField(source='type_client.designation_client', read_only=True)
     commune_nom = serializers.CharField(source='cp_commune.nom_commune', read_only=True)
-    contrats = serializers.SerializerMethodField()
+    contrats = ContratSerializer(source='contrats', many=True, read_only=True)
 
     class Meta:
         model = Client
@@ -27,18 +27,6 @@ class ClientSerializer(serializers.ModelSerializer):
             'type_client_designation', 'commune_nom', 'contrats'
         ]
         read_only_fields = ['id_client']
-
-    def get_contrats(self, obj):
-        contrats = obj.contrats.all()
-        result = [
-            {
-                'num_contrat': c.num_contrat,
-                'num_compteur': c.num_compteur.num_compteur if c.num_compteur else None,
-            }
-            for c in contrats
-        ]
-        print(f'[ClientSerializer] Contrats for {obj.nom_client}: {result}')
-        return result
 
 
 class ClientCreateSerializer(serializers.ModelSerializer):
