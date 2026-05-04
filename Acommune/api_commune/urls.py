@@ -1,6 +1,6 @@
 from django.urls import path
 
-from Acommune.views import (
+from .views import (
     province_list_api,
     regions_by_province_api,
     communes_by_region_api,
