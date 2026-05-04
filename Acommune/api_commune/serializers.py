@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Province, Region, Commune
+from ..models import Province, Region, Commune
 
 
 class ProvinceSerializer(serializers.ModelSerializer):
