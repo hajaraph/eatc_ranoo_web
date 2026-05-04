@@ -1,16 +1,13 @@
-from django.http import Http404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from ..models import Province, Region, Commune
+from Acommune.models import Province, Region, Commune
 from .serializers import (
     ProvinceSerializer, 
     RegionSerializer, 
     CommuneSerializer,
-    ProvinceCascadeSerializer,
 )
 from Rel_Compteur.api_utils import ApiResponse
 
