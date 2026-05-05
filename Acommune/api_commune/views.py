@@ -1,7 +1,6 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
 from Acommune.models import Province, Region, Commune
 from .serializers import (
@@ -17,7 +16,6 @@ from Rel_Compteur.api_utils import ApiResponse
 # ============================================
 
 @api_view(['GET'])
-@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def province_list_api(request):
     """
@@ -54,7 +52,6 @@ def province_list_api(request):
 
 
 @api_view(['GET'])
-@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def regions_by_province_api(request, province_id):
     """
@@ -104,7 +101,6 @@ def regions_by_province_api(request, province_id):
 
 
 @api_view(['GET'])
-@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def communes_by_region_api(request, region_id):
     """
@@ -154,7 +150,6 @@ def communes_by_region_api(request, region_id):
 
 
 @api_view(['GET'])
-@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def communes_by_province_api(request, province_id):
     """
@@ -214,7 +209,6 @@ def communes_by_province_api(request, province_id):
 
 
 @api_view(['GET'])
-@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def commune_detail_api(request, cp_commune):
     """
