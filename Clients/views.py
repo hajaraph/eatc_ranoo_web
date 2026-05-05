@@ -91,7 +91,7 @@ class ClientNew(SchemaAwareView):
         try:
             client_data = extract_client_data(request)
 
-            # Vérification d'unicité du numéro de client par commune
+            # Vérification d'unicité du numéro de client par commune (si fourni)
             num_client = client_data['num_client']
             if num_client:
                 # Vérifier si le numéro existe déjà dans la même commune
@@ -103,26 +103,6 @@ class ClientNew(SchemaAwareView):
                 if client_existant:
                     messages.warning(request, f'Le numéro Client {num_client} existe déjà dans cette commune !')
                     return redirect('client_new')
-            else:
-                # Générer automatiquement un numéro client à 4 chiffres
-                import random
-                while True:
-                    # Générer un nombre aléatoire à 4 chiffres
-                    num_client_genere = str(random.randint(1, 9999))
-
-                    # Vérifier s'il existe déjà dans cette commune
-                    client_existant = Client.objects.filter(
-                        num_client=num_client_genere,
-                        cp_commune_id=client_data['cp_commune']
-                    ).exists()
-
-                    if not client_existant:
-                        # Numéro unique trouvé, on l'utilise
-                        num_client = num_client_genere
-                        break
-
-                # Mettre à jour le client_data avec le numéro généré
-                client_data['num_client'] = num_client
 
             tel2_value = client_data['tel2_client']
             if tel2_value:  # Ne vérifie que si tel2_client n'est pas None ou ''
@@ -131,9 +111,9 @@ class ClientNew(SchemaAwareView):
                     messages.warning(request, f'Téléphone 2 déjà utilisé par un client !')
                     return redirect('client_new')
 
-            # Création du client
+            # Création du client (le signal pre_save générera automatiquement num_client si vide)
             client = Client.objects.create(
-                num_client=client_data['num_client'],  # Sauvegarde du numéro de client
+                num_client=client_data['num_client'] if num_client else None,
                 nom_client=client_data['nom_client'],
                 prenom_client=client_data['prenom_client'],
                 profession_client=client_data['profession_client'],

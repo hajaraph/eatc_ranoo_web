@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 from Compteurs.models import Compteur
 from Tenants.models import Utilisateur
@@ -50,3 +52,24 @@ class Contrat(models.Model):
     client = models.ForeignKey(Client, related_name='contrats', on_delete=models.CASCADE)
     num_compteur = models.ForeignKey(Compteur, on_delete=models.CASCADE, related_name='contrats')
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT, related_name='contrats', null=True)
+
+
+@receiver(pre_save, sender=Client)
+def generate_num_client(sender, instance, **kwargs):
+    import random
+
+    # Générer automatiquement un num_client s'il n'est pas fourni
+    if not instance.num_client and instance.cp_commune:
+        while True:
+            # Générer un nombre aléatoire à 4 chiffres
+            num_client_genere = random.randint(1, 9999)
+
+            # Vérifier s'il existe déjà dans cette commune
+            client_existant = Client.objects.filter(
+                num_client=num_client_genere,
+                cp_commune=instance.cp_commune
+            ).exists()
+
+            if not client_existant:
+                instance.num_client = num_client_genere
+                break
