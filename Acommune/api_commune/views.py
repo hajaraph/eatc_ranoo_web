@@ -33,10 +33,10 @@ def province_list_api(request):
         paginator = PageNumberPagination()
         paginator.page_size = 50
         result_page = paginator.paginate_queryset(provinces, request)
-        
+
         return ApiResponse.success(
             data={
-                'results': ProvinceSerializer(result_page.object_list, many=True).data,
+                'results': ProvinceSerializer(result_page, many=True).data,
                 'count': paginator.page.paginator.count,
                 'next': paginator.get_next_link(),
                 'previous': paginator.get_previous_link(),
@@ -82,10 +82,10 @@ def regions_by_province_api(request, province_id):
         paginator = PageNumberPagination()
         paginator.page_size = 50
         result_page = paginator.paginate_queryset(regions, request)
-        
+
         return ApiResponse.success(
             data={
-                'results': RegionSerializer(result_page.object_list, many=True).data,
+                'results': RegionSerializer(result_page, many=True).data,
                 'count': paginator.page.paginator.count,
                 'next': paginator.get_next_link(),
                 'previous': paginator.get_previous_link(),
@@ -131,10 +131,10 @@ def communes_by_region_api(request, region_id):
         paginator = PageNumberPagination()
         paginator.page_size = 50
         result_page = paginator.paginate_queryset(communes, request)
-        
+
         return ApiResponse.success(
             data={
-                'results': CommuneSerializer(result_page.object_list, many=True).data,
+                'results': CommuneSerializer(result_page, many=True).data,
                 'count': paginator.page.paginator.count,
                 'next': paginator.get_next_link(),
                 'previous': paginator.get_previous_link(),
