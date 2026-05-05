@@ -87,8 +87,8 @@ def authentification(request):
             mode_donnees = 'offline-first' if role == 'Releveur' else 'online-only'
 
             # 4. Générer les tokens JWT
-            refresh_tokens = RefreshToken.for_user(utilisateur)
-            access_token = refresh_tokens.access_token
+            refresh = RefreshToken.for_user(utilisateur)
+            access_token = refresh.access_token
 
             # Ajouter des claims personnalisées au token
             access_token['role'] = role
@@ -102,7 +102,7 @@ def authentification(request):
             return ApiResponse.success(
                 data={
                     'access_token': str(access_token),
-                    'refresh_token': str(refresh_token),
+                    'refresh_token': str(refresh),
                     'info_utilisateur': {
                         'id_utilisateur': utilisateur.id_utilisateur,
                         'nom_utilisateur': utilisateur.nom_utilisateur,
