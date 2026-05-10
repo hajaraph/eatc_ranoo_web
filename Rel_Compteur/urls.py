@@ -35,6 +35,7 @@ urlpatterns = [
         path('', include('Main_Courante.api_anomalie.urls')),
         path('tableau-bord/', include('Tableau_Bord.api.urls')),
         path('', include('Acommune.api_commune.urls')),
+        path('', include('Facturation.api_facture.urls')),
     ])),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,10 +1,11 @@
-from django.urls import path
+from django.urls import path, include
 
 from Facturation.views import facture, facture_restant, facture_retard, facture_avoir, facture_etat_detail, \
     facture_genere_pdf, facture_paiement, facture_impaye, facture_paye, generate_multiple_pages_pdf, \
     facture_export_excel, facture_supprimer, check_pdf_task_status, download_generated_pdf
 
 urlpatterns = [
+    path('api/', include('Facturation.api_facture.urls')),
     path('list', facture, name='facture'),
     path('detail/num_facture=<str:num_facture>', facture_etat_detail, name='facture_etat_detail'),
     path('paye', facture_paye, name='facture_paye'),
